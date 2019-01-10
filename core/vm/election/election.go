@@ -56,11 +56,13 @@ type Candidate struct {
 	TotalBounty     *big.Int       // 总奖励金额
 	ExtractedBounty *big.Int       // 已提取奖励金额
 	LastExtractTime *big.Int       // 上次提权时间
+	Website         []byte         // 节点网站地址
+	Name            []byte         // 节点名字
 }
 
 func (c *Candidate) dump() {
-	fmt.Printf("candidate dump, addr:%s, votes:%s, active:%v, url:%x, totalBounty: %v, extractedBounty: %v, lastExtractTime: %v\n",
-		c.Owner.String(), c.VoteCount.String(), c.Active, c.Url, c.TotalBounty, c.ExtractedBounty, c.LastExtractTime)
+	fmt.Printf("candidate dump, addr:%s, votes:%s, active:%v, url:%x, totalBounty: %v, extractedBounty: %v, lastExtractTime: %v, WebSite: %s, Name: %s\n",
+		c.Owner.String(), c.VoteCount.String(), c.Active, c.Url, c.TotalBounty, c.ExtractedBounty, c.LastExtractTime, c.Website, c.Name)
 }
 
 func newVoter() Voter {
@@ -163,7 +165,7 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
 	}
 	ctx.GetStateDb().SetNonce(electionAddr, nonce+1)
 	abiJSON := `[
-{"inputs":[{"name":"url","type":"bytes"}],"name":"registerWitness","outputs":[],"type":"function"},
+{"inputs":[{"name":"nodeUrl","type":"bytes"},{"name":"website","type":"bytes"},{"name":"nodeName","type":"bytes"}],"name":"registerWitness","outputs":[],"type":"function"},
 {"inputs":[],"name":"unregisterWitness","outputs":[],"type":"function"},
 {"inputs":[{"name":"candidate","type":"address[]"}],"name":"voteWitnesses","outputs":[],"type":"function"},
 {"inputs":[],"name":"cancelVote","outputs":[],"type":"function"},
@@ -189,9 +191,14 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
 	switch {
 	case bytes.Equal(methodId, electionABI.Methods["registerWitness"].Id()):
 		methodName = "registerWitness"
-		var url []byte
-		if err = electionABI.UnpackInput(&url, "registerWitness", methodArgs); err == nil {
-			err = c.registerWitness(ctx.GetOrigin(), url)
+		type NodeInfo struct {
+			NodeUrl  []byte
+			Website  []byte
+			NodeName []byte
+		}
+		var nodeInfo NodeInfo
+		if err = electionABI.UnpackInput(&nodeInfo, "registerWitness", methodArgs); err == nil {
+			err = c.registerWitness(ctx.GetOrigin(), nodeInfo.NodeUrl, nodeInfo.Website, nodeInfo.NodeName)
 		}
 
 	case bytes.Equal(methodId, electionABI.Methods["unregisterWitness"].Id()):
@@ -249,7 +256,7 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
 	return nil, err
 }
 
-func (ec electionContext) registerWitness(address common.Address, url []byte) error {
+func (ec electionContext) registerWitness(address common.Address, url []byte, website []byte, name []byte) error {
 	// get candidate from db
 	candidate := ec.getCandidate(address)
 
@@ -271,6 +278,8 @@ func (ec electionContext) registerWitness(address common.Address, url []byte) er
 	// Mark candidate as active
 	candidate.Active = true
 	candidate.Url = url
+	candidate.Website = website
+	candidate.Name = name
 
 	// save candidate info db
 	err := ec.setCandidate(candidate)
