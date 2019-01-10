@@ -175,6 +175,7 @@ type Candidate struct {
 	TotalBounty     *big.Int // 总奖励金额
 	ExtractedBounty *big.Int // 已提取奖励金额
 	LastExtractTime *big.Int // 上次提权时间
+	// 	TODO stb 增加字段，字符串类型
 }
 
 type Voter struct {
