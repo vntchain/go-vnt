@@ -1,0 +1,95 @@
+[{
+     "name": "System",
+     "constant": false,
+     "inputs": [],
+     "outputs": [],
+     "type": "constructor"
+}, {
+     "name": "$testAtol",
+     "constant": false,
+     "inputs": [{
+          "name": "a",
+          "type": "string",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "int32",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "$testStrtoul",
+     "constant": false,
+     "inputs": [{
+          "name": "a",
+          "type": "string",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint32",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "$testStrtoll",
+     "constant": false,
+     "inputs": [{
+          "name": "a",
+          "type": "string",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "int64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "$testStrtoull",
+     "constant": false,
+     "inputs": [{
+          "name": "a",
+          "type": "string",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "$getStrlen",
+     "constant": false,
+     "inputs": [{
+          "name": "str",
+          "type": "string",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "int32",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "$testPow",
+     "constant": false,
+     "inputs": [{
+          "name": "x",
+          "type": "uint64",
+          "indexed": false
+     }, {
+          "name": "y",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}]

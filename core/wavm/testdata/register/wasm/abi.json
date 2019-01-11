@@ -1,0 +1,97 @@
+[
+    {
+        "name": "contractname",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "aa",
+                "type": "int64",
+                "indexed": false
+            },
+            {
+                "name": "bb",
+                "type": "string",
+                "indexed": false
+            },
+            {
+                "name": "cc",
+                "type": "uint64",
+                "indexed": false
+            }
+        ],
+        "outputs": [],
+        "type": "constructor"
+    },
+    {
+        "name": "querya",
+        "constant": false,
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "int64",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "queryb",
+        "constant": false,
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "queryc",
+        "constant": false,
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "uint64",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "a",
+        "outputs": [
+            {
+                "name": "a",
+                "type": "int64",
+                "indexed": false
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "b",
+        "outputs": [
+            {
+                "name": "b",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "c",
+        "outputs": [
+            {
+                "name": "c",
+                "type": "uint64",
+                "indexed": false
+            }
+        ],
+        "type": "key"
+    }
+]

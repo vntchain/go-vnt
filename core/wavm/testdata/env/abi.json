@@ -1,0 +1,521 @@
+[{
+     "name": "testEnv",
+     "constant": false,
+     "inputs": [],
+     "outputs": [],
+     "type": "constructor"
+}, {
+     "name": "testGetGasLimit",
+     "constant": false,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testAssert",
+     "constant": false,
+     "inputs": [{
+          "name": "condition",
+          "type": "bool",
+          "indexed": false
+     }],
+     "outputs": [],
+     "type": "function"
+}, {
+     "name": "testGetOrigin",
+     "constant": false,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "address",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testGetContractAddress",
+     "constant": false,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "address",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testGetGas",
+     "constant": false,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testGetBlockHash",
+     "constant": false,
+     "inputs": [{
+          "name": "blocknumber",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "string",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testSHA3",
+     "constant": false,
+     "inputs": [{
+          "name": "data",
+          "type": "string",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "string",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testRevert",
+     "constant": false,
+     "inputs": [],
+     "outputs": [],
+     "type": "function"
+}, {
+     "name": "testU256_Add",
+     "constant": false,
+     "inputs": [{
+          "name": "x",
+          "type": "uint256",
+          "indexed": false
+     }, {
+          "name": "y",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testUint256",
+     "constant": false,
+     "inputs": [{
+          "name": "i",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testAddress",
+     "constant": false,
+     "inputs": [{
+          "name": "i",
+          "type": "address",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "address",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testWeeks",
+     "constant": false,
+     "inputs": [{
+          "name": "n",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testRequire",
+     "constant": false,
+     "inputs": [{
+          "name": "condition",
+          "type": "bool",
+          "indexed": false
+     }],
+     "outputs": [],
+     "type": "function"
+}, {
+     "name": "testU256_Mul",
+     "constant": false,
+     "inputs": [{
+          "name": "x",
+          "type": "uint256",
+          "indexed": false
+     }, {
+          "name": "y",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testU256_Pow",
+     "constant": false,
+     "inputs": [{
+          "name": "x",
+          "type": "uint256",
+          "indexed": false
+     }, {
+          "name": "y",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testInt32",
+     "constant": false,
+     "inputs": [{
+          "name": "i",
+          "type": "int32",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "int32",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testYears",
+     "constant": false,
+     "inputs": [{
+          "name": "n",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testGetBlockNumber",
+     "constant": false,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "$testGetValue",
+     "constant": false,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testU256_Sub",
+     "constant": false,
+     "inputs": [{
+          "name": "x",
+          "type": "uint256",
+          "indexed": false
+     }, {
+          "name": "y",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testUint32",
+     "constant": false,
+     "inputs": [{
+          "name": "i",
+          "type": "uint32",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint32",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testBool",
+     "constant": false,
+     "inputs": [{
+          "name": "i",
+          "type": "bool",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "bool",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testGetSender",
+     "constant": false,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "address",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testDays",
+     "constant": false,
+     "inputs": [{
+          "name": "n",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testInt64",
+     "constant": false,
+     "inputs": [{
+          "name": "i",
+          "type": "int64",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "int64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testUint64",
+     "constant": false,
+     "inputs": [{
+          "name": "i",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testNow",
+     "constant": false,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testString",
+     "constant": false,
+     "inputs": [{
+          "name": "i",
+          "type": "string",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "string",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testGetTimestamp",
+     "constant": false,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testTransferFromContract",
+     "constant": false,
+     "inputs": [{
+          "name": "addr",
+          "type": "address",
+          "indexed": false
+     }, {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "bool",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testSendFromContract",
+     "constant": false,
+     "inputs": [{
+          "name": "addr",
+          "type": "address",
+          "indexed": false
+     }, {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "outputs": [],
+     "type": "function"
+}, {
+     "name": "testU256_Div",
+     "constant": false,
+     "inputs": [{
+          "name": "x",
+          "type": "uint256",
+          "indexed": false
+     }, {
+          "name": "y",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testHours",
+     "constant": false,
+     "inputs": [{
+          "name": "n",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testMinutes",
+     "constant": false,
+     "inputs": [{
+          "name": "n",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testGetBalanceFromAddress",
+     "constant": false,
+     "inputs": [{
+          "name": "addr",
+          "type": "address",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testU256_Cmp",
+     "constant": false,
+     "inputs": [{
+          "name": "x",
+          "type": "uint256",
+          "indexed": false
+     }, {
+          "name": "y",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "int32",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testSeconds",
+     "constant": false,
+     "inputs": [{
+          "name": "n",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testGetDifficulty",
+     "constant": false,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "uint256",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testGetCoinBase",
+     "constant": false,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "address",
+          "indexed": false
+     }],
+     "type": "function"
+}]

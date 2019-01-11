@@ -1,0 +1,1193 @@
+[
+    {
+        "name": "readmapping_int32",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "key",
+                "type": "int32",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "int32",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "readarray",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "index",
+                "type": "uint64",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "readarraylength",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "index",
+                "type": "uint64",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "uint64",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "writemapping_int32",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "key",
+                "type": "int32",
+                "indexed": false
+            },
+            {
+                "name": "value",
+                "type": "int32",
+                "indexed": false
+            }
+        ],
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "name": "writearray",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "index",
+                "type": "uint64",
+                "indexed": false
+            },
+            {
+                "name": "value",
+                "type": "string",
+                "indexed": false
+            },
+            {
+                "name": "length",
+                "type": "uint64",
+                "indexed": false
+            }
+        ],
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "name": "TestPop",
+        "constant": false,
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "TestPush",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "val",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "name": "TestReadComplexMappingWithStruct",
+        "constant": false,
+        "inputs": [],
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "name": "writemapping",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string",
+                "indexed": false
+            },
+            {
+                "name": "value",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "name": "readmapping",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "readmapping_int64",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "key",
+                "type": "int64",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "int64",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "TestComplexMappingWithNesting",
+        "constant": false,
+        "inputs": [],
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "name": "TestWriteComplexMappingWithStruct",
+        "constant": false,
+        "inputs": [],
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "name": "writemapping_int64",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "key",
+                "type": "int64",
+                "indexed": false
+            },
+            {
+                "name": "value",
+                "type": "int64",
+                "indexed": false
+            }
+        ],
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "name": "mapping_f",
+        "tables": [
+            {
+                "name": "mapping_f",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "key",
+                        "type": "bool",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "bool",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "b",
+        "tables": [
+            {
+                "name": "b",
+                "type": "uint32",
+                "tables": []
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "mapping_c",
+        "tables": [
+            {
+                "name": "mapping_c",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "key",
+                        "type": "int64",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "int64",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "mapping_d",
+        "tables": [
+            {
+                "name": "mapping_d",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "key",
+                        "type": "uint64",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "uint64",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "s2",
+        "tables": [
+            {
+                "name": "s2",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "a",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "b",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "c",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "d",
+                        "type": "int32",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "s4",
+        "tables": [
+            {
+                "name": "s4",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "a",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "b",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "c",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "d",
+                        "type": "int32",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "qqqq",
+        "tables": [
+            {
+                "name": "qqqq",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "key",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "",
+                        "tables": [
+                            {
+                                "name": "key",
+                                "type": "int32",
+                                "tables": []
+                            },
+                            {
+                                "name": "value",
+                                "type": "",
+                                "tables": [
+                                    {
+                                        "name": "key",
+                                        "type": "int32",
+                                        "tables": []
+                                    },
+                                    {
+                                        "name": "value",
+                                        "type": "int32",
+                                        "tables": []
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "array_d",
+        "tables": [
+            {
+                "name": "array_d",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "index",
+                        "type": "uint64",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "uint64",
+                        "tables": []
+                    },
+                    {
+                        "name": "length",
+                        "type": "uint64",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "mapping_a",
+        "tables": [
+            {
+                "name": "mapping_a",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "key",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "int32",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "array_b",
+        "tables": [
+            {
+                "name": "array_b",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "index",
+                        "type": "uint64",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "uint32",
+                        "tables": []
+                    },
+                    {
+                        "name": "length",
+                        "type": "uint64",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "array_f",
+        "tables": [
+            {
+                "name": "array_f",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "index",
+                        "type": "uint64",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "bool",
+                        "tables": []
+                    },
+                    {
+                        "name": "length",
+                        "type": "uint64",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "mapping_h",
+        "tables": [
+            {
+                "name": "mapping_h",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "key",
+                        "type": "string",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "",
+                        "tables": [
+                            {
+                                "name": "key",
+                                "type": "string",
+                                "tables": []
+                            },
+                            {
+                                "name": "value",
+                                "type": "string",
+                                "tables": []
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "d",
+        "tables": [
+            {
+                "name": "d",
+                "type": "uint64",
+                "tables": []
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "s6",
+        "tables": [
+            {
+                "name": "s6",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "a",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "b",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "e",
+                        "type": "",
+                        "tables": [
+                            {
+                                "name": "c",
+                                "type": "int32",
+                                "tables": []
+                            },
+                            {
+                                "name": "d",
+                                "type": "int32",
+                                "tables": []
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "array_c",
+        "tables": [
+            {
+                "name": "array_c",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "index",
+                        "type": "uint64",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "int64",
+                        "tables": []
+                    },
+                    {
+                        "name": "length",
+                        "type": "uint64",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "mapping_b",
+        "tables": [
+            {
+                "name": "mapping_b",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "key",
+                        "type": "uint32",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "uint32",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "e",
+        "tables": [
+            {
+                "name": "e",
+                "type": "string",
+                "tables": []
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "g",
+        "tables": [
+            {
+                "name": "g",
+                "type": "address",
+                "tables": []
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "s1",
+        "tables": [
+            {
+                "name": "s1",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "a",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "b",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "c",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "d",
+                        "type": "int32",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "yyyy",
+        "tables": [
+            {
+                "name": "yyyy",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "key",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "",
+                        "tables": [
+                            {
+                                "name": "key",
+                                "type": "int32",
+                                "tables": []
+                            },
+                            {
+                                "name": "value",
+                                "type": "",
+                                "tables": [
+                                    {
+                                        "name": "value",
+                                        "type": "int32",
+                                        "tables": []
+                                    },
+                                    {
+                                        "name": "length",
+                                        "type": "uint64",
+                                        "tables": []
+                                    },
+                                    {
+                                        "name": "index",
+                                        "type": "uint64",
+                                        "tables": []
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "x3",
+        "tables": [
+            {
+                "name": "x3",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "index",
+                        "type": "uint64",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "length",
+                        "type": "uint64",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "bbb",
+        "tables": [
+            {
+                "name": "bbb",
+                "type": "int32",
+                "tables": []
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "a",
+        "tables": [
+            {
+                "name": "a",
+                "type": "int32",
+                "tables": []
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "array_g",
+        "tables": [
+            {
+                "name": "array_g",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "index",
+                        "type": "uint64",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "address",
+                        "tables": []
+                    },
+                    {
+                        "name": "length",
+                        "type": "uint64",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "c",
+        "tables": [
+            {
+                "name": "c",
+                "type": "int64",
+                "tables": []
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "array_e",
+        "tables": [
+            {
+                "name": "array_e",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "index",
+                        "type": "uint64",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "string",
+                        "tables": []
+                    },
+                    {
+                        "name": "length",
+                        "type": "uint64",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "f",
+        "tables": [
+            {
+                "name": "f",
+                "type": "bool",
+                "tables": []
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "mapping_g",
+        "tables": [
+            {
+                "name": "mapping_g",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "key",
+                        "type": "address",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "address",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "x1",
+        "tables": [
+            {
+                "name": "x1",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "key",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "int32",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "array_a",
+        "tables": [
+            {
+                "name": "array_a",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "index",
+                        "type": "uint64",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "length",
+                        "type": "uint64",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "mapping_i",
+        "tables": [
+            {
+                "name": "mapping_i",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "key",
+                        "type": "string",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "",
+                        "tables": [
+                            {
+                                "name": "phone",
+                                "type": "string",
+                                "tables": []
+                            },
+                            {
+                                "name": "map1",
+                                "type": "",
+                                "tables": [
+                                    {
+                                        "name": "key",
+                                        "type": "int32",
+                                        "tables": []
+                                    },
+                                    {
+                                        "name": "value",
+                                        "type": "int32",
+                                        "tables": []
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "array1",
+                                "type": "",
+                                "tables": [
+                                    {
+                                        "name": "index",
+                                        "type": "uint64",
+                                        "tables": []
+                                    },
+                                    {
+                                        "name": "value",
+                                        "type": "",
+                                        "tables": [
+                                            {
+                                                "name": "key",
+                                                "type": "int32",
+                                                "tables": []
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "int32",
+                                                "tables": []
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "name": "length",
+                                        "type": "uint64",
+                                        "tables": []
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "name",
+                                "type": "string",
+                                "tables": []
+                            },
+                            {
+                                "name": "address",
+                                "type": "string",
+                                "tables": []
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "xxxx",
+        "tables": [
+            {
+                "name": "xxxx",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "key",
+                        "type": "int32",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "",
+                        "tables": [
+                            {
+                                "name": "key",
+                                "type": "int32",
+                                "tables": []
+                            },
+                            {
+                                "name": "value",
+                                "type": "",
+                                "tables": [
+                                    {
+                                        "name": "phone",
+                                        "type": "string",
+                                        "tables": []
+                                    },
+                                    {
+                                        "name": "map1",
+                                        "type": "",
+                                        "tables": [
+                                            {
+                                                "name": "key",
+                                                "type": "int32",
+                                                "tables": []
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "int32",
+                                                "tables": []
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "name": "array1",
+                                        "type": "",
+                                        "tables": [
+                                            {
+                                                "name": "index",
+                                                "type": "uint64",
+                                                "tables": []
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "",
+                                                "tables": [
+                                                    {
+                                                        "name": "key",
+                                                        "type": "int32",
+                                                        "tables": []
+                                                    },
+                                                    {
+                                                        "name": "value",
+                                                        "type": "int32",
+                                                        "tables": []
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "name": "length",
+                                                "type": "uint64",
+                                                "tables": []
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "name": "name",
+                                        "type": "string",
+                                        "tables": []
+                                    },
+                                    {
+                                        "name": "address",
+                                        "type": "string",
+                                        "tables": []
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "s7",
+        "tables": [
+            {
+                "name": "s7",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "index",
+                        "type": "uint64",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "",
+                        "tables": [
+                            {
+                                "name": "key",
+                                "type": "int32",
+                                "tables": []
+                            },
+                            {
+                                "name": "value",
+                                "type": "int32",
+                                "tables": []
+                            }
+                        ]
+                    },
+                    {
+                        "name": "length",
+                        "type": "uint64",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "aaa",
+        "tables": [
+            {
+                "name": "aaa",
+                "type": "int32",
+                "tables": []
+            }
+        ],
+        "type": "key"
+    },
+    {
+        "name": "mapping_e",
+        "tables": [
+            {
+                "name": "mapping_e",
+                "type": "",
+                "tables": [
+                    {
+                        "name": "key",
+                        "type": "string",
+                        "tables": []
+                    },
+                    {
+                        "name": "value",
+                        "type": "string",
+                        "tables": []
+                    }
+                ]
+            }
+        ],
+        "type": "key"
+    }
+]

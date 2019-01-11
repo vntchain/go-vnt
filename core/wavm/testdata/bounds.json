@@ -1,0 +1,114 @@
+{
+     "env": {
+          "previousHash": "5e20a0453cecd065ea59c37ac63e079ee08998b6045136a8ce6635c7912ec0b6",
+          "currentNumber": 257,
+          "currentGasLimit": 4000000,
+          "currentDifficulty": 256,
+          "currentTimestamp": 11111111,
+          "currentCoinbase": "0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba"
+     },
+     "exec": {
+          "address": "0xcccccccccccccccccccccccccccccccccccccccc",
+          "value": 0,
+          "gas": 4000000,
+          "caller": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "origin": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "gasPrice": 1000000
+     },
+     "pre": {
+          "0xcccccccccccccccccccccccccccccccccccccccc": {
+               "balance": "0xDE0B6B3A7640000",
+               "code": "",
+               "nonce": "0x00",
+               "storage": {}
+          },
+          "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+               "balance": "0xDE0B6B3A7640000",
+               "code": "",
+               "nonce": "0x00",
+               "storage": {}
+          }
+     },
+     "testcase": [{
+          "code": "bounds/main.wasm",
+          "abi": "bounds/abi.json",
+          "initcase": {
+               "needinit": true,
+               "input": []
+          },
+          "tests": [{
+               "function": "testToI64_Max",
+               "input": [],
+               "wanted": {
+                    "data": "9223372036854775807",
+                    "type": "int64"
+               }
+          }, {
+               "function": "testToI64_Max_Overflow",
+               "input": [],
+               "wanted": {
+                    "data": "0",
+                    "type": "int64"
+               }
+          }, {
+               "function": "testToI64_Min",
+               "input": [],
+               "wanted": {
+                    "data": "-9223372036854775808",
+                    "type": "int64"
+               }
+          }, {
+               "function": "testToI64_Min_Overflow",
+               "input": [],
+               "wanted": {
+                    "data": "0",
+                    "type": "int64"
+               }
+          }, {
+               "function": "testToU64_Max",
+               "input": [],
+               "wanted": {
+                    "data": "18446744073709551615",
+                    "type": "uint64"
+               }
+          }, {
+               "function": "testToU64_Max_Overflow",
+               "input": [],
+               "wanted": {
+                    "data": "0",
+                    "type": "uint64"
+               }
+          }, {
+               "function": "testToU64_Min",
+               "input": [],
+               "wanted": {
+                    "data": "0",
+                    "type": "uint64"
+               }
+          }, {
+               "function": "testToU64_Min_Overflow",
+               "input": [],
+               "wanted": {
+                    "data": "0",
+                    "type": "uint64"
+               }
+          }, {
+               "function": "testToI64_1",
+               "input": [],
+               "wanted": {
+                    "data": "-1",
+                    "type": "int64"
+               }
+          }, {
+               "function": "testToI64_string",
+               "input": [{
+                    "data": "-1",
+                    "type": "string"
+               }],
+               "wanted": {
+                    "data": "-1",
+                    "type": "int64"
+               }
+          }]
+     }]
+}

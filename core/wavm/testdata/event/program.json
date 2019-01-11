@@ -1,0 +1,66 @@
+[
+  {
+    "anonymous":false,
+    "name":"init",
+    "constant": false,
+    "inputs":[
+      {"name":"totalsupply","type":"uint64"}
+    ],
+    "outputs":[
+      {"name":"nothing","type":"uint64"}
+    ],
+    "payable":false,
+    "stateMutability":"nonpayable",
+    "type":"constructor"
+  },
+  {
+    "anonymous":false,
+    "name":"init",
+    "constant": false,
+    "inputs":[
+      {"name":"totalsupply","type":"uint64"}
+    ],
+    "outputs":[
+      {"name":"nothing","type":"uint64"}
+    ],
+    "payable":false,
+    "stateMutability":"nonpayable",
+    "type":"function"
+  },
+  {
+    "anonymous":false,
+    "name":"INIT",
+    "constant":false,
+    "inputs":[
+      {"name":"from","type":"address", "indexed": true},
+      {"name":"to","type":"address", "indexed": true},
+      {"name":"value","type":"uint64", "indexed": false},
+      {"name":"remark","type":"string", "indexed": false}
+    ],
+    "outputs":[],
+    "payable":false,
+    "stateMutability":"nonpayable",
+    "type":"event"
+  },
+  {
+    "anonymous":false,
+    "name":"TRANSFER",
+    "constant":false,
+    "inputs":[
+      {"name":"from","type":"address", "indexed": true},
+      {"name":"to","type":"address", "indexed": true},
+      {"name":"value","type":"uint64", "indexed": true},
+      {"name":"remark","type":"string", "indexed": true},
+      {"name":"price","type":"int64", "indexed": true},
+      {"name":"from1","type":"address", "indexed": false},
+      {"name":"to1","type":"address", "indexed": false},
+      {"name":"value1","type":"uint64", "indexed": false},
+      {"name":"remark1","type":"string", "indexed": false},
+      {"name":"price1","type":"int64", "indexed": false}
+    ],
+    "outputs":[],
+    "payable":false,
+    "stateMutability":"nonpayable",
+    "type":"event"
+  }
+]

@@ -1,0 +1,511 @@
+[
+    {
+        "name": "test",
+        "constant": false,
+        "inputs": [],
+        "outputs": [],
+        "type": "constructor"
+    },
+    {
+        "name": "testRead",
+        "constant": false,
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testReadStructE",
+        "constant": false,
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testReadStructF",
+        "constant": false,
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "address",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testReadMapStructA",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "int32",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testReadMapStructC",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "uint32",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testReadStructD",
+        "constant": false,
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "uint64",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testWriteMapStruct",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string",
+                "indexed": false
+            },
+            {
+                "name": "a",
+                "type": "int32",
+                "indexed": false
+            },
+            {
+                "name": "b",
+                "type": "int64",
+                "indexed": false
+            },
+            {
+                "name": "c",
+                "type": "uint32",
+                "indexed": false
+            },
+            {
+                "name": "d",
+                "type": "uint64",
+                "indexed": false
+            },
+            {
+                "name": "e",
+                "type": "string",
+                "indexed": false
+            },
+            {
+                "name": "f",
+                "type": "address",
+                "indexed": false
+            },
+            {
+                "name": "g",
+                "type": "bool",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "int32",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testReadMapStructB",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "int64",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testArrayWrite",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "length",
+                "type": "uint64",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testArrayRead",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "index",
+                "type": "uint64",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "address",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testWriteStruct",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "a",
+                "type": "int32",
+                "indexed": false
+            },
+            {
+                "name": "b",
+                "type": "int64",
+                "indexed": false
+            },
+            {
+                "name": "c",
+                "type": "uint32",
+                "indexed": false
+            },
+            {
+                "name": "d",
+                "type": "uint64",
+                "indexed": false
+            },
+            {
+                "name": "e",
+                "type": "string",
+                "indexed": false
+            },
+            {
+                "name": "f",
+                "type": "address",
+                "indexed": false
+            },
+            {
+                "name": "g",
+                "type": "bool",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "int32",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testReadStructA",
+        "constant": false,
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "int32",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testReadStructB",
+        "constant": false,
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "int64",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testWrite",
+        "constant": false,
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "int32",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testReadStructC",
+        "constant": false,
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "uint32",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testReadMapStructE",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testReadStructG",
+        "constant": false,
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "bool",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testReadMapStructD",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "uint64",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testReadMapStructF",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "address",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testReadMapStructG",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "bool",
+                "indexed": false
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "name": "testEVENT",
+        "anonymous": false,
+        "inputs": [
+            {
+                "name": "addr",
+                "type": "address",
+                "indexed": false
+            },
+            {
+                "name": "amount",
+                "type": "uint64",
+                "indexed": false
+            },
+            {
+                "name": "a",
+                "type": "int32",
+                "indexed": false
+            },
+            {
+                "name": "b",
+                "type": "int64",
+                "indexed": false
+            },
+            {
+                "name": "c",
+                "type": "uint32",
+                "indexed": false
+            },
+            {
+                "name": "d",
+                "type": "uint64",
+                "indexed": false
+            },
+            {
+                "name": "e",
+                "type": "string",
+                "indexed": false
+            },
+            {
+                "name": "f",
+                "type": "address",
+                "indexed": false
+            },
+            {
+                "name": "g",
+                "type": "bool",
+                "indexed": false
+            }
+        ],
+        "type": "event"
+    },
+    {
+        "name": "testCALL",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "addr",
+                "type": "address",
+                "indexed": false
+            },
+            {
+                "name": "amount",
+                "type": "uint64",
+                "indexed": false
+            },
+            {
+                "name": "a",
+                "type": "int32",
+                "indexed": false
+            },
+            {
+                "name": "b",
+                "type": "int64",
+                "indexed": false
+            },
+            {
+                "name": "c",
+                "type": "uint32",
+                "indexed": false
+            },
+            {
+                "name": "d",
+                "type": "uint64",
+                "indexed": false
+            },
+            {
+                "name": "e",
+                "type": "string",
+                "indexed": false
+            },
+            {
+                "name": "f",
+                "type": "address",
+                "indexed": false
+            },
+            {
+                "name": "g",
+                "type": "bool",
+                "indexed": false
+            }
+        ],
+        "outputs": [
+            {
+                "name": "output",
+                "type": "int32",
+                "indexed": false
+            }
+        ],
+        "type": "call"
+    }
+]

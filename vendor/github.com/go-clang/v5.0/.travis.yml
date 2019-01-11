@@ -1,0 +1,40 @@
+language: go
+go:
+  - 1.9.x
+  - 1.10.x
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      - llvm-toolchain-precise-5.0
+    packages:
+      - llvm-5.0
+      - clang-5.0
+      - libclang1-5.0
+      - libclang-5.0-dev
+
+env:
+  global:
+    - CC=clang CXX=clang++
+
+install:
+  - mkdir -p /home/travis/bin
+  - sudo ln -s /usr/bin/clang-5.0 /home/travis/bin/clang
+  - sudo ln -s /usr/bin/llvm-config-5.0 /home/travis/bin/llvm-config
+  - sudo ldconfig
+
+  - llvm-config --version
+  - llvm-config --includedir
+  - llvm-config --libdir
+  - clang --version
+
+  - make install-dependencies
+  - make install-tools
+
+script:
+  # Install the project
+  - make install
+
+  # Test without any coverage
+  - make test-full

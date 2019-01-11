@@ -1,0 +1,26 @@
+[
+  {
+    "anonymous":false,
+    "name":"init",
+    "constant": false,
+    "inputs":[
+      {"name":"totalsupply","type":"uint64"}
+    ],
+    "outputs":[
+      {"name":"nothing","type":"uint64"}
+    ],
+    "payable":false,
+    "stateMutability":"nonpayable",
+    "type":"function"
+  },
+  {
+    "anonymous":false,
+    "name":"transfer",
+    "constant":false,
+    "inputs":[],
+    "outputs":[],
+    "payable":false,
+    "stateMutability":"nonpayable",
+    "type":"function"
+  }
+]

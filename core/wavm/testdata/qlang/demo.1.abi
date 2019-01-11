@@ -1,0 +1,1 @@
+[{"name":"first_api","inputs":[{"name":"aa","type":"int32"},{"name":"bb","type":"int64"}],"outputs":[{"name":"return","type":"int64"}]},{"name":"second_api","inputs":[{"name":"ff","type":"float64"}],"outputs":[]}]

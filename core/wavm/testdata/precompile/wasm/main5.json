@@ -1,0 +1,192 @@
+[{
+          "name": "writemapping_int64",
+          "constant": false,
+          "inputs": [{
+                    "name": "key",
+                    "type": "int64",
+                    "indexed": false
+               },
+               {
+                    "name": "value",
+                    "type": "int64",
+                    "indexed": false
+               }
+          ],
+          "outputs": [],
+          "type": "function"
+     },
+     {
+          "name": "readmapping_int32",
+          "constant": false,
+          "inputs": [{
+               "name": "key",
+               "type": "int32",
+               "indexed": false
+          }],
+          "outputs": [{
+               "name": "output",
+               "type": "int32",
+               "indexed": false
+          }],
+          "type": "function"
+     },
+     {
+          "name": "readarraylength",
+          "constant": false,
+          "inputs": [{
+               "name": "index",
+               "type": "uint64",
+               "indexed": false
+          }],
+          "outputs": [{
+               "name": "output",
+               "type": "uint64",
+               "indexed": false
+          }],
+          "type": "function"
+     },
+     {
+          "name": "TestPush",
+          "constant": false,
+          "inputs": [{
+               "name": "val",
+               "type": "string",
+               "indexed": false
+          }],
+          "outputs": [],
+          "type": "function"
+     },
+     {
+          "name": "TestReadComplexMappingWithStruct",
+          "constant": false,
+          "inputs": [],
+          "outputs": [],
+          "type": "function"
+     },
+     {
+          "name": "TestWriteComplexMappingWithStruct",
+          "constant": false,
+          "inputs": [],
+          "outputs": [],
+          "type": "function"
+     },
+     {
+          "name": "writemapping",
+          "constant": false,
+          "inputs": [{
+                    "name": "key",
+                    "type": "string",
+                    "indexed": false
+               },
+               {
+                    "name": "value",
+                    "type": "string",
+                    "indexed": false
+               }
+          ],
+          "outputs": [],
+          "type": "function"
+     },
+     {
+          "name": "readmapping_int64",
+          "constant": false,
+          "inputs": [{
+               "name": "key",
+               "type": "int64",
+               "indexed": false
+          }],
+          "outputs": [{
+               "name": "output",
+               "type": "int64",
+               "indexed": false
+          }],
+          "type": "function"
+     },
+     {
+          "name": "writearray",
+          "constant": false,
+          "inputs": [{
+                    "name": "index",
+                    "type": "uint64",
+                    "indexed": false
+               },
+               {
+                    "name": "value",
+                    "type": "string",
+                    "indexed": false
+               },
+               {
+                    "name": "length",
+                    "type": "uint64",
+                    "indexed": false
+               }
+          ],
+          "outputs": [],
+          "type": "function"
+     },
+     {
+          "name": "TestPop",
+          "constant": false,
+          "inputs": [],
+          "outputs": [{
+               "name": "output",
+               "type": "string",
+               "indexed": false
+          }],
+          "type": "function"
+     },
+     {
+          "name": "TestComplexMappingWithNesting",
+          "constant": false,
+          "inputs": [],
+          "outputs": [],
+          "type": "function"
+     },
+     {
+          "name": "readmapping",
+          "constant": false,
+          "inputs": [{
+               "name": "key",
+               "type": "string",
+               "indexed": false
+          }],
+          "outputs": [{
+               "name": "output",
+               "type": "string",
+               "indexed": false
+          }],
+          "type": "function"
+     },
+     {
+          "name": "writemapping_int32",
+          "constant": false,
+          "inputs": [{
+                    "name": "key",
+                    "type": "int32",
+                    "indexed": false
+               },
+               {
+                    "name": "value",
+                    "type": "int32",
+                    "indexed": false
+               }
+          ],
+          "outputs": [],
+          "type": "function"
+     },
+     {
+          "name": "readarray",
+          "constant": false,
+          "inputs": [{
+               "name": "index",
+               "type": "uint64",
+               "indexed": false
+          }],
+          "outputs": [{
+               "name": "output",
+               "type": "string",
+               "indexed": false
+          }],
+          "type": "function"
+     }
+]
