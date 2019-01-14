@@ -562,8 +562,6 @@ func (ef *EnvFunctions) getContractCall(funcName string) interface{} {
 			}
 
 		}
-
-		return nil
 	}
 
 	funcVoid := func(proc *exec.WavmProcess, vars ...uint64) {

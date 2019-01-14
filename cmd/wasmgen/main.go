@@ -32,7 +32,7 @@ import (
 	"github.com/vntchain/go-vnt/common"
 )
 
-//clang -Xclang -ast-dump -fsyntax-only /Users/weisaizhang/Documents/go/src/github.com/vntchain/go-vnt/core/wasm/testdata/precompile/contract/main3.cpp
+//clang -Xclang -ast-dump -fsyntax-only main3.cpp
 
 //VNT_WASM_EXPORT
 //uint64 init   (   uint64 totalsupply   )

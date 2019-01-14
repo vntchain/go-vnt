@@ -27,7 +27,6 @@ func readfile(filepath string) []string {
 	fi, err := os.Open(filepath)
 	if err != nil {
 		panic(err.Error())
-		return nil
 	}
 	defer fi.Close()
 	contents := []string{}
