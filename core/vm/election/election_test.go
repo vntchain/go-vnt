@@ -889,9 +889,8 @@ func TestRegisterWitness(t *testing.T) {
 	t.Logf("addr1: %v", addr1.Hex())
 	t.Logf("addr2: %v", addr2.Hex())
 	t.Logf("addr3: %v", addr3.Hex())
-	website := "www.testnet.info"
-	name := "testinfo"
-	err := ec.registerWitness(addr1, url, []byte(website), []byte(name))
+
+	err := ec.registerWitness(addr1, url, []byte("www.testnet1.info"), []byte("node1"))
 	if err != nil {
 		t.Errorf("TestRegisterWitness registerWitness err:%v", err)
 	}
@@ -901,7 +900,7 @@ func TestRegisterWitness(t *testing.T) {
 		t.Logf("111 addr: %v, voteCount: %v, active: %v", candi.Owner.Hex(), candi.VoteCount, candi.Active)
 	}
 
-	err = ec.registerWitness(addr1, url, []byte(website), []byte(name))
+	err = ec.registerWitness(addr1, url, []byte("www.testnet2.com"), []byte("node2"))
 	if err.Error() != "registerWitness witness already exists" {
 		t.Errorf("TestRegisterWitness registerWitness err:%v", err)
 	}
@@ -911,16 +910,20 @@ func TestRegisterWitness(t *testing.T) {
 		t.Logf("222 addr: %v, voteCount: %v, active: %v", candi.Owner.Hex(), candi.VoteCount, candi.Active)
 	}
 
-	err = ec.registerWitness(addr2, url, []byte(website), []byte(name))
+	err = ec.registerWitness(addr2, url, []byte("www.testnet3.cn"), []byte("node3"))
 	if err != nil {
 		t.Errorf("TestRegisterWitness registerWitness err:%v", err)
 	}
 
-	err = ec.registerWitness(addr3, url, []byte(website), []byte(name))
+	err = ec.registerWitness(addr3, url, []byte("www.testnet4.site"), []byte("node4"))
 	if err != nil {
 		t.Errorf("TestRegisterWitness registerWitness err:%v", err)
 	}
 
+	// TODO 增加没给你在太长、太短的注册
+	// 增加url太长、太短
+	// 增加名字重复、名字大写字母、其他符号
+	// 增加url重复
 	candis = getAllCandidate(context.GetStateDb())
 	for _, candi := range candis {
 		t.Logf("333 addr: %v, voteCount: %v, active: %v", candi.Owner.Hex(), candi.VoteCount, candi.Active)

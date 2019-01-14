@@ -307,7 +307,7 @@ func (ec electionContext) checkCand(addr common.Address, name string, website st
 
 	digitalAndLower := func(s string) bool {
 		for _, ru := range s {
-			if !unicode.IsDigit(ru) || !unicode.IsLower(ru) {
+			if !unicode.IsDigit(ru) && !unicode.IsLower(ru) {
 				return false
 			}
 		}
@@ -315,9 +315,6 @@ func (ec electionContext) checkCand(addr common.Address, name string, website st
 	}
 	if !digitalAndLower(name) {
 		return fmt.Errorf("candidate's name should consist of digits and lowercase letters")
-	}
-	if !digitalAndLower(website) {
-		return fmt.Errorf("candidate's website url should consist of digits and lowercase letters")
 	}
 
 	// duplication check
