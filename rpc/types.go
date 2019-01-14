@@ -169,13 +169,14 @@ func (bn BlockNumber) Int64() int64 {
 
 type Candidate struct {
 	Owner           string   `json:"owner"`           // 候选人地址
+	Name            string   `json:"name"`            // 候选人名称
 	Active          bool     `json:"active"`          // 当前是否是候选人
 	Url             string   `json:"url"`             // 节点的URL
 	VoteCount       *big.Int `json:"voteCount"`       // 收到的票数
 	TotalBounty     *big.Int `json:"totalBounty"`     // 总奖励金额
 	ExtractedBounty *big.Int `json:"extractedBounty"` // 已提取奖励金额
 	LastExtractTime *big.Int `json:"lastExtractTime"` // 上次提权时间
-	// 	TODO stb 增加字段，字符串类型
+	Website         string   `json:"website"`         // 见证人网站
 }
 
 type Voter struct {
