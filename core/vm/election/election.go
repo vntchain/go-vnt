@@ -12,6 +12,7 @@ import (
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/log"
+	"unicode"
 )
 
 const (
@@ -257,12 +258,16 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
 }
 
 func (ec electionContext) registerWitness(address common.Address, url []byte, website []byte, name []byte) error {
+	// Sanity check
+	if err := ec.checkCand(address, string(name), string(website)); err != nil {
+		return err
+	}
+
 	// get candidate from db
 	candidate := ec.getCandidate(address)
 
 	// if candidate already exists
 	if bytes.Equal(candidate.Owner.Bytes(), address.Bytes()) {
-
 		// if candidate is already active, just ignore
 		if candidate.Active {
 			log.Warn("registerWitness witness already exists", "address", address.Hex())
@@ -288,6 +293,40 @@ func (ec electionContext) registerWitness(address common.Address, url []byte, we
 		return err
 	}
 
+	return nil
+}
+
+func (ec electionContext) checkCand(addr common.Address, name string, website string) error {
+	// length check
+	if len(name) < 3 || len(name) > 20 {
+		return fmt.Errorf("the lengeth of candites's name should betwwen [3, 20]")
+	}
+	if len(website) < 3 || len(website) > 60 {
+		return fmt.Errorf("the lengeth of candites's website url should betwwen [3, 60]")
+	}
+
+	digitalAndLower := func(s string) bool {
+		for _, ru := range s {
+			if !unicode.IsDigit(ru) || !unicode.IsLower(ru) {
+				return false
+			}
+		}
+		return true
+	}
+	if !digitalAndLower(name) {
+		return fmt.Errorf("candidate's name should consist of digits and lowercase letters")
+	}
+	if !digitalAndLower(website) {
+		return fmt.Errorf("candidate's website url should consist of digits and lowercase letters")
+	}
+
+	// duplication check
+	wits := GetAllCandidates(ec.context.GetStateDb())
+	for _, w := range wits {
+		if w.Owner != addr && (string(w.Name) == name || string(w.Website) == website) {
+			return fmt.Errorf("candidate's name or website url is duplicated with a candidate")
+		}
+	}
 	return nil
 }
 
