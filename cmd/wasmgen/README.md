@@ -7,7 +7,7 @@
 ```
 wget https://raw.githubusercontent.com/go-clang/gen/master/scripts/switch-clang-version.sh
 
-sh ./switch-clang-version.sh 5.0
+/bin/bash ./switch-clang-version.sh 5.0
 
 sudo ln -s /usr/lib/llvm-5.0/lib/libclang*so /usr/lib/
 
