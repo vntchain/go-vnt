@@ -70,9 +70,11 @@ func (m *WavmMemory) Set(offset, size uint64, value []byte) {
 		copy(m.Memory[offset:offset+size], value)
 		m.Size[offset] = len(value)
 		m.Pos = m.Pos + int(size)
+	} else {
+		m.Size[offset] = 0
+		m.Pos = m.Pos + 1
 	}
 }
-
 func (m *WavmMemory) SetBytes(value []byte) (offset int) {
 	offset = m.Len()
 	m.Set(uint64(offset), uint64(len(value)), value)

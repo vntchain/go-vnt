@@ -87,7 +87,6 @@ func lengthPrefixPointsTo(index int, output []byte) (start int, length int, err 
 	bigOffsetEnd := big.NewInt(0).SetBytes(output[index : index+32])
 	bigOffsetEnd.Add(bigOffsetEnd, common.Big32)
 	outputLength := big.NewInt(int64(len(output)))
-
 	if bigOffsetEnd.Cmp(outputLength) > 0 {
 		return 0, 0, fmt.Errorf("abi: cannot marshal in to go slice: offset %v would go over slice boundary (len=%v)", bigOffsetEnd, outputLength)
 	}
