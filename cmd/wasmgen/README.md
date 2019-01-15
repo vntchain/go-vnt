@@ -46,14 +46,34 @@ enabled_metadata=1
 ``yum install llvm``
 
 
-C语言合约完成后通过wasmgen工具生成abi文件和预编译代码precompile.c,文件输出在合约代码目录的output文件夹中
+## 下载wasmception
+
+### ```mac```
+
+[wasmception]https://github.com/ooozws/clang-heroku-slug/blob/master/precomp/wasmception-darwin-bin.tar.gz
+
+### ```linux```
+
+[wasmception]https://github.com/ooozws/clang-heroku-slug/blob/master/precomp/wasmception-linux-bin.tar.gz
+
+下载wasmception并解压wasmception,设置wasmception的环境变量
 
 ```
-./wasmgen --code codepath
-```
+echo export VNT_WASMCEPTION="/[PATH]/wasmception-[XXX]-bin" >> ~/.bash_profile
+source ~/.bash_profile
+``` 
 
-# clang合约编译成wasm
+wasmgen参数说明
+
+* ``-I``:添加合约引用的头文件所在文件夹,默认为合约代码的文件夹
+* ``-code``:合约代码的路径
+* ``-output``:wasm及abi输出文件夹，默认路径为在合约代码的文件夹下新建output
+
+
+# clang合约在线编译
 
 使用wasm在线编译工具**webassembly studio**进行在线编译，将wasmgen生成的预编译代码precompile.c copy到webassembly studio中，点击build按钮进行编译，编译完成后下载wasm
 
 [webassembly studio 网页链接](https://webassembly.studio/)
+
+

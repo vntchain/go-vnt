@@ -136,10 +136,12 @@ type abiGen struct {
 }
 
 var fileContent []string
+var wasmCeptionFlag string
 
 var (
-	codeFlag   = flag.String("code", "", "Code Path")
-	outputFlag = flag.String("output", "", "Output Abi Json Path")
+	codeFlag    = flag.String("code", "", "Code Path")
+	outputFlag  = flag.String("output", "", "Output Abi Json Path")
+	includePath = flag.String("I", "", "Add directory to include search path, DEFAULT:Current Code Directory")
 )
 
 func main() {
@@ -157,12 +159,19 @@ func main() {
 	if *outputFlag == "" {
 		*outputFlag = path.Join(path.Dir(*codeFlag), "output")
 	}
+	if *includePath == "" {
+		*outputFlag = path.Dir(*codeFlag)
+	}
+
+	if wasmCeptionFlag = os.Getenv("VNT_WASMCEPTION"); wasmCeptionFlag == "" {
+		panic("未找到VNT_WASMCEPTION的环境变量，请按照readme的步骤下载并设置wasmception")
+	}
 	code, err := ioutil.ReadFile(*codeFlag)
 	if err != nil {
 		panic(err)
 	}
 	fileContent = readfile(*codeFlag)
-	cmd([]string{"-fname", *codeFlag})
+	cmd([]string{*codeFlag})
 	abigen := newAbiGen(code)
 	abigen.removeCommand()
 	abigen.parseMethod()
@@ -203,10 +212,15 @@ func main() {
 
 	pre := abigen.insertRegistryCode()
 	// pre = abigen.insertMutableCode(pre)
-	err = writeFile(path.Join(*outputFlag, "precompile.c"), pre)
+	codeOutput := path.Join(*outputFlag, "precompile.c")
+	err = writeFile(codeOutput, pre)
 	if err != nil {
 		panic(err)
 	}
+
+	wasmOutput := path.Join(*outputFlag, "precompile.wasm")
+	SetEnvPath()
+	BuildWasm(codeOutput, wasmOutput)
 
 }
 
@@ -528,6 +542,10 @@ func (gen *abiGen) insertRegistryCode() []byte {
 // 	}
 // 	return nil
 // }
+
+func BuildWasm(input string, output string) {
+	buildCFile("-g -O3", input, output)
+}
 
 type Index [][]int
 

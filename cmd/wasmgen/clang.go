@@ -1,41 +1,22 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"path"
 	"strconv"
 	"strings"
 
-	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/go-clang/bootstrap/clang"
+	"github.com/vntchain/go-vnt/accounts/abi"
 )
 
-var fname = flag.String("fname", "", "the file to analyze")
 var index = 0
 
 func cmd(args []string) int {
-	if err := flag.CommandLine.Parse(args); err != nil {
-		fmt.Printf("ERROR: %s", err)
-
-		return 1
-	}
-
-	if *fname == "" {
-		flag.Usage()
-		return 1
-	}
 
 	idx := clang.NewIndex(0, 1)
 	defer idx.Dispose()
-
-	tuArgs := []string{}
-	if len(flag.Args()) > 0 && flag.Args()[0] == "-" {
-		tuArgs = make([]string, len(flag.Args()[1:]))
-		copy(tuArgs, flag.Args()[1:])
-	}
-
-	tu := idx.ParseTranslationUnit(*fname, tuArgs, nil, 0)
+	tu := idx.ParseTranslationUnit(args[0], nil, nil, 0)
 	defer tu.Dispose()
 
 	diagnostics := tu.Diagnostics()
