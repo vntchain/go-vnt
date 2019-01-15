@@ -11,7 +11,6 @@ var llvmDir = ""
 var sysrootDir = ""
 
 func SetEnvPath() {
-	//"/Users/weisaizhang/Documents/go/src/github.com/WebAssembly/clang-server/clang-heroku-slug/precomp/wasmception-darwin-bin"
 	wasmceptionDir := wasmCeptionFlag
 
 	llvmDir = path.Join(wasmceptionDir, "dist")
@@ -39,7 +38,7 @@ func getClangOptions(options string) []string {
 }
 
 func getLldOptions(options string) []string {
-	clangFlags := `--target=wasm32-unknown-unknown-wasm --sysroot=/Users/weisaizhang/Documents/go/src/github.com/WebAssembly/clang-server/clang-heroku-slug/precomp/wasmception-darwin-bin/sysroot -nostartfiles -Wl,--allow-undefined,--no-entry,--no-threads`
+	clangFlags := `--target=wasm32-unknown-unknown-wasm --sysroot=` + sysrootDir + ` -nostartfiles -Wl,--allow-undefined,--no-entry,--no-threads`
 	if options == "" {
 		return strings.Split(clangFlags, " ")
 	}
