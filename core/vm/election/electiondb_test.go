@@ -9,6 +9,7 @@ import (
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/vntdb"
+	"strconv"
 )
 
 var (
@@ -505,8 +506,8 @@ func TestGetFirstXCandidates_4(t *testing.T) {
 	for i := 0; i < len(tests); i++ {
 		can := baseAddr
 		can[0] = byte(tests[i].addrPre)
-		website := "www.testnet.info" + string(i)
-		name := "testinfo" + string(i)
+		website := "www.testnet.info" + strconv.Itoa(i)
+		name := "testinfo" + strconv.Itoa(i)
 		if err := c.registerWitness(can, nil, []byte(website), []byte(name)); err != nil {
 			t.Error(err)
 		}

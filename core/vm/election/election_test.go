@@ -10,6 +10,7 @@ import (
 	"github.com/vntchain/go-vnt/core/state"
 	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/vntdb"
+	"strconv"
 )
 
 var url = []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHGq5zZFRW5FBJ9YMbbvSiW4AzGg5CKMCtDeg6FNnjCbGS")
@@ -307,8 +308,8 @@ func TestVoteTooManyCandidates(t *testing.T) {
 	for i := 1; i <= voteLimit+1; i++ {
 		candidate := common.BytesToAddress([]byte{byte(i)})
 		candidates = append(candidates, candidate)
-		website := "www.testnet.info" + string(i)
-		name := "testinfo" + string(i)
+		website := "www.testnet.info" + strconv.Itoa(i)
+		name := "testinfo" + strconv.Itoa(i)
 		c.registerWitness(candidate, url, []byte(website), []byte(name))
 	}
 	err := c.voteWitnesses(addr, candidates)
@@ -368,8 +369,8 @@ func TestVoteCandidatesFistTime(t *testing.T) {
 
 	// 候选人注册
 	for i := 0; i < len(candidates); i++ {
-		website := "www.testnet.info" + string(i)
-		name := "testinfo" + string(i)
+		website := "www.testnet.info" + strconv.Itoa(i)
+		name := "testinfo" + strconv.Itoa(i)
 		c.registerWitness(candidates[i], url, []byte(website), []byte(name))
 	}
 
@@ -435,8 +436,8 @@ func TestCancelVote(t *testing.T) {
 
 	// 设置候选人
 	for i := 0; i < len(candidates); i++ {
-		website := "www.testnet.info" + string(i)
-		name := "testinfo" + string(i)
+		website := "www.testnet.info" + strconv.Itoa(i)
+		name := "testinfo" + strconv.Itoa(i)
 		c.registerWitness(candidates[i], url, []byte(website), []byte(name))
 	}
 
@@ -861,8 +862,8 @@ func setProxy(c electionContext) error {
 
 	// 设置候选人
 	for i := 0; i < len(candidates); i++ {
-		website := "www.testnet.info" + string(i)
-		name := "testinfo" + string(i)
+		website := "www.testnet.info" + strconv.Itoa(i)
+		name := "testinfo" + strconv.Itoa(i)
 		c.registerWitness(candidates[i], url, []byte(website), []byte(name))
 	}
 
@@ -900,8 +901,8 @@ func TestRegisterWitness(t *testing.T) {
 		name    []byte
 		err     error
 	}{
-		{addr1, url, []byte("www.testnet1.site"), []byte("node2"), nil},
-		{addr1, url, []byte("www.testnet1.site"), []byte("node2"), ErrCandiAlreadyRegistered},
+		{addr1, url, []byte("www.testnet1.site"), []byte("node1"), nil},
+		{addr1, url, []byte("www.testnet1.site"), []byte("node1"), ErrCandiAlreadyRegistered},
 		{addr2, url, []byte("www.testnet2.site"), []byte("node2"), nil},
 		{addr3, url, []byte("www.testnet3.site"), []byte("node3"), nil},
 		{addr4, url, []byte("www.testnet4.site"), []byte("s"), ErrCandiNameLenInvalid},
@@ -1351,8 +1352,8 @@ func initForStateTest(c electionContext) {
 	c.stopProxy(addr)
 
 	for i, candi := range candidates {
-		website := "www.testnet.info" + string(i)
-		name := "testinfo" + string(i)
+		website := "www.testnet.info" + strconv.Itoa(i)
+		name := "testinfo" + strconv.Itoa(i)
 		c.registerWitness(candi, url, []byte(website), []byte(name))
 	}
 }
