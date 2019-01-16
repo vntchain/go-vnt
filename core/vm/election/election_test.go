@@ -885,51 +885,56 @@ func TestRegisterWitness(t *testing.T) {
 	addr1 := common.HexToAddress("41b0db166cfdf1c4ba3ce657171482a9aa55cc93")
 	addr2 := common.HexToAddress("08b467a881ec34b668254aa956e0c46f9c3b2b83")
 	addr3 := common.HexToAddress("0c0292587ccdc76b8f449002a017bc9479ff0a88")
+	addr4 := common.HexToAddress("0x0292587ccdc76b8f449002a017bc9479ff0a88")
 
 	t.Logf("addr1: %v", addr1.Hex())
 	t.Logf("addr2: %v", addr2.Hex())
 	t.Logf("addr3: %v", addr3.Hex())
+	t.Logf("addr4: %v", addr4.Hex())
 
-	err := ec.registerWitness(addr1, url, []byte("www.testnet1.info"), []byte("node1"))
-	if err != nil {
-		t.Errorf("TestRegisterWitness registerWitness err:%v", err)
+	// 注册见证人的测试用例，err为nil代表需要注册成功
+	ts := []struct {
+		addr    common.Address
+		url     []byte
+		website []byte
+		name    []byte
+		err     error
+	}{
+		{addr1, url, []byte("www.testnet1.site"), []byte("node2"), nil},
+		{addr1, url, []byte("www.testnet1.site"), []byte("node2"), ErrCandiAlreadyRegistered},
+		{addr2, url, []byte("www.testnet2.site"), []byte("node2"), nil},
+		{addr3, url, []byte("www.testnet3.site"), []byte("node3"), nil},
+		{addr4, url, []byte("www.testnet4.site"), []byte("s"), ErrCandiNameLenInvalid},
+		{addr4, url, []byte("www.testnet4.site"), []byte("tooloooooooooooooname"), ErrCandiNameLenInvalid},
+		{addr4, url, []byte("ww"), []byte("right name"), ErrCandiUrlLenInvalid},
+		{addr4, url, []byte("www.looooooooooooooooooooooooooooooooooooongwebsite.com/looog"), []byte("right name"), ErrCandiUrlLenInvalid},
+		{addr4, url, []byte("www.testnet4.site"), []byte("ABCEFacd"), ErrCandiNameInvalid},
+		{addr4, url, []byte("www.testnet4.site"), []byte("acd xyz"), ErrCandiNameInvalid},
+		{addr4, url, []byte("www.testnet4.site"), []byte("acd.xyz"), ErrCandiNameInvalid},
+		{addr4, url, []byte("www.testnet4.site"), []byte("node3"), ErrCandiNameOrUrlDup},
+		{addr4, url, []byte("www.testnet3.site"), []byte("node4"), ErrCandiNameOrUrlDup},
+		{addr4, url, []byte("www.testnet4.site"), []byte("node4"), nil}}
+
+	for i, c := range ts {
+		err := ec.registerWitness(c.addr, c.url, c.website, c.name)
+		if c.err != nil {
+			if err == nil || err.Error() != c.err.Error() {
+				t.Errorf("TestRegisterWitness case %d, want err :%v, got: %v", i, c.err, err)
+			}
+		} else {
+			if err != nil {
+				t.Errorf("TestRegisterWitness case %d, want err :%v, got: %v", i, c.err, err)
+			}
+		}
+
 	}
 
 	candis := getAllCandidate(context.GetStateDb())
 	for _, candi := range candis {
-		t.Logf("111 addr: %v, voteCount: %v, active: %v", candi.Owner.Hex(), candi.VoteCount, candi.Active)
-	}
-
-	err = ec.registerWitness(addr1, url, []byte("www.testnet2.com"), []byte("node2"))
-	if err.Error() != "registerWitness witness already exists" {
-		t.Errorf("TestRegisterWitness registerWitness err:%v", err)
-	}
-
-	candis = getAllCandidate(context.GetStateDb())
-	for _, candi := range candis {
-		t.Logf("222 addr: %v, voteCount: %v, active: %v", candi.Owner.Hex(), candi.VoteCount, candi.Active)
-	}
-
-	err = ec.registerWitness(addr2, url, []byte("www.testnet3.cn"), []byte("node3"))
-	if err != nil {
-		t.Errorf("TestRegisterWitness registerWitness err:%v", err)
-	}
-
-	err = ec.registerWitness(addr3, url, []byte("www.testnet4.site"), []byte("node4"))
-	if err != nil {
-		t.Errorf("TestRegisterWitness registerWitness err:%v", err)
-	}
-
-	// TODO 增加没给你在太长、太短的注册
-	// 增加url太长、太短
-	// 增加名字重复、名字大写字母、其他符号
-	// 增加url重复
-	candis = getAllCandidate(context.GetStateDb())
-	for _, candi := range candis {
 		t.Logf("333 addr: %v, voteCount: %v, active: %v", candi.Owner.Hex(), candi.VoteCount, candi.Active)
 	}
 
-	err = ec.unregisterWitness(addr1)
+	err := ec.unregisterWitness(addr1)
 	if err != nil {
 		t.Errorf("TestRegisterWitness unregisterWitness err:%v", err)
 	}
