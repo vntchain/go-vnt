@@ -85,8 +85,6 @@ func GetRandomString(l int) string {
 }
 
 func writeFile(file string, content []byte) error {
-	// Create the keystore directory with appropriate permissions
-	// in case it is not present yet.
 	const dirPerm = 0700
 	if err := os.MkdirAll(filepath.Dir(file), dirPerm); err != nil {
 		return err

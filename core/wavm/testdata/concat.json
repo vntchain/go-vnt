@@ -56,6 +56,45 @@
                     "data": "example",
                     "type": "string"
                }
+          }, {
+               "function": "Test_Concat",
+               "input": [{
+                    "data": "",
+                    "type": "string"
+               }, {
+                    "data": "example",
+                    "type": "string"
+               }],
+               "wanted": {
+                    "data": "example",
+                    "type": "string"
+               }
+          }, {
+               "function": "Test_Equal",
+               "input": [{
+                    "data": "",
+                    "type": "string"
+               }, {
+                    "data": "example",
+                    "type": "string"
+               }],
+               "wanted": {
+                    "data": "false",
+                    "type": "bool"
+               }
+          }, {
+               "function": "Test_Equal",
+               "input": [{
+                    "data": "example",
+                    "type": "string"
+               }, {
+                    "data": "example",
+                    "type": "string"
+               }],
+               "wanted": {
+                    "data": "true",
+                    "type": "bool"
+               }
           }]
      }]
 }

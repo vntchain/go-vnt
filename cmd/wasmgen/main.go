@@ -154,7 +154,8 @@ func main() {
 		fmt.Printf("Error:No Contract Code\n")
 		os.Exit(-1)
 	}
-	fmt.Printf("file path :%s\n", *codeFlag)
+	fmt.Printf("Input file\n")
+	fmt.Printf("Contract path :%s\n", *codeFlag)
 	mustCFile(*codeFlag)
 	if *outputFlag == "" {
 		*outputFlag = path.Join(path.Dir(*codeFlag), "output")
@@ -202,6 +203,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("Output file\n")
+	fmt.Printf("Abi path: %s\n", path.Join(*outputFlag))
 	_, err = abi.JSON(bytes.NewBuffer(res))
 	if err != nil {
 		panic(err)
@@ -214,11 +217,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
+	fmt.Printf("Precompile code path: %s\n", codeOutput)
 	wasmOutput := path.Join(*outputFlag, "precompile.wasm")
 	SetEnvPath()
 	BuildWasm(codeOutput, wasmOutput)
-
+	fmt.Printf("Wasm path: %s\n", wasmOutput)
 }
 
 func newAbiGen(code []byte) *abiGen {
