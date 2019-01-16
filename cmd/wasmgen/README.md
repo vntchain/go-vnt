@@ -1,4 +1,6 @@
-# wasmgen工具安装
+# wasmgen
+
+c语言智能合约通过``wasmgen``生成所需的``wasm``文件和``abi``文件，已经对合约进行预编译的代码，通过``wasm``和``abi``文件可以将智能合约部署到区块链网络并进行访问
 
 ## 依赖clang 5.0 llvm 5.0
 
@@ -67,12 +69,12 @@ wasmgen参数说明
 
 * ``-I``:添加合约引用的头文件所在文件夹,默认为合约代码的文件夹
 * ``-code``:合约代码的路径
-* ``-output``:wasm及abi输出文件夹，默认路径为在合约代码的文件夹下新建output
+* ``-output``:wasm，abi和预编译代码输出文件夹，默认路径为在合约代码的文件夹下新建output
 
 
 # clang合约在线编译
 
-使用wasm在线编译工具**webassembly studio**进行在线编译，将wasmgen生成的预编译代码precompile.c copy到webassembly studio中，点击build按钮进行编译，编译完成后下载wasm
+使用wasm在线编译工具**webassembly studio**进行在线编译，将wasmgen生成的预编译代码precompile.c复制到webassembly studio中，点击build按钮进行编译，编译完成后下载wasm
 
 [webassembly studio 网页链接](https://webassembly.studio/)
 
