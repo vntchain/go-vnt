@@ -16,7 +16,7 @@ func cmd(args []string) int {
 
 	idx := clang.NewIndex(0, 1)
 	defer idx.Dispose()
-	tu := idx.ParseTranslationUnit(args[0], nil, nil, 0)
+	tu := idx.ParseTranslationUnit(args[0], []string{"-I", *includePath}, nil, 0)
 	defer tu.Dispose()
 
 	diagnostics := tu.Diagnostics()

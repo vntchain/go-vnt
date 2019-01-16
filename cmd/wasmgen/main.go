@@ -160,7 +160,7 @@ func main() {
 		*outputFlag = path.Join(path.Dir(*codeFlag), "output")
 	}
 	if *includePath == "" {
-		*outputFlag = path.Dir(*codeFlag)
+		*includePath = path.Dir(*codeFlag)
 	}
 
 	if wasmCeptionFlag = os.Getenv("VNT_WASMCEPTION"); wasmCeptionFlag == "" {
@@ -194,9 +194,6 @@ func main() {
 	for _, v := range abigen.abi.Calls {
 		pack = append(pack, v)
 	}
-	// for _, v := range abigen.abi.Keys {
-	// 	pack = append(pack, v)
-	// }
 	res, err := json.Marshal(pack)
 	if err != nil {
 		panic(err)

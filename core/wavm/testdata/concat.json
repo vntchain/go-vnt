@@ -43,6 +43,19 @@
                     "data": "example",
                     "type": "string"
                }
+          }, {
+               "function": "Test_Concat",
+               "input": [{
+                    "data": "",
+                    "type": "string"
+               }, {
+                    "data": "example",
+                    "type": "string"
+               }],
+               "wanted": {
+                    "data": "example",
+                    "type": "string"
+               }
           }]
      }]
 }
