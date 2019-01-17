@@ -918,9 +918,9 @@ func TestRegisterWitness(t *testing.T) {
 		{addr4, url, []byte("www.testnet4.site"), []byte("node3"), ErrCandiNameOrUrlDup},
 		{addr4, url, []byte("www.testnet3.site"), []byte("node4"), ErrCandiNameOrUrlDup},
 		{addr4, url, []byte("www.testnet4.site"), []byte("nod"), nil},
-		{addr5, url, []byte("www.testnet4.site"), []byte("20charactornaaaaaame"), nil},
+		{addr5, url, []byte("www.testnet5.site"), []byte("20charactornaaaaaame"), nil},
 		{addr6, url, []byte("www"), []byte("node4"), nil},
-		{addr7, url, []byte("www.just60charactor.com/loooooooooooooooooooooooooooooooooog"), []byte("node4"), nil},
+		{addr7, url, []byte("www.just60charactor.com/loooooooooooooooooooooooooooooooooog"), []byte("node7"), nil},
 	}
 
 	for i, c := range ts {
@@ -1404,54 +1404,6 @@ func checkState(c electionContext, address common.Address) byte {
 	// 有代理投票
 	if voter.ProxyVoteCount.Sign() > 0 {
 		result |= 1
-	}
-	return result
-}
-
-// For All test
-// 定义6个账户(复杂度为指数级，定义账户过多运行时间过长)，账户地址50-55。其中
-// 2个账户为一般用户，它们可以投票、取消投票、设置代理、取消代理。
-// 2个账户为代理账户(方便出现类似多级代理的情况)，它们比一般账户多了开始代理和停止代理两个操作。
-// 1个账户为候选账户，它们只有注册成为见证人和注销见证人两个操作。
-// 1个账户为全能账户，它们可以进行所有的操作。
-var alreadySetForAllStateTest map[[6]byte]struct{}
-var operatesForAllStateTest = []string{
-	"voteWitnesses",
-	"cancelVote",
-	"setProxy",
-	"cancelProxy",
-	"startProxy",
-	"stopProxy",
-	"registerWitness",
-	"unregisterWitness",
-}
-
-// 检查并返回所有20个账户的当前状态
-// 状态有6个指标
-// 是否是候选人
-// 是否有抵押
-// 是否有投票
-// 是否是代理
-// 是否有代理
-// 是否有代理投票
-func checkAllState(c electionContext) [6]byte {
-	var result [6]byte
-	var resultByte byte
-	for i := 0; i < 6; i++ {
-		addr := common.BytesToAddress([]byte{byte(i + 50)})
-		resultByte = 0
-
-		//// 是否是候选人
-		if i > 3 {
-			candidate := c.getCandidate(addr)
-			if bytes.Equal(candidate.Owner.Bytes(), addr.Bytes()) {
-				if candidate.Active {
-					resultByte |= 1 << 4
-				}
-			}
-		}
-		resultByte |= checkState(c, addr)
-		result[i] = resultByte
 	}
 	return result
 }
