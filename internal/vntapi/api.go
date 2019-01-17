@@ -725,7 +725,7 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 		return nil, err
 	}
 	// Get the list
-	list := election.GetAllCandidates(stateDB)
+	list := election.GetAllCandidates(stateDB, true)
 	if len(list) == 0 {
 		return nil, errors.New("empty witness candidates list")
 	}

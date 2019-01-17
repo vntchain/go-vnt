@@ -327,7 +327,7 @@ func (ec electionContext) checkCandi(addr common.Address, name string, website s
 	}
 
 	// duplication check
-	wits := GetAllCandidates(ec.context.GetStateDb())
+	wits := getAllCandidate(ec.context.GetStateDb())
 	for _, w := range wits {
 		if w.Owner != addr && (string(w.Name) == name || string(w.Website) == website) {
 			return ErrCandiNameOrUrlDup
@@ -820,9 +820,14 @@ func GetFirstNCandidates(stateDB inter.StateDB, witnessesNum int) ([]common.Addr
 	return witnesses, urls
 }
 
-// GetAllCandidates return the list of all candidate
-func GetAllCandidates(stateDB inter.StateDB) CandidateList {
-	return getAllCandidate(stateDB)
+// GetAllCandidates return the list of all candidate. Candidates will be
+// sort by votes and address, if sorted is true.
+func GetAllCandidates(stateDB inter.StateDB, sorted bool) CandidateList {
+	candidates := getAllCandidate(stateDB)
+	if sorted {
+		candidates.Sort()
+	}
+	return candidates
 }
 
 // GetVoter returns a voter's information
