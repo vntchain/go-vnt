@@ -154,13 +154,14 @@ func main() {
 		fmt.Printf("Error:No Contract Code\n")
 		os.Exit(-1)
 	}
-	fmt.Printf("file path :%s\n", *codeFlag)
+	fmt.Printf("Input file\n")
+	fmt.Printf("Contract path :%s\n", *codeFlag)
 	mustCFile(*codeFlag)
 	if *outputFlag == "" {
 		*outputFlag = path.Join(path.Dir(*codeFlag), "output")
 	}
 	if *includePath == "" {
-		*outputFlag = path.Dir(*codeFlag)
+		*includePath = path.Dir(*codeFlag)
 	}
 
 	if wasmCeptionFlag = os.Getenv("VNT_WASMCEPTION"); wasmCeptionFlag == "" {
@@ -194,9 +195,6 @@ func main() {
 	for _, v := range abigen.abi.Calls {
 		pack = append(pack, v)
 	}
-	// for _, v := range abigen.abi.Keys {
-	// 	pack = append(pack, v)
-	// }
 	res, err := json.Marshal(pack)
 	if err != nil {
 		panic(err)
@@ -205,6 +203,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("Output file\n")
+	fmt.Printf("Abi path: %s\n", path.Join(*outputFlag))
 	_, err = abi.JSON(bytes.NewBuffer(res))
 	if err != nil {
 		panic(err)
@@ -217,11 +217,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
+	fmt.Printf("Precompile code path: %s\n", codeOutput)
 	wasmOutput := path.Join(*outputFlag, "precompile.wasm")
 	SetEnvPath()
 	BuildWasm(codeOutput, wasmOutput)
-
+	fmt.Printf("Wasm path: %s\n", wasmOutput)
 }
 
 func newAbiGen(code []byte) *abiGen {
@@ -478,16 +478,18 @@ const initializeVariables = "\nInitializeVariables();"
 // InitializeVariables用于在constructor方法里存储key的初始化值
 func (gen *abiGen) insertRegistryCode() []byte {
 	initList(varLists.Root)
+	// jsonres, _ := json.Marshal(varLists.Root)
+	// fmt.Printf("res1 %s\n", jsonres)
 	RecursiveVarLists(varLists.Root, "", "")
 
-	// jsonres, _ := structLists(varLists.Root)
-	// fmt.Printf("res %s\n", jsonres)
+	// jsonres, _ = json.Marshal(varLists.Root)
+	// fmt.Printf("res2 %s\n", jsonres)
 
 	sym := parseKey()
 	insert := "\n"
 	for k, v1 := range sym {
 		for _, v2 := range v1.ValueSymbol {
-			//fmt.Printf("key2222 %s val2 %s StorageType %s \n", k, v1.ValueType, v2.Key, v2.KeyType)
+			// fmt.Printf("key2222 %s val2 %s StorageType %s \n", k, v1.ValueType, v2.Key, v2.KeyType)
 			insert = insert + fmt.Sprintf(regFmt, k, abi.KeyType(v1.ValueType), v2.Key, abi.KeyType(v2.KeyType), v2.IsArrayIndex)
 		}
 	}

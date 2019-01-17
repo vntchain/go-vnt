@@ -22,4 +22,22 @@
           "indexed": false
      }],
      "type": "function"
+}, {
+     "name": "Test_Equal",
+     "constant": false,
+     "inputs": [{
+          "name": "str1",
+          "type": "string",
+          "indexed": false
+     }, {
+          "name": "str2",
+          "type": "string",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "bool",
+          "indexed": false
+     }],
+     "type": "function"
 }]
