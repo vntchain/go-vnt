@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -42,12 +43,21 @@ func readfile(filepath string) []string {
 }
 
 //KEY _complex s3;
-const astKeyReg = `([ ]*)(KEY)([ ]+)(int(|32|64)|uint(|32|64)|address|string|bool|mapping|array|struct)([\s\S]*)`
-const keyTypeReg = `(int(|32|64)|uint(|32|64)|address|string|bool|mapping|array|struct)`
+var astKeyReg = `([ ]*)(KEY)([ ]+)(int(|32|64)|uint(|32|64|256)|address|string|bool|mapping|array|struct)([\s\S]*)`
+var astKeyRegFmt = `([ ]*)(KEY)([ ]+)(int(|32|64)|uint(|32|64|256)|address|string|bool|mapping|array|struct|%s)([\s\S]*)`
 
-func isKey(input string) bool {
+const keyTypeReg = `(int(|32|64)|uint(|32|64|256)|address|string|bool|mapping|array|struct)`
 
-	reg, err := regexp.Compile(astKeyReg)
+func isKey(input string, structnames string) bool {
+	keyReg := ""
+	if structnames == "" {
+		keyReg = astKeyReg
+	} else {
+		keyReg = fmt.Sprintf(astKeyRegFmt, structnames)
+	}
+
+	// fmt.Printf("isKey %s astKeyReg %s\n", input, keyReg)
+	reg, err := regexp.Compile(keyReg)
 	flag := false
 	if err != nil {
 		return flag
