@@ -886,7 +886,8 @@ func TestRegisterWitness(t *testing.T) {
 	addr1 := common.HexToAddress("41b0db166cfdf1c4ba3ce657171482a9aa55cc93")
 	addr2 := common.HexToAddress("08b467a881ec34b668254aa956e0c46f9c3b2b83")
 	addr3 := common.HexToAddress("0c0292587ccdc76b8f449002a017bc9479ff0a88")
-	addr4 := common.HexToAddress("0x0292587ccdc76b8f449002a017bc9479ff0a88")
+	addr4 := common.HexToAddress("0a0292587ccdc76b8f449002a017bc9479ff0a88")
+	addr5 := common.HexToAddress("0b0292587ccdc76b8f449002a017bc9479ff0a88")
 
 	t.Logf("addr1: %v", addr1.Hex())
 	t.Logf("addr2: %v", addr2.Hex())
@@ -914,7 +915,9 @@ func TestRegisterWitness(t *testing.T) {
 		{addr4, url, []byte("www.testnet4.site"), []byte("acd.xyz"), ErrCandiNameInvalid},
 		{addr4, url, []byte("www.testnet4.site"), []byte("node3"), ErrCandiNameOrUrlDup},
 		{addr4, url, []byte("www.testnet3.site"), []byte("node4"), ErrCandiNameOrUrlDup},
-		{addr4, url, []byte("www.testnet4.site"), []byte("node4"), nil}}
+		{addr4, url, []byte("www.testnet4.site"), []byte("nod"), nil},
+		{addr5, url, []byte("www.testnet5.site"), []byte("20charactornaaaaaame"), nil},
+	}
 
 	for i, c := range ts {
 		err := ec.registerWitness(c.addr, c.url, c.website, c.name)
