@@ -5,7 +5,7 @@ OutFile "${OUTPUTFILE}" # set through command line arguments
 # Links for "Add/Remove Programs"
 !define HELPURL "https://github.com/vntchain/go-vnt/issues"
 !define UPDATEURL "https://github.com/vntchain/go-vnt/releases"
-!define ABOUTURL "https://github.com/vntchain/go-vnt#ethereum-go"
+!define ABOUTURL "https://github.com/vntchain/go-vnt"
 !define /date NOW "%Y%m%d"
 
 PageEx license
@@ -33,7 +33,7 @@ Section "Gvnt" GETH_IDX
   SimpleFC::AdvAddRule "Gvnt outgoing peers (TCP:30303)" ""  6 2 1 2147483647 1 "$INSTDIR\geth.exe" "" "" "VNT" "" 30303 "" ""
   SimpleFC::AdvAddRule "Gvnt UDP discovery (UDP:30303)" "" 17 2 1 2147483647 1 "$INSTDIR\geth.exe" "" "" "VNT" "" 30303 "" ""
 
-  # Set default IPC endpoint (https://github.com/ethereum/EIPs/issues/147)
+  # Set default IPC endpoint
   ${EnvVarUpdate} $0 "ETHEREUM_SOCKET" "R" "HKLM" "\\.\pipe\geth.ipc"
   ${EnvVarUpdate} $0 "ETHEREUM_SOCKET" "A" "HKLM" "\\.\pipe\geth.ipc"
 

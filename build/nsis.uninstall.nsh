@@ -21,7 +21,7 @@ Section "Uninstall"
   SimpleFC::AdvRemoveRule "Gvnt outgoing peers (TCP:30303)"
   SimpleFC::AdvRemoveRule "Gvnt UDP discovery (UDP:30303)"
 
-  # Remove IPC endpoint (https://github.com/ethereum/EIPs/issues/147)
+  # Remove IPC endpoint
   ${un.EnvVarUpdate} $0 "ETHEREUM_SOCKET" "R" "HKLM" "\\.\pipe\geth.ipc"
 
   # Remove install directory from PATH

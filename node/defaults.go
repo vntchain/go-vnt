@@ -22,8 +22,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/vntchain/go-vnt/vntp2p"
 	libp2p "github.com/libp2p/go-libp2p"
+	"github.com/vntchain/go-vnt/vntp2p"
 )
 
 const (
@@ -59,7 +59,7 @@ func DefaultDataDir() string {
 		} else if runtime.GOOS == "windows" {
 			return filepath.Join(home, "AppData", "Roaming", "VNT")
 		} else {
-			return filepath.Join(home, ".ethereum")
+			return filepath.Join(home, ".vntchian")
 		}
 	}
 	// As we cannot guess a stable location, return empty and handle later
