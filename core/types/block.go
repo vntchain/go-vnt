@@ -51,7 +51,7 @@ type Header struct {
 	GasUsed     uint64           `json:"gasUsed"          gencodec:"required"`
 	Time        *big.Int         `json:"timestamp"        gencodec:"required"`
 	Extra       []byte           `json:"extraData"        gencodec:"required"`
-	Witnesses   []common.Address `json:"witnesses"	      gencodec:"required"`
+	Witnesses   []common.Address `json:"witnesses"        gencodec:"required"`
 	Signature   []byte           `json:"signature"        gencodec:"required"`
 	CmtMsges    []*CommitMsg
 }
