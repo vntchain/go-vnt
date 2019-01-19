@@ -32,7 +32,7 @@ import (
 	"github.com/vntchain/go-vnt/common"
 )
 
-//clang -Xclang -ast-dump -fsyntax-only /Users/weisaizhang/Documents/go/src/github.com/vntchain/go-vnt/core/wasm/testdata/precompile/contract/main3.cpp
+//clang -Xclang -ast-dump -fsyntax-only main3.cpp
 
 //VNT_WASM_EXPORT
 //uint64 init   (   uint64 totalsupply   )
@@ -136,10 +136,12 @@ type abiGen struct {
 }
 
 var fileContent []string
+var wasmCeptionFlag string
 
 var (
-	codeFlag   = flag.String("code", "", "Code Path")
-	outputFlag = flag.String("output", "", "Output Abi Json Path")
+	codeFlag    = flag.String("code", "", "Code Path")
+	outputFlag  = flag.String("output", "", "Output Abi Json Path")
+	includePath = flag.String("I", "", "Add directory to include search path, DEFAULT:Current Code Directory")
 )
 
 func main() {
@@ -152,17 +154,25 @@ func main() {
 		fmt.Printf("Error:No Contract Code\n")
 		os.Exit(-1)
 	}
-	fmt.Printf("file path :%s\n", *codeFlag)
+	fmt.Printf("Input file\n")
+	fmt.Printf("Contract path :%s\n", *codeFlag)
 	mustCFile(*codeFlag)
 	if *outputFlag == "" {
 		*outputFlag = path.Join(path.Dir(*codeFlag), "output")
+	}
+	if *includePath == "" {
+		*includePath = path.Dir(*codeFlag)
+	}
+
+	if wasmCeptionFlag = os.Getenv("VNT_WASMCEPTION"); wasmCeptionFlag == "" {
+		panic("未找到VNT_WASMCEPTION的环境变量，请按照readme的步骤下载并设置wasmception")
 	}
 	code, err := ioutil.ReadFile(*codeFlag)
 	if err != nil {
 		panic(err)
 	}
 	fileContent = readfile(*codeFlag)
-	cmd([]string{"-fname", *codeFlag})
+	cmd([]string{*codeFlag})
 	abigen := newAbiGen(code)
 	abigen.removeCommand()
 	abigen.parseMethod()
@@ -185,9 +195,6 @@ func main() {
 	for _, v := range abigen.abi.Calls {
 		pack = append(pack, v)
 	}
-	// for _, v := range abigen.abi.Keys {
-	// 	pack = append(pack, v)
-	// }
 	res, err := json.Marshal(pack)
 	if err != nil {
 		panic(err)
@@ -196,6 +203,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("Output file\n")
+	fmt.Printf("Abi path: %s\n", path.Join(*outputFlag))
 	_, err = abi.JSON(bytes.NewBuffer(res))
 	if err != nil {
 		panic(err)
@@ -203,11 +212,16 @@ func main() {
 
 	pre := abigen.insertRegistryCode()
 	// pre = abigen.insertMutableCode(pre)
-	err = writeFile(path.Join(*outputFlag, "precompile.c"), pre)
+	codeOutput := path.Join(*outputFlag, "precompile.c")
+	err = writeFile(codeOutput, pre)
 	if err != nil {
 		panic(err)
 	}
-
+	fmt.Printf("Precompile code path: %s\n", codeOutput)
+	wasmOutput := path.Join(*outputFlag, "precompile.wasm")
+	SetEnvPath()
+	BuildWasm(codeOutput, wasmOutput)
+	fmt.Printf("Wasm path: %s\n", wasmOutput)
 }
 
 func newAbiGen(code []byte) *abiGen {
@@ -464,16 +478,18 @@ const initializeVariables = "\nInitializeVariables();"
 // InitializeVariables用于在constructor方法里存储key的初始化值
 func (gen *abiGen) insertRegistryCode() []byte {
 	initList(varLists.Root)
+	// jsonres, _ := json.Marshal(varLists.Root)
+	// fmt.Printf("res1 %s\n", jsonres)
 	RecursiveVarLists(varLists.Root, "", "")
 
-	// jsonres, _ := structLists(varLists.Root)
-	// fmt.Printf("res %s\n", jsonres)
+	// jsonres, _ = json.Marshal(varLists.Root)
+	// fmt.Printf("res2 %s\n", jsonres)
 
 	sym := parseKey()
 	insert := "\n"
 	for k, v1 := range sym {
 		for _, v2 := range v1.ValueSymbol {
-			//fmt.Printf("key2222 %s val2 %s StorageType %s \n", k, v1.ValueType, v2.Key, v2.KeyType)
+			// fmt.Printf("key2222 %s val2 %s StorageType %s \n", k, v1.ValueType, v2.Key, v2.KeyType)
 			insert = insert + fmt.Sprintf(regFmt, k, abi.KeyType(v1.ValueType), v2.Key, abi.KeyType(v2.KeyType), v2.IsArrayIndex)
 		}
 	}
@@ -528,6 +544,10 @@ func (gen *abiGen) insertRegistryCode() []byte {
 // 	}
 // 	return nil
 // }
+
+func BuildWasm(input string, output string) {
+	buildCFile("-g -O3", input, output)
+}
 
 type Index [][]int
 

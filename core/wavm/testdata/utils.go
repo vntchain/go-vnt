@@ -7,6 +7,7 @@ import (
 
 	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/common"
+	"github.com/vntchain/go-vnt/common/hexutil"
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/wavm"
@@ -53,10 +54,11 @@ type initcase struct {
 }
 
 type tests struct {
-	Function string     `json:"function"`
-	Input    []argument `json:"input"`
-	Wanted   argument   `json:"wanted"`
-	Event    []argument `json:"event"`
+	Function string        `json:"function"`
+	Input    []argument    `json:"input"`
+	RawInput hexutil.Bytes `json:"rawinput"`
+	Wanted   argument      `json:"wanted"`
+	Event    []argument    `json:"event"`
 }
 
 type argument struct {

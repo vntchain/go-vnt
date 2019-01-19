@@ -93,7 +93,7 @@ func instantiateMemory(m *vnt.WavmMemory, module *wasm.Module) error {
 			expr, _ := module.ExecInitExpr(v.Offset)
 			offset, ok := expr.(int32)
 			if !ok {
-				return wasm.InvalidValueTypeInitExprError{reflect.Int32, reflect.TypeOf(offset).Kind()}
+				return wasm.InvalidValueTypeInitExprError{Wanted: reflect.Int32, Got: reflect.TypeOf(offset).Kind()}
 			}
 			index = int(offset) + len(v.Data)
 			if bytes.Contains(v.Data, []byte{byte(0)}) {
@@ -305,7 +305,6 @@ func (wavm *Wavm) ExecCodeWithFuncName(input []byte) ([]byte, error) {
 			output := input[:]
 			begin, end, err := lengthPrefixPointsTo(i*32, output)
 			if err != nil {
-				panic(err)
 				return nil, err
 			}
 			value := output[begin : begin+end]

@@ -562,8 +562,6 @@ func (ef *EnvFunctions) getContractCall(funcName string) interface{} {
 			}
 
 		}
-
-		return nil
 	}
 
 	funcVoid := func(proc *exec.WavmProcess, vars ...uint64) {
@@ -916,9 +914,19 @@ func (ef *EnvFunctions) ReadWithPointer(proc *exec.WavmProcess, offsetAddr, base
 func (ef *EnvFunctions) InitializeVariables(proc *exec.WavmProcess) {
 	// 普通类型初始化，忽略mapping和array
 	log.Debug("EnvFunctions", "call", "InitializeVariables")
+	//need to ignore array type because array init need array length
 	storageMap := ef.ctx.StorageMapping
-	for k, _ := range storageMap {
-		ef.WriteWithPointer(proc, k, 0)
+	for k, v := range storageMap {
+		containArray := false
+		for _, storageKey := range v.StorageKey {
+			if storageKey.IsArrayIndex == true {
+				containArray = true
+				break
+			}
+		}
+		if containArray == false {
+			ef.WriteWithPointer(proc, k, 0)
+		}
 	}
 }
 
