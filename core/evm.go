@@ -134,11 +134,6 @@ func GetVM(msg Message, ctx vm.Context, statedb inter.StateDB, chainConfig *para
 	} else {
 		code = statedb.GetCode(*msg.To())
 	}
-	//type WasmCode struct {
-	//	Code []byte
-	//	Abi  []byte
-	//}
-	//wc := WasmCode{}
 
 	if len(code) == 0 {
 		return wavm.NewWAVM(ctx, statedb, chainConfig, vmConfig)

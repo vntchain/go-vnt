@@ -278,9 +278,15 @@ func run(t *testing.T, jspath string) {
 			}
 
 			for _, testcase := range v.Tests {
-				input := parseInput(testcase.Input)
+				var pack []byte
 				abiobj := getABI(filepath.Join(v.Abi))
-				pack := packInput(abiobj, testcase.Function, input...)
+				if testcase.RawInput == nil {
+					input := parseInput(testcase.Input)
+					pack = packInput(abiobj, testcase.Function, input...)
+				} else {
+					pack = testcase.RawInput
+				}
+
 				ret, err := envtest.Run(vmconfig, pack, false, t)
 				if err != nil {
 					if strings.HasPrefix(err.Error(), errorsmsg.ErrExecutionAssert.Error()) {

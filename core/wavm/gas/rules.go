@@ -277,7 +277,6 @@ func (gas Gas) GasCost(op byte) uint64 {
 	default:
 		return WasmCostsRegular
 	}
-	return 0
 }
 
 func constGasFunc(gas uint64) uint64 {

@@ -62,7 +62,6 @@ func RecursiveVarLists(node map[string]*abi.Node, path string, ty string) {
 		if len(v.Children) != 0 {
 			// fmt.Printf("RecursiveVarLists node 【%v】\n", v)
 			root.AddNode(v.FieldName, v.StorageType, v.FieldType, p)
-
 			RecursiveVarLists(v.Children, p, t)
 		} else {
 
