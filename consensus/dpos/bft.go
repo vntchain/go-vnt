@@ -48,7 +48,8 @@ type BftManager struct {
 }
 
 func newBftManager(dp *Dpos) *BftManager {
-	q := (dp.config.WitnessesNum-1)/3*2 + 1 // 2f+1
+	n := dp.config.WitnessesNum
+	q := n - (n-1)/3 // N-f
 	return &BftManager{
 		dp:          dp,
 		quorum:      q,

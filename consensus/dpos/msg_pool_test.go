@@ -8,7 +8,7 @@ import (
 )
 
 func TestMsgPool_GetOrNewRoundMsgPool(t *testing.T) {
-	// f = 1
+	// n = 4, f = 1
 	quo := 3
 	mp := newMsgPool(quo, "test")
 	h := big.NewInt(1)
@@ -45,7 +45,7 @@ func TestMsgPool_GetOrNewRoundMsgPool(t *testing.T) {
 }
 
 func TestMsgPool_AddMsgAndMajoritySuccess(t *testing.T) {
-	// f = 1
+	// n = 4, f = 1
 	quo := 3
 	mp := newMsgPool(quo, "test")
 	h := big.NewInt(1)
@@ -151,7 +151,7 @@ func TestMsgPool_AddMsgAndMajoritySuccess(t *testing.T) {
 }
 
 func TestMsgPool_MajorityFail(t *testing.T) {
-	// f = 1
+	// n = 4, f = 1
 	quo := 3
 	mp := newMsgPool(quo, "test")
 	h := big.NewInt(1)
@@ -206,6 +206,7 @@ func TestMsgPool_MajorityFail(t *testing.T) {
 }
 
 func TestMsgPool_cleanOldMessage(t *testing.T) {
+	// n = 4, f = 1
 	quo := 3
 	mp := newMsgPool(quo, "test")
 	h1 := big.NewInt(100)
@@ -260,6 +261,7 @@ func TestMsgPool_cleanOldMessage(t *testing.T) {
 }
 
 func TestCleanOldMsg(t *testing.T) {
+	// n = 4, f = 1
 	quo := 3
 	mp := newMsgPool(quo, "test")
 
