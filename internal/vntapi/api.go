@@ -724,7 +724,7 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 		return nil, err
 	}
 	// Get the list
-	list := election.GetAllCandidates(stateDB)
+	list := election.GetAllCandidates(stateDB, true)
 	if len(list) == 0 {
 		return nil, errors.New("empty witness candidates list")
 	}
@@ -733,12 +733,14 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 	rpcCandidates := make([]rpc.Candidate, len(list))
 	for i, ca := range list {
 		rpcCandidates[i].Owner = ca.Owner.String()
+		rpcCandidates[i].Name = string(ca.Name)
 		rpcCandidates[i].Active = ca.Active
 		rpcCandidates[i].Url = string(ca.Url)
 		rpcCandidates[i].VoteCount = ca.VoteCount
 		rpcCandidates[i].TotalBounty = ca.TotalBounty
 		rpcCandidates[i].ExtractedBounty = ca.ExtractedBounty
 		rpcCandidates[i].LastExtractTime = ca.LastExtractTime
+		rpcCandidates[i].Website = string(ca.Website)
 	}
 	return rpcCandidates, nil
 }
