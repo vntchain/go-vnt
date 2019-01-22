@@ -20,7 +20,7 @@ const (
 	voteLimit = 30
 	oneDay    = int64(24) * 3600
 	oneWeek   = oneDay * 7
-	year2018  = 1514736000
+	year2019  = 1546272000
 )
 
 var (
@@ -34,7 +34,7 @@ var (
 var (
 	electionAddr = common.BytesToAddress([]byte{9})
 	emptyAddress = common.Address{}
-	eraTimeStamp = big.NewInt(year2018)
+	eraTimeStamp = big.NewInt(year2019)
 
 	// stake minimum time period
 	unstakePeriod   = big.NewInt(oneDay)
