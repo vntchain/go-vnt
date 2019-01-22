@@ -58,6 +58,8 @@ type Voter struct {
 	VoteCandidates []common.Address // 投了哪些人
 }
 
+// Candidate information of witness candidates.
+// Tips: Modify CandidateList.Swap when adding element of Candidate.
 type Candidate struct {
 	Owner           common.Address // 候选人地址
 	VoteCount       *big.Int       // 收到的票数
@@ -134,6 +136,11 @@ func (c CandidateList) Swap(i, j int) {
 	c[i].VoteCount, c[j].VoteCount = c[j].VoteCount, c[i].VoteCount
 	c[i].Active, c[j].Active = c[j].Active, c[i].Active
 	c[i].Url, c[j].Url = c[j].Url, c[i].Url
+	c[i].TotalBounty, c[j].TotalBounty = c[j].TotalBounty, c[i].TotalBounty
+	c[i].ExtractedBounty, c[j].ExtractedBounty = c[j].ExtractedBounty, c[i].ExtractedBounty
+	c[i].LastExtractTime, c[j].LastExtractTime = c[j].LastExtractTime, c[i].LastExtractTime
+	c[i].Website, c[j].Website = c[j].Website, c[i].Website
+	c[i].Name, c[j].Name = c[j].Name, c[i].Name
 }
 
 // Sort
