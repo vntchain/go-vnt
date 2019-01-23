@@ -168,23 +168,25 @@ func (bn BlockNumber) Int64() int64 {
 }
 
 type Candidate struct {
-	Owner           string   // 候选人地址
-	Active          bool     // 当前是否是候选人
-	Url             string   // 节点的URL
-	VoteCount       *big.Int // 收到的票数
-	TotalBounty     *big.Int // 总奖励金额
-	ExtractedBounty *big.Int // 已提取奖励金额
-	LastExtractTime *big.Int // 上次提权时间
+	Owner           string   `json:"owner"`           // 候选人地址
+	Name            string   `json:"name"`            // 候选人名称
+	Active          bool     `json:"active"`          // 当前是否是候选人
+	Url             string   `json:"url"`             // 节点的URL
+	VoteCount       *big.Int `json:"voteCount"`       // 收到的票数
+	TotalBounty     *big.Int `json:"totalBounty"`     // 总奖励金额
+	ExtractedBounty *big.Int `json:"extractedBounty"` // 已提取奖励金额
+	LastExtractTime *big.Int `json:"lastExtractTime"` // 上次提权时间
+	Website         string   `json:"website"`         // 见证人网站
 }
 
 type Voter struct {
-	Owner              common.Address   // 投票人的地址
-	IsProxy            bool             // 是否是代理人
-	ProxyVoteCount     *big.Int         // 收到的代理的票数
-	Proxy              common.Address   // 该节点设置的代理人
-	LastVoteCount      *big.Int         // 上次投的票数
-	LastVoteTimeStamp  *big.Int         // 上次投票时间戳
-	VoteCandidates     []common.Address // 投了哪些人
-	StakeCount         *big.Int         // 抵押的代币数量
-	LastStakeTimeStamp *big.Int         // 上次抵押时间戳
+	Owner              common.Address   `json:"owner"`              // 投票人的地址
+	IsProxy            bool             `json:"isProxy"`            // 是否是代理人
+	ProxyVoteCount     *big.Int         `json:"proxyVoteCount"`     // 收到的代理的票数
+	Proxy              common.Address   `json:"proxy"`              // 该节点设置的代理人
+	LastVoteCount      *big.Int         `json:"lastVoteCount"`      // 上次投的票数
+	LastVoteTimeStamp  *big.Int         `json:"lastVoteTimeStamp"`  // 上次投票时间戳
+	VoteCandidates     []common.Address `json:"voteCandidates"`     // 投了哪些人
+	StakeCount         *big.Int         `json:"stakeCount"`         // 抵押的代币数量
+	LastStakeTimeStamp *big.Int         `json:"lastStakeTimeStamp"` // 上次抵押时间戳
 }

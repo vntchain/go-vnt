@@ -843,7 +843,7 @@ func (d *Dpos) voteBonusPreWork(chain consensus.ChainReader, header *types.Heade
 	allBonus.Mul(allBonus, curHeightBonus(header.Number, VortexCandidatesBonus))
 
 	// Get all witnesses candidates
-	lastCandis := election.GetAllCandidates(curStateDB)
+	lastCandis := election.GetAllCandidates(curStateDB, false)
 
 	return lastCandis, allBonus, nil
 }
