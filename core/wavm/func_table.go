@@ -105,8 +105,10 @@ const (
 	OpNameContractCall = "ContractCall"
 
 	//将字符串转化为地址
-	OpNameAddressFrom = "AddressFrom"
-	OpNameU256From    = "U256From"
+	OpNameAddressFrom     = "AddressFrom"
+	OpNameAddressToString = "AddressToString"
+	OpNameU256From        = "U256From"
+	OpNameU256ToString    = "U256ToString"
 
 	OpNameAddKeyInfo          = "AddKeyInfo"
 	OpNameWriteWithPointer    = "WriteWithPointer"
@@ -481,8 +483,28 @@ func (ef *EnvFunctions) getFuncTable() map[string]wasm.Function {
 				Code: []byte{},
 			},
 		},
+		OpNameAddressToString: {
+			Host: reflect.ValueOf(ef.AddressToString),
+			Sig: &wasm.FunctionSig{
+				ParamTypes:  []wasm.ValueType{wasm.ValueTypeI32},
+				ReturnTypes: []wasm.ValueType{wasm.ValueTypeI32},
+			},
+			Body: &wasm.FunctionBody{
+				Code: []byte{},
+			},
+		},
 		OpNameU256From: {
 			Host: reflect.ValueOf(ef.U256From),
+			Sig: &wasm.FunctionSig{
+				ParamTypes:  []wasm.ValueType{wasm.ValueTypeI32},
+				ReturnTypes: []wasm.ValueType{wasm.ValueTypeI32},
+			},
+			Body: &wasm.FunctionBody{
+				Code: []byte{},
+			},
+		},
+		OpNameU256ToString: {
+			Host: reflect.ValueOf(ef.U256ToString),
 			Sig: &wasm.FunctionSig{
 				ParamTypes:  []wasm.ValueType{wasm.ValueTypeI32},
 				ReturnTypes: []wasm.ValueType{wasm.ValueTypeI32},

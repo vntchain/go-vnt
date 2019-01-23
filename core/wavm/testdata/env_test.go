@@ -19,6 +19,7 @@ import (
 	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/core/wavm"
+	wasmContract "github.com/vntchain/go-vnt/core/wavm/contract"
 	errorsmsg "github.com/vntchain/go-vnt/core/wavm/errors"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/params"
@@ -256,16 +257,12 @@ func run(t *testing.T, jspath string) {
 
 			//init
 			if v.InitCase.NeedInit == true {
-				code := wavm.WasmCode{}
+				code := wasmContract.WasmCode{}
 				code.Code = readFile(filepath.Join(v.Code))
 				code.Abi = readFile(filepath.Join(v.Abi))
 				parseinput := parseInput(v.InitCase.Input)
 				input := packInput(getABI(filepath.Join(v.Abi)), "", parseinput...)
-				c, err := json.Marshal(code)
-				if err != nil {
-					panic(err)
-				}
-				c = append(c, input...)
+				c := append(code.Code, input...)
 				// pre := envtest.json.Pre[envtest.json.Exec.Address]
 				// pre.Code = c //[]byte(hexutil.Encode(c))
 				// envtest.json.Pre[envtest.json.Exec.Address] = pre

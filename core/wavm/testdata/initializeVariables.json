@@ -30,7 +30,7 @@
           }
      },
      "testcase": [{
-          "code": "initializeVariables/main.wasm",
+          "code": "initializeVariables/initializeVariables.compress",
           "abi": "initializeVariables/abi.json",
           "initcase": {
                "needinit": true,

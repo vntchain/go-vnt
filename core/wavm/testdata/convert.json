@@ -30,7 +30,7 @@
           }
      },
      "testcase": [{
-          "code": "convert/main.wasm",
+          "code": "convert/Convert.compress",
           "abi": "convert/abi.json",
           "initcase": {
                "needinit": true,
@@ -43,66 +43,18 @@
                     "type": "address"
                }],
                "wanted": {
-                    "data": "0x02",
+                    "data": "0x0000000000000000000000000000000000000002",
                     "type": "string"
                }
           }, {
-               "function": "GetTotalSupply",
-               "input": [],
-               "wanted": {
-                    "data": "100000000000000000000",
+               "function": "uint256ToStringWithInput",
+               "input": [{
+                    "data": "1000000000",
                     "type": "uint256"
-               }
-          }, {
-               "function": "GetDecimals",
-               "input": [],
+               }],
                "wanted": {
-                    "data": "8",
-                    "type": "uint256"
-               }
-          }, {
-               "function": "GetTokenName",
-               "input": [],
-               "wanted": {
-                    "data": "bitcoin",
+                    "data": "1000000000",
                     "type": "string"
-               }
-          }, {
-               "function": "GetSymbol",
-               "input": [],
-               "wanted": {
-                    "data": "BTC",
-                    "type": "string"
-               }
-          }, {
-               "function": "GetAmount",
-               "input": [{
-                    "data": "0x02",
-                    "type": "address"
-               }],
-               "wanted": {
-                    "data": "10000",
-                    "type": "uint256"
-               }
-          }, {
-               "function": "GetAmount",
-               "input": [{
-                    "data": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                    "type": "address"
-               }],
-               "wanted": {
-                    "data": "99999999999999990000",
-                    "type": "uint256"
-               }
-          }, {
-               "function": "GetAmount",
-               "input": [{
-                    "data": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab",
-                    "type": "address"
-               }],
-               "wanted": {
-                    "data": "0",
-                    "type": "uint256"
                }
           }]
      }]

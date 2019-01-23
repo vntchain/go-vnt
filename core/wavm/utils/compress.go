@@ -15,7 +15,7 @@ import (
 
 const (
 	HEADERLEN   int    = 6
-	MAGIC       uint32 = 0x6d736100
+	MAGIC       uint32 = 0x6d736101
 	MagicBase64 uint32 = 0x7a464741
 	ZLIBUTIL    uint16 = 0x01
 	GZIPUTIL    uint16 = 0x02
@@ -104,6 +104,10 @@ func compressZlib(src []byte) []byte {
 	w.Flush()
 	dst := b.Bytes()
 	return dst
+}
+
+func CompressZlib(src []byte) []byte {
+	return compressZlib(src)
 }
 
 func deZlib(src []byte) (dst []byte, err error) {

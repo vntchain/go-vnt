@@ -189,6 +189,9 @@ func getVarDecl(cursor, parent clang.Cursor) {
 		// fmt.Printf("******parent    %s: %s (%s) (%s)\n", parent.Kind().Spelling(), parent.Spelling(), parent.USR(), parent.Type().Spelling())
 		// if strings.Contains(cursortype, "struct") || strings.Contains(cursortype, "volatile _S") {
 		// fmt.Printf("!!!cursortype %s\n", cursortype)
+		if !strings.Contains(cursortype, "volatile") {
+			return
+		}
 		if strings.Contains(strings.Join(allstruct, ""), cursortype[9:]) {
 			// fmt.Printf("======cursortype=======%s\n", cursortype)
 			// fmt.Printf("\n******          %s: %s (%s) (%s)\n", cursor.Kind().Spelling(), cursor.Spelling(), cursor.USR(), cursor.Type().Spelling())

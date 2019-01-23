@@ -685,6 +685,14 @@ func (ef *EnvFunctions) AddressFrom(proc *exec.WavmProcess, idx uint64) uint64 {
 	return ef.returnAddress(proc, address)
 }
 
+func (ef *EnvFunctions) AddressToString(proc *exec.WavmProcess, idx uint64) uint64 {
+	ctx := ef.ctx
+	ctx.GasCounter.GasQuickStep()
+	addrBytes := proc.ReadAt(idx)
+	address := common.BytesToAddress(addrBytes)
+	return uint64(proc.SetBytes([]byte(address.Hex())))
+}
+
 func (ef *EnvFunctions) U256From(proc *exec.WavmProcess, idx uint64) uint64 {
 	ctx := ef.ctx
 	ctx.GasCounter.GasQuickStep()
@@ -694,6 +702,13 @@ func (ef *EnvFunctions) U256From(proc *exec.WavmProcess, idx uint64) uint64 {
 		panic(fmt.Sprintf("Can't Convert strin %s to uint256", u256Str))
 	}
 	return ef.returnU256(proc, bigint)
+}
+
+func (ef *EnvFunctions) U256ToString(proc *exec.WavmProcess, idx uint64) uint64 {
+	ctx := ef.ctx
+	ctx.GasCounter.GasQuickStep()
+	u256Bytes := proc.ReadAt(idx)
+	return uint64(proc.SetBytes(u256Bytes))
 }
 
 // // Open for unit testing

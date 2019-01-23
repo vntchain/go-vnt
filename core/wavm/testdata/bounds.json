@@ -30,7 +30,7 @@
           }
      },
      "testcase": [{
-          "code": "bounds/main.wasm",
+          "code": "bounds/Bounds.compress",
           "abi": "bounds/abi.json",
           "initcase": {
                "needinit": true,

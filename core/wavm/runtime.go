@@ -293,7 +293,6 @@ func (wavm *Wavm) ExecCodeWithFuncName(input []byte) ([]byte, error) {
 	// 	input = vm.ChainContext.Input
 	// }
 
-	//todo 要考虑fallback的情况
 	log.Debug("vm", "func", "Inputs", "len", len(method.Inputs), "input", input)
 	for i, v := range method.Inputs {
 		if len(input) < 32*(i+1) {
@@ -332,7 +331,7 @@ func (wavm *Wavm) ExecCodeWithFuncName(input []byte) ([]byte, error) {
 			args = append(args, res)
 		case abi.AddressTy:
 			addr := common.BytesToAddress(arg)
-			log.Debug("vm", "func", "ExecCodeWithFuncName", "address", []byte(addr.Hex()))
+			log.Debug("vm", "func", "ExecCodeWithFuncName", "address", addr.Hex())
 			log.Debug("vm", "func", "ExecCodeWithFuncName", "address", addr.Bytes())
 			idx := VM.Memory.SetBytes(addr.Bytes())
 			VM.AddHeapPointer(uint64(len(addr.Bytes())))
@@ -371,6 +370,7 @@ func (wavm *Wavm) ExecCodeWithFuncName(input []byte) ([]byte, error) {
 			switch output {
 			case abi.StringTy:
 				v := VM.Memory.GetPtr(res)
+				fmt.Printf("v `%s`\n", string(v))
 				l, err := packNum(reflect.ValueOf(32))
 				if err != nil {
 					return nil, err

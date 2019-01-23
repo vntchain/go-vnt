@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -30,6 +31,9 @@ import (
 
 	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/common"
+	"github.com/vntchain/go-vnt/core/wavm/contract"
+	"github.com/vntchain/go-vnt/core/wavm/utils"
+	"github.com/vntchain/go-vnt/rlp"
 )
 
 //clang -Xclang -ast-dump -fsyntax-only main3.cpp
@@ -82,8 +86,9 @@ const (
 
 //处理代码中的注释
 //event transfer_event(address _from,/*address _to,*/uint64 _amount);
+//todo 处理 //
 const (
-	commandReg = `/\*(.*)\*/`
+	commandReg = `/\*(.*)\*/|//(.*)`
 )
 
 const (
@@ -174,7 +179,7 @@ func main() {
 	fileContent = readfile(*codeFlag)
 	cmd([]string{*codeFlag})
 	abigen := newAbiGen(code)
-	abigen.removeCommand()
+	abigen.removeComment()
 	abigen.parseMethod()
 	// abigen.parseKey()
 	abigen.parseEvent()
@@ -204,8 +209,8 @@ func main() {
 		panic(err)
 	}
 	fmt.Printf("Output file\n")
-	fmt.Printf("Abi path: %s\n", path.Join(*outputFlag))
-	_, err = abi.JSON(bytes.NewBuffer(res))
+	fmt.Printf("Abi path: %s\n", path.Join(*outputFlag, "abi.json"))
+	abires, err := abi.JSON(bytes.NewBuffer(res))
 	if err != nil {
 		panic(err)
 	}
@@ -218,10 +223,22 @@ func main() {
 		panic(err)
 	}
 	fmt.Printf("Precompile code path: %s\n", codeOutput)
-	wasmOutput := path.Join(*outputFlag, "precompile.wasm")
+	wasmOutput := path.Join(*outputFlag, abires.Constructor.Name+".wasm")
 	SetEnvPath()
 	BuildWasm(codeOutput, wasmOutput)
 	fmt.Printf("Wasm path: %s\n", wasmOutput)
+	wasm, err := ioutil.ReadFile(wasmOutput)
+	if err != nil {
+		panic(err)
+	}
+	cpsPath := path.Join(*outputFlag, abires.Constructor.Name+".compress")
+	cpsRes := abigen.compress(res, wasm)
+	err = writeFile(cpsPath, cpsRes)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Compress Data path: %s\n", cpsPath)
+	fmt.Printf("Please use %s when you want to create a constract\n", abires.Constructor.Name+".compress")
 }
 
 func newAbiGen(code []byte) *abiGen {
@@ -237,7 +254,7 @@ func newAbiGen(code []byte) *abiGen {
 	}
 }
 
-func (gen *abiGen) removeCommand() {
+func (gen *abiGen) removeComment() {
 	reg := regexp.MustCompile(commandReg)
 	res := reg.ReplaceAllString(string(gen.Code), "")
 	gen.Code = []byte(res)
@@ -444,6 +461,9 @@ func (gen *abiGen) parseCall() {
 func (gen *abiGen) parseConstructor() {
 	reg := regexp.MustCompile(constructorReg)
 	res := reg.FindAllString(string(gen.Code), -1)
+	if len(res) == 0 {
+		panic("Can't find Contructor function")
+	}
 	for _, v := range res {
 		final := removeSymbol(v)
 		var method Method
@@ -530,6 +550,26 @@ func (gen *abiGen) insertRegistryCode() []byte {
 		}
 	}
 	return code
+}
+
+//将abi和wasm压缩后进行rlp编码
+func (abi *abiGen) compress(abijson, wasm []byte) []byte {
+	wasmcode := contract.WasmCode{
+		Code: wasm,
+		Abi:  abijson,
+	}
+	res, err := rlp.EncodeToBytes(wasmcode)
+	if err != nil {
+		panic(err)
+	}
+	rlpcps := utils.Compress(res)
+	cpsres, err := rlp.EncodeToBytes(rlpcps)
+	if err != nil {
+		panic(err)
+	}
+	magic := make([]byte, 4)
+	binary.LittleEndian.PutUint32(magic, utils.MAGIC)
+	return append(magic, cpsres...)
 }
 
 // func (gen *abiGen) insertMutableCode(code []byte) []byte {
