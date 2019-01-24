@@ -167,6 +167,7 @@ func (bn BlockNumber) Int64() int64 {
 	return (int64)(bn)
 }
 
+// Candidate is the information of a witness candidate
 type Candidate struct {
 	Owner           string   `json:"owner"`           // 候选人地址
 	Name            string   `json:"name"`            // 候选人名称
@@ -179,14 +180,20 @@ type Candidate struct {
 	Website         string   `json:"website"`         // 见证人网站
 }
 
+// Voter is the information of who has vote witness candidate
 type Voter struct {
-	Owner              common.Address   `json:"owner"`              // 投票人的地址
-	IsProxy            bool             `json:"isProxy"`            // 是否是代理人
-	ProxyVoteCount     *big.Int         `json:"proxyVoteCount"`     // 收到的代理的票数
-	Proxy              common.Address   `json:"proxy"`              // 该节点设置的代理人
-	LastVoteCount      *big.Int         `json:"lastVoteCount"`      // 上次投的票数
-	LastVoteTimeStamp  *big.Int         `json:"lastVoteTimeStamp"`  // 上次投票时间戳
-	VoteCandidates     []common.Address `json:"voteCandidates"`     // 投了哪些人
-	StakeCount         *big.Int         `json:"stakeCount"`         // 抵押的代币数量
-	LastStakeTimeStamp *big.Int         `json:"lastStakeTimeStamp"` // 上次抵押时间戳
+	Owner             common.Address   `json:"owner"`             // 投票人的地址
+	IsProxy           bool             `json:"isProxy"`           // 是否是代理人
+	ProxyVoteCount    *big.Int         `json:"proxyVoteCount"`    // 收到的代理的票数
+	Proxy             common.Address   `json:"proxy"`             // 该节点设置的代理人
+	LastVoteCount     *big.Int         `json:"lastVoteCount"`     // 上次投的票数
+	LastVoteTimeStamp *big.Int         `json:"lastVoteTimeStamp"` // 上次投票时间戳
+	VoteCandidates    []common.Address `json:"voteCandidates"`    // 投了哪些人
+}
+
+// Stake is the information of a user
+type Stake struct {
+	Owner              common.Address `json:"owner"`              // 抵押代币的所有人
+	StakeCount         *big.Int       `json:"stakeCount"`         // 抵押的代币数量
+	LastStakeTimeStamp *big.Int       `json:"lastStakeTimeStamp"` // 上次抵押时间戳
 }
