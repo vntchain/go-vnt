@@ -50,7 +50,7 @@ import (
 )
 
 const (
-	defaultGasPrice = 50 * params.Shannon
+	defaultGasPrice = 50 * params.Gwei
 )
 
 // PublicVntAPI provides an API to access VNT related information.

@@ -70,7 +70,7 @@ var AppHelpFlagGroups = []flagGroup{
 		},
 	},
 	{
-		Name: "ETHEREUM",
+		Name: "HUBBLE NETWORK",
 		Flags: []cli.Flag{
 			configFileFlag,
 			utils.DataDirFlag,
