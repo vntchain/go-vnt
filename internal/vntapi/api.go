@@ -745,7 +745,7 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 	return rpcCandidates, nil
 }
 
-// GetVoter returns a voter's information, stake information included
+// GetVoter returns a voter's information.
 func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Address) (*rpc.Voter, error) {
 	// Get stateDB of current block
 	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
@@ -754,11 +754,12 @@ func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Addre
 		return nil, err
 	}
 
+	// Fill voter information
+	empty := common.Address{}
 	v := election.GetVoter(stateDB, address)
-	if v == nil {
+	if v == nil || v.Owner == empty {
 		return nil, fmt.Errorf("no vorter information for address: %s", address.String())
 	}
-
 	voter := &rpc.Voter{
 		Owner:             v.Owner,
 		IsProxy:           v.IsProxy,
@@ -769,13 +770,31 @@ func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Addre
 		VoteCandidates:    v.VoteCandidates,
 	}
 
-	// Fill stake information
-	stake := election.GetStake(stateDB, address)
-	if stake != nil {
-		voter.StakeCount = stake.StakeCount
-		voter.LastStakeTimeStamp = stake.TimeStamp
-	}
 	return voter, nil
+}
+
+// GetStake returns a stake information.
+func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Address) (*rpc.Stake, error) {
+	// Get stateDB of current block
+	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
+	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	if stateDB == nil || err != nil {
+		return nil, err
+	}
+
+	// Fill stake information
+	empty := common.Address{}
+	st := election.GetStake(stateDB, address)
+	if st == nil || st.Owner == empty {
+		return nil, fmt.Errorf("no stake information for address: %s", address.String())
+	}
+	stake := &rpc.Stake{
+		Owner:              st.Owner,
+		StakeCount:         st.StakeCount,
+		LastStakeTimeStamp: st.TimeStamp,
+	}
+
+	return stake, nil
 }
 
 // GetRestVNTBounty returns the rest VNT bounty.

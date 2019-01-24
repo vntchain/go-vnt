@@ -6,11 +6,12 @@ import (
 	"math/big"
 	"testing"
 
+	"strconv"
+
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/state"
 	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/vntdb"
-	"strconv"
 )
 
 var url = []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHGq5zZFRW5FBJ9YMbbvSiW4AzGg5CKMCtDeg6FNnjCbGS")
@@ -1117,30 +1118,27 @@ func TestGrantBounty(t *testing.T) {
 func TestCalculateVote(t *testing.T) {
 	context := newcontext()
 	ec := newElectionContext(context)
-	if ctx, ok := context.(*testContext); ok {
-		ctx.SetTime(big.NewInt(1514736000))
-	}
-
 	stakeCount := big.NewInt(10000000)
-	voteCount := ec.calculateVoteCount(stakeCount)
-	if voteCount.Cmp(big.NewInt(10000000)) != 0 {
-		t.Errorf("VoteCount %d value wrong ! It should be 10.", voteCount)
+
+	tests := []struct {
+		curTime *big.Int
+		stake   *big.Int
+		votes   *big.Int
+	}{
+		{eraTimeStamp, stakeCount, big.NewInt(10000000)},           // 半衰期开始时
+		{big.NewInt(1562256000), stakeCount, big.NewInt(14142135)}, // 半衰期半个周期：26周
+		{big.NewInt(1578067200), stakeCount, big.NewInt(20000000)}, // 半衰期一个周期：52周
+		{big.NewInt(1609430400), stakeCount, big.NewInt(40000000)}, // 半衰期二个周期：104周
 	}
 
-	if ctx, ok := context.(*testContext); ok {
-		ctx.SetTime(big.NewInt(1532080414))
-	}
-	voteCount = ec.calculateVoteCount(stakeCount)
-	if voteCount.Cmp(big.NewInt(14524228)) != 0 {
-		t.Errorf("VoteCount %d value wrong ! It should be 10.", voteCount)
-	}
-
-	if ctx, ok := context.(*testContext); ok {
-		ctx.SetTime(big.NewInt(1532225103))
-	}
-	voteCount = ec.calculateVoteCount(stakeCount)
-	if voteCount.Cmp(big.NewInt(14524228)) != 0 {
-		t.Errorf("VoteCount %d value wrong ! It should be 10.", voteCount)
+	for i, ts := range tests {
+		if ctx, ok := context.(*testContext); ok {
+			ctx.SetTime(ts.curTime)
+		}
+		voteCount := ec.calculateVoteCount(stakeCount)
+		if voteCount.Cmp(ts.votes) != 0 {
+			t.Errorf("case %d error, time: %s, stake: %s, want votes: %s, got votes: %s", i, ts.curTime.String(), ts.stake.String(), ts.votes.String(), voteCount)
+		}
 	}
 }
 
