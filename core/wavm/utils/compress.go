@@ -114,11 +114,10 @@ func deZlib(src []byte) (dst []byte, err error) {
 	var out bytes.Buffer
 	b := bytes.NewReader(src)
 	r, err := zlib.NewReader(b)
-	defer r.Close()
-
 	if err != nil {
 		return nil, err
 	}
+	defer r.Close()
 	io.Copy(&out, r)
 	return out.Bytes(), nil
 }

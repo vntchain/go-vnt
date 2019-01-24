@@ -54,7 +54,7 @@ func getLldOptions(options string) []string {
 
 func buildCFile(options string, input string, output string) {
 	cmdPath := llvmDir + "/bin/clang"
-	cmdArgs := append(getLldOptions(options), []string{input, "-o", output, "-I", *includePath}...)
+	cmdArgs := append(getLldOptions(options), []string{input, "-o", output, "-I", includeDir}...)
 	cmd := exec.Command(cmdPath, cmdArgs...)
 	var stderr, stdout bytes.Buffer
 	cmd.Stderr = &stderr

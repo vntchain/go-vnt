@@ -23,7 +23,6 @@ import (
 	"sort"
 
 	"github.com/vntchain/go-vnt/cmd/utils"
-	"github.com/vntchain/go-vnt/internal/debug"
 	cli "gopkg.in/urfave/cli.v1"
 )
 
@@ -62,151 +61,31 @@ type flagGroup struct {
 
 // AppHelpFlagGroups is the application flags, grouped by functionality.
 var AppHelpFlagGroups = []flagGroup{
-	{ // yhx
-		Name: "TEMP",
+	{
+		Name: "COMPILE",
 		Flags: []cli.Flag{
-			utils.FindNodeFlag,
-			utils.VNTBootnodeFlag,
+			contractCodeFlag,
+			includeFlag,
 		},
 	},
 	{
-		Name: "VNT",
+		Name: "COMPRESS",
 		Flags: []cli.Flag{
-			configFileFlag,
-			utils.DataDirFlag,
-			utils.KeyStoreDirFlag,
-			utils.NoUSBFlag,
-			utils.NetworkIdFlag,
-			utils.TestnetFlag,
-			utils.RinkebyFlag,
-			utils.SyncModeFlag,
-			utils.GCModeFlag,
-			utils.EthStatsURLFlag,
-			utils.IdentityFlag,
-			utils.LightServFlag,
-			utils.LightPeersFlag,
-			utils.LightKDFFlag,
-		},
-	},
-	{Name: "DEVELOPER CHAIN",
-		Flags: []cli.Flag{
-			utils.DeveloperFlag,
-			utils.DeveloperPeriodFlag,
+			wasmFlag,
+			abiFlag,
 		},
 	},
 	{
-		Name: "TRANSACTION POOL",
+		Name: "DECOMPRESS",
 		Flags: []cli.Flag{
-			utils.TxPoolNoLocalsFlag,
-			utils.TxPoolJournalFlag,
-			utils.TxPoolRejournalFlag,
-			utils.TxPoolPriceLimitFlag,
-			utils.TxPoolPriceBumpFlag,
-			utils.TxPoolAccountSlotsFlag,
-			utils.TxPoolGlobalSlotsFlag,
-			utils.TxPoolAccountQueueFlag,
-			utils.TxPoolGlobalQueueFlag,
-			utils.TxPoolLifetimeFlag,
+			compressFileFlag,
 		},
 	},
 	{
-		Name: "PERFORMANCE TUNING",
+		Name: "OPTION",
 		Flags: []cli.Flag{
-			utils.CacheFlag,
-			utils.CacheDatabaseFlag,
-			utils.CacheGCFlag,
-			utils.TrieCacheGenFlag,
+			outputFlag,
 		},
-	},
-	{
-		Name: "ACCOUNT",
-		Flags: []cli.Flag{
-			utils.UnlockedAccountFlag,
-			utils.PasswordFileFlag,
-		},
-	},
-	{
-		Name: "API AND CONSOLE",
-		Flags: []cli.Flag{
-			utils.RPCEnabledFlag,
-			utils.RPCListenAddrFlag,
-			utils.RPCPortFlag,
-			utils.RPCApiFlag,
-			utils.WSEnabledFlag,
-			utils.WSListenAddrFlag,
-			utils.WSPortFlag,
-			utils.WSApiFlag,
-			utils.WSAllowedOriginsFlag,
-			utils.IPCDisabledFlag,
-			utils.IPCPathFlag,
-			utils.RPCCORSDomainFlag,
-			utils.RPCVirtualHostsFlag,
-			utils.JSpathFlag,
-			utils.ExecFlag,
-			utils.PreloadJSFlag,
-		},
-	},
-	{
-		Name: "NETWORKING",
-		Flags: []cli.Flag{
-			utils.BootnodesFlag,
-			utils.BootnodesV4Flag,
-			utils.BootnodesV5Flag,
-			utils.ListenPortFlag,
-			utils.MaxPeersFlag,
-			utils.MaxPendingPeersFlag,
-			utils.NATFlag,
-			utils.NoDiscoverFlag,
-			utils.DiscoveryV5Flag,
-			utils.NetrestrictFlag,
-			utils.NodeKeyFileFlag,
-			utils.NodeKeyHexFlag,
-		},
-	},
-	{
-		Name: "MINER",
-		Flags: []cli.Flag{
-			utils.MiningEnabledFlag,
-			utils.MinerThreadsFlag,
-			utils.EtherbaseFlag,
-			utils.TargetGasLimitFlag,
-			utils.GasPriceFlag,
-			utils.ExtraDataFlag,
-		},
-	},
-	{
-		Name: "GAS PRICE ORACLE",
-		Flags: []cli.Flag{
-			utils.GpoBlocksFlag,
-			utils.GpoPercentileFlag,
-		},
-	},
-	{
-		Name: "VIRTUAL MACHINE",
-		Flags: []cli.Flag{
-			utils.VMEnableDebugFlag,
-		},
-	},
-	{
-		Name: "LOGGING AND DEBUGGING",
-		Flags: append([]cli.Flag{
-			utils.MetricsEnabledFlag,
-			utils.NoCompactionFlag,
-		}, debug.Flags...),
-	},
-	{
-		Name:  "WHISPER (EXPERIMENTAL)",
-		Flags: whisperFlags,
-	},
-	{
-		Name: "DEPRECATED",
-		Flags: []cli.Flag{
-			utils.FastSyncFlag,
-			utils.LightModeFlag,
-		},
-	},
-	{
-		Name: "MISC",
 	},
 }
 

@@ -17,12 +17,8 @@
 package main
 
 import (
-	"bytes"
 	"encoding/binary"
-	"encoding/json"
-	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"regexp"
@@ -34,6 +30,7 @@ import (
 	"github.com/vntchain/go-vnt/core/wavm/contract"
 	"github.com/vntchain/go-vnt/core/wavm/utils"
 	"github.com/vntchain/go-vnt/rlp"
+	cli "gopkg.in/urfave/cli.v1"
 )
 
 //clang -Xclang -ast-dump -fsyntax-only main3.cpp
@@ -144,101 +141,30 @@ var fileContent []string
 var wasmCeptionFlag string
 
 var (
-	codeFlag    = flag.String("code", "", "Code Path")
-	outputFlag  = flag.String("output", "", "Output Abi Json Path")
-	includePath = flag.String("I", "", "Add directory to include search path, DEFAULT:Current Code Directory")
+	codePath          string
+	outputDir         string
+	includeDir        string
+	abiPath           string
+	wasmPath          string
+	compressPath      string
+	DecompressDirPath string
 )
 
 func main() {
-	// str := C.CString("abc\n")
-	// C.printf(str)
-	// C.free(unsafe.Pointer(str))
 
-	flag.Parse()
-	if *codeFlag == "" {
-		fmt.Printf("Error:No Contract Code\n")
-		os.Exit(-1)
+	// app.Action = gvnt
+	app.HideVersion = true // we have a command to print the version
+	app.Copyright = "Copyright 2018-2019 The go-vnt Authors"
+	app.Commands = []cli.Command{
+		compileCmd,
+		compressCmd,
+		decompressCmd,
 	}
-	fmt.Printf("Input file\n")
-	fmt.Printf("Contract path :%s\n", *codeFlag)
-	mustCFile(*codeFlag)
-	if *outputFlag == "" {
-		*outputFlag = path.Join(path.Dir(*codeFlag), "output")
+	sort.Sort(cli.CommandsByName(app.Commands))
+	if err := app.Run(os.Args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
-	if *includePath == "" {
-		*includePath = path.Dir(*codeFlag)
-	}
-
-	if wasmCeptionFlag = os.Getenv("VNT_WASMCEPTION"); wasmCeptionFlag == "" {
-		panic("未找到VNT_WASMCEPTION的环境变量，请按照readme的步骤下载并设置wasmception")
-	}
-	code, err := ioutil.ReadFile(*codeFlag)
-	if err != nil {
-		panic(err)
-	}
-	fileContent = readfile(*codeFlag)
-	cmd([]string{*codeFlag})
-	abigen := newAbiGen(code)
-	abigen.removeComment()
-	abigen.parseMethod()
-	// abigen.parseKey()
-	abigen.parseEvent()
-	abigen.parseCall()
-	abigen.parseConstructor()
-
-	var pack []interface{}
-	if abigen.abi.Constructor.Name != "" {
-		pack = append(pack, abigen.abi.Constructor)
-	}
-
-	for _, v := range abigen.abi.Methods {
-		pack = append(pack, v)
-	}
-	for _, v := range abigen.abi.Events {
-		pack = append(pack, v)
-	}
-	for _, v := range abigen.abi.Calls {
-		pack = append(pack, v)
-	}
-	res, err := json.Marshal(pack)
-	if err != nil {
-		panic(err)
-	}
-	err = writeFile(path.Join(*outputFlag, "abi.json"), res)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("Output file\n")
-	fmt.Printf("Abi path: %s\n", path.Join(*outputFlag, "abi.json"))
-	abires, err := abi.JSON(bytes.NewBuffer(res))
-	if err != nil {
-		panic(err)
-	}
-
-	pre := abigen.insertRegistryCode()
-	// pre = abigen.insertMutableCode(pre)
-	codeOutput := path.Join(*outputFlag, "precompile.c")
-	err = writeFile(codeOutput, pre)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("Precompile code path: %s\n", codeOutput)
-	wasmOutput := path.Join(*outputFlag, abires.Constructor.Name+".wasm")
-	SetEnvPath()
-	BuildWasm(codeOutput, wasmOutput)
-	fmt.Printf("Wasm path: %s\n", wasmOutput)
-	wasm, err := ioutil.ReadFile(wasmOutput)
-	if err != nil {
-		panic(err)
-	}
-	cpsPath := path.Join(*outputFlag, abires.Constructor.Name+".compress")
-	cpsRes := abigen.compress(res, wasm)
-	err = writeFile(cpsPath, cpsRes)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("Compress Data path: %s\n", cpsPath)
-	fmt.Printf("Please use %s when you want to create a constract\n", abires.Constructor.Name+".compress")
 }
 
 func newAbiGen(code []byte) *abiGen {
@@ -622,5 +548,4 @@ func mustCFile(codefilepath string) {
 	if strings.Compare(res, ".c") != 0 {
 		panic("合约文件的后缀名必须为.c")
 	}
-
 }
