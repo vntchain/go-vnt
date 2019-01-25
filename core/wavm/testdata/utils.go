@@ -70,6 +70,7 @@ type tests struct {
 	Input    []argument    `json:"input"`
 	RawInput hexutil.Bytes `json:"rawinput"`
 	Wanted   argument      `json:"wanted"`
+	Error    string        `json:"error"`
 	Event    []argument    `json:"event"`
 }
 

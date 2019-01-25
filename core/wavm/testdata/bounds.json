@@ -109,6 +109,29 @@
                     "data": "-1",
                     "type": "int64"
                }
+          }, {
+               "function": "testToI64_string",
+               "input": [{
+                    "data": "-1",
+                    "type": "string"
+               }],
+               "wanted": {
+                    "data": "-1",
+                    "type": "int64"
+               }
+          }, {
+               "function": "testU64Add",
+               "input": [{
+                    "data": "18446744073709551615",
+                    "type": "uint64"
+               }, {
+                    "data": "1",
+                    "type": "uint64"
+               }],
+               "wanted": {
+                    "data": "0",
+                    "type": "uint64"
+               }
           }]
      }]
 }

@@ -1,1 +1,147 @@
-[{"name":"Bounds","constant":false,"inputs":[],"outputs":[],"type":"constructor"},{"name":"testToI64_Max","constant":true,"inputs":[],"outputs":[{"name":"output","type":"int64","indexed":false}],"type":"function"},{"name":"testToI64_Max_Overflow","constant":true,"inputs":[],"outputs":[{"name":"output","type":"int64","indexed":false}],"type":"function"},{"name":"testToI64_1","constant":true,"inputs":[],"outputs":[{"name":"output","type":"int64","indexed":false}],"type":"function"},{"name":"testToI64_string","constant":true,"inputs":[{"name":"str","type":"string","indexed":false}],"outputs":[{"name":"output","type":"int64","indexed":false}],"type":"function"},{"name":"testToU64_Min","constant":true,"inputs":[],"outputs":[{"name":"output","type":"uint64","indexed":false}],"type":"function"},{"name":"testToI64_Min","constant":true,"inputs":[],"outputs":[{"name":"output","type":"int64","indexed":false}],"type":"function"},{"name":"testToI64_Min_Overflow","constant":true,"inputs":[],"outputs":[{"name":"output","type":"int64","indexed":false}],"type":"function"},{"name":"testToU64_Max","constant":true,"inputs":[],"outputs":[{"name":"output","type":"uint64","indexed":false}],"type":"function"},{"name":"testToU64_Max_Overflow","constant":true,"inputs":[],"outputs":[{"name":"output","type":"uint64","indexed":false}],"type":"function"},{"name":"testToU64_Min_Overflow","constant":true,"inputs":[],"outputs":[{"name":"output","type":"uint64","indexed":false}],"type":"function"}]
+[{
+     "name": "Bounds",
+     "constant": false,
+     "inputs": [],
+     "outputs": [],
+     "type": "constructor"
+}, {
+     "name": "testToI64_Max_Overflow",
+     "constant": true,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "int64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testToI64_string",
+     "constant": true,
+     "inputs": [{
+          "name": "str",
+          "type": "string",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "int64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testToU64_Max_Overflow",
+     "constant": true,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testToU64_Min",
+     "constant": true,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testToU64_Min_Overflow",
+     "constant": true,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testU64Sub",
+     "constant": true,
+     "inputs": [{
+          "name": "x",
+          "type": "uint64",
+          "indexed": false
+     }, {
+          "name": "y",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testToI64_Max",
+     "constant": true,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "int64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testToI64_Min",
+     "constant": true,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "int64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testToI64_1",
+     "constant": true,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "int64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testToI64_Min_Overflow",
+     "constant": true,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "int64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testToU64_Max",
+     "constant": true,
+     "inputs": [],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}, {
+     "name": "testU64Add",
+     "constant": true,
+     "inputs": [{
+          "name": "x",
+          "type": "uint64",
+          "indexed": false
+     }, {
+          "name": "y",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "outputs": [{
+          "name": "output",
+          "type": "uint64",
+          "indexed": false
+     }],
+     "type": "function"
+}]

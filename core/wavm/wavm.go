@@ -33,6 +33,9 @@ type WAVM struct {
 	StateDB inter.StateDB
 	// Depth is the current call stack
 	depth int
+	// Mutable is the current call mutable state
+	// -1:init state,0:unmutable,1:mutable
+	mutable int
 
 	// chainConfig contains information about the current chain
 	chainConfig *params.ChainConfig
@@ -178,6 +181,7 @@ func NewWAVM(ctx vm.Context, statedb inter.StateDB, chainConfig *params.ChainCon
 		vmConfig:    vmConfig,
 		chainConfig: chainConfig,
 		chainRules:  chainConfig.Rules(ctx.BlockNumber),
+		mutable:     -1,
 	}
 	return wavm
 }

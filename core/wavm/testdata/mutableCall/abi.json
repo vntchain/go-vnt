@@ -1,0 +1,1 @@
+[{"name":"TestMutableCall","constant":false,"inputs":[],"outputs":[],"type":"constructor"},{"name":"ReadA","constant":true,"inputs":[],"outputs":[{"name":"output","type":"int32","indexed":false}],"type":"function"},{"name":"SetA","constant":false,"inputs":[],"outputs":[{"name":"output","type":"int32","indexed":false}],"type":"function"}]

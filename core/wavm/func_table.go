@@ -70,12 +70,11 @@ const (
 	OpNameGetBlockNumber        = "GetBlockNumber"
 	OpNameGetGas                = "GetGas"
 	OpNameGetBlockHash          = "GetBlockHash"
-	OpNameGetCoinBase           = "GetCoinBase"
+	OpNameGetBlockProduser           = "GetBlockProduser"
 	OpNameGetTimestamp          = "GetTimestamp"
 	OpNameGetOrigin             = "GetOrigin"
 	OpNameGetSender             = "GetSender"
 	OpNameGetGasLimit           = "GetGasLimit"
-	OpNameGetDifficulty         = "GetDifficulty"
 	OpNameGetValue              = "GetValue"
 	OpNameSHA3                  = "SHA3"
 	OpNameGetContractAddress    = "GetContractAddress"
@@ -122,6 +121,7 @@ const (
 	OpNameU256Sub     = "U256_Sub"
 	OpNameU256Mul     = "U256_Mul"
 	OpNameU256Div     = "U256_Div"
+	OpNameU256Mod     = "U256_Mod"
 	OpNameU256Pow     = "U256_Pow"
 	OpNameU256Cmp     = "U256_Cmp"
 
@@ -172,8 +172,8 @@ func (ef *EnvFunctions) getFuncTable() map[string]wasm.Function {
 				Code: []byte{},
 			},
 		},
-		OpNameGetCoinBase: {
-			Host: reflect.ValueOf(ef.GetCoinBase),
+		OpNameGetBlockProduser: {
+			Host: reflect.ValueOf(ef.GetBlockProduser),
 			Sig: &wasm.FunctionSig{
 				ParamTypes:  []wasm.ValueType{},
 				ReturnTypes: []wasm.ValueType{wasm.ValueTypeI32},
@@ -217,16 +217,6 @@ func (ef *EnvFunctions) getFuncTable() map[string]wasm.Function {
 			Sig: &wasm.FunctionSig{
 				ParamTypes:  []wasm.ValueType{},
 				ReturnTypes: []wasm.ValueType{wasm.ValueTypeI64},
-			},
-			Body: &wasm.FunctionBody{
-				Code: []byte{},
-			},
-		},
-		OpNameGetDifficulty: {
-			Host: reflect.ValueOf(ef.GetDifficulty),
-			Sig: &wasm.FunctionSig{
-				ParamTypes:  []wasm.ValueType{},
-				ReturnTypes: []wasm.ValueType{wasm.ValueTypeI32},
 			},
 			Body: &wasm.FunctionBody{
 				Code: []byte{},
@@ -605,6 +595,16 @@ func (ef *EnvFunctions) getFuncTable() map[string]wasm.Function {
 		},
 		OpNameU256Div: {
 			Host: reflect.ValueOf(ef.U256Div),
+			Sig: &wasm.FunctionSig{
+				ParamTypes:  []wasm.ValueType{wasm.ValueTypeI32, wasm.ValueTypeI32},
+				ReturnTypes: []wasm.ValueType{wasm.ValueTypeI32},
+			},
+			Body: &wasm.FunctionBody{
+				Code: []byte{},
+			},
+		},
+		OpNameU256Mod: {
+			Host: reflect.ValueOf(ef.U256Mod),
 			Sig: &wasm.FunctionSig{
 				ParamTypes:  []wasm.ValueType{wasm.ValueTypeI32, wasm.ValueTypeI32},
 				ReturnTypes: []wasm.ValueType{wasm.ValueTypeI32},
