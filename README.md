@@ -64,4 +64,4 @@ VNT Chain的公链——Hubble Network是下一代商业级智能价值传递的
 
 ## 许可证
 
-所有`go-vnt`仓库生成的二进制程序都采用GNU General Public License v3.0许可证, 具体请查看[COPYING](COPYPING)。
+所有`go-vnt`仓库生成的二进制程序都采用GNU General Public License v3.0许可证, 具体请查看[COPYING](https://github.com/vntchain/go-vnt/blob/master/COPYING)。
