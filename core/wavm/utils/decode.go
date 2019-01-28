@@ -2,7 +2,6 @@ package utils
 
 import (
 	"bytes"
-	"encoding/binary"
 	"errors"
 
 	"github.com/vntchain/go-vnt/core/wavm/contract"
@@ -10,21 +9,14 @@ import (
 )
 
 func DecodeContractCode(input []byte) (contract.WasmCode, []byte, error) {
-	buf := bytes.NewReader(input)
-	magic := make([]byte, 4)
-	_, err := buf.Read(magic)
-	if err != nil {
-		return contract.WasmCode{}, nil, err
-	}
-	magicBytes := make([]byte, 4)
-	binary.LittleEndian.PutUint32(magicBytes, MAGIC)
-	// magicNum := binary.LittleEndian.Uint32(magic)
-	if !bytes.Equal(magic, magicBytes) {
+	magic, _ := ReadMagic(input)
+	if magic != MAGIC {
 		return contract.WasmCode{}, nil, errors.New("Magic number mismatch")
 	}
-
+	input = input[4:]
+	buf := bytes.NewReader(input)
 	cps := []byte{}
-	err = rlp.Decode(buf, &cps)
+	err := rlp.Decode(buf, &cps)
 	if err != nil {
 		return contract.WasmCode{}, nil, err
 	}
@@ -32,7 +24,6 @@ func DecodeContractCode(input []byte) (contract.WasmCode, []byte, error) {
 	if err != nil {
 		return contract.WasmCode{}, nil, err
 	}
-
 	dec := contract.WasmCode{}
 	err = rlp.Decode(bytes.NewReader(decom), &dec)
 	if err != nil {

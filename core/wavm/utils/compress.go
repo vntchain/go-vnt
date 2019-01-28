@@ -35,14 +35,7 @@ func Compress(src []byte) []byte {
 	if isCompressed {
 		compressType := make([]byte, 2)
 		binary.LittleEndian.PutUint16(compressType, ZLIBUTIL)
-
-		magic := make([]byte, 4)
-		binary.LittleEndian.PutUint32(magic, MAGIC)
-
-		header := append(magic, compressType...)
-		dst = append(header, dst...)
-
-		log.Debug("after compress", "code length", len(dst), "header", header)
+		dst = append(compressType, dst...)
 		return dst
 	}
 
@@ -58,19 +51,6 @@ func DeCompress(src []byte) ([]byte, error) {
 	}
 
 	log.Debug("before decompress", "code length", len(src))
-	magic, err := ReadMagic(src)
-	if err != nil {
-		return nil, err
-	}
-
-	log.Debug("during decompress", "magic", magic)
-	// if src is not compressed, return the raw code
-	if magic != MAGIC {
-		return src, nil
-	}
-
-	// get rid of the magic bytes
-	src = src[4:]
 
 	compressType, err := readCompressType(src)
 	if err != nil {

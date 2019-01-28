@@ -70,7 +70,7 @@ const (
 	OpNameGetBlockNumber        = "GetBlockNumber"
 	OpNameGetGas                = "GetGas"
 	OpNameGetBlockHash          = "GetBlockHash"
-	OpNameGetBlockProduser           = "GetBlockProduser"
+	OpNameGetBlockProduser      = "GetBlockProduser"
 	OpNameGetTimestamp          = "GetTimestamp"
 	OpNameGetOrigin             = "GetOrigin"
 	OpNameGetSender             = "GetSender"
