@@ -19,7 +19,6 @@ package vntapi
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -39,7 +38,7 @@ import (
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/vm/election"
-	"github.com/vntchain/go-vnt/core/wavm"
+	"github.com/vntchain/go-vnt/core/wavm/contract"
 	"github.com/vntchain/go-vnt/core/wavm/utils"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/log"
@@ -538,20 +537,17 @@ func (s *PublicBlockChainAPI) GetCode(ctx context.Context, address common.Addres
 	if state == nil || err != nil {
 		return nil, err
 	}
-	code := state.GetCode(address)
-	wasmcode := wavm.WasmCode{}
-	decompress, err := utils.DeCompress(code)
+	compress := state.GetCode(address)
+	var code contract.WasmCode
+	decompress, err := utils.DeCompress(compress)
 	if err != nil {
 		return nil, err
 	}
-	sep := []byte{0x7d} // 分割符'}',是{Code: "0x2da32be...", Abi: "0x23290da98acb032..."}的最后一位
-	sepIdx := bytes.Index(decompress, sep)
-
-	err = json.Unmarshal(decompress[:sepIdx+1], &wasmcode)
+	err = rlp.Decode(bytes.NewBuffer(decompress), &code)
 	if err != nil {
 		return nil, err
 	}
-	return wasmcode.Code, state.Error()
+	return code.Code, state.Error()
 }
 
 // GetAbi returns the abi stored at the given address in the state for the given block number.
@@ -560,20 +556,17 @@ func (s *PublicBlockChainAPI) GetAbi(ctx context.Context, address common.Address
 	if state == nil || err != nil {
 		return nil, err
 	}
-	code := state.GetCode(address)
-	wasmcode := wavm.WasmCode{}
-	decompress, err := utils.DeCompress(code)
+	compress := state.GetCode(address)
+	var code contract.WasmCode
+	decompress, err := utils.DeCompress(compress)
 	if err != nil {
 		return nil, err
 	}
-	sep := []byte{0x7d} // 分割符'}',是{Code: "0x2da32be...", Abi: "0x23290da98acb032..."}的最后一位
-	sepIdx := bytes.Index(decompress, sep)
-
-	err = json.Unmarshal(decompress[:sepIdx+1], &wasmcode)
+	err = rlp.Decode(bytes.NewBuffer(decompress), &code)
 	if err != nil {
 		return nil, err
 	}
-	return wasmcode.Abi, state.Error()
+	return code.Abi, state.Error()
 }
 
 // GetStorageAt returns the storage from the state at the given address, key and

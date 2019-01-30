@@ -394,7 +394,7 @@ func (gas GasCounter) GasGetBlockHash() {
 	gas.Charge(constGasFunc(vm.GasExtStep))
 }
 
-func (gas GasCounter) GasGetCoinBase() {
+func (gas GasCounter) GasGetBlockProduser() {
 	gas.Charge(constGasFunc(vm.GasQuickStep))
 }
 
@@ -411,10 +411,6 @@ func (gas GasCounter) GasGetSender() {
 }
 
 func (gas GasCounter) GasGetGasLimit() {
-	gas.Charge(constGasFunc(vm.GasQuickStep))
-}
-
-func (gas GasCounter) GasGetDifficulty() {
 	gas.Charge(constGasFunc(vm.GasQuickStep))
 }
 

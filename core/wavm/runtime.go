@@ -3,19 +3,17 @@ package wavm
 import (
 	"bytes"
 	"errors"
-	"regexp"
-
-	"github.com/vntchain/go-vnt/core/vm"
-
-	"github.com/vntchain/go-vnt/core/wavm/gas"
-
 	"fmt"
 	"math/big"
 	"reflect"
+	"regexp"
 
 	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/common"
+	"github.com/vntchain/go-vnt/common/math"
 	mat "github.com/vntchain/go-vnt/common/math"
+	"github.com/vntchain/go-vnt/core/vm"
+	"github.com/vntchain/go-vnt/core/wavm/gas"
 	"github.com/vntchain/go-vnt/core/wavm/utils"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/vnt-wasm/exec"
@@ -47,6 +45,23 @@ type InvalidPayableFunctionError string
 
 func (e InvalidPayableFunctionError) Error() string {
 	return fmt.Sprintf("Invalid payable function: %s", string(e))
+}
+
+type MismatchMutableFunctionError struct {
+	parent  int
+	current int
+}
+
+func (e MismatchMutableFunctionError) Error() string {
+	parentStr := "unmutable"
+	if e.parent == 1 {
+		parentStr = "mutable"
+	}
+	currentStr := "unmutable"
+	if e.current == 1 {
+		currentStr = "mutable"
+	}
+	return fmt.Sprintf("Mismatch mutable type , parent function type : %s , current function type : %s", parentStr, currentStr)
 }
 
 type Wavm struct {
@@ -293,7 +308,6 @@ func (wavm *Wavm) ExecCodeWithFuncName(input []byte) ([]byte, error) {
 	// 	input = vm.ChainContext.Input
 	// }
 
-	//todo 要考虑fallback的情况
 	log.Debug("vm", "func", "Inputs", "len", len(method.Inputs), "input", input)
 	for i, v := range method.Inputs {
 		if len(input) < 32*(i+1) {
@@ -315,7 +329,7 @@ func (wavm *Wavm) ExecCodeWithFuncName(input []byte) ([]byte, error) {
 			a := readInteger(v.Type.Kind, arg)
 			val := reflect.ValueOf(a)
 			if val.Kind() == reflect.Ptr { //uint256
-				u256 := a.(*big.Int)
+				u256 := math.U256(a.(*big.Int))
 				value := []byte(u256.String())
 				// args = append(args, a.(uint64))
 				offset := VM.Memory.SetBytes(value)
@@ -332,8 +346,8 @@ func (wavm *Wavm) ExecCodeWithFuncName(input []byte) ([]byte, error) {
 			args = append(args, res)
 		case abi.AddressTy:
 			addr := common.BytesToAddress(arg)
-			log.Debug("vm", "func", "ExecCodeWithFuncName", "address", []byte(addr.Hex()))
-			log.Debug("vm", "func", "ExecCodeWithFuncName", "address", addr.Bytes())
+			// log.Debug("vm", "func", "ExecCodeWithFuncName", "address", addr.Hex())
+			// log.Debug("vm", "func", "ExecCodeWithFuncName", "address", addr.Bytes())
 			idx := VM.Memory.SetBytes(addr.Bytes())
 			VM.AddHeapPointer(uint64(len(addr.Bytes())))
 			args = append(args, uint64(idx))
@@ -352,6 +366,18 @@ func (wavm *Wavm) ExecCodeWithFuncName(input []byte) ([]byte, error) {
 			*VM.Mutable = false
 		}
 	}
+	if wavm.ChainContext.Wavm.mutable == -1 {
+		if *VM.Mutable == true {
+			wavm.ChainContext.Wavm.mutable = 1
+		} else {
+			wavm.ChainContext.Wavm.mutable = 0
+		}
+	} else {
+		if wavm.ChainContext.Wavm.mutable == 0 && *VM.Mutable == true {
+			return nil, MismatchMutableFunctionError{0, 1}
+		}
+	}
+
 	res, err := VM.ExecContractCode(index, args...)
 	if err != nil {
 		return nil, err
@@ -371,6 +397,7 @@ func (wavm *Wavm) ExecCodeWithFuncName(input []byte) ([]byte, error) {
 			switch output {
 			case abi.StringTy:
 				v := VM.Memory.GetPtr(res)
+				fmt.Printf("v `%s`\n", string(v))
 				l, err := packNum(reflect.ValueOf(32))
 				if err != nil {
 					return nil, err

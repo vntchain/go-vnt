@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/vntchain/go-vnt/common"
+	m "github.com/vntchain/go-vnt/common/math"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/vnt-wasm/wasm"
 )
@@ -87,7 +88,7 @@ func GetU256(mem []byte) *big.Int {
 	if success == false {
 		panic("Illegal uint256 input " + toStr)
 	}
-	return bigint
+	return m.U256(bigint)
 }
 
 func GetIndex(m *wasm.Module) (writeIndex int, readIndex int, gasIndex int) {
