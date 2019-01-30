@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"github.com/vntchain/go-vnt/common"
+	"github.com/vntchain/go-vnt/core/wavm/contract"
 	"github.com/vntchain/go-vnt/log"
+	"github.com/vntchain/go-vnt/rlp"
 )
 
 const (
@@ -131,4 +133,25 @@ func readCompressType(src []byte) (uint16, error) {
 	}
 	log.Debug("read CompressType", "CompressType", common.ToHex(buf[:]))
 	return binary.LittleEndian.Uint16(buf[:]), nil
+}
+
+//将abi和wasm压缩后进行rlp编码
+func CompressWasmAndAbi(abijson, wasm, compiled []byte) []byte {
+	wasmcode := contract.WasmCode{
+		Code:     wasm,
+		Abi:      abijson,
+		Compiled: compiled,
+	}
+	res, err := rlp.EncodeToBytes(wasmcode)
+	if err != nil {
+		panic(err)
+	}
+	rlpcps := Compress(res)
+	cpsres, err := rlp.EncodeToBytes(rlpcps)
+	if err != nil {
+		panic(err)
+	}
+	magic := make([]byte, 4)
+	binary.LittleEndian.PutUint32(magic, MAGIC)
+	return append(magic, cpsres...)
 }

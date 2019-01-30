@@ -102,8 +102,8 @@ func compile(ctx *cli.Context) error {
 		fmt.Printf("Error:No Contract Code\n")
 		os.Exit(-1)
 	}
-	fmt.Printf("Input file\n")
-	fmt.Printf("Contract path :%s\n", codePath)
+	// fmt.Printf("Input file\n")
+	// fmt.Printf("Contract path :%s\n", codePath)
 	mustCFile(codePath)
 	if outputDir == "" {
 		outputDir = path.Join(path.Dir(codePath), "output")
@@ -151,8 +151,8 @@ func compile(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Output file\n")
-	fmt.Printf("Abi path: %s\n", path.Join(outputDir, "abi.json"))
+	// fmt.Printf("Output file\n")
+	// fmt.Printf("Abi path: %s\n", path.Join(outputDir, "abi.json"))
 	abires, err := abi.JSON(bytes.NewBuffer(res))
 	if err != nil {
 		return err
@@ -165,21 +165,27 @@ func compile(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Precompile code path: %s\n", codeOutput)
+	// fmt.Printf("Precompile code path: %s\n", codeOutput)
 	wasmOutput := path.Join(outputDir, abires.Constructor.Name+".wasm")
 	SetEnvPath()
 	BuildWasm(codeOutput, wasmOutput)
-	fmt.Printf("Wasm path: %s\n", wasmOutput)
+	// fmt.Printf("Wasm path: %s\n", wasmOutput)
 	wasm, err := ioutil.ReadFile(wasmOutput)
 	if err != nil {
 		return err
 	}
 	cpsPath := path.Join(outputDir, abires.Constructor.Name+".compress")
-	cpsRes := abigen.compress(res, wasm)
+	cpsRes := utils.CompressWasmAndAbi(res, wasm, nil)
 	err = writeFile(cpsPath, cpsRes)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("Input file\n")
+	fmt.Printf("Contract path :%s\n", codePath)
+	fmt.Printf("Output file\n")
+	fmt.Printf("Abi path: %s\n", path.Join(outputDir, "abi.json"))
+	fmt.Printf("Precompile code path: %s\n", codeOutput)
+	fmt.Printf("Wasm path: %s\n", wasmOutput)
 	fmt.Printf("Compress Data path: %s\n", cpsPath)
 	fmt.Printf("Please use %s when you want to create a constract\n", abires.Constructor.Name+".compress")
 	return nil
@@ -211,13 +217,12 @@ func compress(ctx *cli.Context) error {
 		return err
 	}
 
-	abigen := new(abiGen)
 	abires, err := abi.JSON(bytes.NewBuffer(abijson))
 	if err != nil {
 		return err
 	}
 	cpsPath := path.Join(outputDir, abires.Constructor.Name+".compress")
-	cpsRes := abigen.compress(abijson, wasm)
+	cpsRes := utils.CompressWasmAndAbi(abijson, wasm, nil)
 	err = writeFile(cpsPath, cpsRes)
 	if err != nil {
 		return err

@@ -264,6 +264,7 @@ func run(t *testing.T, jspath string) {
 			parseinput := parseInput(v.InitCase.Input)
 			input := packInput(getABI(filepath.Join(v.Abi)), "", parseinput...)
 			c := append(code.Code, input...)
+			// fmt.Printf(hex.EncodeToString(c))
 			// pre := envtest.json.Pre[envtest.json.Exec.Address]
 			// pre.Code = c //[]byte(hexutil.Encode(c))
 			// envtest.json.Pre[envtest.json.Exec.Address] = pre

@@ -20,11 +20,11 @@ import (
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/params"
-	"github.com/vntchain/go-vnt/rlp"
 	"github.com/vntchain/vnt-wasm/vnt"
 )
 
 var emptyCodeHash = crypto.Keccak256Hash(nil)
+var electionAddress = common.BytesToAddress([]byte{9})
 
 type WAVM struct {
 	// Context provides auxiliary blockchain related information
@@ -82,22 +82,13 @@ func runWavm(wavm *WAVM, contract *wasmcontract.WASMContract, input []byte, isCr
 		return nil, nil
 	}
 	var code wasmcontract.WasmCode
-	if isCreate == false {
-		decompress, err := utils.DeCompress(contract.Code)
-		if err != nil {
-			return nil, err
-		}
-		err = rlp.Decode(bytes.NewBuffer(decompress), &code)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		decode, vmInput, err := utils.DecodeContractCode(contract.Code)
-		if err != nil {
-			return nil, err
-		}
+	decode, vmInput, err := utils.DecodeContractCode(contract.Code)
+	if err != nil {
+		return nil, err
+	}
+	code = decode
+	if isCreate == true {
 		input = vmInput
-		code = decode
 	}
 
 	abi, err := GetAbi(code.Abi)
@@ -155,11 +146,7 @@ func runWavm(wavm *WAVM, contract *wasmcontract.WASMContract, input []byte, isCr
 			return nil, err
 		}
 		code.Compiled = compileres
-		res, err = rlp.EncodeToBytes(code)
-		if err != nil {
-			return nil, err
-		}
-		res = utils.Compress(res)
+		res = utils.CompressWasmAndAbi(code.Abi, code.Code, code.Compiled)
 	} else {
 		var compiled []vnt.Compiled
 		err = json.Unmarshal(code.Compiled, &compiled)
@@ -330,7 +317,7 @@ func (wavm *WAVM) Call(caller vm.ContractRef, addr common.Address, input []byte,
 	// when we're in homestead this also counts for code storage gas errors.
 	if err != nil {
 		wavm.StateDB.RevertToSnapshot(snapshot)
-		if err.Error() != errorsmsg.ErrExecutionReverted.Error() {
+		if err.Error() != errorsmsg.ErrExecutionReverted.Error() && !bytes.Equal(to.Address().Bytes(), electionAddress.Bytes()) {
 			contract.UseGas(contract.Gas)
 		}
 	}

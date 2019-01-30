@@ -17,7 +17,6 @@
 package main
 
 import (
-	"encoding/binary"
 	"fmt"
 	"os"
 	"path"
@@ -27,9 +26,6 @@ import (
 
 	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/core/wavm/contract"
-	"github.com/vntchain/go-vnt/core/wavm/utils"
-	"github.com/vntchain/go-vnt/rlp"
 	cli "gopkg.in/urfave/cli.v1"
 )
 
@@ -478,25 +474,25 @@ func (gen *abiGen) insertRegistryCode() []byte {
 	return code
 }
 
-//将abi和wasm压缩后进行rlp编码
-func (abi *abiGen) compress(abijson, wasm []byte) []byte {
-	wasmcode := contract.WasmCode{
-		Code: wasm,
-		Abi:  abijson,
-	}
-	res, err := rlp.EncodeToBytes(wasmcode)
-	if err != nil {
-		panic(err)
-	}
-	rlpcps := utils.Compress(res)
-	cpsres, err := rlp.EncodeToBytes(rlpcps)
-	if err != nil {
-		panic(err)
-	}
-	magic := make([]byte, 4)
-	binary.LittleEndian.PutUint32(magic, utils.MAGIC)
-	return append(magic, cpsres...)
-}
+// //将abi和wasm压缩后进行rlp编码
+// func (abi *abiGen) compress(abijson, wasm, compile []byte) []byte {
+// 	wasmcode := contract.WasmCode{
+// 		Code: wasm,
+// 		Abi:  abijson,
+// 	}
+// 	res, err := rlp.EncodeToBytes(wasmcode)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	rlpcps := utils.Compress(res)
+// 	cpsres, err := rlp.EncodeToBytes(rlpcps)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	magic := make([]byte, 4)
+// 	binary.LittleEndian.PutUint32(magic, utils.MAGIC)
+// 	return append(magic, cpsres...)
+// }
 
 // func (gen *abiGen) insertMutableCode(code []byte) []byte {
 // 	reg := regexp.MustCompile(functionReg)

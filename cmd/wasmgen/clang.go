@@ -21,6 +21,7 @@ func cmd(args []string) int {
 
 	diagnostics := tu.Diagnostics()
 	for _, d := range diagnostics {
+		// fmt.Printf("d %+v\n", d)
 		fmt.Println("PROBLEM:", d.Spelling())
 	}
 
