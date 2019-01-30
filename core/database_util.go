@@ -197,7 +197,6 @@ func headerKey(hash common.Hash, number uint64) []byte {
 }
 
 func blockBodyKey(hash common.Hash, number uint64) []byte {
-	return append(append(bodyPrefix, encodeBlockNumber(number)...), hash.Bytes()...)
 	log.Debug("database_util", "func", "blockBodyKey", "prefix", bodyPrefix, "hash", hash, "number", number)
 	return append(append(bodyPrefix, encodeBlockNumber(number)...), hash.Bytes()...)
 }

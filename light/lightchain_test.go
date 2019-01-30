@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/consensus/dpos"
+	"github.com/vntchain/go-vnt/consensus/mock"
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/rawdb"
 	"github.com/vntchain/go-vnt/core/types"
@@ -38,7 +38,7 @@ var (
 
 // makeHeaderChain creates a deterministic chain of headers rooted at parent.
 func makeHeaderChain(parent *types.Header, n int, db vntdb.Database, seed int) []*types.Header {
-	blocks, _ := core.GenerateChain(params.TestChainConfig, types.NewBlockWithHeader(parent), dpos.NewFaker(), db, n, func(i int, b *core.BlockGen) {
+	blocks, _ := core.GenerateChain(params.TestChainConfig, types.NewBlockWithHeader(parent), mock.NewMock(), db, n, func(i int, b *core.BlockGen) {
 		b.SetCoinbase(common.Address{0: byte(seed), 19: byte(i)})
 	})
 	headers := make([]*types.Header, len(blocks))
@@ -55,7 +55,7 @@ func newCanonical(n int) (vntdb.Database, *LightChain, error) {
 	db := vntdb.NewMemDatabase()
 	gspec := core.Genesis{Config: params.TestChainConfig}
 	genesis := gspec.MustCommit(db)
-	blockchain, _ := NewLightChain(&dummyOdr{db: db}, gspec.Config, dpos.NewFaker())
+	blockchain, _ := NewLightChain(&dummyOdr{db: db}, gspec.Config, mock.NewMock())
 
 	// Create and inject the requested chain
 	if n == 0 {
@@ -75,7 +75,7 @@ func newTestLightChain() *LightChain {
 		Config:     params.TestChainConfig,
 	}
 	gspec.MustCommit(db)
-	lc, err := NewLightChain(&dummyOdr{db: db}, gspec.Config, dpos.NewFaker())
+	lc, err := NewLightChain(&dummyOdr{db: db}, gspec.Config, mock.NewMock())
 	if err != nil {
 		panic(err)
 	}
@@ -278,13 +278,13 @@ func (odr *dummyOdr) Retrieve(ctx context.Context, req OdrRequest) error {
 // Tests that reorganizing a long difficult chain after a short easy one
 // overwrites the canonical numbers and links in the database.
 func TestReorgLongHeaders(t *testing.T) {
-	testReorg(t, []int{1, 2, 4}, []int{1, 2, 3, 4}, 10)
+	testReorg(t, []int{1, 1, 1}, []int{1, 1, 1, 1}, 4)
 }
 
 // Tests that reorganizing a short difficult chain after a long easy one
 // overwrites the canonical numbers and links in the database.
 func TestReorgShortHeaders(t *testing.T) {
-	testReorg(t, []int{1, 2, 3, 4}, []int{1, 10}, 11)
+	testReorg(t, []int{1, 1, 1, 1}, []int{1, 1}, 4)
 }
 
 func testReorg(t *testing.T, first, second []int, td int64) {
@@ -293,6 +293,7 @@ func testReorg(t *testing.T, first, second []int, td int64) {
 	// Insert an easy and a difficult chain afterwards
 	bc.InsertHeaderChain(makeHeaderChainWithDiff(bc.genesisBlock, first, 11), 1)
 	bc.InsertHeaderChain(makeHeaderChainWithDiff(bc.genesisBlock, second, 22), 1)
+
 	// Check that the chain is valid number and link wise
 	prev := bc.CurrentHeader()
 	for header := bc.GetHeaderByNumber(bc.CurrentHeader().Number.Uint64() - 1); header.Number.Uint64() != 0; prev, header = header, bc.GetHeaderByNumber(header.Number.Uint64()-1) {
@@ -313,8 +314,9 @@ func TestBadHeaderHashes(t *testing.T) {
 
 	// Create a chain, ban a hash and try to import
 	var err error
-	headers := makeHeaderChainWithDiff(bc.genesisBlock, []int{1, 2, 4}, 10)
+	headers := makeHeaderChainWithDiff(bc.genesisBlock, []int{1, 1, 1}, 10)
 	core.BadHashes[headers[2].Hash()] = true
+	defer func() { delete(core.BadHashes, headers[2].Hash()) }()
 	if _, err = bc.InsertHeaderChain(headers, 1); err != core.ErrBlacklistedHash {
 		t.Errorf("error mismatch: have: %v, want %v", err, core.ErrBlacklistedHash)
 	}
@@ -326,7 +328,7 @@ func TestReorgBadHeaderHashes(t *testing.T) {
 	bc := newTestLightChain()
 
 	// Create a chain, import and ban aferwards
-	headers := makeHeaderChainWithDiff(bc.genesisBlock, []int{1, 2, 3, 4}, 10)
+	headers := makeHeaderChainWithDiff(bc.genesisBlock, []int{1, 1, 1, 1}, 10)
 
 	if _, err := bc.InsertHeaderChain(headers, 1); err != nil {
 		t.Fatalf("failed to import headers: %v", err)
@@ -338,7 +340,7 @@ func TestReorgBadHeaderHashes(t *testing.T) {
 	defer func() { delete(core.BadHashes, headers[3].Hash()) }()
 
 	// Create a new LightChain and check that it rolled back the state.
-	ncm, err := NewLightChain(&dummyOdr{db: bc.chainDb}, params.TestChainConfig, dpos.NewFaker())
+	ncm, err := NewLightChain(&dummyOdr{db: bc.chainDb}, params.TestChainConfig, mock.NewMock())
 	if err != nil {
 		t.Fatalf("failed to create new chain manager: %v", err)
 	}

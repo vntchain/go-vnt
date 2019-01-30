@@ -81,7 +81,6 @@ func (m *Manager) indexOf(witness common.Address) int {
 	for i := 0; i < len(m.Witnesses); i++ {
 		if addressEqual(m.Witnesses[i], witness) {
 			return i
-			break
 		}
 	}
 	return -1
