@@ -70,7 +70,7 @@ var AppHelpFlagGroups = []flagGroup{
 		},
 	},
 	{
-		Name: "VNT",
+		Name: "HUBBLE NETWORK",
 		Flags: []cli.Flag{
 			configFileFlag,
 			utils.DataDirFlag,
