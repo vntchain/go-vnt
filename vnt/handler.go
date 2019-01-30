@@ -220,7 +220,7 @@ func (pm *ProtocolManager) resetBftPeer(urls []string) {
 	for _, url := range urls {
 		node, err := vntp2p.ParseNode(url)
 		if err != nil {
-			log.Error("invalid vnode:", "error", err)
+			log.Error("resetBftPeer invalid vnode:", "error", err)
 			continue
 		}
 		if node.Id.ToString() == selfID {

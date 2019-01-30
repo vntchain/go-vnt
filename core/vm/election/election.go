@@ -8,12 +8,15 @@ import (
 	"sort"
 	"strings"
 
+	"unicode"
+
+	"reflect"
+
 	"github.com/pkg/errors"
 	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/core/vm/interface"
+	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/log"
-	"unicode"
 )
 
 const (
@@ -72,9 +75,9 @@ type Candidate struct {
 	Name            []byte         // 节点名字
 }
 
-func (c *Candidate) dump() {
-	fmt.Printf("candidate dump, addr:%s, votes:%s, active:%v, url:%x, totalBounty: %v, extractedBounty: %v, lastExtractTime: %v, WebSite: %s, Name: %s\n",
-		c.Owner.String(), c.VoteCount.String(), c.Active, c.Url, c.TotalBounty, c.ExtractedBounty, c.LastExtractTime, c.Website, c.Name)
+func (c *Candidate) String() string {
+	return fmt.Sprintf("candidate, addr:%s, votes:%s, active:%v, url:%s, totalBounty: %v, extractedBounty: %v, lastExtractTime: %v, WebSite: %s, Name: %s\n",
+		c.Owner.String(), c.VoteCount.String(), c.Active, string(c.Url), c.TotalBounty, c.ExtractedBounty, c.LastExtractTime, string(c.Website), string(c.Name))
 }
 
 func newVoter() Voter {
@@ -108,7 +111,7 @@ func (c *Candidate) votes() *big.Int {
 
 // Equal two object is equal
 func (c *Candidate) equal(d *Candidate) bool {
-	return c.Owner == d.Owner && c.VoteCount.Cmp(d.VoteCount) == 0 && c.Active == d.Active
+	return reflect.DeepEqual(c, d)
 }
 
 type CandidateList []Candidate
