@@ -9,7 +9,6 @@ import (
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/vntdb"
-	"strconv"
 )
 
 var (
@@ -406,7 +405,7 @@ func TestGetFirstXCandidates_2(t *testing.T) {
 
 	candidates := getAllCandidate(stateDB)
 	for _, candi := range candidates {
-		fmt.Printf("candidate owner: %x, active: %v, voteCount : %v\n", candi.Owner, candi.Active, candi.VoteCount)
+		t.Logf("candidate owner: %x, active: %v, voteCount : %v\n", candi.Owner, candi.Active, candi.VoteCount)
 	}
 }
 
@@ -465,7 +464,7 @@ func TestGetFirstXCandidates_3(t *testing.T) {
 
 	candidates := getAllCandidate(stateDB)
 	for _, candi := range candidates {
-		fmt.Printf("candidate owner: %x, active: %v, voteCount : %v\n", candi.Owner, candi.Active, candi.VoteCount)
+		t.Logf("candidate owner: %x, active: %v, voteCount : %v\n", candi.Owner, candi.Active, candi.VoteCount)
 	}
 }
 
@@ -499,16 +498,14 @@ func TestGetFirstXCandidates_4(t *testing.T) {
 		{byte(4), 0},
 	}
 
-	// 注册
+	// 设置到数据库
 	baseAddr := candidate.Owner
 	for i := 0; i < len(tests); i++ {
-		can := baseAddr
-		can[0] = byte(tests[i].addrPre)
-		website := "www.testnet.info" + strconv.Itoa(i)
-		name := "testinfo" + strconv.Itoa(i)
-		if err := c.registerWitness(can, nil, []byte(website), []byte(name)); err != nil {
-			t.Error(err)
-		}
+		candidate1 := candidate
+		candidate1.Owner[0] = byte(tests[i].addrPre)
+		candidate1.VoteCount = big.NewInt(tests[i].votes)
+		candidate1.Active = true
+		c.setCandidate(candidate1)
 	}
 
 	witsAddr, _ := GetFirstNCandidates(stateDB, witNum)
