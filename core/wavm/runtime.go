@@ -397,7 +397,6 @@ func (wavm *Wavm) ExecCodeWithFuncName(input []byte) ([]byte, error) {
 			switch output {
 			case abi.StringTy:
 				v := VM.Memory.GetPtr(res)
-				fmt.Printf("v `%s`\n", string(v))
 				l, err := packNum(reflect.ValueOf(32))
 				if err != nil {
 					return nil, err
