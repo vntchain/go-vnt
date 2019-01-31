@@ -1,0 +1,24 @@
+FROM ubuntu:xenial
+
+ENV PATH=/usr/lib/go-1.9/bin:$PATH
+
+ADD ./clang.sh ./
+
+RUN \
+  apt-get update && apt-get upgrade -q -y && \
+  apt-get install -y --no-install-recommends lsb software-properties-common golang-1.9 git make gcc libc-dev ca-certificates wget && \
+  /bin/bash ./clang.sh 5.0 && \
+  ln -s /usr/lib/llvm-5.0/lib/libclang*so /usr/lib/ && \
+  git clone --depth 1 https://github.com/vntchain/go-vnt && \
+  (cd go-vnt && make all) && \
+  cp go-vnt/build/bin/* / && \
+  apt-get remove -y golang-1.9 git make gcc libc-dev && apt autoremove -y && apt-get clean && \
+  rm -rf /go-vnt
+
+ADD ./nodir /
+RUN  ls / 
+
+EXPOSE 8545
+EXPOSE 30303
+
+ENTRYPOINT ["/gvnt"]

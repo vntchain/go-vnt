@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"time"
 
 	"github.com/vntchain/go-vnt/accounts/abi"
 	cmdutils "github.com/vntchain/go-vnt/cmd/utils"
@@ -92,9 +93,25 @@ Deompress file into wasm and abi
 			outputFlag,
 		},
 	}
+	AnalyseCmd = cli.Command{
+		Action:    analyse,
+		Name:      "analyse",
+		Usage:     "Analyse contract",
+		ArgsUsage: "<code file> <abi file>",
+		Category:  "ANALYSE COMMANDS",
+		Description: `
+		wasmgen analyse
+
+Analyse contract
+		`,
+		Flags: []cli.Flag{
+			contractCodeFlag,
+		},
+	}
 )
 
 func compile(ctx *cli.Context) error {
+	start := time.Now()
 	codePath = ctx.String(contractCodeFlag.Name)
 	includeDir = ctx.String(includeFlag.Name)
 	outputDir = ctx.String(outputFlag.Name)
@@ -188,6 +205,7 @@ func compile(ctx *cli.Context) error {
 	fmt.Printf("Wasm path: %s\n", wasmOutput)
 	fmt.Printf("Compress Data path: %s\n", cpsPath)
 	fmt.Printf("Please use %s when you want to create a constract\n", abires.Constructor.Name+".compress")
+	fmt.Printf("time duration 2:", time.Since(start))
 	return nil
 }
 
@@ -272,5 +290,10 @@ func decompress(ctx *cli.Context) error {
 	fmt.Printf("Output file\n")
 	fmt.Printf("wasm path: %s\n", wasmoutputPath)
 	fmt.Printf("abi path: %s\n", abioutputPath)
+	return nil
+}
+
+func analyse(ctx *cli.Context) error {
+	fmt.Printf("analyse")
 	return nil
 }

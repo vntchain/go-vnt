@@ -13,7 +13,6 @@ import (
 var index = 0
 
 func cmd(args []string) int {
-
 	idx := clang.NewIndex(0, 1)
 	defer idx.Dispose()
 	tu := idx.ParseTranslationUnit(args[0], []string{"-I", includeDir}, nil, 0)
@@ -51,7 +50,7 @@ func cmd(args []string) int {
 		}
 		return clang.ChildVisit_Continue
 	})
-	structLists.Fulling()
+	// structLists.Fulling()
 	// jsonres, _ := json.Marshal(structLists)
 	// fmt.Printf("structLists %s\n", jsonres)
 

@@ -155,6 +155,7 @@ func main() {
 		compileCmd,
 		compressCmd,
 		decompressCmd,
+		AnalyseCmd,
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 	if err := app.Run(os.Args); err != nil {
