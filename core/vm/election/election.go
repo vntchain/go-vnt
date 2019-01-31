@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"reflect"
 	"sort"
 	"strings"
-
 	"unicode"
-
-	"reflect"
 
 	"github.com/pkg/errors"
 	"github.com/vntchain/go-vnt/accounts/abi"

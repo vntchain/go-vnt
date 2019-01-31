@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
-	"testing"
-
-	"strconv"
-
 	"reflect"
+	"strconv"
+	"testing"
 
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/state"
@@ -30,17 +28,6 @@ var InputCase = [][]byte{
 	common.FromHex("73cf575a"),
 	common.FromHex("65f7314e000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000004d2f6970342f3132372e302e302e312f7463702f33303330332f697066732f316b484771357a5a4652573546424a39594d62627653695734417a476735434b4d437444656736464e6e6a436247530000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000317777772e746573746e65742e696e666f2e776562736974652e746573742e746573742e746573742e746573742e74657374000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000874657374696e666f000000000000000000000000000000000000000000000000"),
 	common.FromHex("f67ab93e"),
-}
-var candidates = []common.Address{
-	common.BytesToAddress([]byte{1}),
-	common.BytesToAddress([]byte{2}),
-	common.BytesToAddress([]byte{3}),
-	common.BytesToAddress([]byte{4}),
-	common.BytesToAddress([]byte{5}),
-	common.BytesToAddress([]byte{6}),
-	common.BytesToAddress([]byte{7}),
-	common.BytesToAddress([]byte{8}),
-	common.BytesToAddress([]byte{9}),
 }
 
 type candiRegInfo struct {
@@ -71,6 +58,7 @@ var (
 	candiInfo8 = candiRegInfo{addr8, []byte("nodd8"), []byte("www.node8.com"), []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHYwV52itn31V5fRXzERMygHFDx6PrSFS8puEr3N4Ujv69")}
 	candiInfo9 = candiRegInfo{addr9, []byte("nodd9"), []byte("www.node9.com"), []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHiEQS9qnK1YJN25eNyTjDRUukTzComAMWYAowTAYCu1K4")}
 
+	candidates = []common.Address{addr1, addr2, addr3, addr4, addr5, addr6, addr7, addr8, addr9}
 	candiInfos = []candiRegInfo{candiInfo1, candiInfo2, candiInfo3, candiInfo4, candiInfo5, candiInfo6, candiInfo7, candiInfo8, candiInfo9}
 )
 
