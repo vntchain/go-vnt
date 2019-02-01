@@ -180,7 +180,6 @@ func (ef *EnvFunctions) GetGasLimit(proc *exec.WavmProcess) uint64 {
 	return ctx.GasLimit
 }
 
-
 //todo 不能转成uint64 必须是uint256
 func (ef *EnvFunctions) GetValue(proc *exec.WavmProcess) uint64 {
 	ctx := ef.ctx
@@ -425,7 +424,7 @@ func (ef *EnvFunctions) getContractCall(funcName string) interface{} {
 				args = append(args, addr)
 			case "string":
 				value = proc.ReadAt(param)
-				args = append(args, value)
+				args = append(args, string(value))
 			case "uint64":
 				args = append(args, uint64(param))
 			case "int64":
