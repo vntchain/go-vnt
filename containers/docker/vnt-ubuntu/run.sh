@@ -20,6 +20,15 @@ account2="0xd915ce08a49e70d3b0c8d6f44e10646207167223"
 account3="0x663d9b36c1aa7a1e49a8619f6976993534caea76" 
 account4="0x77dcc0a74d2a37a6acffdda9ece8f4ca166a8fbd"
 
+cd /nodedir/${nodedir1}/ && rm  -rf gvnt vntdb history gvnt.ipc
+
+cd /nodedir/${nodedir2}/ && rm  -rf gvnt vntdb history gvnt.ipc
+
+cd /nodedir/${nodedir3}/ && rm  -rf gvnt vntdb history gvnt.ipc
+
+cd /nodedir/${nodedir4}/ && rm  -rf gvnt vntdb history gvnt.ipc
+
+
 addr1=`/nodeaddrgen -addr  ${port1} -datadir=/nodedir/${nodedir1}/`
 addr2=`/nodeaddrgen -addr  ${port2} -datadir=/nodedir/${nodedir2}/`
 addr3=`/nodeaddrgen -addr  ${port3} -datadir=/nodedir/${nodedir3}/`
@@ -31,20 +40,21 @@ genesis=`cat /genesis.json`
 genesisres=${genesis/\/\*replaceaddress\*\//${addr}}
 echo ${genesisres} > /genesis.json
 # echo aaa${arr[1]}
-
+echo "gvnt init"
 echo `/gvnt init /genesis.json --datadir /nodedir/${nodedir1}`
 echo `/gvnt init /genesis.json --datadir /nodedir/${nodedir2}`
 echo `/gvnt init /genesis.json --datadir /nodedir/${nodedir3}`
 echo `/gvnt init /genesis.json --datadir /nodedir/${nodedir4}`
 
-echo "/gvnt --networkid 1015 --datadir /nodedir/${nodedir1} --port ${port1} --rpcport ${rpcport1} --unlock ${account1} --password /password --mine"
-echo `/gvnt --networkid 1015 --datadir /nodedir/${nodedir1} --port ${port1} --rpcport ${rpcport1} --unlock ${account1} --password /password --mine`
+echo "gvnt start"
+#echo "nohup /gvnt --networkid 1015 --datadir /nodedir/${nodedir1} --port ${port1} --rpcport ${rpcport1} --unlock ${account1} --password /password --mine \> node1.log 2\>\&1 \&"
+nohup /gvnt --verbosity 5 --networkid 1015 --datadir /nodedir/${nodedir1} --port ${port1} --rpcport ${rpcport1} --unlock ${account1} --password /password --mine > node1.log 2>&1 &
 
-echo "/gvnt --networkid 1015 --datadir /nodedir/${nodedir2} --port ${port2} --rpcport ${rpcport2} --unlock ${account2} --password /password --vntbootnode ${addr1} --mine"
-echo `/gvnt --networkid 1015 --datadir /nodedir/${nodedir2} --port ${port2} --rpcport ${rpcport2} --unlock ${account2} --password /password --vntbootnode ${addr1} --mine`
+#echo "nohup /gvnt --networkid 1015 --datadir /nodedir/${nodedir2} --port ${port2} --rpcport ${rpcport2} --unlock ${account2} --password /password --vntbootnode ${addr1} --mine \> node2.log 2\>\&1 \&"
+nohup /gvnt --verbosity 5 --networkid 1015 --datadir /nodedir/${nodedir2} --port ${port2} --rpcport ${rpcport2} --unlock ${account2} --password /password --vntbootnode ${addr1} --mine > node2.log 2>&1 &
 
-echo "/gvnt --networkid 1015 --datadir /nodedir/${nodedir3} --port ${port3} --rpcport ${rpcport3} --unlock ${account3} --password /password --vntbootnode ${addr2} --mine"
-echo `/gvnt --networkid 1015 --datadir /nodedir/${nodedir3} --port ${port3} --rpcport ${rpcport3} --unlock ${account3} --password /password --vntbootnode ${addr2} --mine`
+#echo "nohup /gvnt --networkid 1015 --datadir /nodedir/${nodedir3} --port ${port3} --rpcport ${rpcport3} --unlock ${account3} --password /password --vntbootnode ${addr2} --mine \> node3.log 2\>\&1 \&"
+nohup /gvnt --verbosity 5 --networkid 1015 --datadir /nodedir/${nodedir3} --port ${port3} --rpcport ${rpcport3} --unlock ${account3} --password /password --vntbootnode ${addr2} --mine > node3.log 2>&1 &
 
-echo "/gvnt --networkid 1015 --datadir /nodedir/${nodedir4} --port ${port4} --rpcport ${rpcport4} --unlock ${account4} --password /password --vntbootnode ${addr3} --mine"
-echo `/gvnt --networkid 1015 --datadir /nodedir/${nodedir4} --port ${port4} --rpcport ${rpcport4} --unlock ${account4} --password /password --vntbootnode ${addr3} --mine`
+#echo "nohup /gvnt --networkid 1015 --datadir /nodedir/${nodedir4} --port ${port4} --rpcport ${rpcport4} --unlock ${account4} --password /password --vntbootnode ${addr3} --mine \> node4.log 2\>\&1 \&"
+nohup /gvnt --verbosity 5 --networkid 1015 --datadir /nodedir/${nodedir4} --port ${port4} --rpcport ${rpcport4} --unlock ${account4} --password /password --vntbootnode ${addr3} --mine > node4.log 2>&1 &
