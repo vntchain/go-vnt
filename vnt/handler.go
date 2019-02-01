@@ -98,6 +98,8 @@ type ProtocolManager struct {
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg sync.WaitGroup
+
+	urlsCh chan []string // 传递p2p urls of witnesses
 }
 
 // NewProtocolManager returns a new VNT sub protocol manager. The VNT sub protocol manages peers capable
@@ -116,6 +118,8 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 		txsyncCh:    make(chan *txsync),
 		quitSync:    make(chan struct{}),
 		node:        node,
+
+		urlsCh: make(chan []string),
 	}
 	// Figure out whether to allow fast sync or not
 	if mode == downloader.FastSync && blockchain.CurrentBlock().NumberU64() > 0 {
@@ -250,6 +254,8 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	go pm.minedBroadcastLoop()
 	go pm.bftBroadcastLoop()
 
+	go pm.resetBftPeerLoop()
+
 	// start sync handlers
 	go pm.syncer()
 	go pm.txsyncLoop()
@@ -263,6 +269,8 @@ func (pm *ProtocolManager) Stop() {
 	pm.minedBlockSub.Unsubscribe() // quits blockBroadcastLoop
 	pm.bftMsgSub.Unsubscribe()
 	pm.bftPeerSub.Unsubscribe()
+
+	close(pm.urlsCh)
 
 	// Quit the sync loop.
 	// After this send has completed, no new peers will be accepted.
@@ -835,7 +843,8 @@ func (pm *ProtocolManager) bftPeerLoop() {
 		switch ev := obj.Data.(type) {
 		case core.BftPeerChangeEvent:
 			log.Trace("Receive BftPeerChangeEvent")
-			pm.resetBftPeer(ev.Urls) // First propagate block to peers
+			pm.urlsCh <- ev.Urls
+			// pm.resetBftPeer(ev.Urls) // First propagate block to peers
 		}
 	}
 }
@@ -860,4 +869,33 @@ func (pm *ProtocolManager) NodeInfo() *NodeInfo {
 		Config:     pm.blockchain.Config(),
 		Head:       currentBlock.Hash(),
 	}
+}
+
+func (pm *ProtocolManager) resetBftPeerLoop() {
+	log.Debug("resetBftPeerLoop start")
+
+	var (
+		urls []string
+		ok   bool
+	)
+
+	ticker := time.NewTicker(time.Minute)
+	exit := false
+	for exit == false {
+		select {
+		case urls, ok = <-pm.urlsCh:
+			if !ok {
+				exit = true
+			} else {
+				log.Debug("resetBftPeerLoop, new urls")
+				pm.resetBftPeer(urls)
+			}
+
+		case <-ticker.C:
+			log.Debug("resetBftPeerLoop, time to reset bft peer")
+			pm.resetBftPeer(urls)
+		}
+	}
+
+	log.Debug("resetBftPeerLoop exit")
 }
