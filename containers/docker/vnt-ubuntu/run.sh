@@ -1,60 +1,89 @@
 #!/bin/sh
+killall gvnt
+rm -rf /nodedir
+peernumber=$1
+echo $peernumber
+if [ $peernumber -lt 4 ]  
+then  
+     peernumber=4
+fi   
+baseport=30311
+baserpcport=8555
+basenodedir="/nodedir/node"
 
-port1=30311
-port2=30312
-port3=30313
-port4=30314
+echo "create keystore and p2paddress"
+password="12345678"
+echo ${password} > password
+declare -a keystore
+declare -a p2paddress
+for ((i=0; i<${peernumber}; i ++))  
+do 
+    #cd ${basenodedir}${i} && rm -rf *
+    #cd /
+    echo "/gvnt account new --password ${password} --datadir ${basenodedir}${i}"
+    newaddress=`/gvnt account new --password /password  --datadir ${basenodedir}${i}`
+    newaddress="0x"${newaddress:10:40}
+    echo ${newaddress} 
+    let port=baseport+i
+    p2paddr=`/nodeaddrgen -addr  ${port} --datadir ${basenodedir}${i}`
+    echo ${p2paddr}
+    keystore[i]=${newaddress} 
+    p2paddress[i]=${p2paddr}
+done
 
-rpcport1=8555
-rpcport2=8556
-rpcport3=8557
-rpcport4=8558
+cd /
 
-nodedir1="node1"
-nodedir2="node2"
-nodedir3="node3"
-nodedir4="node4"
+echo "replace alloc,witnesses,p2paddress in genesis.json"
 
-account1="0x9f55d20eb4f0d9f27da0db41c0331136772a5fb0"
-account2="0xd915ce08a49e70d3b0c8d6f44e10646207167223" 
-account3="0x663d9b36c1aa7a1e49a8619f6976993534caea76" 
-account4="0x77dcc0a74d2a37a6acffdda9ece8f4ca166a8fbd"
+wlist=""
+alist=""
+plist=""
+for data in ${keystore[@]}
+do
+   alist=${alist},\"${data}\"\:\{"\"balance\":\"0x200000000000000000000000000000000000000000000000000000000000000\""}
+   wlist=${wlist},\"${data}\"
+done
+alist=${alist:1:${#alist}}
+wlist=${wlist:1:${#wlist}}
+echo $wlist
+echo $alist
 
-cd /nodedir/${nodedir1}/ && rm  -rf gvnt vntdb history gvnt.ipc
+for data in ${p2paddress[@]}
+do
+    echo ${data}
+    plist=${plist},\"${data}\"
+done
+plist=${plist:1:${#plist}}
+echo ${plist}
 
-cd /nodedir/${nodedir2}/ && rm  -rf gvnt vntdb history gvnt.ipc
+genesis=`cat /genesis.json.templet`
+genesis=${genesis/\/\*replaceaddress\*\//${plist}}
+genesis=${genesis/\/\*replacewitnesses\*\//${wlist}}
+genesis=${genesis/\/\*replacealloc\*\//${alist}}
+genesis=${genesis/\/\*replacenumber\*\//${peernumber}}
+echo ${genesis} > /genesis.json
 
-cd /nodedir/${nodedir3}/ && rm  -rf gvnt vntdb history gvnt.ipc
+#init gnvt
+echo "init gvnt"
 
-cd /nodedir/${nodedir4}/ && rm  -rf gvnt vntdb history gvnt.ipc
+for ((i=0; i<$peernumber; i ++))
+do
+    echo `/gvnt init /genesis.json --datadir  ${basenodedir}${i}`
+done
 
-
-addr1=`/nodeaddrgen -addr  ${port1} -datadir=/nodedir/${nodedir1}/`
-addr2=`/nodeaddrgen -addr  ${port2} -datadir=/nodedir/${nodedir2}/`
-addr3=`/nodeaddrgen -addr  ${port3} -datadir=/nodedir/${nodedir3}/`
-addr4=`/nodeaddrgen -addr  ${port4} -datadir=/nodedir/${nodedir4}/`
-
-addr=\"${addr1}\",\"${addr2}\",\"${addr3}\",\"${addr4}\"
-#echo ${addr}
-genesis=`cat /genesis.json`
-genesisres=${genesis/\/\*replaceaddress\*\//${addr}}
-echo ${genesisres} > /genesis.json
-# echo aaa${arr[1]}
-echo "gvnt init"
-echo `/gvnt init /genesis.json --datadir /nodedir/${nodedir1}`
-echo `/gvnt init /genesis.json --datadir /nodedir/${nodedir2}`
-echo `/gvnt init /genesis.json --datadir /nodedir/${nodedir3}`
-echo `/gvnt init /genesis.json --datadir /nodedir/${nodedir4}`
-
-echo "gvnt start"
-#echo "nohup /gvnt --networkid 1015 --datadir /nodedir/${nodedir1} --port ${port1} --rpcport ${rpcport1} --unlock ${account1} --password /password --mine \> node1.log 2\>\&1 \&"
-nohup /gvnt --verbosity 5 --networkid 1015 --datadir /nodedir/${nodedir1} --port ${port1} --rpcport ${rpcport1} --unlock ${account1} --password /password --mine > node1.log 2>&1 &
-
-#echo "nohup /gvnt --networkid 1015 --datadir /nodedir/${nodedir2} --port ${port2} --rpcport ${rpcport2} --unlock ${account2} --password /password --vntbootnode ${addr1} --mine \> node2.log 2\>\&1 \&"
-nohup /gvnt --verbosity 5 --networkid 1015 --datadir /nodedir/${nodedir2} --port ${port2} --rpcport ${rpcport2} --unlock ${account2} --password /password --vntbootnode ${addr1} --mine > node2.log 2>&1 &
-
-#echo "nohup /gvnt --networkid 1015 --datadir /nodedir/${nodedir3} --port ${port3} --rpcport ${rpcport3} --unlock ${account3} --password /password --vntbootnode ${addr2} --mine \> node3.log 2\>\&1 \&"
-nohup /gvnt --verbosity 5 --networkid 1015 --datadir /nodedir/${nodedir3} --port ${port3} --rpcport ${rpcport3} --unlock ${account3} --password /password --vntbootnode ${addr2} --mine > node3.log 2>&1 &
-
-#echo "nohup /gvnt --networkid 1015 --datadir /nodedir/${nodedir4} --port ${port4} --rpcport ${rpcport4} --unlock ${account4} --password /password --vntbootnode ${addr3} --mine \> node4.log 2\>\&1 \&"
-nohup /gvnt --verbosity 5 --networkid 1015 --datadir /nodedir/${nodedir4} --port ${port4} --rpcport ${rpcport4} --unlock ${account4} --password /password --vntbootnode ${addr3} --mine > node4.log 2>&1 &
+# start peer
+echo "start peer"
+for ((i=0; i<$peernumber; i ++))  
+do  
+    let port=baseport+i
+    let rpcport=baserpcport+i
+    if [ $i -eq 0 ]  
+    then  
+      echo "==0"
+      nohup /gvnt --verbosity 5 --networkid 1015 --datadir  ${basenodedir}${i} --port ${port} --rpcport ${rpcport} --unlock ${keystore[${i}]} --password /password --mine > /tmp/node${i}.log 2>&1 &  
+    else  
+      echo "!0"
+      let j=i-1
+      nohup /gvnt --verbosity 5 --networkid 1015 --datadir  ${basenodedir}${i} --port ${port} --rpcport ${rpcport} --unlock ${keystore[${i}]} --password /password --vntbootnode ${p2paddress[${j}]} --mine > /tmp/node${i}.log 2>&1 &        
+    fi   
+done

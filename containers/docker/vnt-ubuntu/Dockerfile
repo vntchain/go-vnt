@@ -4,9 +4,7 @@ ENV PATH=/usr/lib/go-1.9/bin:$PATH
 
 ADD ./clang.sh /
 
-ADD ./nodedir /nodedir
-
-ADD ./genesis.json /
+ADD ./genesis.json.templet /
 
 ADD ./run.sh  /
 
