@@ -2,26 +2,25 @@ FROM ubuntu:xenial
 
 ENV PATH=/usr/lib/go-1.9/bin:$PATH
 
-ADD ./clang.sh ./
+ADD ./clang.sh /
 
-ADD ./nodedir ./
+ADD ./nodedir /nodedir
 
-ADD ./genesis.json ./
+ADD ./genesis.json /
 
-ADD ./run.sh  ./
+ADD ./run.sh  /
 
 RUN \
   apt-get update && apt-get upgrade -q -y && \
   apt-get install -y --no-install-recommends lsb software-properties-common golang-1.9 git make gcc libc-dev ca-certificates wget && \
   /bin/bash ./clang.sh 5.0 && \
   ln -s /usr/lib/llvm-5.0/lib/libclang*so /usr/lib/ && \
-  git clone --depth 1 https://github.com/vntchain/go-vnt && \
+  git clone --depth 1 https://github.com/vntchain/go-vnt -b docker && \
   (cd go-vnt && make all) && \
   cp go-vnt/build/bin/* / && \
   apt-get remove -y golang-1.9 git make gcc libc-dev && apt autoremove -y && apt-get clean && \
   rm -rf /go-vnt
 
-RUN  ls / 
 
 EXPOSE 8555
 EXPOSE 30311
@@ -35,4 +34,4 @@ EXPOSE 30313
 EXPOSE 8558
 EXPOSE 30314
 
-ENTRYPOINT ["./run.sh"]
+ENTRYPOINT ["sh","/run.sh"]

@@ -4,7 +4,7 @@
           "dpos": {
                "period": 2,
                "witnessesNum": 4,
-               "witnessesUrl": ["/ip4/127.0.0.1/tcp/30311/ipfs/1kHVrHim8w34LN3mCR7PrxH5wtYsMHji5m34AUDUKJCUZi4", "/ip4/127.0.0.1/tcp/30312/ipfs/1kHc8YLBeXJSMiQAvWYXuShGY4MQaw4hyQisXYcbupjtifc", "/ip4/127.0.0.1/tcp/30313/ipfs/1kHJBopPk8SjvFY8aqpsfRJQtHp7DfRMhvK2MMs4fApGc21", "/ip4/127.0.0.1/tcp/30314/ipfs/1kHiaypeT3hLzZ7NdMTvsi7skfBxf2DNjccEiLDcFSKgETL"]
+               "witnessesUrl": [ /*replaceaddress*/ ]
           }
      },
      "nonce": "0x0",
