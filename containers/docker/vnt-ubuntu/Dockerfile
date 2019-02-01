@@ -4,6 +4,12 @@ ENV PATH=/usr/lib/go-1.9/bin:$PATH
 
 ADD ./clang.sh ./
 
+ADD ./nodedir ./
+
+ADD ./genesis.json ./
+
+ADD ./run.sh  ./
+
 RUN \
   apt-get update && apt-get upgrade -q -y && \
   apt-get install -y --no-install-recommends lsb software-properties-common golang-1.9 git make gcc libc-dev ca-certificates wget && \
@@ -15,10 +21,18 @@ RUN \
   apt-get remove -y golang-1.9 git make gcc libc-dev && apt autoremove -y && apt-get clean && \
   rm -rf /go-vnt
 
-ADD ./nodir /
 RUN  ls / 
 
-EXPOSE 8545
-EXPOSE 30303
+EXPOSE 8555
+EXPOSE 30311
 
-ENTRYPOINT ["/gvnt"]
+EXPOSE 8556
+EXPOSE 30312
+
+EXPOSE 8557
+EXPOSE 30313
+
+EXPOSE 8558
+EXPOSE 30314
+
+ENTRYPOINT ["./run.sh"]
