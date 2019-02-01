@@ -331,6 +331,7 @@ func (p *peer) Handshake(network uint64, td *big.Int, head common.Hash, genesis 
 	var status statusData // safe to read after two values have been received from errc
 
 	go func() {
+		p.Log().Info("yhx-test vnt protocol handshake", "going to send handshake msg to", p.id, "msg with ProtocolVersion", uint32(p.version))
 		errc <- vntp2p.Send(p.rw, ProtocolName, StatusMsg, &statusData{
 			ProtocolVersion: uint32(p.version),
 			NetworkId:       network,
@@ -341,6 +342,7 @@ func (p *peer) Handshake(network uint64, td *big.Int, head common.Hash, genesis 
 	}()
 	go func() {
 		errc <- p.readStatus(network, &status, genesis)
+		p.Log().Info("yhx-test vnt protocol handshake", "encounter error", errc)
 	}()
 	timeout := time.NewTimer(handshakeTimeout)
 	defer timeout.Stop()

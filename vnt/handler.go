@@ -224,7 +224,7 @@ func (pm *ProtocolManager) resetBftPeer(urls []string) {
 	for _, url := range urls {
 		node, err := vntp2p.ParseNode(url)
 		if err != nil {
-			log.Error("invalid vnode:", "error", err)
+			log.Error("resetBftPeer invalid vnode:", "error", err)
 			continue
 		}
 		if node.Id.ToString() == selfID {
@@ -793,12 +793,13 @@ func (pm *ProtocolManager) BroadcastTxs(txs types.Transactions) {
 }
 
 func (pm *ProtocolManager) BroadcastBftMsg(bftMsg types.BftMsg) {
-	log.Debug("BroadcastBftMsg", "type", bftMsg.BftType, "hash", bftMsg.Msg.Hash())
 	peers := pm.peers.PeersForBft()
+	log.Trace("BroadcastBftMsg", "type", bftMsg.BftType, "hash", bftMsg.Msg.Hash(), "number of bft peer", len(peers))
 	for _, peer := range peers {
+		log.Trace("BroadcastBftMsg", "to peer", peer.id.ToString())
 		err := peer.SendBftMsg(bftMsg)
 		if err != nil {
-			log.Error("SendBftMsg ", "error", err)
+			log.Error("BroadcastBftMsg ", "to peer", peer.id.ToString(), "error", err)
 		}
 	}
 }

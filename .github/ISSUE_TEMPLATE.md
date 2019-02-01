@@ -2,7 +2,7 @@ Hi there,
 
 please note that this is an issue tracker reserved for bug reports and feature requests.
 
-For general questions please use the gitter channel or the VNT stack exchange at https://ethereum.stackexchange.com.
+For general questions please use the gitter channel: https://gitter.im/vntchain/community.
 
 #### System information
 

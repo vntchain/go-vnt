@@ -6,11 +6,12 @@ import (
 	"math/big"
 	"testing"
 
+	"strconv"
+
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/state"
 	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/vntdb"
-	"strconv"
 )
 
 var url = []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHGq5zZFRW5FBJ9YMbbvSiW4AzGg5CKMCtDeg6FNnjCbGS")
@@ -222,16 +223,8 @@ func TestCandidate_votes(t *testing.T) {
 func TestCandidate_equal(t *testing.T) {
 	addr1 := common.HexToAddress("0x122369f04f32269598789998de33e3d56e2c507a")
 	addr2 := common.HexToAddress("0x42a875ac43f2b4e6d17f54d288071f5952bf8911")
-	c1 := Candidate{
-		Owner:     addr1,
-		VoteCount: big.NewInt(10),
-		Active:    true,
-	}
-	c2 := Candidate{
-		Owner:     addr2,
-		VoteCount: big.NewInt(20),
-		Active:    false,
-	}
+	c1 := Candidate{Owner: addr1, VoteCount: big.NewInt(10), Active: true}
+	c2 := Candidate{Owner: addr2, VoteCount: big.NewInt(20), Active: false}
 
 	if c1.equal(&c2) {
 		t.Errorf("two Candidate should not equal")
@@ -247,53 +240,66 @@ func TestCandidate_equal(t *testing.T) {
 }
 
 func TestCandidateList_Less(t *testing.T) {
-	addr1 := common.HexToAddress("0x122369f04f32269598789998de33e3d56e2c507a")
+	addr1 := common.HexToAddress("0x522369f04f32269598789998de33e3d56e2c507a")
 	addr2 := common.HexToAddress("0x42a875ac43f2b4e6d17f54d288071f5952bf8911")
-	c1 := Candidate{
-		Owner:     addr1,
-		VoteCount: big.NewInt(10),
-		Active:    true,
-	}
-	c2 := Candidate{
-		Owner:     addr2,
-		VoteCount: big.NewInt(20),
-		Active:    false,
-	}
+	addr3 := common.HexToAddress("0x18a875ac43f2b4e6d17f54d288071f5952bf8911")
+	c1 := Candidate{Owner: addr1, VoteCount: big.NewInt(10), Active: true}
+	c2 := Candidate{Owner: addr2, VoteCount: big.NewInt(20), Active: false}
+	c3 := Candidate{Owner: addr3, VoteCount: big.NewInt(10), Active: true}
 
-	var cl CandidateList
-	cl = append(cl, c1)
-	cl = append(cl, c2)
+	cl := CandidateList{c1, c2, c3}
 
-	// actual is greater
 	if cl.Less(0, 1) == false {
-		t.Errorf("cl[0] should greater than cl[1]: %s, %s", cl[0].votes().String(), cl[1].votes().String())
+		t.Errorf("c1 should greater than c2, c1= %s, c2=%s", c1.String(), c2.String())
+	}
+	if cl.Less(0, 2) == true {
+		t.Errorf("c1 should less than c3, c1= %s, c3=%s", c1.String(), c3.String())
 	}
 }
 
 func TestCandidateList_Swap(t *testing.T) {
-	addr1 := common.HexToAddress("0x122369f04f32269598789998de33e3d56e2c507a")
-	addr2 := common.HexToAddress("0x42a875ac43f2b4e6d17f54d288071f5952bf8911")
-	c1 := Candidate{
-		Owner:     addr1,
-		VoteCount: big.NewInt(10),
-		Active:    true,
-	}
-	c2 := Candidate{
-		Owner:     addr2,
-		VoteCount: big.NewInt(20),
-		Active:    false,
-	}
+	c1 := Candidate{common.HexToAddress("0x1"), big.NewInt(100),
+		false, []byte("/p2p/1"), big.NewInt(10000), big.NewInt(200),
+		big.NewInt(1548664636), []byte("node1.com"), []byte("node1")}
+	c2 := Candidate{common.HexToAddress("0x2"), big.NewInt(20),
+		true, []byte("/p2p/2"), big.NewInt(10000), big.NewInt(200),
+		big.NewInt(1548664636), []byte("node2.com"), []byte("node2")}
 
-	var cl CandidateList
-	cl = append(cl, c1)
-	cl = append(cl, c2)
-
-	cl.Swap(0, 1)
-	if cl[0].equal(&c2) == false {
-		t.Errorf("cl[0] should equal c2")
+	candidates := CandidateList{c1, c2}
+	swaped := CandidateList{c2, c1}
+	candidates.Swap(0, 1)
+	for i, tt := range candidates {
+		if tt.equal(&swaped[i]) == false {
+			t.Errorf("index: %d, expect: %s, got: %s", i, swaped[i].String(), tt.String())
+		}
 	}
-	if cl[1].equal(&c1) == false {
-		t.Errorf("cl[1] should equal c1")
+}
+
+func TestCandidateList_Sort(t *testing.T) {
+	// c1票数为负，c2与c5票数相等，c3票数最多
+	c1 := Candidate{common.HexToAddress("0x1"), big.NewInt(100),
+		false, []byte("/p2p/1"), big.NewInt(10000), big.NewInt(200),
+		big.NewInt(1548664636), []byte("node1.com"), []byte("node1")}
+	c2 := Candidate{common.HexToAddress("0x2"), big.NewInt(20),
+		true, []byte("/p2p/2"), big.NewInt(10000), big.NewInt(200),
+		big.NewInt(1548664636), []byte("node2.com"), []byte("node2")}
+	c3 := Candidate{common.HexToAddress("0x3"), big.NewInt(90),
+		true, []byte("/p2p/3"), big.NewInt(10000), big.NewInt(200),
+		big.NewInt(1548664636), []byte("node3.com"), []byte("node3")}
+	c4 := Candidate{common.HexToAddress("0x4"), big.NewInt(40),
+		true, []byte("/p2p/4"), big.NewInt(10000), big.NewInt(200),
+		big.NewInt(1548664636), []byte("node4.com"), []byte("node4")}
+	c5 := Candidate{common.HexToAddress("0x5"), big.NewInt(20),
+		true, []byte("/p2p/5"), big.NewInt(10000), big.NewInt(200),
+		big.NewInt(1548664636), []byte("node5.com"), []byte("node5")}
+	candidates := CandidateList{c1, c2, c3, c4, c5}
+	sorted := CandidateList{c3, c4, c2, c5, c1}
+
+	candidates.Sort()
+	for i, tt := range candidates {
+		if tt.equal(&sorted[i]) == false {
+			t.Errorf("index: %d, expect: %s, got: %s", i, sorted[i].String(), tt.String())
+		}
 	}
 }
 
@@ -1117,30 +1123,27 @@ func TestGrantBounty(t *testing.T) {
 func TestCalculateVote(t *testing.T) {
 	context := newcontext()
 	ec := newElectionContext(context)
-	if ctx, ok := context.(*testContext); ok {
-		ctx.SetTime(big.NewInt(1514736000))
-	}
-
 	stakeCount := big.NewInt(10000000)
-	voteCount := ec.calculateVoteCount(stakeCount)
-	if voteCount.Cmp(big.NewInt(10000000)) != 0 {
-		t.Errorf("VoteCount %d value wrong ! It should be 10.", voteCount)
+
+	tests := []struct {
+		curTime *big.Int
+		stake   *big.Int
+		votes   *big.Int
+	}{
+		{eraTimeStamp, stakeCount, big.NewInt(10000000)},           // 半衰期开始时
+		{big.NewInt(1562256000), stakeCount, big.NewInt(14142135)}, // 半衰期半个周期：26周
+		{big.NewInt(1578067200), stakeCount, big.NewInt(20000000)}, // 半衰期一个周期：52周
+		{big.NewInt(1609430400), stakeCount, big.NewInt(40000000)}, // 半衰期二个周期：104周
 	}
 
-	if ctx, ok := context.(*testContext); ok {
-		ctx.SetTime(big.NewInt(1532080414))
-	}
-	voteCount = ec.calculateVoteCount(stakeCount)
-	if voteCount.Cmp(big.NewInt(14524228)) != 0 {
-		t.Errorf("VoteCount %d value wrong ! It should be 10.", voteCount)
-	}
-
-	if ctx, ok := context.(*testContext); ok {
-		ctx.SetTime(big.NewInt(1532225103))
-	}
-	voteCount = ec.calculateVoteCount(stakeCount)
-	if voteCount.Cmp(big.NewInt(14524228)) != 0 {
-		t.Errorf("VoteCount %d value wrong ! It should be 10.", voteCount)
+	for i, ts := range tests {
+		if ctx, ok := context.(*testContext); ok {
+			ctx.SetTime(ts.curTime)
+		}
+		voteCount := ec.calculateVoteCount(stakeCount)
+		if voteCount.Cmp(ts.votes) != 0 {
+			t.Errorf("case %d error, time: %s, stake: %s, want votes: %s, got votes: %s", i, ts.curTime.String(), ts.stake.String(), ts.votes.String(), voteCount)
+		}
 	}
 }
 

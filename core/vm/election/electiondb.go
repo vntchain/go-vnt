@@ -319,12 +319,13 @@ func getAllCandidate(db inter.StateDB) CandidateList {
 		return db.GetState(electionAddr, key)
 	}
 	// 用这些address尝试去数据库中找候选者，当没有这个地址的候选者时会报错
+	// 有可能并不是见证人所以报错
 	for addr := range addrs {
 		// var candidate Candidate
 		candidate := newCandidate()
 		err := convertToStruct(CANDIDATEPREFIX, addr, &candidate, getFn)
 		if err != nil {
-			log.Error("getAllCandidate error", "address", addr, "err", err)
+			log.Debug("getAllCandidate maybe error", "address", addr, "err", err)
 			continue
 		}
 		result = append(result, candidate)

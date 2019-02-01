@@ -164,7 +164,7 @@ func NewNode(datadir string, config *NodeConfig) (stack *Node, _ error) {
 		if err := rawStack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 			return les.New(ctx, &ethConf)
 		}); err != nil {
-			return nil, fmt.Errorf("ethereum init: %v", err)
+			return nil, fmt.Errorf("gvnt init: %v", err)
 		}
 		// If netstats reporting is requested, do it
 		if config.HubbleNetStats != "" {

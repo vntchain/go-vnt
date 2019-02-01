@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with go-ethereum. If not, see <http://www.gnu.org/licenses/>.
 
-// faucet is a Ether faucet backed by a light client.
+// faucet is a Vnt faucet backed by a light client.
 package main
 
 //go:generate go-bindata -nometadata -o website.go faucet.html
@@ -306,7 +306,7 @@ func (f *faucet) webHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(f.index)
 }
 
-// apiHandler handles requests for Ether grants and transaction statuses.
+// apiHandler handles requests for Vnt grants and transaction statuses.
 func (f *faucet) apiHandler(conn *websocket.Conn) {
 	// Start tracking the connection and drop at the end
 	defer conn.Close()
