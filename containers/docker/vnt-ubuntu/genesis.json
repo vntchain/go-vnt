@@ -4,7 +4,7 @@
           "dpos": {
                "period": 2,
                "witnessesNum": 4,
-               "witnessesUrl": [replaceaddress]
+               "witnessesUrl": [ /*replaceaddress*/ ]
           }
      },
      "nonce": "0x0",
