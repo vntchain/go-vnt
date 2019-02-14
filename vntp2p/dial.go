@@ -176,7 +176,7 @@ func (t *dialTask) Do(ctx context.Context, server *Server) {
 
 	// 直接连接
 	// fmt.Println("it's time to dial")
-
+	log.Info("cq-test", "DailTaskTarget", t.target)
 	t.dial(ctx, server, t.target, t.pid)
 }
 
