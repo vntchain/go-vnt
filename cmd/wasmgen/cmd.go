@@ -93,16 +93,16 @@ Deompress file into wasm and abi
 			outputFlag,
 		},
 	}
-	AnalyseCmd = cli.Command{
-		Action:    analyse,
-		Name:      "analyse",
-		Usage:     "Analyse contract",
+	HintCmd = cli.Command{
+		Action:    hint,
+		Name:      "hint",
+		Usage:     "Contract hint",
 		ArgsUsage: "<code file> <abi file>",
-		Category:  "ANALYSE COMMANDS",
+		Category:  "HINT COMMANDS",
 		Description: `
-		wasmgen analyse
+		wasmgen hint
 
-Analyse contract
+Contract hint
 		`,
 		Flags: []cli.Flag{
 			contractCodeFlag,
@@ -293,7 +293,12 @@ func decompress(ctx *cli.Context) error {
 	return nil
 }
 
-func analyse(ctx *cli.Context) error {
-	fmt.Printf("analyse")
+func hint(ctx *cli.Context) error {
+	fmt.Printf("hint\n")
+	codePath = ctx.String(contractCodeFlag.Name)
+	fileContent = readfile(codePath)
+	cmd([]string{codePath})
+	jsonres, _ := json.Marshal(varLists)
+	fmt.Printf("vallist %s\n", jsonres)
 	return nil
 }
