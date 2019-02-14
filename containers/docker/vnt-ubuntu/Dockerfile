@@ -93,4 +93,4 @@ EXPOSE 8578
 EXPOSE 30334
 
 
-ENTRYPOINT ["sh","/run.sh"]
+ENTRYPOINT ["bash","/run.sh"]

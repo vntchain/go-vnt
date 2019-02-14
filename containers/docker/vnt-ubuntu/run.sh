@@ -3,7 +3,7 @@ killall gvnt
 rm -rf /nodedir
 peernumber=$1
 echo $peernumber
-if [ $peernumber -lt 4 ]  
+if [[ $peernumber -lt 4 ]]  
 then  
      peernumber=4
 fi   
@@ -79,10 +79,8 @@ do
     let rpcport=baserpcport+i
     if [ $i -eq 0 ]  
     then  
-      echo "==0"
       nohup /gvnt --verbosity 5 --networkid 1015 --datadir  ${basenodedir}${i} --port ${port} --rpcport ${rpcport} --unlock ${keystore[${i}]} --password /password --mine > /tmp/node${i}.log 2>&1 &  
     else  
-      echo "!0"
       let j=i-1
       nohup /gvnt --verbosity 5 --networkid 1015 --datadir  ${basenodedir}${i} --port ${port} --rpcport ${rpcport} --unlock ${keystore[${i}]} --password /password --vntbootnode ${p2paddress[${j}]} --mine > /tmp/node${i}.log 2>&1 &        
     fi   
