@@ -893,8 +893,8 @@ func (pm *ProtocolManager) resetBftPeerLoop() {
 			}
 
 		case <-ticker.C:
-			log.Debug("resetBftPeerLoop, time to reset bft peer")
-			pm.resetBftPeer(urls)
+			// log.Debug("resetBftPeerLoop, time to reset bft peer")
+			// pm.resetBftPeer(urls)
 		}
 	}
 
