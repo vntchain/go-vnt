@@ -13,20 +13,20 @@ import (
 
 	"crypto/ecdsa"
 
-	"github.com/vntchain/go-vnt/crypto"
 	ds "github.com/ipfs/go-datastore"
 	libp2p "github.com/libp2p/go-libp2p"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
+	"github.com/vntchain/go-vnt/crypto"
 	"github.com/whyrusleeping/base32"
 	// crypto "github.com/libp2p/go-libp2p-crypto"
 	p2phost "github.com/libp2p/go-libp2p-host"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	dhtopts "github.com/libp2p/go-libp2p-kad-dht/opts"
 	// net "github.com/libp2p/go-libp2p-net"
-	"github.com/vntchain/go-vnt/log"
 	peer "github.com/libp2p/go-libp2p-peer"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr-net"
+	"github.com/vntchain/go-vnt/log"
 
 	// "github.com/vntchain/go-vnt/crypto"
 
