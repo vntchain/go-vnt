@@ -77,8 +77,6 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.KeyStoreDirFlag,
 			utils.NoUSBFlag,
 			utils.NetworkIdFlag,
-			utils.TestnetFlag,
-			utils.RinkebyFlag,
 			utils.SyncModeFlag,
 			utils.GCModeFlag,
 			utils.EthStatsURLFlag,
@@ -86,12 +84,6 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.LightServFlag,
 			utils.LightPeersFlag,
 			utils.LightKDFFlag,
-		},
-	},
-	{Name: "DEVELOPER CHAIN",
-		Flags: []cli.Flag{
-			utils.DeveloperFlag,
-			utils.DeveloperPeriodFlag,
 		},
 	},
 	{
