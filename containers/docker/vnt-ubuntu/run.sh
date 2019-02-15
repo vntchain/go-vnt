@@ -85,3 +85,5 @@ do
       nohup /gvnt --verbosity 5 --networkid 1015 --datadir  ${basenodedir}${i} --port ${port} --rpcport ${rpcport} --unlock ${keystore[${i}]} --password /password --vntbootnode ${p2paddress[${j}]} --mine > /tmp/node${i}.log 2>&1 &        
     fi   
 done
+
+tail -f /tmp/node0.log
