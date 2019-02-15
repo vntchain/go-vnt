@@ -1,8 +1,7 @@
 {
 	"comment": "",
 	"ignore": "test",
-	"package": [
-		{
+	"package": [{
 			"checksumSHA1": "b5bkSc2hlmUV7PlLY6JlLwiJpiE=",
 			"path": "bazil.org/fuse",
 			"revision": "371fbbdaa8987b715bdd21d6adc4c9b20155f748",
@@ -157,24 +156,6 @@
 			"path": "github.com/gizak/termui",
 			"revision": "991cd3d3809135dc24daf6188dc6edcaf3d7d2d9",
 			"revisionTime": "2017-01-17T22:23:42Z"
-		},
-		{
-			"checksumSHA1": "s6z/drkapA3WN4c1G7qwZ4boAYI=",
-			"path": "github.com/go-clang/bootstrap/clang",
-			"revision": "46910c2bedc84a20805f10c1c0a45c72b4347107",
-			"revisionTime": "2016-12-04T10:46:21Z"
-		},
-		{
-			"checksumSHA1": "G3WJmQZX7xD2FEXhUqIkBqUHE40=",
-			"path": "github.com/go-clang/gen",
-			"revision": "33ed5199cae3b5a277b85d83b8b4387fc1880671",
-			"revisionTime": "2018-03-01T17:04:06Z"
-		},
-		{
-			"checksumSHA1": "Xq8t560VlkF5cPvf+fbIy1gGAWc=",
-			"path": "github.com/go-clang/gen/clang",
-			"revision": "33ed5199cae3b5a277b85d83b8b4387fc1880671",
-			"revisionTime": "2018-03-01T17:04:06Z"
 		},
 		{
 			"checksumSHA1": "gxV/cPPLkByTdY8y172t7v4qcZA=",
