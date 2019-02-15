@@ -10,6 +10,8 @@ import (
 	"github.com/vntchain/go-vnt/accounts/abi"
 )
 
+var KeyPos [][]int
+
 var index = 0
 
 func cmd(args []string) int {

@@ -62,8 +62,8 @@ func isKey(input string, structnames string) bool {
 	if err != nil {
 		return flag
 	}
-	res := reg.FindAllString(input, -1)
-	if len(res) == 0 {
+	idx := reg.FindAllStringIndex(input, -1)
+	if len(idx) == 0 {
 		return flag
 	}
 	flag = true

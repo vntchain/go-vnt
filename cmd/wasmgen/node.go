@@ -14,6 +14,7 @@ var varLists = abi.Root{
 	Root: make(map[string]*abi.Node),
 }
 
+
 type value struct {
 	Path     string
 	TypeInfo string

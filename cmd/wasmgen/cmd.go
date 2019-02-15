@@ -297,8 +297,14 @@ func hint(ctx *cli.Context) error {
 	fmt.Printf("hint\n")
 	codePath = ctx.String(contractCodeFlag.Name)
 	fileContent = readfile(codePath)
+	code, err := ioutil.ReadFile(codePath)
+	if err != nil {
+		return err
+	}
 	cmd([]string{codePath})
 	jsonres, _ := json.Marshal(varLists)
 	fmt.Printf("vallist %s\n", jsonres)
+	hint := newHint(code)
+	hint.contructorCheck()
 	return nil
 }
