@@ -63,7 +63,6 @@ var (
 		utils.BootnodesV5Flag,
 		utils.DataDirFlag,
 		utils.KeyStoreDirFlag,
-		utils.NoUSBFlag,
 		// utils.EthashCacheDirFlag,
 		// utils.EthashCachesInMemoryFlag,
 		// utils.EthashCachesOnDiskFlag,
@@ -158,7 +157,6 @@ func init() {
 		monitorCommand,
 		// See accountcmd.go:
 		accountCommand,
-		walletCommand,
 		// See consolecmd.go:
 		consoleCommand,
 		attachCommand,
