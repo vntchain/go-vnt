@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
+	"strconv"
 	"testing"
 
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/vntdb"
-	"strconv"
 )
 
 var (
@@ -192,7 +192,7 @@ func TestConvertToStruct(t *testing.T) {
 	}
 
 	var bounty1 Bounty
-	err = convertToStruct(BOUNTYPREFIX, electionAddr, &bounty1, getFn)
+	err = convertToStruct(BOUNTYPREFIX, ContractAddr, &bounty1, getFn)
 	if err != nil {
 		t.Error(err)
 	}

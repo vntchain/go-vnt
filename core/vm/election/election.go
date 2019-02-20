@@ -7,13 +7,13 @@ import (
 	"math/big"
 	"sort"
 	"strings"
+	"unicode"
 
 	"github.com/pkg/errors"
 	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/core/vm/interface"
+	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/log"
-	"unicode"
 )
 
 const (
@@ -32,7 +32,7 @@ var (
 )
 
 var (
-	electionAddr = common.BytesToAddress([]byte{9})
+	ContractAddr = common.BytesToAddress([]byte{9})
 	emptyAddress = common.Address{}
 	eraTimeStamp = big.NewInt(year2019)
 
@@ -41,6 +41,20 @@ var (
 	baseBounty      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1000))
 	restTotalBounty = big.NewInt(0).Mul(big.NewInt(1e18), big.NewInt(1e9))
 )
+
+var AbiJSON = `[
+{"name":"registerWitness","inputs":[{"name":"nodeUrl","type":"bytes"},{"name":"website","type":"bytes"},{"name":"nodeName","type":"bytes"}],"outputs":[],"type":"function"},
+{"name":"unregisterWitness","inputs":[],"outputs":[],"type":"function"},
+{"name":"voteWitnesses","inputs":[{"name":"candidate","type":"address[]"}],"outputs":[],"type":"function"},
+{"name":"cancelVote","inputs":[],"outputs":[],"type":"function"},
+{"name":"startProxy","inputs":[],"outputs":[],"type":"function"},
+{"name":"stopProxy","inputs":[],"outputs":[],"type":"function"},
+{"name":"cancelProxy","inputs":[],"outputs":[],"type":"function"},
+{"name":"setProxy","inputs":[{"name":"proxy","type":"address"}],"outputs":[],"type":"function"},
+{"name":"stake","inputs":[{"name":"stakeCount","type":"uint256"}],"outputs":[],"type":"function"},
+{"name":"unStake","inputs":[],"outputs":[],"type":"function"},
+{"name":"extractOwnBounty","inputs":[],"outputs":[],"type":"function"}
+]`
 
 type Election struct{}
 
@@ -176,25 +190,13 @@ func (e *Election) RequiredGas(input []byte) uint64 {
 }
 
 func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
-	nonce := ctx.GetStateDb().GetNonce(electionAddr)
+	nonce := ctx.GetStateDb().GetNonce(ContractAddr)
 	if nonce == 0 {
 		setRestBounty(ctx.GetStateDb(), Bounty{restTotalBounty})
 	}
-	ctx.GetStateDb().SetNonce(electionAddr, nonce+1)
-	abiJSON := `[
-{"inputs":[{"name":"nodeUrl","type":"bytes"},{"name":"website","type":"bytes"},{"name":"nodeName","type":"bytes"}],"name":"registerWitness","outputs":[],"type":"function"},
-{"inputs":[],"name":"unregisterWitness","outputs":[],"type":"function"},
-{"inputs":[{"name":"candidate","type":"address[]"}],"name":"voteWitnesses","outputs":[],"type":"function"},
-{"inputs":[],"name":"cancelVote","outputs":[],"type":"function"},
-{"inputs":[],"name":"startProxy","outputs":[],"type":"function"},
-{"inputs":[],"name":"stopProxy","outputs":[],"type":"function"},
-{"inputs":[],"name":"cancelProxy","outputs":[],"type":"function"},
-{"inputs":[{"name":"proxy","type":"address"}],"name":"setProxy","outputs":[],"type":"function"},
-{"inputs":[{"name":"stakeCount","type":"uint256"}],"name":"stake","outputs":[],"type":"function"},
-{"inputs":[],"name":"unStake","outputs":[],"type":"function"},
-{"inputs":[],"name":"extractOwnBounty","outputs":[],"type":"function"}
-]`
-	electionABI, err := abi.JSON(strings.NewReader(abiJSON))
+	ctx.GetStateDb().SetNonce(ContractAddr, nonce+1)
+
+	electionABI, err := abi.JSON(strings.NewReader(AbiJSON))
 	if err != nil {
 		return nil, err
 	}
@@ -840,7 +842,7 @@ func GetAllCandidates(stateDB inter.StateDB, sorted bool) CandidateList {
 // GetVoter returns a voter's information
 func GetVoter(stateDB inter.StateDB, addr common.Address) *Voter {
 	getFromDB := func(key common.Hash) common.Hash {
-		return stateDB.GetState(electionAddr, key)
+		return stateDB.GetState(ContractAddr, key)
 	}
 
 	v := getVoterFrom(addr, getFromDB)
@@ -850,7 +852,7 @@ func GetVoter(stateDB inter.StateDB, addr common.Address) *Voter {
 // GetStake returns a user's information
 func GetStake(stateDB inter.StateDB, addr common.Address) *Stake {
 	getFromDB := func(key common.Hash) common.Hash {
-		return stateDB.GetState(electionAddr, key)
+		return stateDB.GetState(ContractAddr, key)
 	}
 
 	s := getStakeFrom(addr, getFromDB)
@@ -880,8 +882,8 @@ func GrantBounty(stateDB inter.StateDB, grantAmount *big.Int) (*big.Int, error) 
 
 // QueryRestVNTBounty returns the value of RestTotalBounty.
 func QueryRestVNTBounty(stateDB inter.StateDB) *big.Int {
-	if !stateDB.Exist(electionAddr) {
-		stateDB.SetNonce(electionAddr, 1)
+	if !stateDB.Exist(ContractAddr) {
+		stateDB.SetNonce(ContractAddr, 1)
 		setRestBounty(stateDB, Bounty{restTotalBounty})
 		return restTotalBounty
 	}

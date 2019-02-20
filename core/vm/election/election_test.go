@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
+	"strconv"
 	"testing"
 
 	"strconv"
@@ -79,7 +80,7 @@ func getAllVoter(db inter.StateDB) []*Voter {
 	voters := make(map[common.Hash]common.Hash)
 	addrs := make(map[common.Address]struct{})
 
-	db.ForEachStorage(electionAddr, func(key common.Hash, value common.Hash) bool {
+	db.ForEachStorage(ContractAddr, func(key common.Hash, value common.Hash) bool {
 		if key[0] == VOTERPREFIX {
 			voters[key] = value
 
