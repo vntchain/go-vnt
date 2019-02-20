@@ -23,11 +23,14 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 
 	hubble "github.com/vntchain/go-vnt"
+	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/common/hexutil"
 	"github.com/vntchain/go-vnt/core/types"
+	"github.com/vntchain/go-vnt/core/vm/election"
 	"github.com/vntchain/go-vnt/rlp"
 	"github.com/vntchain/go-vnt/rpc"
 )
@@ -485,4 +488,46 @@ func toCallArg(msg hubble.CallMsg) interface{} {
 		arg["gasPrice"] = (*hexutil.Big)(msg.GasPrice)
 	}
 	return arg
+}
+
+// NewElectionStakeTx returns a unsigned transaction of stake VNT token.
+//
+// You should check parameters before to make sure transaction executed success.
+func (ec *Client) NewElectionStakeTx(ctx context.Context, from common.Address, stakeCnt uint64, gasLimit uint64, gasPrice *big.Int) (*types.Transaction, error) {
+	// 	Generate tx txData
+	electAbi, err := getElectionABI()
+	if err != nil {
+		return nil, err
+	}
+	txData, err := packInput(electAbi, "stake", big.NewInt(0).SetUint64(stakeCnt))
+	if err != nil {
+		return nil, err
+	}
+
+	// 	Query nonce
+	nonce, err := ec.NonceAt(ctx, from, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return types.NewTransaction(nonce, election.ContractAddr, common.Big0, gasLimit, gasPrice, txData), nil
+}
+
+func getElectionABI() (abi.ABI, error) {
+	return abi.JSON(strings.NewReader(election.AbiJSON))
+}
+
+func packInput(abiobj abi.ABI, name string, args ...interface{}) ([]byte, error) {
+	abires := abiobj
+	var res []byte
+	var err error
+	if len(args) == 0 {
+		res, err = abires.Pack(name)
+	} else {
+		res, err = abires.Pack(name, args...)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
