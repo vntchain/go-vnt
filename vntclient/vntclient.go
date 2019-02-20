@@ -490,22 +490,26 @@ func toCallArg(msg hubble.CallMsg) interface{} {
 	return arg
 }
 
-// NewElectionStakeTx returns a unsigned transaction of stake VNT token.
+// NewElectionTx returns a unsigned transaction of calling election contract.
 //
-// You should check parameters before to make sure transaction executed success.
-func (ec *Client) NewElectionStakeTx(ctx context.Context, from common.Address, stakeCnt uint64, gasLimit uint64, gasPrice *big.Int) (*types.Transaction, error) {
+// It support all operation in election contract, such as stake/unStake, vote/cancelVote, more operation see election
+// abi: github.com/vntchain/go-vnt/core/vm/election.AbiJSON .
+//
+// parameter sender only used for to get nonce of the account who send this transaction. funcName name is the operation
+// what you want to do, and args is the parameters of funcName in election contract.
+func (ec *Client) NewElectionTx(ctx context.Context, sender common.Address, gasLimit uint64, gasPrice *big.Int, funcName string, args ...interface{}) (*types.Transaction, error) {
 	// 	Generate tx txData
 	electAbi, err := getElectionABI()
 	if err != nil {
 		return nil, err
 	}
-	txData, err := packInput(electAbi, "stake", big.NewInt(0).SetUint64(stakeCnt))
+	txData, err := packInput(electAbi, funcName, args...)
 	if err != nil {
 		return nil, err
 	}
 
 	// 	Query nonce
-	nonce, err := ec.NonceAt(ctx, from, nil)
+	nonce, err := ec.NonceAt(ctx, sender, nil)
 	if err != nil {
 		return nil, err
 	}
