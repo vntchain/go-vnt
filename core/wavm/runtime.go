@@ -411,10 +411,11 @@ func (wavm *Wavm) ExecCodeWithFuncName(input []byte) ([]byte, error) {
 					mem := VM.Memory.GetPtr(res)
 					bigint := utils.GetU256(mem)
 					return abi.U256(bigint), nil
-				} else {
+				} else if output == abi.UintTy {
 					return abi.U256(new(big.Int).SetUint64(res)), nil
+				} else {
+					return abi.U256(big.NewInt(int64(res))), nil
 				}
-
 			case abi.BoolTy:
 				if res == 1 {
 					return mat.PaddedBigBytes(common.Big1, 32), nil

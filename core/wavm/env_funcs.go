@@ -258,14 +258,14 @@ func (ef *EnvFunctions) fromU64(proc *exec.WavmProcess, amount uint64) uint64 {
 	return uint64(proc.SetBytes([]byte(str)))
 }
 
-func (ef *EnvFunctions) toI64(proc *exec.WavmProcess, strIdx uint64) int64 {
+func (ef *EnvFunctions) toI64(proc *exec.WavmProcess, strIdx uint64) uint64 {
 	ef.ctx.GasCounter.GasToI64()
 	b := proc.ReadAt(strIdx)
 	amount, err := strconv.Atoi(string(b))
 	if err != nil {
 		return 0
 	} else {
-		return int64(amount)
+		return uint64(amount)
 	}
 }
 
