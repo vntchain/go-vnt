@@ -919,8 +919,6 @@ func SetShhConfig(ctx *cli.Context, stack *node.Node, cfg *whisper.Config) {
 // SetEthConfig applies vnt-related command line flags to the config.
 func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *vnt.Config) {
 	// Avoid conflicting network flags
-	checkExclusive(ctx, SyncModeFlag)
-	checkExclusive(ctx, LightServFlag)
 	checkExclusive(ctx, LightServFlag, SyncModeFlag, "light")
 
 	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
