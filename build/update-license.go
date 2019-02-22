@@ -62,6 +62,7 @@ var (
 		"cmd/vntkey/changepassphrase.go",
 		"accounts/usbwallet/",
 		"cmd/faucet",
+		"signer/rules/deps/bignumber.js",
 	}
 
 	// paths with this prefix are licensed as GPL. all other files are LGPL.
