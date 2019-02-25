@@ -277,7 +277,7 @@ var (
 	}
 	TargetGasLimitFlag = cli.Uint64Flag{
 		Name:  "targetgaslimit",
-		Usage: "Target gas limit sets the artificial target gas floor for the blocks to mine",
+		Usage: "Target gas limit sets the artificial target gas floor for the blocks to produce",
 		Value: params.GenesisGasLimit,
 	}
 	EtherbaseFlag = cli.StringFlag{
@@ -287,12 +287,12 @@ var (
 	}
 	GasPriceFlag = BigFlag{
 		Name:  "gasprice",
-		Usage: "Minimal gas price to accept for mining a transactions",
+		Usage: "Minimal gas price to accept for producing a transactions",
 		Value: vnt.DefaultConfig.GasPrice,
 	}
 	ExtraDataFlag = cli.StringFlag{
 		Name:  "extradata",
-		Usage: "Block extra data set by the miner (default = client version)",
+		Usage: "Block extra data set by the block producer (default = client version)",
 	}
 	// Account settings
 	UnlockedAccountFlag = cli.StringFlag{
