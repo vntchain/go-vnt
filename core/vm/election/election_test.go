@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"testing"
 
-	"strconv"
-
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/state"
 	inter "github.com/vntchain/go-vnt/core/vm/interface"
@@ -80,7 +78,7 @@ func getAllVoter(db inter.StateDB) []*Voter {
 	voters := make(map[common.Hash]common.Hash)
 	addrs := make(map[common.Address]struct{})
 
-	db.ForEachStorage(ContractAddr, func(key common.Hash, value common.Hash) bool {
+	db.ForEachStorage(contractAddr, func(key common.Hash, value common.Hash) bool {
 		if key[0] == VOTERPREFIX {
 			voters[key] = value
 
@@ -307,7 +305,7 @@ func TestVoteTooManyCandidates(t *testing.T) {
 	addr := common.BytesToAddress([]byte{111})
 
 	var candidates []common.Address
-	for i := 1; i <= voteLimit+1; i++ {
+	for i := 1; i <= VoteLimit+1; i++ {
 		candidate := common.BytesToAddress([]byte{byte(i)})
 		candidates = append(candidates, candidate)
 		website := "www.testnet.info" + strconv.Itoa(i)
@@ -315,7 +313,7 @@ func TestVoteTooManyCandidates(t *testing.T) {
 		c.registerWitness(candidate, url, []byte(website), []byte(name))
 	}
 	err := c.voteWitnesses(addr, candidates)
-	if err.Error() != fmt.Sprintf("you voted too many candidates: the limit is %d, you voted %d", voteLimit, len(candidates)) {
+	if err.Error() != fmt.Sprintf("you voted too many candidates: the limit is %d, you voted %d", VoteLimit, len(candidates)) {
 		t.Error(err)
 	}
 }

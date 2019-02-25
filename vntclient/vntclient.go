@@ -514,7 +514,7 @@ func (ec *Client) NewElectionTx(ctx context.Context, sender common.Address, gasL
 		return nil, err
 	}
 
-	return types.NewTransaction(nonce, election.ContractAddr, common.Big0, gasLimit, gasPrice, txData), nil
+	return types.NewTransaction(nonce, common.HexToAddress(election.ContractAddr), common.Big0, gasLimit, gasPrice, txData), nil
 }
 
 func getElectionABI() (abi.ABI, error) {
