@@ -22,7 +22,7 @@ var Modules = map[string]string{
 	"chequebook": Chequebook_JS,
 	"debug":      Debug_JS,
 	"core":       Core_JS,
-	"bp":      	  Bp_JS,
+	"bp":         Bp_JS,
 	"net":        Net_JS,
 	"personal":   Personal_JS,
 	"rpc":        RPC_JS,
@@ -406,8 +406,8 @@ vnt._extend({
 			call: 'bp_stop'
 		}),
 		new vnt._extend.Method({
-			name: 'setEtherbase',
-			call: 'bp_setEtherbase',
+			name: 'setCoinbase',
+			call: 'bp_setCoinbase',
 			params: 1,
 			inputFormatter: [vnt._extend.formatters.inputAddressFormatter]
 		}),

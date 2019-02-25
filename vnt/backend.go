@@ -127,7 +127,7 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*VNT, error
 		shutdownChan:   make(chan bool),
 		networkId:      config.NetworkId,
 		gasPrice:       config.GasPrice,
-		vnterbase:      config.Etherbase,
+		vnterbase:      config.Coinbase,
 		bloomRequests:  make(chan chan *bloombits.Retrieval),
 		bloomIndexer:   NewBloomIndexer(chainDb, params.BloomBitsBlocks),
 	}
@@ -301,20 +301,20 @@ func (s *VNT) Vnterbase() (eb common.Address, err error) {
 			s.vnterbase = vnterbase
 			s.lock.Unlock()
 
-			log.Info("Etherbase automatically configured", "address", vnterbase)
+			log.Info("Coinbase automatically configured", "address", vnterbase)
 			return vnterbase, nil
 		}
 	}
 	return common.Address{}, fmt.Errorf("vnterbase must be explicitly specified")
 }
 
-// SetEtherbase sets the mining reward address.
-func (s *VNT) SetEtherbase(vnterbase common.Address) {
+// SetCoinbase sets the mining reward address.
+func (s *VNT) SetCoinbase(vnterbase common.Address) {
 	s.lock.Lock()
 	s.vnterbase = vnterbase
 	s.lock.Unlock()
 
-	s.miner.SetEtherbase(vnterbase)
+	s.miner.SetCoinbase(vnterbase)
 }
 
 func (s *VNT) StartMining(local bool) error {
@@ -327,7 +327,7 @@ func (s *VNT) StartMining(local bool) error {
 	if dpos, ok := s.engine.(*dpos.Dpos); ok {
 		wallet, err := s.accountManager.Find(accounts.Account{Address: eb})
 		if wallet == nil || err != nil {
-			log.Error("Etherbase account unavailable locally", "err", err)
+			log.Error("Coinbase account unavailable locally", "err", err)
 			return fmt.Errorf("signer missing: %v", err)
 		}
 		dpos.Authorize(eb, wallet.SignHash)
