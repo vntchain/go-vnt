@@ -53,13 +53,8 @@ func NewPublicVntAPI(e *VNT) *PublicVntAPI {
 }
 
 // Coinbase is the address that mining rewards will be send to
-func (api *PublicVntAPI) Vnterbase() (common.Address, error) {
-	return api.e.Vnterbase()
-}
-
-// Coinbase is the address that mining rewards will be send to (alias for Coinbase)
 func (api *PublicVntAPI) Coinbase() (common.Address, error) {
-	return api.Vnterbase()
+	return api.e.Coinbase()
 }
 
 // PublicMinerAPI provides an API to control the miner.
