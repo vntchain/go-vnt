@@ -535,3 +535,31 @@ func packInput(abiobj abi.ABI, name string, args ...interface{}) ([]byte, error)
 	}
 	return res, nil
 }
+
+// StakeAt returns the stake information of the given account.
+func (ec *Client) StakeAt(ctx context.Context, account common.Address) (rpc.Stake, error) {
+	var ret rpc.Stake
+	err := ec.c.CallContext(ctx, &ret, "core_getStake", account)
+	return ret, err
+}
+
+// VoteAt returns the vote information of the given account.
+func (ec *Client) VoteAt(ctx context.Context, account common.Address) (rpc.Voter, error) {
+	var ret rpc.Voter
+	err := ec.c.CallContext(ctx, &ret, "core_getVoter", account)
+	return ret, err
+}
+
+// WitnessCandidates returns a list of witness candidates.
+func (ec *Client) WitnessCandidates(ctx context.Context) ([]rpc.Candidate, error) {
+	var ret []rpc.Candidate
+	err := ec.c.CallContext(ctx, &ret, "core_getAllCandidates")
+	return ret, err
+}
+
+// RestVNTBounty return a integer of the left VNT bounty in wei.
+func (ec *Client) RestVNTBounty(ctx context.Context) (*big.Int, error) {
+	var ret big.Int
+	err := ec.c.CallContext(ctx, &ret, "core_getRestVNTBounty")
+	return &ret, err
+}
