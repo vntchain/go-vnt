@@ -25,7 +25,6 @@ func (c Config) MarshalTOML() (interface{}, error) {
 		DatabaseHandles         int  `toml:"-"`
 		DatabaseCache           int
 		Etherbase               common.Address `toml:",omitempty"`
-		MinerThreads            int            `toml:",omitempty"`
 		ExtraData               hexutil.Bytes  `toml:",omitempty"`
 		GasPrice                *big.Int
 		TxPool                  core.TxPoolConfig
@@ -43,7 +42,6 @@ func (c Config) MarshalTOML() (interface{}, error) {
 	enc.DatabaseHandles = c.DatabaseHandles
 	enc.DatabaseCache = c.DatabaseCache
 	enc.Etherbase = c.Etherbase
-	enc.MinerThreads = c.MinerThreads
 	enc.ExtraData = c.ExtraData
 	enc.GasPrice = c.GasPrice
 	enc.TxPool = c.TxPool
@@ -102,9 +100,6 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 	}
 	if dec.Etherbase != nil {
 		c.Etherbase = *dec.Etherbase
-	}
-	if dec.MinerThreads != nil {
-		c.MinerThreads = *dec.MinerThreads
 	}
 	if dec.ExtraData != nil {
 		c.ExtraData = *dec.ExtraData

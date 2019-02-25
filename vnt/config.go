@@ -80,10 +80,9 @@ type Config struct {
 	TrieTimeout        time.Duration
 
 	// Mining-related options
-	Etherbase    common.Address `toml:",omitempty"`
-	MinerThreads int            `toml:",omitempty"`
-	ExtraData    []byte         `toml:",omitempty"`
-	GasPrice     *big.Int
+	Etherbase common.Address `toml:",omitempty"`
+	ExtraData []byte         `toml:",omitempty"`
+	GasPrice  *big.Int
 
 	// Transaction pool options
 	TxPool core.TxPoolConfig
