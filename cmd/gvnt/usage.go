@@ -167,7 +167,7 @@ var AppHelpFlagGroups = []flagGroup{
 		Name: "BLOCK PRODUCE",
 		Flags: []cli.Flag{
 			utils.ProducingEnabledFlag,
-			utils.EtherbaseFlag,
+			utils.CoinbaseFlag,
 			utils.TargetGasLimitFlag,
 			utils.GasPriceFlag,
 			utils.ExtraDataFlag,
