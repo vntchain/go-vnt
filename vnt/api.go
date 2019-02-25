@@ -78,7 +78,7 @@ func NewPublicMinerAPI(e *VNT) *PublicMinerAPI {
 }
 
 // Mining returns an indication if this node is currently mining.
-func (api *PublicMinerAPI) Mining() bool {
+func (api *PublicMinerAPI) Producing() bool {
 	return api.e.IsMining()
 }
 
