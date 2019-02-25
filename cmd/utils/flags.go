@@ -265,10 +265,10 @@ var (
 		Usage: "Number of trie node generations to keep in memory",
 		Value: int(state.MaxTrieCacheGen),
 	}
-	// Miner settings
-	MiningEnabledFlag = cli.BoolFlag{
-		Name:  "mine",
-		Usage: "Enable mining",
+	// Producer settings
+	ProducingEnabledFlag = cli.BoolFlag{
+		Name:  "produce",
+		Usage: "Enable block producing",
 	}
 	MinerThreadsFlag = cli.IntFlag{
 		Name:  "minerthreads",
