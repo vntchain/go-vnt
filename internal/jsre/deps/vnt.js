@@ -5282,8 +5282,8 @@ var properties = function () {
             getter: 'core_coinbase'
         }),
         new Property({
-            name: 'mining',
-            getter: 'core_mining'
+            name: 'producing',
+            getter: 'core_producing'
         }),
         new Property({
             name: 'syncing',
