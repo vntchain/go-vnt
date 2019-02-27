@@ -9,9 +9,9 @@ import (
 	"io/ioutil"
 	"time"
 
+	inet "github.com/libp2p/go-libp2p-net"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/rlp"
-	inet "github.com/libp2p/go-libp2p-net"
 )
 
 type MsgReadWriter interface {
@@ -149,10 +149,11 @@ func (msg *Msg) GetBodySize() uint32 {
 
 // VNTMessenger vnt chain message readwriter
 type VNTMessenger struct {
-	protocol Protocol
-	in       chan Msg
-	err      chan error
-	w        inet.Stream
+	protocol    Protocol
+	in          chan Msg
+	err         chan error
+	w           inet.Stream
+	peerPointer *Peer
 }
 
 // WriteMsg implement MsgReadWriter interface
@@ -172,7 +173,8 @@ func (rw *VNTMessenger) WriteMsg(msg Msg) (err error) {
 
 	_, err = rw.w.Write(m)
 	if err != nil {
-		log.Error("WriteMsg()", "write msg error", err)
+		log.Error("WriteMsg()", "write msg error", err, "underlay will close this connection which remotePID", rw.peerPointer.RemoteID())
+		rw.peerPointer.err <- err
 		return err
 	}
 	return nil

@@ -92,6 +92,9 @@ func newPeer(conn *Stream) *Peer {
 		err:       make(chan error),
 		messenger: m,
 	}
+	for _, msger := range p.messenger {
+		msger.peerPointer = p
+	}
 
 	return p
 }
