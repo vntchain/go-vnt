@@ -162,6 +162,9 @@ func (rw *VNTMessenger) WriteMsg(msg Msg) (err error) {
 	//	return newPeerError(errInvalidMsgCode, "not handled")
 	//}
 	// 暂时先不管主动关闭需要告知对方的情况，目前聚焦于发送消息这件基本工作
+
+	defer fmt.Println("WriteMsg exit")
+
 	msgHeaderByte := msg.Header[:]
 	msgBodyByte, err := json.Marshal(msg.Body)
 	if err != nil {

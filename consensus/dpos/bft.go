@@ -2,13 +2,14 @@ package dpos
 
 import (
 	"fmt"
-	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/core/types"
-	"github.com/vntchain/go-vnt/log"
 	"math/big"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/vntchain/go-vnt/common"
+	"github.com/vntchain/go-vnt/core/types"
+	"github.com/vntchain/go-vnt/log"
 )
 
 // BFT step
@@ -261,6 +262,8 @@ func (b *BftManager) startCommit(prePreMsg *types.PreprepareMsg) error {
 // sendMsg only witness send bft message.
 // Caller make sure has the newRoundRWLock.
 func (b *BftManager) sendMsg(msg types.ConsensusMsg) {
+	log.Trace("bft sendMsg start")
+	defer log.Trace("bft sendMsg success")
 	if _, ok := b.witnessList[b.coinBase]; ok {
 		b.sendBftMsg(msg)
 	}
