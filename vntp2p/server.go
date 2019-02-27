@@ -56,41 +56,27 @@ const (
 )
 
 type Config struct {
-	PrivateKey *ecdsa.PrivateKey `toml:"-"`
-
-	MaxPeers int
-
+	PrivateKey      *ecdsa.PrivateKey `toml:"-"`
+	MaxPeers        int
 	MaxPendingPeers int `toml:",omitempty"`
-
-	DialRatio int `toml:",omitempty"`
-
-	NoDiscovery bool
-
-	Name string `toml:"-"`
+	DialRatio       int `toml:",omitempty"`
+	NoDiscovery     bool
+	Name            string `toml:"-"`
 
 	BootstrapNodes []*Node
+	StaticNodes    []*Node
+	TrustedNodes   []*Node
 
-	StaticNodes []*Node
-
-	TrustedNodes []*Node
-
-	NetRestrict []*net.IPNet `toml:",omitempty"`
-
-	NodeDatabase string `toml:",omitempty"`
-
-	Protocols []Protocol `toml:"-"`
-
-	ListenAddr string
-
-	NAT libp2p.Option `toml:",omitempty"`
-
+	NetRestrict  []*net.IPNet `toml:",omitempty"`
+	NodeDatabase string       `toml:",omitempty"`
+	Protocols    []Protocol   `toml:"-"`
+	ListenAddr   string
+	NAT          libp2p.Option `toml:"-"`
 	// Dialer NodeDialer `toml:"-"`
-
 	// NoDial bool `toml:",omitempty"`
 
 	EnableMsgEvents bool
-
-	Logger log.Logger `toml:",omitempty"`
+	Logger          log.Logger `toml:",omitempty"`
 }
 
 type Server struct {
