@@ -176,8 +176,11 @@ func (rw *VNTMessenger) WriteMsg(msg Msg) (err error) {
 
 	_, err = rw.w.Write(m)
 	if err != nil {
-		log.Error("WriteMsg()", "write msg error", err, "underlay will close this connection which remotePID", rw.peerPointer.RemoteID())
-		rw.peerPointer.err <- err
+		log.Error("WriteMsg()", "write msg error", err)
+		if !rw.peerPointer.closed {
+			log.Info("WriteMsg()", "underlay will close this connection which remotePID", rw.peerPointer.RemoteID())
+			rw.peerPointer.err <- err
+		}
 		return err
 	}
 	return nil

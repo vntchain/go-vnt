@@ -68,6 +68,7 @@ type Peer struct {
 	log       log.Logger
 	events    *event.Feed
 	err       chan error
+	closed    bool
 	messenger map[string]*VNTMessenger // protocolName - vntMessenger
 	wg        sync.WaitGroup
 	// need to add wg
@@ -90,6 +91,7 @@ func newPeer(conn *Stream) *Peer {
 		rw:        conn.Conn,
 		log:       log.New(),
 		err:       make(chan error),
+		closed:    false,
 		messenger: m,
 	}
 	for _, msger := range p.messenger {
@@ -186,7 +188,9 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 			p.wg.Add(1)
 			err := proto.Run(p, m)
 			log.Info("yhx-test", "run protocol error log", err)
-			p.err <- err
+			if !p.closed {
+				p.err <- err
+			}
 			p.wg.Done()
 		}()
 	}
@@ -194,6 +198,7 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 	err = <-p.err
 	remoteRequested = true
 
+	p.closed = true
 	p.rw.Close()
 	//log.Info("yhx-test remote peer request close, but we need to wait for other protocol", "peerid", p.RemoteID())
 	//p.wg.Wait()
