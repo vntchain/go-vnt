@@ -18,11 +18,11 @@ type function interface {
 
 type compiledFunction struct {
 	code           []byte
-	branchTables   []*vnt.BranchTable  // edited by vnt
-	maxDepth       int  // maximum stack depth reached while executing the function body
-	totalLocalVars int  // number of local variables used by the function
-	args           int  // number of arguments the function accepts
-	returns        bool // whether the function returns a value
+	branchTables   []*vnt.BranchTable // edited by vnt
+	maxDepth       int                // maximum stack depth reached while executing the function body
+	totalLocalVars int                // number of local variables used by the function
+	args           int                // number of arguments the function accepts
+	returns        bool               // whether the function returns a value
 }
 
 type goFunction struct {
@@ -80,6 +80,8 @@ func (fn goFunction) call(vm *VM, index int64) {
 }
 
 func (compiled compiledFunction) call(vm *VM, index int64) {
+	vm.recursiveCallDepth++
+	defer func() { vm.recursiveCallDepth-- }()
 	newStack := make([]uint64, compiled.maxDepth)
 	locals := make([]uint64, compiled.totalLocalVars)
 
