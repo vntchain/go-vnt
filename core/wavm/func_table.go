@@ -162,7 +162,7 @@ func (ef *EnvFunctions) getFuncTable() map[string]wasm.Function {
 			Host: reflect.ValueOf(ef.GetBalanceFromAddress),
 			Sig: &wasm.FunctionSig{
 				ParamTypes:  []wasm.ValueType{wasm.ValueTypeI32},
-				ReturnTypes: []wasm.ValueType{wasm.ValueTypeI64},
+				ReturnTypes: []wasm.ValueType{wasm.ValueTypeI32},
 			},
 			Body: &wasm.FunctionBody{
 				Code: []byte{},
