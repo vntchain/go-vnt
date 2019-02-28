@@ -39,19 +39,6 @@
                },
                "tests": [
                     {
-                         "function": "GetBalanceFromAddress",
-                         "input": [
-                              {
-                                   "data": "0xaaa",
-                                   "type": "address"
-                              }
-                         ],
-                         "wanted": {
-                              "data": "0",
-                              "type": "uint256"
-                         }
-                    },
-                    {
                          "function": "GetBlockHash",
                          "input": [
                               {
@@ -59,10 +46,8 @@
                                    "type": "uint64"
                               }
                          ],
-                         "wanted": {
-                              "data": "0",
-                              "type": "uint64"
-                         }
+                         "wanted": {},
+                         "error": "recursive call limit reached 1024"
                     }
                ]
           }
