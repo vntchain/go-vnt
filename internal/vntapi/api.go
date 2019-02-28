@@ -726,7 +726,7 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 	// Get the list
 	list := election.GetAllCandidates(stateDB, true)
 	if len(list) == 0 {
-		return nil, errors.New("empty witness candidates list")
+		return nil, nil
 	}
 
 	// Transform to rpc candidate
@@ -758,7 +758,7 @@ func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Addre
 	empty := common.Address{}
 	v := election.GetVoter(stateDB, address)
 	if v == nil || v.Owner == empty {
-		return nil, fmt.Errorf("no vorter information for address: %s", address.String())
+		return nil, nil
 	}
 	voter := &rpc.Voter{
 		Owner:             v.Owner,
@@ -786,7 +786,7 @@ func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Addre
 	empty := common.Address{}
 	st := election.GetStake(stateDB, address)
 	if st == nil || st.Owner == empty {
-		return nil, fmt.Errorf("no stake information for address: %s", address.String())
+		return nil, nil
 	}
 	stake := &rpc.Stake{
 		Owner:              st.Owner,

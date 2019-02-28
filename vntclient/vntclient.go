@@ -537,16 +537,26 @@ func packInput(abiobj abi.ABI, name string, args ...interface{}) ([]byte, error)
 }
 
 // StakeAt returns the stake information of the given account.
-func (ec *Client) StakeAt(ctx context.Context, account common.Address) (rpc.Stake, error) {
-	var ret rpc.Stake
+func (ec *Client) StakeAt(ctx context.Context, account common.Address) (*rpc.Stake, error) {
+	var ret *rpc.Stake
 	err := ec.c.CallContext(ctx, &ret, "core_getStake", account)
+	if err != nil {
+		return nil, err
+	} else if ret == nil {
+		return nil, hubble.NotFound
+	}
 	return ret, err
 }
 
 // VoteAt returns the vote information of the given account.
-func (ec *Client) VoteAt(ctx context.Context, account common.Address) (rpc.Voter, error) {
-	var ret rpc.Voter
+func (ec *Client) VoteAt(ctx context.Context, account common.Address) (*rpc.Voter, error) {
+	var ret *rpc.Voter
 	err := ec.c.CallContext(ctx, &ret, "core_getVoter", account)
+	if err != nil {
+		return nil, err
+	} else if ret == nil {
+		return nil, hubble.NotFound
+	}
 	return ret, err
 }
 
@@ -554,6 +564,11 @@ func (ec *Client) VoteAt(ctx context.Context, account common.Address) (rpc.Voter
 func (ec *Client) WitnessCandidates(ctx context.Context) ([]rpc.Candidate, error) {
 	var ret []rpc.Candidate
 	err := ec.c.CallContext(ctx, &ret, "core_getAllCandidates")
+	if err != nil {
+		return nil, err
+	} else if ret == nil {
+		return nil, hubble.NotFound
+	}
 	return ret, err
 }
 
