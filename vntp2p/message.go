@@ -163,8 +163,6 @@ func (rw *VNTMessenger) WriteMsg(msg Msg) (err error) {
 	//}
 	// 暂时先不管主动关闭需要告知对方的情况，目前聚焦于发送消息这件基本工作
 
-	defer fmt.Println("WriteMsg exit")
-
 	msgHeaderByte := msg.Header[:]
 	msgBodyByte, err := json.Marshal(msg.Body)
 	if err != nil {
@@ -180,7 +178,9 @@ func (rw *VNTMessenger) WriteMsg(msg Msg) (err error) {
 		if !rw.peerPointer.closed {
 			log.Info("WriteMsg()", "underlay will close this connection which remotePID", rw.peerPointer.RemoteID())
 			rw.peerPointer.err <- err
+			log.Info("WriteMsg() send error")
 		}
+		log.Info("WriteMsg() exit")
 		return err
 	}
 	return nil
