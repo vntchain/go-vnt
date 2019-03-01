@@ -795,17 +795,21 @@ func (pm *ProtocolManager) BroadcastTxs(txs types.Transactions) {
 func (pm *ProtocolManager) BroadcastBftMsg(bftMsg types.BftMsg) {
 	peers := pm.peers.PeersForBft()
 	log.Trace("BroadcastBftMsg", "type", bftMsg.BftType, "hash", bftMsg.Msg.Hash(), "number of bft peer", len(peers))
-	defer log.Trace("BroadcastBftMsg exit")
 
-	for _, peer := range peers {
-		log.Trace("BroadcastBftMsg", "to peer", peer.id.ToString())
-		err := peer.SendBftMsg(bftMsg)
-		if err != nil {
-			log.Error("BroadcastBftMsg error", "to peer", peer.id.ToString(), "error", err)
-		} else {
-			log.Trace("BroadcastBftMsg success", "to peer", peer.id.ToString())
-		}
+	for _, p := range peers {
+		// using goroutine for each peer for peer may connection
+		go func(p *peer) {
+			log.Trace("BroadcastBftMsg", "to peer", p.id.ToString())
+			err := p.SendBftMsg(bftMsg)
+			if err != nil {
+				log.Error("BroadcastBftMsg error", "to peer", p.id.ToString(), "error", err)
+			} else {
+				log.Trace("BroadcastBftMsg success", "to peer", p.id.ToString())
+			}
+		}(p)
 	}
+
+	log.Trace("BroadcastBftMsg exit")
 }
 
 // Mined broadcast loop

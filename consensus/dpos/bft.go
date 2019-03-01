@@ -263,10 +263,10 @@ func (b *BftManager) startCommit(prePreMsg *types.PreprepareMsg) error {
 // Caller make sure has the newRoundRWLock.
 func (b *BftManager) sendMsg(msg types.ConsensusMsg) {
 	log.Trace("bft sendMsg start")
-	defer log.Trace("bft sendMsg success")
 	if _, ok := b.witnessList[b.coinBase]; ok {
 		b.sendBftMsg(msg)
 	}
+	log.Trace("bft sendMsg success")
 }
 
 func (b *BftManager) tryWriteBlockStep() error {
