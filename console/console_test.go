@@ -100,8 +100,8 @@ func newTester(t *testing.T, confOverride func(*vnt.Config)) *tester {
 		t.Fatalf("failed to create node: %v", err)
 	}
 	ethConf := &vnt.Config{
-		Genesis:   &core.Genesis{Config: params.TestChainConfig},
-		Etherbase: common.HexToAddress(testAddress),
+		Genesis:  &core.Genesis{Config: params.TestChainConfig},
+		Coinbase: common.HexToAddress(testAddress),
 	}
 	if confOverride != nil {
 		confOverride(ethConf)

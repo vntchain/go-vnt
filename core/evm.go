@@ -17,9 +17,6 @@
 package core
 
 import (
-	"bytes"
-	"encoding/binary"
-	"io"
 	"math/big"
 
 	"github.com/vntchain/go-vnt/common"
@@ -27,8 +24,8 @@ import (
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/vm/interface"
-	"github.com/vntchain/go-vnt/core/wavm/utils"
 	"github.com/vntchain/go-vnt/core/wavm"
+	"github.com/vntchain/go-vnt/core/wavm/utils"
 	"github.com/vntchain/go-vnt/params"
 )
 
@@ -134,38 +131,13 @@ func GetVM(msg Message, ctx vm.Context, statedb inter.StateDB, chainConfig *para
 	} else {
 		code = statedb.GetCode(*msg.To())
 	}
-
 	if len(code) == 0 {
 		return wavm.NewWAVM(ctx, statedb, chainConfig, vmConfig)
 	}
-
-	preLen := len("{\"Code\":\"")
-
-	var magic uint32
-	if contractCreation {
-		buffer := bytes.NewBuffer(code[preLen:])
-		magic, _ = readWasmMagic(buffer)
-	} else {
-		var err error
-		magic, err = utils.ReadMagic(code)
-		if err != nil {
-			return nil
-		}
-	}
-
-	if magic == utils.MagicBase64 || magic == utils.MAGIC {
+	magic, _ := utils.ReadMagic(code)
+	if magic == utils.MAGIC {
 		return wavm.NewWAVM(ctx, statedb, chainConfig, vmConfig)
 	} else {
 		return vm.NewEVM(ctx, statedb, chainConfig, vmConfig)
 	}
-
-}
-
-func readWasmMagic(r io.Reader) (uint32, error) {
-	var buf [4]byte
-	_, err := io.ReadFull(r, buf[:])
-	if err != nil {
-		return 0, err
-	}
-	return binary.LittleEndian.Uint32(buf[:]), nil
 }
