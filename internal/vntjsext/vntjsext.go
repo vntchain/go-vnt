@@ -267,8 +267,8 @@ vnt._extend({
 			params: 2
 		}),
 		new vnt._extend.Method({
-			name: 'setMutexProfileRate',
-			call: 'debug_setMutexProfileRate',
+			name: 'setMutexProfileFraction',
+			call: 'debug_setMutexProfileFraction',
 			params: 1
 		}),
 		new vnt._extend.Method({
