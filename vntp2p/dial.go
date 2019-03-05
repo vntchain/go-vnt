@@ -21,9 +21,10 @@ import (
 
 	"errors"
 	"fmt"
-	"github.com/vntchain/go-vnt/log"
-	"github.com/libp2p/go-libp2p-peer"
 	"time"
+
+	peer "github.com/libp2p/go-libp2p-peer"
+	"github.com/vntchain/go-vnt/log"
 )
 
 var (
@@ -163,6 +164,7 @@ func (s *taskstate) taskDone(t task) {
 
 func (s *taskstate) addStatic(n *Node) {
 	s.static[n.Id] = &dialTask{flag: staticDialedDail, target: n.Id, pid: PID}
+	log.Debug("cq-test", "staticPeer", n.Id)
 }
 
 func newTaskState(maxdail int, bootnodes []peer.ID, dht DhtTable) *taskstate {
@@ -190,7 +192,7 @@ func (t *dialTask) Do(ctx context.Context, server *Server) {
 
 	// 直接连接
 	// fmt.Println("it's time to dial")
-
+	// log.Info("cq-test", "DailTaskTarget", t.target)
 	t.dial(ctx, server, t.target, t.pid)
 }
 

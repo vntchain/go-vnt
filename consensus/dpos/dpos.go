@@ -26,7 +26,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/vntchain/go-vnt/accounts"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/common/math"
@@ -217,9 +217,9 @@ func (d *Dpos) VerifyHeader(chain consensus.ChainReader, header *types.Header, s
 
 	err := d.verifyHeader(chain, header, nil)
 	if err != nil {
-		log.Debug("VerifyHeader error", "hash", header.Hash(), "err", err.Error())
+		log.Debug("VerifyHeader error", "hash", header.Hash().String(), "err", err.Error())
 	} else {
-		log.Debug("VerifyHeader NO error", "hash", header.Hash(), "number", header.Number.Int64())
+		log.Debug("VerifyHeader NO error", "hash", header.Hash().String(), "number", header.Number.Int64())
 	}
 	return err
 }

@@ -134,7 +134,7 @@ func (p *peer) broadcast() {
 			if err := p.SendNewBlockHashes(newBlockHashesData{data}); err != nil {
 				return
 			}
-			p.Log().Trace("Announced block", "number", anno.block.Number(), "hash", anno.block.Hash(), "peer", p.id)
+			p.Log().Trace("Announced block", "number", anno.block.Number(), "hash", anno.block.Hash().String(), "peer", p.id)
 
 		case <-p.term:
 			return

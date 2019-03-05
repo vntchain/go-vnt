@@ -26,12 +26,12 @@ import (
 
 	"net"
 
-	"github.com/vntchain/go-vnt/event"
-	"github.com/vntchain/go-vnt/log"
 	inet "github.com/libp2p/go-libp2p-net"
 	libp2p "github.com/libp2p/go-libp2p-peer"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr-net"
+	"github.com/vntchain/go-vnt/event"
+	"github.com/vntchain/go-vnt/log"
 )
 
 type PeerEventType string
@@ -84,6 +84,7 @@ type Peer struct {
 	log       log.Logger
 	events    *event.Feed
 	err       chan error
+	closed    bool
 	messenger map[string]*VNTMessenger // protocolName - vntMessenger
 	wg        sync.WaitGroup
 	// need to add wg
@@ -106,7 +107,11 @@ func newPeer(conn *Stream) *Peer {
 		rw:        conn.Conn,
 		log:       log.New(),
 		err:       make(chan error),
+		closed:    false,
 		messenger: m,
+	}
+	for _, msger := range p.messenger {
+		msger.peerPointer = p
 	}
 
 	return p
@@ -199,7 +204,9 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 			p.wg.Add(1)
 			err := proto.Run(p, m)
 			log.Info("yhx-test", "run protocol error log", err)
-			p.err <- err
+			if !p.closed {
+				p.err <- err
+			}
 			p.wg.Done()
 		}()
 	}
@@ -207,10 +214,11 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 	err = <-p.err
 	remoteRequested = true
 
+	p.closed = true
 	p.rw.Close()
-	log.Info("yhx-test remote peer request close, but we need to wait for other protocol", "peerid", p.RemoteID())
-	p.wg.Wait()
-	log.Info("yhx-test wait complete!", "peerid", p.RemoteID())
+	//log.Info("yhx-test remote peer request close, but we need to wait for other protocol", "peerid", p.RemoteID())
+	//p.wg.Wait()
+	log.Info("vnt-test wait complete!", "peerid", p.RemoteID())
 
 	return remoteRequested, err
 }

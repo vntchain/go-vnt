@@ -259,6 +259,7 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 			log.Info("yhx-test", "peers", peers)
 
 		case t := <-server.addstatic:
+			log.Info("cq-test", "addStaticPeers", t.Id)
 			tasker.addStatic(t)
 		case t := <-server.removestatic:
 			tasker.removeStatic(t)
@@ -273,8 +274,8 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 
 		case pd := <-server.delpeer:
 			// A peer disconnected.
-			//log.Debug("Removing p2p peer", "peers", len(peers)-1, "req", "err", pd.err)
-			// fmt.Println("Del peer", pd.RemoteID())
+
+			log.Info("Removing p2p peer", "peers", pd.RemoteID())
 			delete(peers, pd.RemoteID())
 		}
 	}
