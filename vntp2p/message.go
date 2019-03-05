@@ -194,9 +194,8 @@ func (rw *VNTMessenger) WriteMsg(msg Msg) (err error) {
 		if !rw.peerPointer.closed {
 			log.Info("WriteMsg()", "underlay will close this connection which remotePID", rw.peerPointer.RemoteID())
 			rw.peerPointer.err <- err
-			log.Info("WriteMsg() send error")
 		}
-		log.Info("WriteMsg() exit")
+		log.Trace("WriteMsg() exit", "peer", rw.peerPointer.RemoteID())
 		return err
 	}
 	return nil
