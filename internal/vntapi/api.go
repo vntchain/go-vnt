@@ -720,10 +720,10 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 		rpcCandidates[i].Name = string(ca.Name)
 		rpcCandidates[i].Active = ca.Active
 		rpcCandidates[i].Url = string(ca.Url)
-		rpcCandidates[i].VoteCount = ca.VoteCount
-		rpcCandidates[i].TotalBounty = ca.TotalBounty
-		rpcCandidates[i].ExtractedBounty = ca.ExtractedBounty
-		rpcCandidates[i].LastExtractTime = ca.LastExtractTime
+		rpcCandidates[i].VoteCount = (*hexutil.Big)(ca.VoteCount)
+		rpcCandidates[i].TotalBounty = (*hexutil.Big)(ca.TotalBounty)
+		rpcCandidates[i].ExtractedBounty = (*hexutil.Big)(ca.ExtractedBounty)
+		rpcCandidates[i].LastExtractTime = (*hexutil.Big)(ca.LastExtractTime)
 		rpcCandidates[i].Website = string(ca.Website)
 	}
 	return rpcCandidates, nil
