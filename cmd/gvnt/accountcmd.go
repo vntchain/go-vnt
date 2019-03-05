@@ -18,8 +18,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
-
 	"github.com/vntchain/go-vnt/accounts"
 	"github.com/vntchain/go-vnt/accounts/keystore"
 	"github.com/vntchain/go-vnt/cmd/utils"
@@ -30,41 +28,6 @@ import (
 )
 
 var (
-	walletCommand = cli.Command{
-		Name:      "wallet",
-		Usage:     "Manage VNT presale wallets",
-		ArgsUsage: "",
-		Category:  "ACCOUNT COMMANDS",
-		Description: `
-    gvnt wallet import /path/to/my/presale.wallet
-
-will prompt for your password and imports your ether presale account.
-It can be used non-interactively with the --password option taking a
-passwordfile as argument containing the wallet password in plaintext.`,
-		Subcommands: []cli.Command{
-			{
-
-				Name:      "import",
-				Usage:     "Import VNT presale wallet",
-				ArgsUsage: "<keyFile>",
-				Action:    utils.MigrateFlags(importWallet),
-				Category:  "ACCOUNT COMMANDS",
-				Flags: []cli.Flag{
-					utils.DataDirFlag,
-					utils.KeyStoreDirFlag,
-					utils.PasswordFileFlag,
-					utils.LightKDFFlag,
-				},
-				Description: `
-	gvnt wallet [options] /path/to/my/presale.wallet
-
-will prompt for your password and imports your ether presale account.
-It can be used non-interactively with the --password option taking a
-passwordfile as argument containing the wallet password in plaintext.`,
-			},
-		},
-	}
-
 	accountCommand = cli.Command{
 		Name:     "account",
 		Usage:    "Manage accounts",
@@ -332,28 +295,6 @@ func accountUpdate(ctx *cli.Context) error {
 			utils.Fatalf("Could not update the account: %v", err)
 		}
 	}
-	return nil
-}
-
-func importWallet(ctx *cli.Context) error {
-	keyfile := ctx.Args().First()
-	if len(keyfile) == 0 {
-		utils.Fatalf("keyfile must be given as argument")
-	}
-	keyJSON, err := ioutil.ReadFile(keyfile)
-	if err != nil {
-		utils.Fatalf("Could not read wallet file: %v", err)
-	}
-
-	stack, _ := makeConfigNode(ctx)
-	passphrase := getPassPhrase("", false, 0, utils.MakePasswordList(ctx))
-
-	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
-	acct, err := ks.ImportPreSaleKey(keyJSON, passphrase)
-	if err != nil {
-		utils.Fatalf("%v", err)
-	}
-	fmt.Printf("Address: {%x}\n", acct.Address)
 	return nil
 }
 

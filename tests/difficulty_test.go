@@ -56,8 +56,6 @@ func TestDifficulty(t *testing.T) {
 	dt.skipLoad("difficultyMorden\\.json")
 	dt.skipLoad("difficultyOlimpic\\.json")
 
-	dt.config("Ropsten", *params.TestnetChainConfig)
-	dt.config("Morden", *params.TestnetChainConfig)
 	dt.config("Frontier", params.ChainConfig{})
 
 	dt.config("Homestead", params.ChainConfig{
@@ -68,7 +66,6 @@ func TestDifficulty(t *testing.T) {
 		ByzantiumBlock: big.NewInt(0),
 	})
 
-	dt.config("Frontier", *params.TestnetChainConfig)
 	dt.config("MainNetwork", mainnetChainConfig)
 	dt.config("CustomMainNetwork", mainnetChainConfig)
 	dt.config("difficulty.json", mainnetChainConfig)
