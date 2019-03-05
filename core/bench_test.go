@@ -25,7 +25,7 @@ import (
 
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/common/math"
-	"github.com/vntchain/go-vnt/consensus/dpos"
+	"github.com/vntchain/go-vnt/consensus/mock"
 	"github.com/vntchain/go-vnt/core/rawdb"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
@@ -152,11 +152,11 @@ func benchInsertChain(b *testing.B, disk bool, gen func(int, *BlockGen)) {
 		Alloc:  GenesisAlloc{benchRootAddr: {Balance: benchRootFunds}},
 	}
 	genesis := gspec.MustCommit(db)
-	chain, _ := GenerateChain(gspec.Config, genesis, dpos.NewFaker(), db, b.N, gen)
+	chain, _ := GenerateChain(gspec.Config, genesis, mock.NewMock(), db, b.N, gen)
 
 	// Time the insertion of the new chain.
 	// State and blocks are stored in the same DB.
-	chainman, _ := NewBlockChain(db, nil, gspec.Config, dpos.NewFaker(), vm.Config{})
+	chainman, _ := NewBlockChain(db, nil, gspec.Config, mock.NewMock(), vm.Config{})
 	defer chainman.Stop()
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -267,7 +267,7 @@ func benchReadChain(b *testing.B, full bool, count uint64) {
 		if err != nil {
 			b.Fatalf("error opening database at %v: %v", dir, err)
 		}
-		chain, err := NewBlockChain(db, nil, params.TestChainConfig, dpos.NewFaker(), vm.Config{})
+		chain, err := NewBlockChain(db, nil, params.TestChainConfig, mock.NewMock(), vm.Config{})
 		if err != nil {
 			b.Fatalf("error creating chain: %v", err)
 		}

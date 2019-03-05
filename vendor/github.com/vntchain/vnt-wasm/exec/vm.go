@@ -9,14 +9,14 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 
 	"github.com/vntchain/vnt-wasm/disasm"
 	"github.com/vntchain/vnt-wasm/exec/internal/compile"
-	"github.com/vntchain/vnt-wasm/wasm"
 	"github.com/vntchain/vnt-wasm/vnt"
+	"github.com/vntchain/vnt-wasm/wasm"
 	ops "github.com/vntchain/vnt-wasm/wasm/operators"
-	"io"
 )
 
 var (
@@ -71,6 +71,8 @@ type VM struct {
 	RecoverPanic bool
 
 	abort bool // Flag for host functions to terminate execution
+
+	recursiveCallDepth int
 }
 
 // As per the WebAssembly spec: https://github.com/WebAssembly/design/blob/27ac254c854994103c24834a994be16f74f54186/Semantics.md#linear-memory
@@ -325,6 +327,9 @@ func (vm *VM) ExecCode(fnIndex int64, args ...uint64) (rtrn interface{}, err err
 func (vm *VM) execCode(compiled compiledFunction) uint64 {
 outer:
 	for int(vm.ctx.pc) < len(vm.ctx.code) && !vm.abort {
+		if vm.recursiveCallDepth > 1024 {
+			panic(fmt.Errorf("recursive call limit reached 1024"))
+		}
 		op := vm.ctx.code[vm.ctx.pc]
 		vm.ctx.pc++
 		switch op {

@@ -153,8 +153,7 @@ type Backend interface {
 type WalletEventType int
 
 const (
-	// WalletArrived is fired when a new wallet is detected either via USB or via
-	// a filesystem event in the keystore.
+	// WalletArrived is fired when a new wallet is detected via a filesystem event in the keystore.
 	WalletArrived WalletEventType = iota
 
 	// WalletOpened is fired when a wallet is successfully opened with the purpose

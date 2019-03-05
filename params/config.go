@@ -25,10 +25,7 @@ import (
 
 // Genesis hashes to enforce below configs on.
 var (
-	// MainnetGenesisHash = common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
-	// TestnetGenesisHash = common.HexToHash("0x41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d")
-	MainnetGenesisHash = common.HexToHash("0x821dde9e8f56e68bd337ee1b3141e20cb9eb8bd36779bc394cc76de088f002cb")
-	TestnetGenesisHash = common.HexToHash("0x47c5e7c031ac0141b5da331d83f07d6a99d8a660a01b8fd8b53c820a3e2e58ab")
+	MainnetGenesisHash = common.HexToHash("0x9c62e96e22812c31f4b8b74e7556410fdc79104a237dd163f755d1ca471deaf2")
 )
 
 var (
@@ -103,7 +100,7 @@ var (
 			Period:       2,
 		},
 	}
-
+  
 	TestChainConfig = &ChainConfig{big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil}
 	TestRules       = TestChainConfig.Rules(new(big.Int))
 )

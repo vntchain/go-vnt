@@ -22,7 +22,7 @@ var Modules = map[string]string{
 	"chequebook": Chequebook_JS,
 	"debug":      Debug_JS,
 	"core":       Core_JS,
-	"bp":      	  Bp_JS,
+	"bp":         Bp_JS,
 	"net":        Net_JS,
 	"personal":   Personal_JS,
 	"rpc":        RPC_JS,
@@ -355,12 +355,6 @@ vnt._extend({
 			inputFormatter: [vnt._extend.formatters.inputTransactionFormatter, vnt._extend.utils.fromDecimal, vnt._extend.utils.fromDecimal]
 		}),
 		new vnt._extend.Method({
-			name: 'submitTransaction',
-			call: 'core_submitTransaction',
-			params: 1,
-			inputFormatter: [vnt._extend.formatters.inputTransactionFormatter]
-		}),
-		new vnt._extend.Method({
 			name: 'getRawTransaction',
 			call: 'core_getRawTransactionByHash',
 			params: 1
@@ -406,8 +400,8 @@ vnt._extend({
 			call: 'bp_stop'
 		}),
 		new vnt._extend.Method({
-			name: 'setEtherbase',
-			call: 'bp_setEtherbase',
+			name: 'setCoinbase',
+			call: 'bp_setCoinbase',
 			params: 1,
 			inputFormatter: [vnt._extend.formatters.inputAddressFormatter]
 		}),
@@ -458,11 +452,6 @@ vnt._extend({
 		new vnt._extend.Method({
 			name: 'ecRecover',
 			call: 'personal_ecRecover',
-			params: 2
-		}),
-		new vnt._extend.Method({
-			name: 'openWallet',
-			call: 'personal_openWallet',
 			params: 2
 		}),
 		new vnt._extend.Method({

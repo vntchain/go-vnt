@@ -30,6 +30,7 @@ import (
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/internal/jsre"
 	"github.com/vntchain/go-vnt/node"
+	"github.com/vntchain/go-vnt/params"
 	"github.com/vntchain/go-vnt/vnt"
 	"github.com/vntchain/go-vnt/vntp2p"
 )
@@ -99,8 +100,8 @@ func newTester(t *testing.T, confOverride func(*vnt.Config)) *tester {
 		t.Fatalf("failed to create node: %v", err)
 	}
 	ethConf := &vnt.Config{
-		Genesis:   core.DeveloperGenesisBlock(15, common.Address{}),
-		Etherbase: common.HexToAddress(testAddress),
+		Genesis:  &core.Genesis{Config: params.TestChainConfig},
+		Coinbase: common.HexToAddress(testAddress),
 	}
 	if confOverride != nil {
 		confOverride(ethConf)

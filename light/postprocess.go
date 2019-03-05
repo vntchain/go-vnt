@@ -27,11 +27,11 @@ import (
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/rawdb"
 	"github.com/vntchain/go-vnt/core/types"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/params"
 	"github.com/vntchain/go-vnt/rlp"
 	"github.com/vntchain/go-vnt/trie"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 const (
@@ -65,19 +65,11 @@ var (
 		bloomTrieRoot: common.HexToHash("6b7497a4a03e33870a2383cb6f5e70570f12b1bf5699063baf8c71d02ca90b02"),
 	}
 
-	ropstenCheckpoint = trustedCheckpoint{
-		name:          "ropsten",
-		sectionIdx:    102,
-		sectionHead:   common.HexToHash("9017ab08465cb2b2dee035ee5b817bbd7fa28e2c8d2cd903e0aed1cccb249e89"),
-		chtRoot:       common.HexToHash("f61c10a7a787a5ef15f0ae1ae6c13c64331e57e79d0466d2bd9b0c06833fe956"),
-		bloomTrieRoot: common.HexToHash("69f2ad19aa46d5213a90137b3d2c9bff8a7c9483f7170f0125096ff450c9a873"),
-	}
 )
 
 // trustedCheckpoints associates each known checkpoint with the genesis hash of the chain it belongs to
 var trustedCheckpoints = map[common.Hash]trustedCheckpoint{
 	params.MainnetGenesisHash: mainnetCheckpoint,
-	params.TestnetGenesisHash: ropstenCheckpoint,
 }
 
 var (

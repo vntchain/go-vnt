@@ -19,6 +19,7 @@ import (
 	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/core/wavm"
+	wasmContract "github.com/vntchain/go-vnt/core/wavm/contract"
 	errorsmsg "github.com/vntchain/go-vnt/core/wavm/errors"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/params"
@@ -165,7 +166,7 @@ func (t *ENVTest) newWAVM(statedb *state.StateDB, vmconfig vm.Config) vm.VM {
 	return wavm.NewWAVM(context, statedb, params.MainnetChainConfig, vmconfig)
 }
 
-func (t *ENVTest) Run(vmconfig vm.Config, data []byte, iscreate bool, test *testing.T) ([]byte, error) {
+func (t *ENVTest) Run(vmconfig vm.Config, data []byte, iscreate bool, needinit bool, test *testing.T) ([]byte, error) {
 
 	if t.statedb == nil {
 		db := vntdb.NewMemDatabase()
@@ -173,7 +174,7 @@ func (t *ENVTest) Run(vmconfig vm.Config, data []byte, iscreate bool, test *test
 		t.statedb = statedb
 	}
 	// now := T.Now()
-	ret, _, err := t.exec(t.statedb, vmconfig, data, iscreate)
+	ret, _, err := t.exec(t.statedb, vmconfig, data, iscreate, needinit)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +214,7 @@ func (t *ENVTest) Run(vmconfig vm.Config, data []byte, iscreate bool, test *test
 	return ret, nil
 }
 
-func (t *ENVTest) exec(statedb *state.StateDB, vmconfig vm.Config, data []byte, isCreated bool) ([]byte, uint64, error) {
+func (t *ENVTest) exec(statedb *state.StateDB, vmconfig vm.Config, data []byte, isCreated bool, needinit bool) ([]byte, uint64, error) {
 	wavmobj := t.newWAVM(statedb, vmconfig)
 	e := t.json.Exec
 	if isCreated {
@@ -221,7 +222,9 @@ func (t *ENVTest) exec(statedb *state.StateDB, vmconfig vm.Config, data []byte, 
 		res, addr, gas, err := wavmobj.Create(vm.AccountRef(e.Caller), data, e.GasLimit, e.Value)
 		duration := T.Since(now)
 		t.createCost += duration.Seconds()
-		t.json.Exec.Address = addr
+		if needinit == true {
+			t.json.Exec.Address = addr
+		}
 		// t.compileCost += wavmobj.(*wavm.WAVM).Wavm.VM.CompileTimeCost
 		// t.createRunCost += wavmobj.(*wavm.WAVM).CreateTimeCost
 		fmt.Printf("create gas cost %d\n", gas)
@@ -255,27 +258,43 @@ func run(t *testing.T, jspath string) {
 		for _, v := range envtest.json.TestCase {
 
 			//init
-			if v.InitCase.NeedInit == true {
-				code := wavm.WasmCode{}
-				code.Code = readFile(filepath.Join(v.Code))
-				code.Abi = readFile(filepath.Join(v.Abi))
-				parseinput := parseInput(v.InitCase.Input)
-				input := packInput(getABI(filepath.Join(v.Abi)), "", parseinput...)
-				c, err := json.Marshal(code)
-				if err != nil {
-					panic(err)
-				}
-				c = append(c, input...)
-				// pre := envtest.json.Pre[envtest.json.Exec.Address]
-				// pre.Code = c //[]byte(hexutil.Encode(c))
-				// envtest.json.Pre[envtest.json.Exec.Address] = pre
-				_, err = envtest.Run(vmconfig, c, true, t)
-				if err != nil {
-					t.Fatalf(err.Error())
-				}
-			} else {
-
+			code := wasmContract.WasmCode{}
+			code.Code = readFile(filepath.Join(v.Code))
+			code.Abi = readFile(filepath.Join(v.Abi))
+			parseinput := parseInput(v.InitCase.Input)
+			input := packInput(getABI(filepath.Join(v.Abi)), "", parseinput...)
+			c := append(code.Code, input...)
+			// fmt.Printf(hex.EncodeToString(c))
+			// pre := envtest.json.Pre[envtest.json.Exec.Address]
+			// pre.Code = c //[]byte(hexutil.Encode(c))
+			// envtest.json.Pre[envtest.json.Exec.Address] = pre
+			ret, err := envtest.Run(vmconfig, c, true, v.InitCase.NeedInit, t)
+			if err != nil {
+				t.Fatalf(err.Error())
 			}
+			if v.InitCase.NeedInit == false {
+				account := envtest.json.Pre[envtest.json.Exec.Address]
+				account.Code = ret
+				envtest.json.Pre[envtest.json.Exec.Address] = account
+				envtest.statedb = nil
+			}
+			// if v.InitCase.NeedInit == true {
+			// 	code := wasmContract.WasmCode{}
+			// 	code.Code = readFile(filepath.Join(v.Code))
+			// 	code.Abi = readFile(filepath.Join(v.Abi))
+			// 	parseinput := parseInput(v.InitCase.Input)
+			// 	input := packInput(getABI(filepath.Join(v.Abi)), "", parseinput...)
+			// 	c := append(code.Code, input...)
+			// 	// pre := envtest.json.Pre[envtest.json.Exec.Address]
+			// 	// pre.Code = c //[]byte(hexutil.Encode(c))
+			// 	// envtest.json.Pre[envtest.json.Exec.Address] = pre
+			// 	_, err = envtest.Run(vmconfig, c, true, t)
+			// 	if err != nil {
+			// 		t.Fatalf(err.Error())
+			// 	}
+			// } else {
+
+			// }
 
 			for _, testcase := range v.Tests {
 				var pack []byte
@@ -287,15 +306,22 @@ func run(t *testing.T, jspath string) {
 					pack = testcase.RawInput
 				}
 
-				ret, err := envtest.Run(vmconfig, pack, false, t)
+				ret, err := envtest.Run(vmconfig, pack, false, v.InitCase.NeedInit, t)
 				if err != nil {
-					if strings.HasPrefix(err.Error(), errorsmsg.ErrExecutionAssert.Error()) {
-						t.Logf("%s", err.Error())
-					} else if err.Error() == errorsmsg.ErrExecutionReverted.Error() {
-						t.Logf("%s", errorsmsg.ErrExecutionReverted)
+					if testcase.Error == err.Error() {
+						t.Logf("funcName %s\n", testcase.Function)
+						t.Logf("wavm err match, got %s, want %s", err, testcase.Error)
+						continue
 					} else {
-						t.Fatal(err)
+						if strings.HasPrefix(err.Error(), errorsmsg.ErrExecutionAssert.Error()) {
+							t.Logf("%s", err.Error())
+						} else if err.Error() == errorsmsg.ErrExecutionReverted.Error() {
+							t.Logf("%s", errorsmsg.ErrExecutionReverted)
+						} else {
+							t.Fatal(err)
+						}
 					}
+
 				}
 				verify(t, ret, testcase.Wanted, abiobj, testcase.Function)
 				if testcase.Event != nil {
