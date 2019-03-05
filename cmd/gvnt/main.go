@@ -91,10 +91,9 @@ var (
 		utils.ListenPortFlag,
 		utils.MaxPeersFlag,
 		utils.MaxPendingPeersFlag,
-		utils.EtherbaseFlag,
+		utils.CoinbaseFlag,
 		utils.GasPriceFlag,
-		utils.MinerThreadsFlag,
-		utils.MiningEnabledFlag,
+		utils.ProducingEnabledFlag,
 		utils.TargetGasLimitFlag,
 		utils.NATFlag,
 		utils.NoDiscoverFlag,
@@ -388,8 +387,8 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		}
 	}()
 	// Start auxiliary services if enabled
-	if ctx.GlobalBool(utils.MiningEnabledFlag.Name) {
-		// Mining only makes sense if a full VNT node is running
+	if ctx.GlobalBool(utils.ProducingEnabledFlag.Name) {
+		// Producing only makes sense if a full VNT node is running
 		if ctx.GlobalString(utils.SyncModeFlag.Name) == "light" {
 			utils.Fatalf("Light clients do not support mining")
 		}
@@ -397,15 +396,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		if err := stack.Service(&vnt); err != nil {
 			utils.Fatalf("VNT service not running: %v", err)
 		}
-		// Use a reduced number of threads if requested
-		if threads := ctx.GlobalInt(utils.MinerThreadsFlag.Name); threads > 0 {
-			type threaded interface {
-				SetThreads(threads int)
-			}
-			if th, ok := vnt.Engine().(threaded); ok {
-				th.SetThreads(threads)
-			}
-		}
+
 		// Set the gas price to the limits from the CLI and start mining
 		vnt.TxPool().SetGasPrice(utils.GlobalBig(ctx, utils.GasPriceFlag.Name))
 		if err := vnt.StartMining(true); err != nil {

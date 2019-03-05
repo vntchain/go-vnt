@@ -155,11 +155,10 @@ var AppHelpFlagGroups = []flagGroup{
 		},
 	},
 	{
-		Name: "MINER",
+		Name: "BLOCK PRODUCE",
 		Flags: []cli.Flag{
-			utils.MiningEnabledFlag,
-			utils.MinerThreadsFlag,
-			utils.EtherbaseFlag,
+			utils.ProducingEnabledFlag,
+			utils.CoinbaseFlag,
 			utils.TargetGasLimitFlag,
 			utils.GasPriceFlag,
 			utils.ExtraDataFlag,

@@ -13,10 +13,6 @@ matrix:
         - sudo modprobe fuse
         - sudo chmod 666 /dev/fuse
         - sudo chown root:$USER /etc/fuse.conf      
-      install:
-        - wget https://raw.githubusercontent.com/go-clang/gen/master/scripts/switch-clang-version.sh
-        - /bin/bash ./switch-clang-version.sh 5.0
-        - sudo ln -s /usr/lib/llvm-5.0/lib/libclang*so /usr/lib/
       script:
         - make all
         - go install -v ./cmd/gvnt
@@ -35,6 +31,8 @@ matrix:
         - go test ./cmd/rlpdump
         - go test ./cmd/utils
         - go test ./cmd/wnode
+        - go test ./cmd/swarm
+        - go test ./swarm/...
         - go test ./log/...
         - go test ./trie/...
         - go test ./miner/...
@@ -69,10 +67,6 @@ matrix:
         - sudo modprobe fuse
         - sudo chmod 666 /dev/fuse
         - sudo chown root:$USER /etc/fuse.conf      
-      install:
-        - wget https://raw.githubusercontent.com/go-clang/gen/master/scripts/switch-clang-version.sh
-        - /bin/bash ./switch-clang-version.sh 5.0
-        - sudo ln -s /usr/lib/llvm-5.0/lib/libclang*so /usr/lib/
       script:
         - make all
         - go install -v ./cmd/gvnt
@@ -91,6 +85,8 @@ matrix:
         - go test ./cmd/rlpdump
         - go test ./cmd/utils
         - go test ./cmd/wnode
+        - go test ./cmd/swarm
+        - go test ./swarm/...
         - go test ./log/...
         - go test ./trie/...
         - go test ./miner/...
@@ -128,9 +124,6 @@ matrix:
         - ulimit -S -n $NOFILE
         - ulimit -n
         - unset -f cd # workaround for https://github.com/travis-ci/travis-ci/issues/8703
-      install:
-        - brew install llvm@5
-        - sudo ln -s /usr/local/opt/llvm@5/lib/libclang*dylib /usr/local/lib
       script:              
         - make all
         - go install -v ./cmd/gvnt
@@ -149,6 +142,8 @@ matrix:
         - go test ./cmd/rlpdump
         - go test ./cmd/utils
         - go test ./cmd/wnode
+        - go test ./cmd/swarm
+        - go test ./swarm/...
         - go test ./log/...
         - go test ./trie/...
         - go test ./miner/...

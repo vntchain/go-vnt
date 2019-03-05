@@ -267,8 +267,8 @@ vnt._extend({
 			params: 2
 		}),
 		new vnt._extend.Method({
-			name: 'setMutexProfileRate',
-			call: 'debug_setMutexProfileRate',
+			name: 'setMutexProfileFraction',
+			call: 'debug_setMutexProfileFraction',
 			params: 1
 		}),
 		new vnt._extend.Method({
@@ -400,8 +400,8 @@ vnt._extend({
 			call: 'bp_stop'
 		}),
 		new vnt._extend.Method({
-			name: 'setEtherbase',
-			call: 'bp_setEtherbase',
+			name: 'setCoinbase',
+			call: 'bp_setCoinbase',
 			params: 1,
 			inputFormatter: [vnt._extend.formatters.inputAddressFormatter]
 		}),

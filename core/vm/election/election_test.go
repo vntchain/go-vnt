@@ -1,12 +1,28 @@
+// Copyright 2019 The go-vnt Authors
+// This file is part of the go-vnt library.
+//
+// The go-vnt library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-vnt library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-vnt library. If not, see <http://www.gnu.org/licenses/>.
+
 package election
 
 import (
 	"bytes"
 	"fmt"
 	"math/big"
-	"testing"
-
+	"reflect"
 	"strconv"
+	"testing"
 
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/state"
@@ -29,17 +45,38 @@ var InputCase = [][]byte{
 	common.FromHex("65f7314e000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000004d2f6970342f3132372e302e302e312f7463702f33303330332f697066732f316b484771357a5a4652573546424a39594d62627653695734417a476735434b4d437444656736464e6e6a436247530000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000317777772e746573746e65742e696e666f2e776562736974652e746573742e746573742e746573742e746573742e74657374000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000874657374696e666f000000000000000000000000000000000000000000000000"),
 	common.FromHex("f67ab93e"),
 }
-var candidates = []common.Address{
-	common.BytesToAddress([]byte{1}),
-	common.BytesToAddress([]byte{2}),
-	common.BytesToAddress([]byte{3}),
-	common.BytesToAddress([]byte{4}),
-	common.BytesToAddress([]byte{5}),
-	common.BytesToAddress([]byte{6}),
-	common.BytesToAddress([]byte{7}),
-	common.BytesToAddress([]byte{8}),
-	common.BytesToAddress([]byte{9}),
+
+type candiRegInfo struct {
+	addr    common.Address
+	name    []byte
+	website []byte
+	url     []byte
 }
+
+var (
+	addr1 = common.HexToAddress("41b0db166cfdf1c4ba3ce657171482a9aa55cc93")
+	addr2 = common.HexToAddress("08b467a881ec34b668254aa956e0c46f9c3b2b83")
+	addr3 = common.HexToAddress("0c0292587ccdc76b8f449002a017bc9479ff0a88")
+	addr4 = common.HexToAddress("0a0292587ccdc76b8f449002a017bc9479ff0a88")
+	addr5 = common.HexToAddress("0b0292587ccdc76b8f449002a017bc9479ff0a88")
+	addr6 = common.HexToAddress("0d0292587ccdc76b8f449002a017bc9479ff0a88")
+	addr7 = common.HexToAddress("0e0292587ccdc76b8f449002a017bc9479ff0a88")
+	addr8 = common.HexToAddress("0e0292587ccdc76b8f449002a017bc9479ff0a81")
+	addr9 = common.HexToAddress("0e0292587ccdc76b8f449002a017bc9479ff0a82")
+
+	candiInfo1 = candiRegInfo{addr1, []byte("node1"), []byte("www.node1.com"), []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHNAAfnqXNsxMwJf6QjJFRmVK7iB32U9owwK9KfeLFxEA7")}
+	candiInfo2 = candiRegInfo{addr2, []byte("node2"), []byte("www.node2.com"), []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHcch6yuBCgC5nPPSK3Yp7Es4c4eenxAeK167pYwUvNjRo")}
+	candiInfo3 = candiRegInfo{addr3, []byte("node3"), []byte("www.node3.com"), []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHJFKr2bzUnMr1NbeyYbYJa3RXT18cEu7cNDrHWjg8XYKB")}
+	candiInfo4 = candiRegInfo{addr4, []byte("node4"), []byte("www.node4.com"), []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHfop9dnUHHmtBXVkLB5UauAmACtrsEX5H5t6oCRpdL198")}
+	candiInfo5 = candiRegInfo{addr5, []byte("node5"), []byte("www.node5.com"), []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHGG8L1DTrVG3Cad479Q32oGmFAiEjLFwxzNyXH3ehGo73")}
+	candiInfo6 = candiRegInfo{addr6, []byte("node6"), []byte("www.node6.com"), []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHmExX4yutwBZLbRsYHq59KfgiM1LUJFW2JSPeSCcBf7rH")}
+	candiInfo7 = candiRegInfo{addr7, []byte("nodd7"), []byte("www.node7.com"), []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHSMhv82q5thJkdeJzxCVW8tdXwaDThBZWsH2Q9KUGGFUq")}
+	candiInfo8 = candiRegInfo{addr8, []byte("nodd8"), []byte("www.node8.com"), []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHYwV52itn31V5fRXzERMygHFDx6PrSFS8puEr3N4Ujv69")}
+	candiInfo9 = candiRegInfo{addr9, []byte("nodd9"), []byte("www.node9.com"), []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHiEQS9qnK1YJN25eNyTjDRUukTzComAMWYAowTAYCu1K4")}
+
+	candidates = []common.Address{addr1, addr2, addr3, addr4, addr5, addr6, addr7, addr8, addr9}
+	candiInfos = []candiRegInfo{candiInfo1, candiInfo2, candiInfo3, candiInfo4, candiInfo5, candiInfo6, candiInfo7, candiInfo8, candiInfo9}
+)
 
 type testContext struct {
 	Origin  common.Address
@@ -223,16 +260,8 @@ func TestCandidate_votes(t *testing.T) {
 func TestCandidate_equal(t *testing.T) {
 	addr1 := common.HexToAddress("0x122369f04f32269598789998de33e3d56e2c507a")
 	addr2 := common.HexToAddress("0x42a875ac43f2b4e6d17f54d288071f5952bf8911")
-	c1 := Candidate{
-		Owner:     addr1,
-		VoteCount: big.NewInt(10),
-		Active:    true,
-	}
-	c2 := Candidate{
-		Owner:     addr2,
-		VoteCount: big.NewInt(20),
-		Active:    false,
-	}
+	c1 := Candidate{Owner: addr1, VoteCount: big.NewInt(10), Active: true}
+	c2 := Candidate{Owner: addr2, VoteCount: big.NewInt(20), Active: false}
 
 	if c1.equal(&c2) {
 		t.Errorf("two Candidate should not equal")
@@ -248,53 +277,66 @@ func TestCandidate_equal(t *testing.T) {
 }
 
 func TestCandidateList_Less(t *testing.T) {
-	addr1 := common.HexToAddress("0x122369f04f32269598789998de33e3d56e2c507a")
+	addr1 := common.HexToAddress("0x522369f04f32269598789998de33e3d56e2c507a")
 	addr2 := common.HexToAddress("0x42a875ac43f2b4e6d17f54d288071f5952bf8911")
-	c1 := Candidate{
-		Owner:     addr1,
-		VoteCount: big.NewInt(10),
-		Active:    true,
-	}
-	c2 := Candidate{
-		Owner:     addr2,
-		VoteCount: big.NewInt(20),
-		Active:    false,
-	}
+	addr3 := common.HexToAddress("0x18a875ac43f2b4e6d17f54d288071f5952bf8911")
+	c1 := Candidate{Owner: addr1, VoteCount: big.NewInt(10), Active: true}
+	c2 := Candidate{Owner: addr2, VoteCount: big.NewInt(20), Active: false}
+	c3 := Candidate{Owner: addr3, VoteCount: big.NewInt(10), Active: true}
 
-	var cl CandidateList
-	cl = append(cl, c1)
-	cl = append(cl, c2)
+	cl := CandidateList{c1, c2, c3}
 
-	// actual is greater
 	if cl.Less(0, 1) == false {
-		t.Errorf("cl[0] should greater than cl[1]: %s, %s", cl[0].votes().String(), cl[1].votes().String())
+		t.Errorf("c1 should greater than c2, c1= %s, c2=%s", c1.String(), c2.String())
+	}
+	if cl.Less(0, 2) == true {
+		t.Errorf("c1 should less than c3, c1= %s, c3=%s", c1.String(), c3.String())
 	}
 }
 
 func TestCandidateList_Swap(t *testing.T) {
-	addr1 := common.HexToAddress("0x122369f04f32269598789998de33e3d56e2c507a")
-	addr2 := common.HexToAddress("0x42a875ac43f2b4e6d17f54d288071f5952bf8911")
-	c1 := Candidate{
-		Owner:     addr1,
-		VoteCount: big.NewInt(10),
-		Active:    true,
-	}
-	c2 := Candidate{
-		Owner:     addr2,
-		VoteCount: big.NewInt(20),
-		Active:    false,
-	}
+	c1 := Candidate{common.HexToAddress("0x1"), big.NewInt(100),
+		false, []byte("/p2p/1"), big.NewInt(10000), big.NewInt(200),
+		big.NewInt(1548664636), []byte("node1.com"), []byte("node1")}
+	c2 := Candidate{common.HexToAddress("0x2"), big.NewInt(20),
+		true, []byte("/p2p/2"), big.NewInt(10000), big.NewInt(200),
+		big.NewInt(1548664636), []byte("node2.com"), []byte("node2")}
 
-	var cl CandidateList
-	cl = append(cl, c1)
-	cl = append(cl, c2)
-
-	cl.Swap(0, 1)
-	if cl[0].equal(&c2) == false {
-		t.Errorf("cl[0] should equal c2")
+	candidates := CandidateList{c1, c2}
+	swaped := CandidateList{c2, c1}
+	candidates.Swap(0, 1)
+	for i, tt := range candidates {
+		if tt.equal(&swaped[i]) == false {
+			t.Errorf("index: %d, expect: %s, got: %s", i, swaped[i].String(), tt.String())
+		}
 	}
-	if cl[1].equal(&c1) == false {
-		t.Errorf("cl[1] should equal c1")
+}
+
+func TestCandidateList_Sort(t *testing.T) {
+	// c1票数为负，c2与c5票数相等，c3票数最多
+	c1 := Candidate{common.HexToAddress("0x1"), big.NewInt(100),
+		false, []byte("/p2p/1"), big.NewInt(10000), big.NewInt(200),
+		big.NewInt(1548664636), []byte("node1.com"), []byte("node1")}
+	c2 := Candidate{common.HexToAddress("0x2"), big.NewInt(20),
+		true, []byte("/p2p/2"), big.NewInt(10000), big.NewInt(200),
+		big.NewInt(1548664636), []byte("node2.com"), []byte("node2")}
+	c3 := Candidate{common.HexToAddress("0x3"), big.NewInt(90),
+		true, []byte("/p2p/3"), big.NewInt(10000), big.NewInt(200),
+		big.NewInt(1548664636), []byte("node3.com"), []byte("node3")}
+	c4 := Candidate{common.HexToAddress("0x4"), big.NewInt(40),
+		true, []byte("/p2p/4"), big.NewInt(10000), big.NewInt(200),
+		big.NewInt(1548664636), []byte("node4.com"), []byte("node4")}
+	c5 := Candidate{common.HexToAddress("0x5"), big.NewInt(20),
+		true, []byte("/p2p/5"), big.NewInt(10000), big.NewInt(200),
+		big.NewInt(1548664636), []byte("node5.com"), []byte("node5")}
+	candidates := CandidateList{c1, c2, c3, c4, c5}
+	sorted := CandidateList{c3, c4, c2, c5, c1}
+
+	candidates.Sort()
+	for i, tt := range candidates {
+		if tt.equal(&sorted[i]) == false {
+			t.Errorf("index: %d, expect: %s, got: %s", i, sorted[i].String(), tt.String())
+		}
 	}
 }
 
@@ -608,13 +650,14 @@ func TestCancelProxy(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	voteCount := c.calculateVoteCount(big.NewInt(100))
+
 	// 取消代理
 	err = c.cancelProxy(addr)
 	if err != nil {
 		t.Error(err)
 	}
 
+	voteCount := c.calculateVoteCount(big.NewInt(100))
 	for i := 0; i < len(candidates); i++ {
 		candi := c.getCandidate(candidates[i])
 		if candi.VoteCount.Cmp(voteCount) != 0 {
@@ -861,11 +904,11 @@ func setProxy(c electionContext) error {
 		return err
 	}
 
-	// 设置候选人
+	// 设置候选人，借用candiInfos的website、name、url信息
 	for i := 0; i < len(candidates); i++ {
-		website := "www.testnet.info" + strconv.Itoa(i)
-		name := "testinfo" + strconv.Itoa(i)
-		c.registerWitness(candidates[i], url, []byte(website), []byte(name))
+		if err := c.registerWitness(candidates[i], candiInfos[i].url, candiInfos[i].website, candiInfos[i].name); err != nil {
+			return fmt.Errorf("setProxy case: %d, err: %s", i, err)
+		}
 	}
 
 	// 代理人投票
@@ -897,45 +940,47 @@ func TestRegisterWitness(t *testing.T) {
 	t.Logf("addr3: %v", addr3.Hex())
 	t.Logf("addr4: %v", addr4.Hex())
 
+	complicatedErr := fmt.Errorf("complicated error, not compare error content")
 	// 注册见证人的测试用例，err为nil代表需要注册成功
 	ts := []struct {
-		addr    common.Address
-		url     []byte
-		website []byte
-		name    []byte
-		err     error
+		addr     common.Address
+		url      []byte
+		website  []byte
+		name     []byte
+		err      error
+		matchErr bool   // 是否对error内容进行匹配，p2p类别的错误不易的，可设置为false
+		desc     string // 本case的描述
 	}{
-		{addr1, url, []byte("www.testnet1.site"), []byte("node1"), nil},
-		{addr1, url, []byte("www.testnet1.site"), []byte("node1"), ErrCandiAlreadyRegistered},
-		{addr2, url, []byte("www.testnet2.site"), []byte("node2"), nil},
-		{addr3, url, []byte("www.testnet3.site"), []byte("node3"), nil},
-		{addr4, url, []byte("www.testnet4.site"), []byte("s"), ErrCandiNameLenInvalid},
-		{addr4, url, []byte("www.testnet4.site"), []byte("tooloooooooooooooname"), ErrCandiNameLenInvalid},
-		{addr4, url, []byte("ww"), []byte("right name"), ErrCandiUrlLenInvalid},
-		{addr4, url, []byte("www.looooooooooooooooooooooooooooooooooooongwebsite.com/looog"), []byte("right name"), ErrCandiUrlLenInvalid},
-		{addr4, url, []byte("www.testnet4.site"), []byte("ABCEFacd"), ErrCandiNameInvalid},
-		{addr4, url, []byte("www.testnet4.site"), []byte("acd xyz"), ErrCandiNameInvalid},
-		{addr4, url, []byte("www.testnet4.site"), []byte("acd.xyz"), ErrCandiNameInvalid},
-		{addr4, url, []byte("www.testnet4.site"), []byte("node3"), ErrCandiNameOrUrlDup},
-		{addr4, url, []byte("www.testnet3.site"), []byte("node4"), ErrCandiNameOrUrlDup},
-		{addr4, url, []byte("www.testnet4.site"), []byte("nod"), nil},
-		{addr5, url, []byte("www.testnet5.site"), []byte("20charactornaaaaaame"), nil},
-		{addr6, url, []byte("www"), []byte("node4"), nil},
-		{addr7, url, []byte("www.just60charactor.com/loooooooooooooooooooooooooooooooooog"), []byte("node7"), nil},
+		{addr1, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHNAAfnqXNsxMwJf6QjJFRmVK7iB32U9owwK9KfeLFxEA7"), []byte("www.testnet1.site"), []byte("node1"), nil, true, "node1 success"},
+		{addr1, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHNAAfnqXNsxMwJf6QjJFRmVK7iB32U9owwK9KfeLFxEA7"), []byte("www.testnet1.site"), []byte("node1"), ErrCandiAlreadyRegistered, true, "node1 dup-register"},
+		{addr2, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHcch6yuBCgC5nPPSK3Yp7Es4c4eenxAeK167pYwUvNjRo"), []byte("www.testnet2.site"), []byte("node2"), nil, true, "node2 success"},
+		{addr3, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHJFKr2bzUnMr1NbeyYbYJa3RXT18cEu7cNDrHWjg8XYKB"), []byte("www.testnet3.site"), []byte("node3"), nil, true, "node3 success"},
+		{addr4, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHfop9dnUHHmtBXVkLB5UauAmACtrsEX5H5t6oCRpdL198"), []byte("www.testnet4.site"), []byte("s"), ErrCandiNameLenInvalid, true, "node4 too short name"},
+		{addr4, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHfop9dnUHHmtBXVkLB5UauAmACtrsEX5H5t6oCRpdL198"), []byte("www.testnet4.site"), []byte("tooloooooooooooooname"), ErrCandiNameLenInvalid, true, "node4 too long name"},
+		{addr4, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHfop9dnUHHmtBXVkLB5UauAmACtrsEX5H5t6oCRpdL198"), []byte("ww"), []byte("right name"), ErrCandiUrlLenInvalid, true, "node4 too short website"},
+		{addr4, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHfop9dnUHHmtBXVkLB5UauAmACtrsEX5H5t6oCRpdL198"), []byte("www.looooooooooooooooooooooooooooooooooooongwebsite.com/looog"), []byte("right name"), ErrCandiUrlLenInvalid, true, "node4 too long website"},
+		{addr4, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHfop9dnUHHmtBXVkLB5UauAmACtrsEX5H5t6oCRpdL198"), []byte("www.testnet4.site"), []byte("ABCEFacd"), ErrCandiNameInvalid, true, "node4 name should lowercase"},
+		{addr4, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHfop9dnUHHmtBXVkLB5UauAmACtrsEX5H5t6oCRpdL198"), []byte("www.testnet4.site"), []byte("acd xyz"), ErrCandiNameInvalid, true, "node4 name should only contain lowercase letter and digits"},
+		{addr4, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHfop9dnUHHmtBXVkLB5UauAmACtrsEX5H5t6oCRpdL198"), []byte("www.testnet4.site"), []byte("acd.xyz"), ErrCandiNameInvalid, true, "node4 name should only contain lowercase letter and digits"},
+		{addr4, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHfop9dnUHHmtBXVkLB5UauAmACtrsEX5H5t6oCRpdL198"), []byte("www.testnet4.site"), []byte("node3"), ErrCandiInfoDup, true, "node4 dup name"},
+		{addr4, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHfop9dnUHHmtBXVkLB5UauAmACtrsEX5H5t6oCRpdL198"), []byte("www.testnet3.site"), []byte("node4"), ErrCandiInfoDup, true, "node4 dup website"},
+		{addr4, []byte("/ip9/127.0.0.1/tcp/30303/ipfs/1kHfop9dnUHHmtBXVkLB5UauAmACtrsEX5H5t6oCRpdL198"), []byte("www.testnet4.site"), []byte("node4"), fmt.Errorf("registerWitness node url is error: no protocol with name ip9"), true, "node4 node url invalid: ip9"},
+		{addr4, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHfop9dnUHHmtskLfs5fdafemACtfsEX5H5t6oCRpdL1"), []byte("www.testnet4.site"), []byte("node4"), complicatedErr, false, "node4 node url invalid: id is less"},
+		{addr4, []byte("/ip4/127.0.0.1/txp/30303/ipfs/1kHfop9dnUHHmtskLfs5fdafemACtfsEX5H5t6oCRpdL198"), []byte("www.testnet4.site"), []byte("node4"), fmt.Errorf("registerWitness node url is error: no protocol with name txp"), true, "node4 node url invalid: not tcp"},
+		{addr4, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1111111111111111111111111111111111111111RpdL198"), []byte("www.testnet4.site"), []byte("node4"), complicatedErr, false, "node4 node url invalid: id is invalid"},
+		{addr4, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHfop9dnUHHmtBXVkLB5UauAmACtrsEX5H5t6oCRpdL198"), []byte("www.testnet4.site"), []byte("node4"), nil, true, "node4 success"},
+		{addr5, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHGG8L1DTrVG3Cad479Q32oGmFAiEjLFwxzNyXH3ehGo73"), []byte("www.testnet5.site"), []byte("20charactornaaaaaame"), nil, true, "node5 success"},
+		{addr6, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHmExX4yutwBZLbRsYHq59KfgiM1LUJFW2JSPeSCcBf7rH"), []byte("www"), []byte("node6"), nil, true, "node6 success"},
+		{addr7, []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHSMhv82q5thJkdeJzxCVW8tdXwaDThBZWsH2Q9KUGGFUq"), []byte("www.just60charactor.com/loooooooooooooooooooooooooooooooooog"), []byte("node7"), nil, true, "node7 success"},
 	}
 
 	for i, c := range ts {
 		err := ec.registerWitness(c.addr, c.url, c.website, c.name)
-		if c.err != nil {
-			if err == nil || err.Error() != c.err.Error() {
-				t.Errorf("TestRegisterWitness case %d, want err :%v, got: %v", i, c.err, err)
-			}
-		} else {
-			if err != nil {
-				t.Errorf("TestRegisterWitness case %d, want err :%v, got: %v", i, c.err, err)
+		if !reflect.DeepEqual(err, c.err) {
+			if c.matchErr {
+				t.Errorf("TestRegisterWitness case %d, case discrition: %s, want err :%v, got:%v", i, c.desc, c.err, err)
 			}
 		}
-
 	}
 
 	candis := getAllCandidate(context.GetStateDb())

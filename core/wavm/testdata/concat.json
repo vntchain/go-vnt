@@ -30,7 +30,7 @@
           }
      },
      "testcase": [{
-          "code": "concat/main.wasm",
+          "code": "concat/testConcat.compress",
           "abi": "concat/abi.json",
           "initcase": {
                "needinit": true,

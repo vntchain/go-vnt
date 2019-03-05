@@ -23,7 +23,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -237,34 +236,29 @@ var (
 		Usage: "Number of trie node generations to keep in memory",
 		Value: int(state.MaxTrieCacheGen),
 	}
-	// Miner settings
-	MiningEnabledFlag = cli.BoolFlag{
-		Name:  "mine",
-		Usage: "Enable mining",
-	}
-	MinerThreadsFlag = cli.IntFlag{
-		Name:  "minerthreads",
-		Usage: "Number of CPU threads to use for mining",
-		Value: runtime.NumCPU(),
+	// Producer settings
+	ProducingEnabledFlag = cli.BoolFlag{
+		Name:  "produce",
+		Usage: "Enable block producing",
 	}
 	TargetGasLimitFlag = cli.Uint64Flag{
 		Name:  "targetgaslimit",
-		Usage: "Target gas limit sets the artificial target gas floor for the blocks to mine",
+		Usage: "Target gas limit sets the artificial target gas floor for the blocks to produce",
 		Value: params.GenesisGasLimit,
 	}
-	EtherbaseFlag = cli.StringFlag{
-		Name:  "etherbase",
-		Usage: "Public address for block mining rewards (default = first account created)",
+	CoinbaseFlag = cli.StringFlag{
+		Name:  "coinbase",
+		Usage: "Public address for block producing and witness rewards (default = first account created)",
 		Value: "0",
 	}
 	GasPriceFlag = BigFlag{
 		Name:  "gasprice",
-		Usage: "Minimal gas price to accept for mining a transactions",
+		Usage: "Minimal gas price to accept for producing a transactions",
 		Value: vnt.DefaultConfig.GasPrice,
 	}
 	ExtraDataFlag = cli.StringFlag{
 		Name:  "extradata",
-		Usage: "Block extra data set by the miner (default = client version)",
+		Usage: "Block extra data set by the block producer (default = client version)",
 	}
 	// Account settings
 	UnlockedAccountFlag = cli.StringFlag{
@@ -713,15 +707,15 @@ func MakeAddress(ks *keystore.KeyStore, account string) (accounts.Account, error
 	return accs[index], nil
 }
 
-// setEtherbase retrieves the etherbase either from the directly specified
+// setCoinbase retrieves the coinbase either from the directly specified
 // command line flags or from the keystore if CLI indexed.
-func setEtherbase(ctx *cli.Context, ks *keystore.KeyStore, cfg *vnt.Config) {
-	if ctx.GlobalIsSet(EtherbaseFlag.Name) {
-		account, err := MakeAddress(ks, ctx.GlobalString(EtherbaseFlag.Name))
+func setCoinbase(ctx *cli.Context, ks *keystore.KeyStore, cfg *vnt.Config) {
+	if ctx.GlobalIsSet(CoinbaseFlag.Name) {
+		account, err := MakeAddress(ks, ctx.GlobalString(CoinbaseFlag.Name))
 		if err != nil {
-			Fatalf("Option %q: %v", EtherbaseFlag.Name, err)
+			Fatalf("Option %q: %v", CoinbaseFlag.Name, err)
 		}
-		cfg.Etherbase = account.Address
+		cfg.Coinbase = account.Address
 	}
 }
 
@@ -922,7 +916,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *vnt.Config) {
 	checkExclusive(ctx, LightServFlag, SyncModeFlag, "light")
 
 	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
-	setEtherbase(ctx, ks, cfg)
+	setCoinbase(ctx, ks, cfg)
 	setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
 
@@ -952,9 +946,6 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *vnt.Config) {
 
 	if ctx.GlobalIsSet(CacheFlag.Name) || ctx.GlobalIsSet(CacheGCFlag.Name) {
 		cfg.TrieCache = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheGCFlag.Name) / 100
-	}
-	if ctx.GlobalIsSet(MinerThreadsFlag.Name) {
-		cfg.MinerThreads = ctx.GlobalInt(MinerThreadsFlag.Name)
 	}
 	if ctx.GlobalIsSet(DocRootFlag.Name) {
 		cfg.DocRoot = ctx.GlobalString(DocRootFlag.Name)

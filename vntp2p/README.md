@@ -55,7 +55,7 @@ miners node starts
 ```bash
 $ gvnt account new --datadir ./datadir2
 
-$ gvnt --datadir=./datadir2 --vntbootnode=/ip4/127.0.0.1/tcp/30301/ipfs/QmW1zhpCHrfoyXjWRkJMaTgtfy7BiqhZfHajgK3Xnysoxx --mine --minerthreads=1 --etherbase=0xf6f5038a406a7fe78229a80850ca8ed42fe03bfd --port 30307
+$ gvnt --datadir=./datadir2 --vntbootnode=/ip4/127.0.0.1/tcp/30301/ipfs/QmW1zhpCHrfoyXjWRkJMaTgtfy7BiqhZfHajgK3Xnysoxx --mine --minerthreads=1 --coinbase=0xf6f5038a406a7fe78229a80850ca8ed42fe03bfd --port 30307
 ```
 
 now，`vntdb` is support `--datadir` tag

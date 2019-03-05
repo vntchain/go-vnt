@@ -1,3 +1,19 @@
+// Copyright 2019 The go-vnt Authors
+// This file is part of the go-vnt library.
+//
+// The go-vnt library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-vnt library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-vnt library. If not, see <http://www.gnu.org/licenses/>.
+
 package election
 
 import (
@@ -9,7 +25,6 @@ import (
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/vntdb"
-	"strconv"
 )
 
 var (
@@ -406,7 +421,7 @@ func TestGetFirstXCandidates_2(t *testing.T) {
 
 	candidates := getAllCandidate(stateDB)
 	for _, candi := range candidates {
-		fmt.Printf("candidate owner: %x, active: %v, voteCount : %v\n", candi.Owner, candi.Active, candi.VoteCount)
+		t.Logf("candidate owner: %x, active: %v, voteCount : %v\n", candi.Owner, candi.Active, candi.VoteCount)
 	}
 }
 
@@ -465,7 +480,7 @@ func TestGetFirstXCandidates_3(t *testing.T) {
 
 	candidates := getAllCandidate(stateDB)
 	for _, candi := range candidates {
-		fmt.Printf("candidate owner: %x, active: %v, voteCount : %v\n", candi.Owner, candi.Active, candi.VoteCount)
+		t.Logf("candidate owner: %x, active: %v, voteCount : %v\n", candi.Owner, candi.Active, candi.VoteCount)
 	}
 }
 
@@ -499,16 +514,14 @@ func TestGetFirstXCandidates_4(t *testing.T) {
 		{byte(4), 0},
 	}
 
-	// 注册
+	// 设置到数据库
 	baseAddr := candidate.Owner
 	for i := 0; i < len(tests); i++ {
-		can := baseAddr
-		can[0] = byte(tests[i].addrPre)
-		website := "www.testnet.info" + strconv.Itoa(i)
-		name := "testinfo" + strconv.Itoa(i)
-		if err := c.registerWitness(can, nil, []byte(website), []byte(name)); err != nil {
-			t.Error(err)
-		}
+		candidate1 := candidate
+		candidate1.Owner[0] = byte(tests[i].addrPre)
+		candidate1.VoteCount = big.NewInt(tests[i].votes)
+		candidate1.Active = true
+		c.setCandidate(candidate1)
 	}
 
 	witsAddr, _ := GetFirstNCandidates(stateDB, witNum)

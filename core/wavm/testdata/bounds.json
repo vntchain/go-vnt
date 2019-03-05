@@ -30,7 +30,7 @@
           }
      },
      "testcase": [{
-          "code": "bounds/main.wasm",
+          "code": "bounds/Bounds.compress",
           "abi": "bounds/abi.json",
           "initcase": {
                "needinit": true,
@@ -108,6 +108,19 @@
                "wanted": {
                     "data": "-1",
                     "type": "int64"
+               }
+          }, {
+               "function": "testU64Add",
+               "input": [{
+                    "data": "18446744073709551615",
+                    "type": "uint64"
+               }, {
+                    "data": "1",
+                    "type": "uint64"
+               }],
+               "wanted": {
+                    "data": "0",
+                    "type": "uint64"
                }
           }]
      }]

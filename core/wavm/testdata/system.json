@@ -30,7 +30,7 @@
           }
      },
      "testcase": [{
-          "code": "system/system.wasm",
+          "code": "system/System.compress",
           "abi": "system/abi.json",
           "initcase": {
                "needinit": true,
