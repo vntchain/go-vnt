@@ -167,15 +167,12 @@ func (c *Console) init(preload []string) error {
 		if err != nil {
 			return err
 		}
-		// Override the openWallet, unlockAccount, newAccount and sign methods since
+		// Override the unlockAccount, newAccount and sign methods since
 		// these require user interaction. Assign these method in the Console the
 		// original vnt callbacks. These will be called by the jvnt.* methods after
 		// they got the password from the user and send the original vnt request to
 		// the backend.
 		if obj := personal.Object(); obj != nil { // make sure the personal api is enabled over the interface
-			if _, err = c.jsre.Run(`jvnt.openWallet = personal.openWallet;`); err != nil {
-				return fmt.Errorf("personal.openWallet: %v", err)
-			}
 			if _, err = c.jsre.Run(`jvnt.unlockAccount = personal.unlockAccount;`); err != nil {
 				return fmt.Errorf("personal.unlockAccount: %v", err)
 			}
@@ -185,7 +182,6 @@ func (c *Console) init(preload []string) error {
 			if _, err = c.jsre.Run(`jvnt.sign = personal.sign;`); err != nil {
 				return fmt.Errorf("personal.sign: %v", err)
 			}
-			obj.Set("openWallet", bridge.OpenWallet)
 			obj.Set("unlockAccount", bridge.UnlockAccount)
 			obj.Set("newAccount", bridge.NewAccount)
 			obj.Set("sign", bridge.Sign)
@@ -285,7 +281,7 @@ func (c *Console) Welcome() {
 	`)
 	// List all the supported modules for the user to call
 	if apis, err := c.client.SupportedModules(); err == nil {
-		
+
 		modules := make([]string, 0, len(apis))
 		for api, version := range apis {
 			modules = append(modules, fmt.Sprintf("%s:%s", api, version))

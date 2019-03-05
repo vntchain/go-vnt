@@ -355,12 +355,6 @@ vnt._extend({
 			inputFormatter: [vnt._extend.formatters.inputTransactionFormatter, vnt._extend.utils.fromDecimal, vnt._extend.utils.fromDecimal]
 		}),
 		new vnt._extend.Method({
-			name: 'submitTransaction',
-			call: 'core_submitTransaction',
-			params: 1,
-			inputFormatter: [vnt._extend.formatters.inputTransactionFormatter]
-		}),
-		new vnt._extend.Method({
 			name: 'getRawTransaction',
 			call: 'core_getRawTransactionByHash',
 			params: 1
@@ -458,11 +452,6 @@ vnt._extend({
 		new vnt._extend.Method({
 			name: 'ecRecover',
 			call: 'personal_ecRecover',
-			params: 2
-		}),
-		new vnt._extend.Method({
-			name: 'openWallet',
-			call: 'personal_openWallet',
 			params: 2
 		}),
 		new vnt._extend.Method({

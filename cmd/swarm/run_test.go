@@ -162,7 +162,6 @@ func getTestAccount(t *testing.T, dir string) (conf *node.Config, account accoun
 	conf = &node.Config{
 		DataDir: dir,
 		IPCPath: "bzzd.ipc",
-		NoUSB:   true,
 	}
 	n, err := node.New(conf)
 	if err != nil {

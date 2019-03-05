@@ -177,7 +177,6 @@ func init() {
 		configdirFlag,
 		utils.NetworkIdFlag,
 		utils.LightKDFFlag,
-		utils.NoUSBFlag,
 		utils.RPCListenAddrFlag,
 		utils.RPCVirtualHostsFlag,
 		utils.IPCDisabledFlag,
@@ -382,7 +381,6 @@ func signer(c *cli.Context) error {
 	apiImpl := core.NewSignerAPI(
 		c.Int64(utils.NetworkIdFlag.Name),
 		c.String(keystoreFlag.Name),
-		c.Bool(utils.NoUSBFlag.Name),
 		ui, db,
 		c.Bool(utils.LightKDFFlag.Name))
 
