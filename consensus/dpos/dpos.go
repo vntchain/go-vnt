@@ -181,17 +181,6 @@ func New(config *params.DposConfig, db vntdb.Database) *Dpos {
 	return d
 }
 
-// Fake dpos for tests
-func NewFaker() *Dpos {
-	cfg := &params.DposConfig{
-		WitnessesNum: 4,
-		Period:       2,
-	}
-
-	dp := New(cfg, nil)
-	return dp
-}
-
 func (d *Dpos) InitBft(sendBftMsg func(types.ConsensusMsg), SendPeerUpdate func(urls []string), verifyBlock func(*types.Block) (types.Receipts, []*types.Log, uint64, error), writeBlock func(*types.Block) error) {
 	d.sendBftPeerUpdateFn = SendPeerUpdate
 
