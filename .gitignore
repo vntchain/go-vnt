@@ -47,3 +47,5 @@ profile.cov
 **/yarn-error.log
 
 /tests/testcode/ldb/dump/*
+
+nohup.out

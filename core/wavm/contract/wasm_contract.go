@@ -25,6 +25,12 @@ import (
 	"github.com/vntchain/go-vnt/log"
 )
 
+type WasmCode struct {
+	Code     []byte
+	Abi      []byte
+	Compiled []byte
+}
+
 type WASMContractRef interface {
 	Address() common.Address
 }

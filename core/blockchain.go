@@ -976,9 +976,6 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 		bc.insert(block)
 	}
 	bc.futureBlocks.Remove(block.Hash())
-	// fmt.Printf("******STATEDB****** %s \n", state.Dump())
-	// filepath := path.Join("/Users/weisaizhang/Documents/go/src/github.com/vntchain/go-vnt/tests/testcode/ldb/dump")
-	// ioutil.WriteFile(path.Join(filepath, fmt.Sprintf("%d_", block.NumberU64())+block.Hash().String()+".json"), state.Dump(), 0644)
 	return status, nil
 }
 
@@ -1168,7 +1165,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 		}
 		switch status {
 		case CanonStatTy:
-			log.Debug("Inserted new block", "number", block.Number(), "hash", block.Hash(),
+			log.Debug("Inserted new block", "number", block.Number(), "hash", block.Hash().String(),
 				"txs", len(block.Transactions()), "gas", block.GasUsed(), "elapsed", common.PrettyDuration(time.Since(bstart)))
 
 			coalescedLogs = append(coalescedLogs, logs...)

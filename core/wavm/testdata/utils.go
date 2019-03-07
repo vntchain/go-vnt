@@ -4,17 +4,30 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"os"
 
 	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/common"
+	"github.com/vntchain/go-vnt/common/hexutil"
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/wavm"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/crypto/sha3"
+	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/rlp"
 	"github.com/vntchain/go-vnt/vntdb"
 )
+
+var (
+	basepath = "./"
+)
+
+var logger *log.Logger
+
+func init() {
+	log.Root().SetHandler(log.LvlFilterHandler(log.LvlTrace, log.StreamHandler(os.Stderr, log.TerminalFormat(true))))
+}
 
 type vmJSON struct {
 	Env      stEnv             `json:"env"`
@@ -53,10 +66,12 @@ type initcase struct {
 }
 
 type tests struct {
-	Function string     `json:"function"`
-	Input    []argument `json:"input"`
-	Wanted   argument   `json:"wanted"`
-	Event    []argument `json:"event"`
+	Function string        `json:"function"`
+	Input    []argument    `json:"input"`
+	RawInput hexutil.Bytes `json:"rawinput"`
+	Wanted   argument      `json:"wanted"`
+	Error    string        `json:"error"`
+	Event    []argument    `json:"event"`
 }
 
 type argument struct {

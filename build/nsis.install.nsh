@@ -1,26 +1,26 @@
-Name "geth ${MAJORVERSION}.${MINORVERSION}.${BUILDVERSION}" # VERSION variables set through command line arguments
+Name "gvnt ${MAJORVERSION}.${MINORVERSION}.${BUILDVERSION}" # VERSION variables set through command line arguments
 InstallDir "$InstDir"
 OutFile "${OUTPUTFILE}" # set through command line arguments
 
 # Links for "Add/Remove Programs"
 !define HELPURL "https://github.com/vntchain/go-vnt/issues"
 !define UPDATEURL "https://github.com/vntchain/go-vnt/releases"
-!define ABOUTURL "https://github.com/vntchain/go-vnt#ethereum-go"
+!define ABOUTURL "https://github.com/vntchain/go-vnt"
 !define /date NOW "%Y%m%d"
 
 PageEx license
   LicenseData {{.License}}
 PageExEnd
 
-# Install geth binary
-Section "Gvnt" GETH_IDX
+# Install gvnt binary
+Section "Gvnt" GVNT_IDX
   SetOutPath $INSTDIR
   file {{.Gvnt}}
 
   # Create start menu launcher
   createDirectory "$SMPROGRAMS\${APPNAME}"
-  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\geth.exe" "--fast" "--cache=512"
-  createShortCut "$SMPROGRAMS\${APPNAME}\Attach.lnk" "$INSTDIR\geth.exe" "attach" "" ""
+  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\gvnt.exe" "--fast" "--cache=512"
+  createShortCut "$SMPROGRAMS\${APPNAME}\Attach.lnk" "$INSTDIR\gvnt.exe" "attach" "" ""
   createShortCut "$SMPROGRAMS\${APPNAME}\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "" ""
 
   # Firewall - remove rules (if exists)
@@ -29,13 +29,13 @@ Section "Gvnt" GETH_IDX
   SimpleFC::AdvRemoveRule "Gvnt UDP discovery (UDP:30303)"
 
   # Firewall - add rules
-  SimpleFC::AdvAddRule "Gvnt incoming peers (TCP:30303)" ""  6 1 1 2147483647 1 "$INSTDIR\geth.exe" "" "" "VNT" 30303 "" "" ""
-  SimpleFC::AdvAddRule "Gvnt outgoing peers (TCP:30303)" ""  6 2 1 2147483647 1 "$INSTDIR\geth.exe" "" "" "VNT" "" 30303 "" ""
-  SimpleFC::AdvAddRule "Gvnt UDP discovery (UDP:30303)" "" 17 2 1 2147483647 1 "$INSTDIR\geth.exe" "" "" "VNT" "" 30303 "" ""
+  SimpleFC::AdvAddRule "Gvnt incoming peers (TCP:30303)" ""  6 1 1 2147483647 1 "$INSTDIR\gvnt.exe" "" "" "VNT" 30303 "" "" ""
+  SimpleFC::AdvAddRule "Gvnt outgoing peers (TCP:30303)" ""  6 2 1 2147483647 1 "$INSTDIR\gvnt.exe" "" "" "VNT" "" 30303 "" ""
+  SimpleFC::AdvAddRule "Gvnt UDP discovery (UDP:30303)" "" 17 2 1 2147483647 1 "$INSTDIR\gvnt.exe" "" "" "VNT" "" 30303 "" ""
 
-  # Set default IPC endpoint (https://github.com/ethereum/EIPs/issues/147)
-  ${EnvVarUpdate} $0 "ETHEREUM_SOCKET" "R" "HKLM" "\\.\pipe\geth.ipc"
-  ${EnvVarUpdate} $0 "ETHEREUM_SOCKET" "A" "HKLM" "\\.\pipe\geth.ipc"
+  # Set default IPC endpoint
+  ${EnvVarUpdate} $0 "HUBBLE_SOCKET" "R" "HKLM" "\\.\pipe\gvnt.ipc"
+  ${EnvVarUpdate} $0 "HUBBLE_SOCKET" "A" "HKLM" "\\.\pipe\gvnt.ipc"
 
   # Add instdir to PATH
   Push "$INSTDIR"
@@ -54,8 +54,8 @@ Var GetInstalledSize.total
 Function GetInstalledSize
   StrCpy $GetInstalledSize.total 0
 
-  ${if} ${SectionIsSelected} ${GETH_IDX}
-    SectionGetSize ${GETH_IDX} $0
+  ${if} ${SectionIsSelected} ${GVNT_IDX}
+    SectionGetSize ${GVNT_IDX} $0
     IntOp $GetInstalledSize.total $GetInstalledSize.total + $0
   ${endif}
 

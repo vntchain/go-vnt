@@ -1,3 +1,19 @@
+// Copyright 2019 The go-vnt Authors
+// This file is part of the go-vnt library.
+//
+// The go-vnt library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-vnt library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-vnt library. If not, see <http://www.gnu.org/licenses/>.
+
 package election
 
 import (
@@ -5,26 +21,38 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"reflect"
 	"sort"
 	"strings"
+	"unicode"
 
+	"github.com/pkg/errors"
 	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/core/vm/interface"
+	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/log"
+	"github.com/vntchain/go-vnt/vntp2p"
 )
 
 const (
 	voteLimit = 30
 	oneDay    = int64(24) * 3600
 	oneWeek   = oneDay * 7
-	year2018  = 1514736000
+	year2019  = 1546272000
+)
+
+var (
+	ErrCandiNameLenInvalid    = errors.New("the length of candidate's name should between [3, 20]")
+	ErrCandiUrlLenInvalid     = errors.New("the length of candidate's website url should between [3, 60]")
+	ErrCandiNameInvalid       = errors.New("candidate's name should consist of digits and lowercase letters")
+	ErrCandiInfoDup           = errors.New("candidate's name, website url or node url is duplicated with a registered candidate")
+	ErrCandiAlreadyRegistered = errors.New("candidate is already registered")
 )
 
 var (
 	electionAddr = common.BytesToAddress([]byte{9})
 	emptyAddress = common.Address{}
-	eraTimeStamp = big.NewInt(year2018)
+	eraTimeStamp = big.NewInt(year2019)
 
 	// stake minimum time period
 	unstakePeriod   = big.NewInt(oneDay)
@@ -48,6 +76,8 @@ type Voter struct {
 	VoteCandidates []common.Address // 投了哪些人
 }
 
+// Candidate information of witness candidates.
+// Tips: Modify CandidateList.Swap when adding element of Candidate.
 type Candidate struct {
 	Owner           common.Address // 候选人地址
 	VoteCount       *big.Int       // 收到的票数
@@ -56,11 +86,13 @@ type Candidate struct {
 	TotalBounty     *big.Int       // 总奖励金额
 	ExtractedBounty *big.Int       // 已提取奖励金额
 	LastExtractTime *big.Int       // 上次提权时间
+	Website         []byte         // 节点网站地址
+	Name            []byte         // 节点名字
 }
 
-func (c *Candidate) dump() {
-	fmt.Printf("candidate dump, addr:%s, votes:%s, active:%v, url:%x, totalBounty: %v, extractedBounty: %v, lastExtractTime: %v\n",
-		c.Owner.String(), c.VoteCount.String(), c.Active, c.Url, c.TotalBounty, c.ExtractedBounty, c.LastExtractTime)
+func (c *Candidate) String() string {
+	return fmt.Sprintf("candidate, addr:%s, votes:%s, active:%v, url:%s, totalBounty: %v, extractedBounty: %v, lastExtractTime: %v, WebSite: %s, Name: %s\n",
+		c.Owner.String(), c.VoteCount.String(), c.Active, string(c.Url), c.TotalBounty, c.ExtractedBounty, c.LastExtractTime, string(c.Website), string(c.Name))
 }
 
 func newVoter() Voter {
@@ -94,7 +126,7 @@ func (c *Candidate) votes() *big.Int {
 
 // Equal two object is equal
 func (c *Candidate) equal(d *Candidate) bool {
-	return c.Owner == d.Owner && c.VoteCount.Cmp(d.VoteCount) == 0 && c.Active == d.Active
+	return reflect.DeepEqual(c, d)
 }
 
 type CandidateList []Candidate
@@ -122,6 +154,11 @@ func (c CandidateList) Swap(i, j int) {
 	c[i].VoteCount, c[j].VoteCount = c[j].VoteCount, c[i].VoteCount
 	c[i].Active, c[j].Active = c[j].Active, c[i].Active
 	c[i].Url, c[j].Url = c[j].Url, c[i].Url
+	c[i].TotalBounty, c[j].TotalBounty = c[j].TotalBounty, c[i].TotalBounty
+	c[i].ExtractedBounty, c[j].ExtractedBounty = c[j].ExtractedBounty, c[i].ExtractedBounty
+	c[i].LastExtractTime, c[j].LastExtractTime = c[j].LastExtractTime, c[i].LastExtractTime
+	c[i].Website, c[j].Website = c[j].Website, c[i].Website
+	c[i].Name, c[j].Name = c[j].Name, c[i].Name
 }
 
 // Sort
@@ -163,7 +200,7 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
 	}
 	ctx.GetStateDb().SetNonce(electionAddr, nonce+1)
 	abiJSON := `[
-{"inputs":[{"name":"url","type":"bytes"}],"name":"registerWitness","outputs":[],"type":"function"},
+{"inputs":[{"name":"nodeUrl","type":"bytes"},{"name":"website","type":"bytes"},{"name":"nodeName","type":"bytes"}],"name":"registerWitness","outputs":[],"type":"function"},
 {"inputs":[],"name":"unregisterWitness","outputs":[],"type":"function"},
 {"inputs":[{"name":"candidate","type":"address[]"}],"name":"voteWitnesses","outputs":[],"type":"function"},
 {"inputs":[],"name":"cancelVote","outputs":[],"type":"function"},
@@ -189,9 +226,14 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
 	switch {
 	case bytes.Equal(methodId, electionABI.Methods["registerWitness"].Id()):
 		methodName = "registerWitness"
-		var url []byte
-		if err = electionABI.UnpackInput(&url, "registerWitness", methodArgs); err == nil {
-			err = c.registerWitness(ctx.GetOrigin(), url)
+		type NodeInfo struct {
+			NodeUrl  []byte
+			Website  []byte
+			NodeName []byte
+		}
+		var nodeInfo NodeInfo
+		if err = electionABI.UnpackInput(&nodeInfo, "registerWitness", methodArgs); err == nil {
+			err = c.registerWitness(ctx.GetOrigin(), nodeInfo.NodeUrl, nodeInfo.Website, nodeInfo.NodeName)
 		}
 
 	case bytes.Equal(methodId, electionABI.Methods["unregisterWitness"].Id()):
@@ -249,17 +291,16 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
 	return nil, err
 }
 
-func (ec electionContext) registerWitness(address common.Address, url []byte) error {
+func (ec electionContext) registerWitness(address common.Address, url []byte, website []byte, name []byte) error {
 	// get candidate from db
 	candidate := ec.getCandidate(address)
 
 	// if candidate already exists
 	if bytes.Equal(candidate.Owner.Bytes(), address.Bytes()) {
-
 		// if candidate is already active, just ignore
 		if candidate.Active {
 			log.Warn("registerWitness witness already exists", "address", address.Hex())
-			return fmt.Errorf("registerWitness witness already exists")
+			return ErrCandiAlreadyRegistered
 		}
 	} else {
 		// if candidate is not found in db
@@ -268,9 +309,16 @@ func (ec electionContext) registerWitness(address common.Address, url []byte) er
 		candidate.VoteCount = big.NewInt(0)
 	}
 
+	// Sanity check
+	if err := ec.checkCandi(address, string(name), string(website), string(url)); err != nil {
+		return err
+	}
+
 	// Mark candidate as active
 	candidate.Active = true
 	candidate.Url = url
+	candidate.Website = website
+	candidate.Name = name
 
 	// save candidate info db
 	err := ec.setCandidate(candidate)
@@ -279,6 +327,43 @@ func (ec electionContext) registerWitness(address common.Address, url []byte) er
 		return err
 	}
 
+	return nil
+}
+
+// checkCandi 候选人基本参数的校验
+func (ec electionContext) checkCandi(addr common.Address, name string, website string, url string) error {
+	// length check
+	if len(name) < 3 || len(name) > 20 {
+		return ErrCandiNameLenInvalid
+	}
+	if len(website) < 3 || len(website) > 60 {
+		return ErrCandiUrlLenInvalid
+	}
+
+	digitalAndLower := func(s string) bool {
+		for _, ru := range s {
+			if !unicode.IsDigit(ru) && !unicode.IsLower(ru) {
+				return false
+			}
+		}
+		return true
+	}
+	if !digitalAndLower(name) {
+		return ErrCandiNameInvalid
+	}
+
+	// p2p node url format check
+	if _, err := vntp2p.ParseNode(url); err != nil {
+		return fmt.Errorf("registerWitness node url is error: %s", err)
+	}
+
+	// duplication check
+	wits := getAllCandidate(ec.context.GetStateDb())
+	for _, w := range wits {
+		if w.Owner != addr && (string(w.Name) == name || string(w.Website) == website || string(w.Url) == url) {
+			return ErrCandiInfoDup
+		}
+	}
 	return nil
 }
 
@@ -766,9 +851,14 @@ func GetFirstNCandidates(stateDB inter.StateDB, witnessesNum int) ([]common.Addr
 	return witnesses, urls
 }
 
-// GetAllCandidates return the list of all candidate
-func GetAllCandidates(stateDB inter.StateDB) CandidateList {
-	return getAllCandidate(stateDB)
+// GetAllCandidates return the list of all candidate. Candidates will be
+// sort by votes and address, if sorted is true.
+func GetAllCandidates(stateDB inter.StateDB, sorted bool) CandidateList {
+	candidates := getAllCandidate(stateDB)
+	if sorted {
+		candidates.Sort()
+	}
+	return candidates
 }
 
 // GetVoter returns a voter's information

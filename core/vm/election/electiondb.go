@@ -1,3 +1,19 @@
+// Copyright 2019 The go-vnt Authors
+// This file is part of the go-vnt library.
+//
+// The go-vnt library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-vnt library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-vnt library. If not, see <http://www.gnu.org/licenses/>.
+
 package election
 
 import (
@@ -172,28 +188,19 @@ func convertToKV(prefix byte, v interface{}, fn func(key common.Hash, value comm
 		// 如果要存储的字节过长，就拆分了存
 		// 0号位置存储切分的长度，后面按右对齐方式存储，若需要补空位，补在第一个元素处
 		valLen := len(elem)/32 + 1
-		if valLen > 1 {
-			lenByte, err := rlp.EncodeToBytes(uint32(valLen))
-			if err != nil {
-				return err
+		var j int
+		for j = valLen - 1; j >= 0; j-- {
+			var subKey common.Hash
+			copy(subKey[:], key[:])
+			binary.BigEndian.PutUint32(subKey[PREFIXLENGTH+common.AddressLength:], uint32(j))
+			cutPos := len(elem) - 32
+			if cutPos < 0 {
+				fn(subKey, common.BytesToHash(elem))
+				break
 			}
-			fn(key, common.BytesToHash(lenByte))
-			var j int
-			for j = valLen; j > 0; j-- {
-				var subKey common.Hash
-				copy(subKey[:], key[:])
-				binary.BigEndian.PutUint32(subKey[PREFIXLENGTH+common.AddressLength:], uint32(j))
-				cutPos := len(elem) - 32
-				if cutPos < 0 {
-					fn(subKey, common.BytesToHash(elem))
-					break
-				}
-				tmpElem := elem[cutPos:]
-				elem = elem[:cutPos]
-				fn(subKey, common.BytesToHash(tmpElem))
-			}
-		} else {
-			fn(key, common.BytesToHash(elem))
+			tmpElem := elem[cutPos:]
+			elem = elem[:cutPos]
+			fn(subKey, common.BytesToHash(tmpElem))
 		}
 	}
 	return nil
@@ -273,33 +280,25 @@ func convertToStruct(prefix byte, addr common.Address, v interface{}, getFn func
 			}
 		} else if _, ok := fv.Interface().([]byte); ok {
 			// 部分byte数组过长，是拆分了之后存储的
-			var valLen uint32
-			if err := rlp.DecodeBytes(valByte.Big().Bytes(), &valLen); err == nil {
-				if valLen == 0 {
-					break
-				}
-				var longByte []byte
-				for j := valLen; j > 1; j-- {
+			var val []byte
+			err := rlp.DecodeBytes(valByte.Big().Bytes(), &val)
+			if err == nil {
+				value.Field(i).Set(reflect.ValueOf(val))
+			} else {
+				val = valByte.Big().Bytes()
+				var tmp []byte
+				for j := 1; ; j++ {
 					binary.BigEndian.PutUint32(key[PREFIXLENGTH+common.AddressLength:], uint32(j))
 					arrayByte := getFn(key)
-					longByte = append(arrayByte.Bytes(), longByte...)
+					if arrayByte.Big().Sign() == 0 {
+						break
+					}
+					val = append(val, arrayByte.Bytes()...)
+					if err = rlp.DecodeBytes(val, &tmp); err == nil {
+						value.Field(i).Set(reflect.ValueOf(tmp))
+						break
+					}
 				}
-				if valLen > 0 {
-					binary.BigEndian.PutUint32(key[PREFIXLENGTH+common.AddressLength:], uint32(1))
-					arrayByte := getFn(key)
-					longByte = append(arrayByte.Big().Bytes(), longByte...)
-				}
-				var tmp []byte
-				if err = rlp.DecodeBytes(longByte, &tmp); err != nil {
-					return fmt.Errorf("decode %x to []byte error: %v", longByte, err)
-				}
-				value.Field(i).Set(reflect.ValueOf(tmp))
-			} else {
-				var tmp []byte
-				if err = rlp.DecodeBytes(valByte.Big().Bytes(), &tmp); err != nil {
-					return fmt.Errorf("decode %x to []byte error: %v", valByte, err)
-				}
-				value.Field(i).Set(reflect.ValueOf(tmp))
 			}
 		}
 
@@ -336,12 +335,13 @@ func getAllCandidate(db inter.StateDB) CandidateList {
 		return db.GetState(electionAddr, key)
 	}
 	// 用这些address尝试去数据库中找候选者，当没有这个地址的候选者时会报错
+	// 有可能并不是见证人所以报错
 	for addr := range addrs {
 		// var candidate Candidate
 		candidate := newCandidate()
 		err := convertToStruct(CANDIDATEPREFIX, addr, &candidate, getFn)
 		if err != nil {
-			log.Error("getAllCandidate error", "address", addr, "err", err)
+			log.Debug("getAllCandidate maybe error", "address", addr, "err", err)
 			continue
 		}
 		result = append(result, candidate)

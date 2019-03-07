@@ -1,3 +1,19 @@
+// Copyright 2019 The go-vnt Authors
+// This file is part of the go-vnt library.
+//
+// The go-vnt library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-vnt library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-vnt library. If not, see <http://www.gnu.org/licenses/>.
+
 package utils
 
 import (
@@ -10,12 +26,14 @@ import (
 	"time"
 
 	"github.com/vntchain/go-vnt/common"
+	"github.com/vntchain/go-vnt/core/wavm/contract"
 	"github.com/vntchain/go-vnt/log"
+	"github.com/vntchain/go-vnt/rlp"
 )
 
 const (
 	HEADERLEN   int    = 6
-	MAGIC       uint32 = 0x6d736100
+	MAGIC       uint32 = 0x6d736101
 	MagicBase64 uint32 = 0x7a464741
 	ZLIBUTIL    uint16 = 0x01
 	GZIPUTIL    uint16 = 0x02
@@ -35,14 +53,7 @@ func Compress(src []byte) []byte {
 	if isCompressed {
 		compressType := make([]byte, 2)
 		binary.LittleEndian.PutUint16(compressType, ZLIBUTIL)
-
-		magic := make([]byte, 4)
-		binary.LittleEndian.PutUint32(magic, MAGIC)
-
-		header := append(magic, compressType...)
-		dst = append(header, dst...)
-
-		log.Debug("after compress", "code length", len(dst), "header", header)
+		dst = append(compressType, dst...)
 		return dst
 	}
 
@@ -58,19 +69,6 @@ func DeCompress(src []byte) ([]byte, error) {
 	}
 
 	log.Debug("before decompress", "code length", len(src))
-	magic, err := ReadMagic(src)
-	if err != nil {
-		return nil, err
-	}
-
-	log.Debug("during decompress", "magic", magic)
-	// if src is not compressed, return the raw code
-	if magic != MAGIC {
-		return src, nil
-	}
-
-	// get rid of the magic bytes
-	src = src[4:]
 
 	compressType, err := readCompressType(src)
 	if err != nil {
@@ -106,15 +104,18 @@ func compressZlib(src []byte) []byte {
 	return dst
 }
 
+func CompressZlib(src []byte) []byte {
+	return compressZlib(src)
+}
+
 func deZlib(src []byte) (dst []byte, err error) {
 	var out bytes.Buffer
 	b := bytes.NewReader(src)
 	r, err := zlib.NewReader(b)
-	defer r.Close()
-
 	if err != nil {
 		return nil, err
 	}
+	defer r.Close()
 	io.Copy(&out, r)
 	return out.Bytes(), nil
 }
@@ -148,4 +149,25 @@ func readCompressType(src []byte) (uint16, error) {
 	}
 	log.Debug("read CompressType", "CompressType", common.ToHex(buf[:]))
 	return binary.LittleEndian.Uint16(buf[:]), nil
+}
+
+//将abi和wasm压缩后进行rlp编码
+func CompressWasmAndAbi(abijson, wasm, compiled []byte) []byte {
+	wasmcode := contract.WasmCode{
+		Code:     wasm,
+		Abi:      abijson,
+		Compiled: compiled,
+	}
+	res, err := rlp.EncodeToBytes(wasmcode)
+	if err != nil {
+		panic(err)
+	}
+	rlpcps := Compress(res)
+	cpsres, err := rlp.EncodeToBytes(rlpcps)
+	if err != nil {
+		panic(err)
+	}
+	magic := make([]byte, 4)
+	binary.LittleEndian.PutUint32(magic, MAGIC)
+	return append(magic, cpsres...)
 }

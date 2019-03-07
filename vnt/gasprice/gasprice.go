@@ -29,7 +29,7 @@ import (
 	"github.com/vntchain/go-vnt/rpc"
 )
 
-var maxPrice = big.NewInt(500 * params.Shannon)
+var maxPrice = big.NewInt(500 * params.Gwei)
 
 type Config struct {
 	Blocks     int

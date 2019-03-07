@@ -1,3 +1,19 @@
+// Copyright 2019 The go-vnt Authors
+// This file is part of the go-vnt library.
+//
+// The go-vnt library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-vnt library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-vnt library. If not, see <http://www.gnu.org/licenses/>.
+
 package wavm
 
 import (
@@ -6,6 +22,7 @@ import (
 	"math/big"
 	"sync/atomic"
 
+	wasmcontract "github.com/vntchain/go-vnt/core/wavm/contract"
 	"github.com/vntchain/go-vnt/core/wavm/gas"
 
 	"github.com/vntchain/go-vnt/common"
@@ -13,7 +30,6 @@ import (
 	"github.com/vntchain/go-vnt/core/vm"
 
 	"github.com/vntchain/go-vnt/core/vm/interface"
-	"github.com/vntchain/go-vnt/core/wavm/contract"
 	errorsmsg "github.com/vntchain/go-vnt/core/wavm/errors"
 	"github.com/vntchain/go-vnt/core/wavm/storage"
 	"github.com/vntchain/go-vnt/core/wavm/utils"
@@ -24,12 +40,7 @@ import (
 )
 
 var emptyCodeHash = crypto.Keccak256Hash(nil)
-
-type WasmCode struct {
-	Code     []byte
-	Abi      []byte
-	Compiled []byte
-}
+var electionAddress = common.BytesToAddress([]byte{9})
 
 type WAVM struct {
 	// Context provides auxiliary blockchain related information
@@ -38,6 +49,9 @@ type WAVM struct {
 	StateDB inter.StateDB
 	// Depth is the current call stack
 	depth int
+	// Mutable is the current call mutable state
+	// -1:init state,0:unmutable,1:mutable
+	mutable int
 
 	// chainConfig contains information about the current chain
 	chainConfig *params.ChainConfig
@@ -70,7 +84,7 @@ func (wavm *WAVM) GetChainConfig() *params.ChainConfig {
 }
 
 // run runs the given contract and takes care of running precompiles with a fallback to the byte code interpreter.
-func runWavm(wavm *WAVM, contract *contract.WASMContract, input []byte, isCreate bool) ([]byte, error) {
+func runWavm(wavm *WAVM, contract *wasmcontract.WASMContract, input []byte, isCreate bool) ([]byte, error) {
 	if contract.CodeAddr != nil {
 		precompiles := vm.PrecompiledContractsHomestead
 		if wavm.ChainConfig().IsByzantium(wavm.BlockNumber) {
@@ -83,24 +97,14 @@ func runWavm(wavm *WAVM, contract *contract.WASMContract, input []byte, isCreate
 	if len(contract.Code) == 0 {
 		return nil, nil
 	}
-	code := WasmCode{}
-	if isCreate == false {
-		decompress, err := utils.DeCompress(contract.Code)
-		if err != nil {
-			return nil, err
-		}
-		contract.Code = decompress
-	}
-
-	sep := []byte{0x7d} // 分割符'}',是{Code: "0x2da32be...", Abi: "0x23290da98acb032..."}的最后一位
-	sepIdx := bytes.Index(contract.Code, sep)
-
-	err := json.Unmarshal(contract.Code[:sepIdx+1], &code)
+	var code wasmcontract.WasmCode
+	decode, vmInput, err := utils.DecodeContractCode(contract.Code)
 	if err != nil {
 		return nil, err
 	}
-	if isCreate {
-		input = contract.Code[sepIdx+1:]
+	code = decode
+	if isCreate == true {
+		input = vmInput
 	}
 
 	abi, err := GetAbi(code.Abi)
@@ -153,17 +157,12 @@ func runWavm(wavm *WAVM, contract *contract.WASMContract, input []byte, isCreate
 		if err != nil {
 			return nil, err
 		}
-
 		compileres, err := json.Marshal(compiled)
 		if err != nil {
 			return nil, err
 		}
 		code.Compiled = compileres
-		res, err = json.Marshal(code)
-		if err != nil {
-			return nil, err
-		}
-		res = utils.Compress(res)
+		res = utils.CompressWasmAndAbi(code.Abi, code.Code, code.Compiled)
 	} else {
 		var compiled []vnt.Compiled
 		err = json.Unmarshal(code.Compiled, &compiled)
@@ -185,6 +184,7 @@ func NewWAVM(ctx vm.Context, statedb inter.StateDB, chainConfig *params.ChainCon
 		vmConfig:    vmConfig,
 		chainConfig: chainConfig,
 		chainRules:  chainConfig.Rules(ctx.BlockNumber),
+		mutable:     -1,
 	}
 	return wavm
 }
@@ -223,7 +223,7 @@ func (wavm *WAVM) Create(caller vm.ContractRef, code []byte, gas uint64, value *
 	// initialise a new contract and set the code that is to be used by the
 	// wavm. The contract is a scoped environment for this execution context
 	// only.
-	contract := contract.NewWASMContract(caller, vm.AccountRef(contractAddr), value, gas)
+	contract := wasmcontract.NewWASMContract(caller, vm.AccountRef(contractAddr), value, gas)
 	contract.SetCallCode(&contractAddr, crypto.Keccak256Hash(code), code)
 
 	if wavm.vmConfig.NoRecursion && wavm.depth > 0 {
@@ -235,7 +235,6 @@ func (wavm *WAVM) Create(caller vm.ContractRef, code []byte, gas uint64, value *
 	// }
 	// start := time.Now()
 	ret, err = runWavm(wavm, contract, nil, true)
-
 	// check whether the max code size has been exceeded
 	maxCodeSizeExceeded := wavm.ChainConfig().IsEIP158(wavm.BlockNumber) && len(ret) > params.MaxCodeSize
 	// if the contract creation ran successfully and no errors were returned
@@ -312,7 +311,7 @@ func (wavm *WAVM) Call(caller vm.ContractRef, addr common.Address, input []byte,
 
 	// Initialise a new contract and set the code that is to be used by the EVM.
 	// The contract is a scoped environment for this execution context only.
-	contract := contract.NewWASMContract(caller, to, value, gas)
+	contract := wasmcontract.NewWASMContract(caller, to, value, gas)
 
 	code := wavm.StateDB.GetCode(addr)
 
@@ -334,7 +333,7 @@ func (wavm *WAVM) Call(caller vm.ContractRef, addr common.Address, input []byte,
 	// when we're in homestead this also counts for code storage gas errors.
 	if err != nil {
 		wavm.StateDB.RevertToSnapshot(snapshot)
-		if err.Error() != errorsmsg.ErrExecutionReverted.Error() {
+		if err.Error() != errorsmsg.ErrExecutionReverted.Error() && !bytes.Equal(to.Address().Bytes(), electionAddress.Bytes()) {
 			contract.UseGas(contract.Gas)
 		}
 	}
@@ -370,7 +369,7 @@ func (wavm *WAVM) CallCode(caller vm.ContractRef, addr common.Address, input []b
 	// initialise a new contract and set the code that is to be used by the
 	// EVM. The contract is a scoped environment for this execution context
 	// only.
-	contract := contract.NewWASMContract(caller, to, value, gas)
+	contract := wasmcontract.NewWASMContract(caller, to, value, gas)
 
 	code := wavm.StateDB.GetCode(addr)
 
@@ -400,8 +399,8 @@ func (wavm *WAVM) DelegateCall(caller vm.ContractRef, addr common.Address, input
 	)
 
 	// Initialise a new contract and make initialise the delegate values
-	ctr := contract.NewWASMContract(caller, to, nil, gas).AsDelegate()
-	contract := ctr.(*contract.WASMContract)
+	ctr := wasmcontract.NewWASMContract(caller, to, nil, gas).AsDelegate()
+	contract := ctr.(*wasmcontract.WASMContract)
 
 	code := wavm.StateDB.GetCode(addr)
 

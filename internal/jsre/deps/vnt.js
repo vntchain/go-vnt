@@ -515,10 +515,10 @@ module.exports=[
 
 },{}],4:[function(require,module,exports){
 var f = require('./formatters');
-var SolidityType = require('./type');
+var Type = require('./type');
 
 /**
- * SolidityTypeAddress is a prootype that represents address type
+ * TypeAddress is a prootype that represents address type
  * It matches:
  * address
  * address[]
@@ -527,26 +527,26 @@ var SolidityType = require('./type');
  * address[3][]
  * address[][6][], ...
  */
-var SolidityTypeAddress = function () {
+var TypeAddress = function () {
     this._inputFormatter = f.formatInputInt;
     this._outputFormatter = f.formatOutputAddress;
 };
 
-SolidityTypeAddress.prototype = new SolidityType({});
-SolidityTypeAddress.prototype.constructor = SolidityTypeAddress;
+TypeAddress.prototype = new Type({});
+TypeAddress.prototype.constructor = TypeAddress;
 
-SolidityTypeAddress.prototype.isType = function (name) {
+TypeAddress.prototype.isType = function (name) {
     return !!name.match(/address(\[([0-9]*)\])?/);
 };
 
-module.exports = SolidityTypeAddress;
+module.exports = TypeAddress;
 
 },{"./formatters":9,"./type":14}],5:[function(require,module,exports){
 var f = require('./formatters');
-var SolidityType = require('./type');
+var Type = require('./type');
 
 /**
- * SolidityTypeBool is a prootype that represents bool type
+ * TypeBool is a prootype that represents bool type
  * It matches:
  * bool
  * bool[]
@@ -555,26 +555,26 @@ var SolidityType = require('./type');
  * bool[3][]
  * bool[][6][], ...
  */
-var SolidityTypeBool = function () {
+var TypeBool = function () {
     this._inputFormatter = f.formatInputBool;
     this._outputFormatter = f.formatOutputBool;
 };
 
-SolidityTypeBool.prototype = new SolidityType({});
-SolidityTypeBool.prototype.constructor = SolidityTypeBool;
+TypeBool.prototype = new Type({});
+TypeBool.prototype.constructor = TypeBool;
 
-SolidityTypeBool.prototype.isType = function (name) {
+TypeBool.prototype.isType = function (name) {
     return !!name.match(/^bool(\[([0-9]*)\])*$/);
 };
 
-module.exports = SolidityTypeBool;
+module.exports = TypeBool;
 
 },{"./formatters":9,"./type":14}],6:[function(require,module,exports){
 var f = require('./formatters');
-var SolidityType = require('./type');
+var Type = require('./type');
 
 /**
- * SolidityTypeBytes is a prototype that represents the bytes type.
+ * TypeBytes is a prototype that represents the bytes type.
  * It matches:
  * bytes
  * bytes[]
@@ -586,19 +586,19 @@ var SolidityType = require('./type');
  * bytes8[4]
  * bytes[3][]
  */
-var SolidityTypeBytes = function () {
+var TypeBytes = function () {
     this._inputFormatter = f.formatInputBytes;
     this._outputFormatter = f.formatOutputBytes;
 };
 
-SolidityTypeBytes.prototype = new SolidityType({});
-SolidityTypeBytes.prototype.constructor = SolidityTypeBytes;
+TypeBytes.prototype = new Type({});
+TypeBytes.prototype.constructor = TypeBytes;
 
-SolidityTypeBytes.prototype.isType = function (name) {
+TypeBytes.prototype.isType = function (name) {
     return !!name.match(/^bytes([0-9]{1,})(\[([0-9]*)\])*$/);
 };
 
-module.exports = SolidityTypeBytes;
+module.exports = TypeBytes;
 
 },{"./formatters":9,"./type":14}],7:[function(require,module,exports){
 /*
@@ -625,46 +625,46 @@ module.exports = SolidityTypeBytes;
 
 var f = require('./formatters');
 
-var SolidityTypeAddress = require('./address');
-var SolidityTypeBool = require('./bool');
-var SolidityTypeInt = require('./int');
-var SolidityTypeUInt = require('./uint');
-var SolidityTypeDynamicBytes = require('./dynamicbytes');
-var SolidityTypeString = require('./string');
-var SolidityTypeReal = require('./real');
-var SolidityTypeUReal = require('./ureal');
-var SolidityTypeBytes = require('./bytes');
+var TypeAddress = require('./address');
+var TypeBool = require('./bool');
+var TypeInt = require('./int');
+var TypeUInt = require('./uint');
+var TypeDynamicBytes = require('./dynamicbytes');
+var TypeString = require('./string');
+var TypeReal = require('./real');
+var TypeUReal = require('./ureal');
+var TypeBytes = require('./bytes');
 
-var isDynamic = function (solidityType, type) {
-   return solidityType.isDynamicType(type) ||
-          solidityType.isDynamicArray(type);
+var isDynamic = function (Type, type) {
+   return Type.isDynamicType(type) ||
+          Type.isDynamicArray(type);
 };
 
 /**
- * SolidityCoder prototype should be used to encode/decode solidity params of any type
+ * Coder prototype should be used to encode/decode params of any type
  */
-var SolidityCoder = function (types) {
+var Coder = function (types) {
     this._types = types;
 };
 
 /**
- * This method should be used to transform type to SolidityType
+ * This method should be used to transform type to Type
  *
  * @method _requireType
  * @param {String} type
- * @returns {SolidityType}
+ * @returns {Type}
  * @throws {Error} throws if no matching type is found
  */
-SolidityCoder.prototype._requireType = function (type) {
-    var solidityType = this._types.filter(function (t) {
+Coder.prototype._requireType = function (type) {
+    var _type = this._types.filter(function (t) {
         return t.isType(type);
     })[0];
 
-    if (!solidityType) {
-        throw Error('invalid solidity type!: ' + type);
+    if (!_type) {
+        throw Error('invalid type!: ' + type);
     }
 
-    return solidityType;
+    return _type;
 };
 
 /**
@@ -675,7 +675,7 @@ SolidityCoder.prototype._requireType = function (type) {
  * @param {Object} plain param
  * @return {String} encoded plain param
  */
-SolidityCoder.prototype.encodeParam = function (type, param) {
+Coder.prototype.encodeParam = function (type, param) {
     return this.encodeParams([type], [param]);
 };
 
@@ -687,47 +687,47 @@ SolidityCoder.prototype.encodeParam = function (type, param) {
  * @param {Array} params
  * @return {String} encoded list of params
  */
-SolidityCoder.prototype.encodeParams = function (types, params) {
-    var solidityTypes = this.getSolidityTypes(types);
+Coder.prototype.encodeParams = function (types, params) {
+    var Types = this.getTypes(types);
 
-    var encodeds = solidityTypes.map(function (solidityType, index) {
-        return solidityType.encode(params[index], types[index]);
+    var encodeds = Types.map(function (Type, index) {
+        return Type.encode(params[index], types[index]);
     });
 
-    var dynamicOffset = solidityTypes.reduce(function (acc, solidityType, index) {
-        var staticPartLength = solidityType.staticPartLength(types[index]);
+    var dynamicOffset = Types.reduce(function (acc, Type, index) {
+        var staticPartLength = Type.staticPartLength(types[index]);
         var roundedStaticPartLength = Math.floor((staticPartLength + 31) / 32) * 32;
 
-        return acc + (isDynamic(solidityTypes[index], types[index]) ?
+        return acc + (isDynamic(Types[index], types[index]) ?
             32 :
             roundedStaticPartLength);
     }, 0);
 
-    var result = this.encodeMultiWithOffset(types, solidityTypes, encodeds, dynamicOffset);
+    var result = this.encodeMultiWithOffset(types, Types, encodeds, dynamicOffset);
 
     return result;
 };
 
-SolidityCoder.prototype.encodeMultiWithOffset = function (types, solidityTypes, encodeds, dynamicOffset) {
+Coder.prototype.encodeMultiWithOffset = function (types, Types, encodeds, dynamicOffset) {
     var result = "";
     var self = this;
 
     types.forEach(function (type, i) {
-        if (isDynamic(solidityTypes[i], types[i])) {
+        if (isDynamic(Types[i], types[i])) {
             result += f.formatInputInt(dynamicOffset).encode();
-            var e = self.encodeWithOffset(types[i], solidityTypes[i], encodeds[i], dynamicOffset);
+            var e = self.encodeWithOffset(types[i], Types[i], encodeds[i], dynamicOffset);
             dynamicOffset += e.length / 2;
         } else {
             // don't add length to dynamicOffset. it's already counted
-            result += self.encodeWithOffset(types[i], solidityTypes[i], encodeds[i], dynamicOffset);
+            result += self.encodeWithOffset(types[i], Types[i], encodeds[i], dynamicOffset);
         }
 
         // TODO: figure out nested arrays
     });
 
     types.forEach(function (type, i) {
-        if (isDynamic(solidityTypes[i], types[i])) {
-            var e = self.encodeWithOffset(types[i], solidityTypes[i], encodeds[i], dynamicOffset);
+        if (isDynamic(Types[i], types[i])) {
+            var e = self.encodeWithOffset(types[i], Types[i], encodeds[i], dynamicOffset);
             dynamicOffset += e.length / 2;
             result += e;
         }
@@ -735,21 +735,21 @@ SolidityCoder.prototype.encodeMultiWithOffset = function (types, solidityTypes, 
     return result;
 };
 
-SolidityCoder.prototype.encodeWithOffset = function (type, solidityType, encoded, offset) {
+Coder.prototype.encodeWithOffset = function (type, Type, encoded, offset) {
     /* jshint maxcomplexity: 17 */
     /* jshint maxdepth: 5 */
 
     var self = this;
     var encodingMode={dynamic:1,static:2,other:3};
 
-    var mode=(solidityType.isDynamicArray(type)?encodingMode.dynamic:(solidityType.isStaticArray(type)?encodingMode.static:encodingMode.other));
+    var mode=(Type.isDynamicArray(type)?encodingMode.dynamic:(Type.isStaticArray(type)?encodingMode.static:encodingMode.other));
 
     if(mode !== encodingMode.other){
-        var nestedName = solidityType.nestedName(type);
-        var nestedStaticPartLength = solidityType.staticPartLength(nestedName);
+        var nestedName = Type.nestedName(type);
+        var nestedStaticPartLength = Type.staticPartLength(nestedName);
         var result = (mode === encodingMode.dynamic ? encoded[0] : '');
 
-        if (solidityType.isDynamicArray(nestedName)) {
+        if (Type.isDynamicArray(nestedName)) {
             var previousLength = (mode === encodingMode.dynamic ? 2 : 0);
 
             for (var i = 0; i < encoded.length; i++) {
@@ -768,10 +768,10 @@ SolidityCoder.prototype.encodeWithOffset = function (type, solidityType, encoded
         for (var c = 0; c < len; c++) {
             var additionalOffset = result / 2;
             if(mode === encodingMode.dynamic){
-                result += self.encodeWithOffset(nestedName, solidityType, encoded[c + 1], offset +  additionalOffset);
+                result += self.encodeWithOffset(nestedName, Type, encoded[c + 1], offset +  additionalOffset);
             }
             else if(mode === encodingMode.static){
-                result += self.encodeWithOffset(nestedName, solidityType, encoded[c], offset + additionalOffset);
+                result += self.encodeWithOffset(nestedName, Type, encoded[c], offset + additionalOffset);
             }
         }
 
@@ -790,7 +790,7 @@ SolidityCoder.prototype.encodeWithOffset = function (type, solidityType, encoded
  * @param {String} bytes
  * @return {Object} plain param
  */
-SolidityCoder.prototype.decodeParam = function (type, bytes) {
+Coder.prototype.decodeParam = function (type, bytes) {
     return this.decodeParams([type], bytes)[0];
 };
 
@@ -802,18 +802,18 @@ SolidityCoder.prototype.decodeParam = function (type, bytes) {
  * @param {String} bytes
  * @return {Array} array of plain params
  */
-SolidityCoder.prototype.decodeParams = function (types, bytes) {
-    var solidityTypes = this.getSolidityTypes(types);
-    var offsets = this.getOffsets(types, solidityTypes);
+Coder.prototype.decodeParams = function (types, bytes) {
+    var Types = this.getTypes(types);
+    var offsets = this.getOffsets(types, Types);
 
-    return solidityTypes.map(function (solidityType, index) {
-        return solidityType.decode(bytes, offsets[index],  types[index], index);
+    return Types.map(function (Type, index) {
+        return Type.decode(bytes, offsets[index],  types[index], index);
     });
 };
 
-SolidityCoder.prototype.getOffsets = function (types, solidityTypes) {
-    var lengths =  solidityTypes.map(function (solidityType, index) {
-        return solidityType.staticPartLength(types[index]);
+Coder.prototype.getOffsets = function (types, Types) {
+    var lengths =  Types.map(function (Type, index) {
+        return Type.staticPartLength(types[index]);
     });
 
     for (var i = 1; i < lengths.length; i++) {
@@ -823,53 +823,53 @@ SolidityCoder.prototype.getOffsets = function (types, solidityTypes) {
 
     return lengths.map(function (length, index) {
         // remove the current length, so the length is sum of previous elements
-        var staticPartLength = solidityTypes[index].staticPartLength(types[index]);
+        var staticPartLength = Types[index].staticPartLength(types[index]);
         return length - staticPartLength;
     });
 };
 
-SolidityCoder.prototype.getSolidityTypes = function (types) {
+Coder.prototype.getTypes = function (types) {
     var self = this;
     return types.map(function (type) {
         return self._requireType(type);
     });
 };
 
-var coder = new SolidityCoder([
-    new SolidityTypeAddress(),
-    new SolidityTypeBool(),
-    new SolidityTypeInt(),
-    new SolidityTypeUInt(),
-    new SolidityTypeDynamicBytes(),
-    new SolidityTypeBytes(),
-    new SolidityTypeString(),
-    new SolidityTypeReal(),
-    new SolidityTypeUReal()
+var coder = new Coder([
+    new TypeAddress(),
+    new TypeBool(),
+    new TypeInt(),
+    new TypeUInt(),
+    new TypeDynamicBytes(),
+    new TypeBytes(),
+    new TypeString(),
+    new TypeReal(),
+    new TypeUReal()
 ]);
 
 module.exports = coder;
 
 },{"./address":4,"./bool":5,"./bytes":6,"./dynamicbytes":8,"./formatters":9,"./int":10,"./real":12,"./string":13,"./uint":15,"./ureal":16}],8:[function(require,module,exports){
 var f = require('./formatters');
-var SolidityType = require('./type');
+var Type = require('./type');
 
-var SolidityTypeDynamicBytes = function () {
+var TypeDynamicBytes = function () {
     this._inputFormatter = f.formatInputDynamicBytes;
     this._outputFormatter = f.formatOutputDynamicBytes;
 };
 
-SolidityTypeDynamicBytes.prototype = new SolidityType({});
-SolidityTypeDynamicBytes.prototype.constructor = SolidityTypeDynamicBytes;
+TypeDynamicBytes.prototype = new Type({});
+TypeDynamicBytes.prototype.constructor = TypeDynamicBytes;
 
-SolidityTypeDynamicBytes.prototype.isType = function (name) {
+TypeDynamicBytes.prototype.isType = function (name) {
     return !!name.match(/^bytes(\[([0-9]*)\])*$/);
 };
 
-SolidityTypeDynamicBytes.prototype.isDynamicType = function () {
+TypeDynamicBytes.prototype.isDynamicType = function () {
     return true;
 };
 
-module.exports = SolidityTypeDynamicBytes;
+module.exports = TypeDynamicBytes;
 
 },{"./formatters":9,"./type":14}],9:[function(require,module,exports){
 /*
@@ -897,7 +897,7 @@ module.exports = SolidityTypeDynamicBytes;
 var BigNumber = require('bignumber.js');
 var utils = require('../utils/utils');
 var c = require('../utils/config');
-var SolidityParam = require('./param');
+var Param = require('./param');
 
 
 /**
@@ -907,12 +907,12 @@ var SolidityParam = require('./param');
  *
  * @method formatInputInt
  * @param {String|Number|BigNumber} value that needs to be formatted
- * @returns {SolidityParam}
+ * @returns {Param}
  */
 var formatInputInt = function (value) {
     BigNumber.config(c.VNT_BIGNUMBER_ROUNDING_MODE);
     var result = utils.padLeft(utils.toTwosComplement(value).toString(16), 64);
-    return new SolidityParam(result);
+    return new Param(result);
 };
 
 /**
@@ -920,13 +920,13 @@ var formatInputInt = function (value) {
  *
  * @method formatInputBytes
  * @param {String}
- * @returns {SolidityParam}
+ * @returns {Param}
  */
 var formatInputBytes = function (value) {
     var result = utils.toHex(value).substr(2);
     var l = Math.floor((result.length + 63) / 64);
     result = utils.padRight(result, l * 64);
-    return new SolidityParam(result);
+    return new Param(result);
 };
 
 /**
@@ -934,14 +934,14 @@ var formatInputBytes = function (value) {
  *
  * @method formatDynamicInputBytes
  * @param {String}
- * @returns {SolidityParam}
+ * @returns {Param}
  */
 var formatInputDynamicBytes = function (value) {
     var result = utils.toHex(value).substr(2);
     var length = result.length / 2;
     var l = Math.floor((result.length + 63) / 64);
     result = utils.padRight(result, l * 64);
-    return new SolidityParam(formatInputInt(length).value + result);
+    return new Param(formatInputInt(length).value + result);
 };
 
 /**
@@ -949,14 +949,14 @@ var formatInputDynamicBytes = function (value) {
  *
  * @method formatInputString
  * @param {String}
- * @returns {SolidityParam}
+ * @returns {Param}
  */
 var formatInputString = function (value) {
     var result = utils.fromUtf8(value).substr(2);
     var length = result.length / 2;
     var l = Math.floor((result.length + 63) / 64);
     result = utils.padRight(result, l * 64);
-    return new SolidityParam(formatInputInt(length).value + result);
+    return new Param(formatInputInt(length).value + result);
 };
 
 /**
@@ -964,11 +964,11 @@ var formatInputString = function (value) {
  *
  * @method formatInputBool
  * @param {Boolean}
- * @returns {SolidityParam}
+ * @returns {Param}
  */
 var formatInputBool = function (value) {
     var result = '000000000000000000000000000000000000000000000000000000000000000' + (value ?  '1' : '0');
-    return new SolidityParam(result);
+    return new Param(result);
 };
 
 /**
@@ -977,7 +977,7 @@ var formatInputBool = function (value) {
  *
  * @method formatInputReal
  * @param {String|Number|BigNumber}
- * @returns {SolidityParam}
+ * @returns {Param}
  */
 var formatInputReal = function (value) {
     return formatInputInt(new BigNumber(value).times(new BigNumber(2).pow(128)));
@@ -998,7 +998,7 @@ var signedIsNegative = function (value) {
  * Formats right-aligned output bytes to int
  *
  * @method formatOutputInt
- * @param {SolidityParam} param
+ * @param {Param} param
  * @returns {BigNumber} right-aligned output bytes formatted to big number
  */
 var formatOutputInt = function (param) {
@@ -1016,7 +1016,7 @@ var formatOutputInt = function (param) {
  * Formats right-aligned output bytes to uint
  *
  * @method formatOutputUInt
- * @param {SolidityParam}
+ * @param {Param}
  * @returns {BigNumeber} right-aligned output bytes formatted to uint
  */
 var formatOutputUInt = function (param) {
@@ -1028,7 +1028,7 @@ var formatOutputUInt = function (param) {
  * Formats right-aligned output bytes to real
  *
  * @method formatOutputReal
- * @param {SolidityParam}
+ * @param {Param}
  * @returns {BigNumber} input bytes formatted to real
  */
 var formatOutputReal = function (param) {
@@ -1039,7 +1039,7 @@ var formatOutputReal = function (param) {
  * Formats right-aligned output bytes to ureal
  *
  * @method formatOutputUReal
- * @param {SolidityParam}
+ * @param {Param}
  * @returns {BigNumber} input bytes formatted to ureal
  */
 var formatOutputUReal = function (param) {
@@ -1050,7 +1050,7 @@ var formatOutputUReal = function (param) {
  * Should be used to format output bool
  *
  * @method formatOutputBool
- * @param {SolidityParam}
+ * @param {Param}
  * @returns {Boolean} right-aligned input bytes formatted to bool
  */
 var formatOutputBool = function (param) {
@@ -1061,7 +1061,7 @@ var formatOutputBool = function (param) {
  * Should be used to format output bytes
  *
  * @method formatOutputBytes
- * @param {SolidityParam} left-aligned hex representation of string
+ * @param {Param} left-aligned hex representation of string
  * @param {String} name type name
  * @returns {String} hex string
  */
@@ -1075,7 +1075,7 @@ var formatOutputBytes = function (param, name) {
  * Should be used to format output bytes
  *
  * @method formatOutputDynamicBytes
- * @param {SolidityParam} left-aligned hex representation of string
+ * @param {Param} left-aligned hex representation of string
  * @returns {String} hex string
  */
 var formatOutputDynamicBytes = function (param) {
@@ -1087,7 +1087,7 @@ var formatOutputDynamicBytes = function (param) {
  * Should be used to format output string
  *
  * @method formatOutputString
- * @param {SolidityParam} left-aligned hex representation of string
+ * @param {Param} left-aligned hex representation of string
  * @returns {String} ascii string
  */
 var formatOutputString = function (param) {
@@ -1099,7 +1099,7 @@ var formatOutputString = function (param) {
  * Should be used to format output address
  *
  * @method formatOutputAddress
- * @param {SolidityParam} right-aligned input bytes
+ * @param {Param} right-aligned input bytes
  * @returns {String} address
  */
 var formatOutputAddress = function (param) {
@@ -1125,12 +1125,12 @@ module.exports = {
     formatOutputAddress: formatOutputAddress
 };
 
-},{"../utils/config":18,"../utils/utils":20,"./param":11,"bignumber.js":"bignumber.js"}],10:[function(require,module,exports){
+},{"../utils/config":18,"../utils/utils":21,"./param":11,"bignumber.js":"bignumber.js"}],10:[function(require,module,exports){
 var f = require('./formatters');
-var SolidityType = require('./type');
+var Type = require('./type');
 
 /**
- * SolidityTypeInt is a prootype that represents int type
+ * TypeInt is a prootype that represents int type
  * It matches:
  * int
  * int[]
@@ -1145,19 +1145,19 @@ var SolidityType = require('./type');
  * int[3][]
  * int64[][6][], ...
  */
-var SolidityTypeInt = function () {
+var TypeInt = function () {
     this._inputFormatter = f.formatInputInt;
     this._outputFormatter = f.formatOutputInt;
 };
 
-SolidityTypeInt.prototype = new SolidityType({});
-SolidityTypeInt.prototype.constructor = SolidityTypeInt;
+TypeInt.prototype = new Type({});
+TypeInt.prototype.constructor = TypeInt;
 
-SolidityTypeInt.prototype.isType = function (name) {
+TypeInt.prototype.isType = function (name) {
     return !!name.match(/^int([0-9]*)?(\[([0-9]*)\])*$/);
 };
 
-module.exports = SolidityTypeInt;
+module.exports = TypeInt;
 
 },{"./formatters":9,"./type":14}],11:[function(require,module,exports){
 /*
@@ -1176,7 +1176,7 @@ module.exports = SolidityTypeInt;
     You should have received a copy of the GNU Lesser General Public License
     along with vnt.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
+/**
  * @file param.js
  * @author Marek Kotewicz <marek@ethdev.com>
  * @date 2015
@@ -1185,45 +1185,45 @@ module.exports = SolidityTypeInt;
 var utils = require('../utils/utils');
 
 /**
- * SolidityParam object prototype.
- * Should be used when encoding, decoding solidity bytes
+ * Param object prototype.
+ * Should be used when encoding, decoding bytes
  */
-var SolidityParam = function (value, offset) {
+var Param = function (value, offset) {
     this.value = value || '';
     this.offset = offset; // offset in bytes
 };
 
 /**
  * This method should be used to get length of params's dynamic part
- * 
+ *
  * @method dynamicPartLength
  * @returns {Number} length of dynamic part (in bytes)
  */
-SolidityParam.prototype.dynamicPartLength = function () {
+Param.prototype.dynamicPartLength = function () {
     return this.dynamicPart().length / 2;
 };
 
 /**
- * This method should be used to create copy of solidity param with different offset
+ * This method should be used to create copy of param with different offset
  *
  * @method withOffset
  * @param {Number} offset length in bytes
- * @returns {SolidityParam} new solidity param with applied offset
+ * @returns {Param} new param with applied offset
  */
-SolidityParam.prototype.withOffset = function (offset) {
-    return new SolidityParam(this.value, offset);
+Param.prototype.withOffset = function (offset) {
+    return new Param(this.value, offset);
 };
 
 /**
- * This method should be used to combine solidity params together
+ * This method should be used to combine params together
  * eg. when appending an array
  *
  * @method combine
- * @param {SolidityParam} param with which we should combine
- * @param {SolidityParam} result of combination
+ * @param {Param} param with which we should combine
+ * @param {Param} result of combination
  */
-SolidityParam.prototype.combine = function (param) {
-    return new SolidityParam(this.value + param.value); 
+Param.prototype.combine = function (param) {
+    return new Param(this.value + param.value);
 };
 
 /**
@@ -1233,7 +1233,7 @@ SolidityParam.prototype.combine = function (param) {
  * @method isDynamic
  * @returns {Boolean}
  */
-SolidityParam.prototype.isDynamic = function () {
+Param.prototype.isDynamic = function () {
     return this.offset !== undefined;
 };
 
@@ -1243,7 +1243,7 @@ SolidityParam.prototype.isDynamic = function () {
  * @method offsetAsBytes
  * @returns {String} bytes representation of offset
  */
-SolidityParam.prototype.offsetAsBytes = function () {
+Param.prototype.offsetAsBytes = function () {
     return !this.isDynamic() ? '' : utils.padLeft(utils.toTwosComplement(this.offset).toString(16), 64);
 };
 
@@ -1253,10 +1253,10 @@ SolidityParam.prototype.offsetAsBytes = function () {
  * @method staticPart
  * @returns {String} offset if it is a dynamic param, otherwise value
  */
-SolidityParam.prototype.staticPart = function () {
+Param.prototype.staticPart = function () {
     if (!this.isDynamic()) {
-        return this.value; 
-    } 
+        return this.value;
+    }
     return this.offsetAsBytes();
 };
 
@@ -1266,7 +1266,7 @@ SolidityParam.prototype.staticPart = function () {
  * @method dynamicPart
  * @returns {String} returns a value if it is a dynamic param, otherwise empty string
  */
-SolidityParam.prototype.dynamicPart = function () {
+Param.prototype.dynamicPart = function () {
     return this.isDynamic() ? this.value : '';
 };
 
@@ -1276,7 +1276,7 @@ SolidityParam.prototype.dynamicPart = function () {
  * @method encode
  * @returns {String}
  */
-SolidityParam.prototype.encode = function () {
+Param.prototype.encode = function () {
     return this.staticPart() + this.dynamicPart();
 };
 
@@ -1284,11 +1284,11 @@ SolidityParam.prototype.encode = function () {
  * This method should be called to encode array of params
  *
  * @method encodeList
- * @param {Array[SolidityParam]} params
+ * @param {Array[Param]} params
  * @returns {String}
  */
-SolidityParam.encodeList = function (params) {
-    
+Param.encodeList = function (params) {
+
     // updating offsets
     var totalOffset = params.length * 32;
     var offsetParams = params.map(function (param) {
@@ -1310,15 +1310,14 @@ SolidityParam.encodeList = function (params) {
 
 
 
-module.exports = SolidityParam;
+module.exports = Param;
 
-
-},{"../utils/utils":20}],12:[function(require,module,exports){
+},{"../utils/utils":21}],12:[function(require,module,exports){
 var f = require('./formatters');
-var SolidityType = require('./type');
+var Type = require('./type');
 
 /**
- * SolidityTypeReal is a prootype that represents real type
+ * TypeReal is a prootype that represents real type
  * It matches:
  * real
  * real[]
@@ -1333,62 +1332,62 @@ var SolidityType = require('./type');
  * real[3][]
  * real64[][6][], ...
  */
-var SolidityTypeReal = function () {
+var TypeReal = function () {
     this._inputFormatter = f.formatInputReal;
     this._outputFormatter = f.formatOutputReal;
 };
 
-SolidityTypeReal.prototype = new SolidityType({});
-SolidityTypeReal.prototype.constructor = SolidityTypeReal;
+TypeReal.prototype = new Type({});
+TypeReal.prototype.constructor = TypeReal;
 
-SolidityTypeReal.prototype.isType = function (name) {
+TypeReal.prototype.isType = function (name) {
     return !!name.match(/real([0-9]*)?(\[([0-9]*)\])?/);
 };
 
-module.exports = SolidityTypeReal;
+module.exports = TypeReal;
 
 },{"./formatters":9,"./type":14}],13:[function(require,module,exports){
 var f = require('./formatters');
-var SolidityType = require('./type');
+var Type = require('./type');
 
-var SolidityTypeString = function () {
+var TypeString = function () {
     this._inputFormatter = f.formatInputString;
     this._outputFormatter = f.formatOutputString;
 };
 
-SolidityTypeString.prototype = new SolidityType({});
-SolidityTypeString.prototype.constructor = SolidityTypeString;
+TypeString.prototype = new Type({});
+TypeString.prototype.constructor = TypeString;
 
-SolidityTypeString.prototype.isType = function (name) {
+TypeString.prototype.isType = function (name) {
     return !!name.match(/^string(\[([0-9]*)\])*$/);
 };
 
-SolidityTypeString.prototype.isDynamicType = function () {
+TypeString.prototype.isDynamicType = function () {
     return true;
 };
 
-module.exports = SolidityTypeString;
+module.exports = TypeString;
 
 },{"./formatters":9,"./type":14}],14:[function(require,module,exports){
 var f = require('./formatters');
-var SolidityParam = require('./param');
+var Param = require('./param');
 
 /**
- * SolidityType prototype is used to encode/decode solidity params of certain type
+ * Type prototype is used to encode/decode params of certain type
  */
-var SolidityType = function (config) {
+var Type = function (config) {
     this._inputFormatter = config.inputFormatter;
     this._outputFormatter = config.outputFormatter;
 };
 
 /**
- * Should be used to determine if this SolidityType do match given name
+ * Should be used to determine if this Type do match given name
  *
  * @method isType
  * @param {String} name
- * @return {Bool} true if type match this SolidityType, otherwise false
+ * @return {Bool} true if type match this Type, otherwise false
  */
-SolidityType.prototype.isType = function (name) {
+Type.prototype.isType = function (name) {
     throw "this method should be overrwritten for type " + name;
 };
 
@@ -1399,7 +1398,7 @@ SolidityType.prototype.isType = function (name) {
  * @param {String} name
  * @return {Number} length of static part in bytes
  */
-SolidityType.prototype.staticPartLength = function (name) {
+Type.prototype.staticPartLength = function (name) {
     // If name isn't an array then treat it like a single element array.
     return (this.nestedTypes(name) || ['[1]'])
         .map(function (type) {
@@ -1422,7 +1421,7 @@ SolidityType.prototype.staticPartLength = function (name) {
  * @param {String} name
  * @return {Bool} true if the type is dynamic array
  */
-SolidityType.prototype.isDynamicArray = function (name) {
+Type.prototype.isDynamicArray = function (name) {
     var nestedTypes = this.nestedTypes(name);
     return !!nestedTypes && !nestedTypes[nestedTypes.length - 1].match(/[0-9]{1,}/g);
 };
@@ -1437,7 +1436,7 @@ SolidityType.prototype.isDynamicArray = function (name) {
  * @param {String} name
  * @return {Bool} true if the type is static array
  */
-SolidityType.prototype.isStaticArray = function (name) {
+Type.prototype.isStaticArray = function (name) {
     var nestedTypes = this.nestedTypes(name);
     return !!nestedTypes && !!nestedTypes[nestedTypes.length - 1].match(/[0-9]{1,}/g);
 };
@@ -1456,7 +1455,7 @@ SolidityType.prototype.isStaticArray = function (name) {
  * @param {String} name
  * @return {Number} static array length
  */
-SolidityType.prototype.staticArrayLength = function (name) {
+Type.prototype.staticArrayLength = function (name) {
     var nestedTypes = this.nestedTypes(name);
     if (nestedTypes) {
        return parseInt(nestedTypes[nestedTypes.length - 1].match(/[0-9]{1,}/g) || 1);
@@ -1477,7 +1476,7 @@ SolidityType.prototype.staticArrayLength = function (name) {
  * @param {String} name
  * @return {String} nested name
  */
-SolidityType.prototype.nestedName = function (name) {
+Type.prototype.nestedName = function (name) {
     // remove last [] in name
     var nestedTypes = this.nestedTypes(name);
     if (!nestedTypes) {
@@ -1495,7 +1494,7 @@ SolidityType.prototype.nestedName = function (name) {
  * @param {String} name
  * @return {Bool} true if is dynamic, otherwise false
  */
-SolidityType.prototype.isDynamicType = function () {
+Type.prototype.isDynamicType = function () {
     return false;
 };
 
@@ -1510,7 +1509,7 @@ SolidityType.prototype.isDynamicType = function () {
  * @param {String} name
  * @return {Array} array of nested types
  */
-SolidityType.prototype.nestedTypes = function (name) {
+Type.prototype.nestedTypes = function (name) {
     // return list of strings eg. "[]", "[3]", "[]", "[2]"
     return name.match(/(\[[0-9]*\])/g);
 };
@@ -1523,7 +1522,7 @@ SolidityType.prototype.nestedTypes = function (name) {
  * @param {String} name
  * @return {String} encoded value
  */
-SolidityType.prototype.encode = function (value, name) {
+Type.prototype.encode = function (value, name) {
     var self = this;
     if (this.isDynamicArray(name)) {
 
@@ -1569,7 +1568,7 @@ SolidityType.prototype.encode = function (value, name) {
  * @param {String} name type name
  * @returns {Object} decoded value
  */
-SolidityType.prototype.decode = function (bytes, offset, name) {
+Type.prototype.decode = function (bytes, offset, name) {
     var self = this;
 
     if (this.isDynamicArray(name)) {
@@ -1614,24 +1613,24 @@ SolidityType.prototype.decode = function (bytes, offset, name) {
             var dynamicOffset = parseInt('0x' + bytes.substr(offset * 2, 64));      // in bytes
             var length = parseInt('0x' + bytes.substr(dynamicOffset * 2, 64));      // in bytes
             var roundedLength = Math.floor((length + 31) / 32);                     // in int
-            var param = new SolidityParam(bytes.substr(dynamicOffset * 2, ( 1 + roundedLength) * 64), 0);
+            var param = new Param(bytes.substr(dynamicOffset * 2, ( 1 + roundedLength) * 64), 0);
             return self._outputFormatter(param, name);
         })();
     }
 
     var length = this.staticPartLength(name);
-    var param = new SolidityParam(bytes.substr(offset * 2, length * 2));
+    var param = new Param(bytes.substr(offset * 2, length * 2));
     return this._outputFormatter(param, name);
 };
 
-module.exports = SolidityType;
+module.exports = Type;
 
 },{"./formatters":9,"./param":11}],15:[function(require,module,exports){
 var f = require('./formatters');
-var SolidityType = require('./type');
+var Type = require('./type');
 
 /**
- * SolidityTypeUInt is a prootype that represents uint type
+ * TypeUInt is a prootype that represents uint type
  * It matches:
  * uint
  * uint[]
@@ -1646,26 +1645,26 @@ var SolidityType = require('./type');
  * uint[3][]
  * uint64[][6][], ...
  */
-var SolidityTypeUInt = function () {
+var TypeUInt = function () {
     this._inputFormatter = f.formatInputInt;
     this._outputFormatter = f.formatOutputUInt;
 };
 
-SolidityTypeUInt.prototype = new SolidityType({});
-SolidityTypeUInt.prototype.constructor = SolidityTypeUInt;
+TypeUInt.prototype = new Type({});
+TypeUInt.prototype.constructor = TypeUInt;
 
-SolidityTypeUInt.prototype.isType = function (name) {
+TypeUInt.prototype.isType = function (name) {
     return !!name.match(/^uint([0-9]*)?(\[([0-9]*)\])*$/);
 };
 
-module.exports = SolidityTypeUInt;
+module.exports = TypeUInt;
 
 },{"./formatters":9,"./type":14}],16:[function(require,module,exports){
 var f = require('./formatters');
-var SolidityType = require('./type');
+var Type = require('./type');
 
 /**
- * SolidityTypeUReal is a prootype that represents ureal type
+ * TypeUReal is a prootype that represents ureal type
  * It matches:
  * ureal
  * ureal[]
@@ -1680,19 +1679,19 @@ var SolidityType = require('./type');
  * ureal[3][]
  * ureal64[][6][], ...
  */
-var SolidityTypeUReal = function () {
+var TypeUReal = function () {
     this._inputFormatter = f.formatInputReal;
     this._outputFormatter = f.formatOutputUReal;
 };
 
-SolidityTypeUReal.prototype = new SolidityType({});
-SolidityTypeUReal.prototype.constructor = SolidityTypeUReal;
+TypeUReal.prototype = new Type({});
+TypeUReal.prototype.constructor = TypeUReal;
 
-SolidityTypeUReal.prototype.isType = function (name) {
+TypeUReal.prototype.isType = function (name) {
     return !!name.match(/^ureal([0-9]*)?(\[([0-9]*)\])*$/);
 };
 
-module.exports = SolidityTypeUReal;
+module.exports = TypeUReal;
 
 },{"./formatters":9,"./type":14}],17:[function(require,module,exports){
 'use strict';
@@ -1768,6 +1767,346 @@ module.exports = {
 };
 
 },{"bignumber.js":"bignumber.js"}],19:[function(require,module,exports){
+// This was ported from https://github.com/emn178/js-sha3, with some minor
+// modifications and pruning. It is licensed under MIT:
+//
+// Copyright 2015-2016 Chen, Yi-Cyuan
+//  
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+var HEX_CHARS = '0123456789abcdef'.split('');
+var KECCAK_PADDING = [1, 256, 65536, 16777216];
+var SHIFT = [0, 8, 16, 24];
+var RC = [1, 0, 32898, 0, 32906, 2147483648, 2147516416, 2147483648, 32907, 0, 2147483649, 0, 2147516545, 2147483648, 32777, 2147483648, 138, 0, 136, 0, 2147516425, 0, 2147483658, 0, 2147516555, 0, 139, 2147483648, 32905, 2147483648, 32771, 2147483648, 32770, 2147483648, 128, 2147483648, 32778, 0, 2147483658, 2147483648, 2147516545, 2147483648, 32896, 2147483648, 2147483649, 0, 2147516424, 2147483648];
+
+var Keccak = function Keccak(bits) {
+  return {
+    blocks: [],
+    reset: true,
+    block: 0,
+    start: 0,
+    blockCount: 1600 - (bits << 1) >> 5,
+    outputBlocks: bits >> 5,
+    s: function (s) {
+      return [].concat(s, s, s, s, s);
+    }([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+  };
+};
+
+var update = function update(state, message) {
+  var length = message.length,
+      blocks = state.blocks,
+      byteCount = state.blockCount << 2,
+      blockCount = state.blockCount,
+      outputBlocks = state.outputBlocks,
+      s = state.s,
+      index = 0,
+      i,
+      code;
+
+  // update
+  while (index < length) {
+    if (state.reset) {
+      state.reset = false;
+      blocks[0] = state.block;
+      for (i = 1; i < blockCount + 1; ++i) {
+        blocks[i] = 0;
+      }
+    }
+    if (typeof message !== "string") {
+      for (i = state.start; index < length && i < byteCount; ++index) {
+        blocks[i >> 2] |= message[index] << SHIFT[i++ & 3];
+      }
+    } else {
+      for (i = state.start; index < length && i < byteCount; ++index) {
+        code = message.charCodeAt(index);
+        if (code < 0x80) {
+          blocks[i >> 2] |= code << SHIFT[i++ & 3];
+        } else if (code < 0x800) {
+          blocks[i >> 2] |= (0xc0 | code >> 6) << SHIFT[i++ & 3];
+          blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
+        } else if (code < 0xd800 || code >= 0xe000) {
+          blocks[i >> 2] |= (0xe0 | code >> 12) << SHIFT[i++ & 3];
+          blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT[i++ & 3];
+          blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
+        } else {
+          code = 0x10000 + ((code & 0x3ff) << 10 | message.charCodeAt(++index) & 0x3ff);
+          blocks[i >> 2] |= (0xf0 | code >> 18) << SHIFT[i++ & 3];
+          blocks[i >> 2] |= (0x80 | code >> 12 & 0x3f) << SHIFT[i++ & 3];
+          blocks[i >> 2] |= (0x80 | code >> 6 & 0x3f) << SHIFT[i++ & 3];
+          blocks[i >> 2] |= (0x80 | code & 0x3f) << SHIFT[i++ & 3];
+        }
+      }
+    }
+    state.lastByteIndex = i;
+    if (i >= byteCount) {
+      state.start = i - byteCount;
+      state.block = blocks[blockCount];
+      for (i = 0; i < blockCount; ++i) {
+        s[i] ^= blocks[i];
+      }
+      f(s);
+      state.reset = true;
+    } else {
+      state.start = i;
+    }
+  }
+
+  // finalize
+  i = state.lastByteIndex;
+  blocks[i >> 2] |= KECCAK_PADDING[i & 3];
+  if (state.lastByteIndex === byteCount) {
+    blocks[0] = blocks[blockCount];
+    for (i = 1; i < blockCount + 1; ++i) {
+      blocks[i] = 0;
+    }
+  }
+  blocks[blockCount - 1] |= 0x80000000;
+  for (i = 0; i < blockCount; ++i) {
+    s[i] ^= blocks[i];
+  }
+  f(s);
+
+  // toString
+  var hex = '',
+      i = 0,
+      j = 0,
+      block;
+  while (j < outputBlocks) {
+    for (i = 0; i < blockCount && j < outputBlocks; ++i, ++j) {
+      block = s[i];
+      hex += HEX_CHARS[block >> 4 & 0x0F] + HEX_CHARS[block & 0x0F] + HEX_CHARS[block >> 12 & 0x0F] + HEX_CHARS[block >> 8 & 0x0F] + HEX_CHARS[block >> 20 & 0x0F] + HEX_CHARS[block >> 16 & 0x0F] + HEX_CHARS[block >> 28 & 0x0F] + HEX_CHARS[block >> 24 & 0x0F];
+    }
+    if (j % blockCount === 0) {
+      f(s);
+      i = 0;
+    }
+  }
+  return "0x" + hex;
+};
+
+var f = function f(s) {
+  var h, l, n, c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47, b48, b49;
+
+  for (n = 0; n < 48; n += 2) {
+    c0 = s[0] ^ s[10] ^ s[20] ^ s[30] ^ s[40];
+    c1 = s[1] ^ s[11] ^ s[21] ^ s[31] ^ s[41];
+    c2 = s[2] ^ s[12] ^ s[22] ^ s[32] ^ s[42];
+    c3 = s[3] ^ s[13] ^ s[23] ^ s[33] ^ s[43];
+    c4 = s[4] ^ s[14] ^ s[24] ^ s[34] ^ s[44];
+    c5 = s[5] ^ s[15] ^ s[25] ^ s[35] ^ s[45];
+    c6 = s[6] ^ s[16] ^ s[26] ^ s[36] ^ s[46];
+    c7 = s[7] ^ s[17] ^ s[27] ^ s[37] ^ s[47];
+    c8 = s[8] ^ s[18] ^ s[28] ^ s[38] ^ s[48];
+    c9 = s[9] ^ s[19] ^ s[29] ^ s[39] ^ s[49];
+
+    h = c8 ^ (c2 << 1 | c3 >>> 31);
+    l = c9 ^ (c3 << 1 | c2 >>> 31);
+    s[0] ^= h;
+    s[1] ^= l;
+    s[10] ^= h;
+    s[11] ^= l;
+    s[20] ^= h;
+    s[21] ^= l;
+    s[30] ^= h;
+    s[31] ^= l;
+    s[40] ^= h;
+    s[41] ^= l;
+    h = c0 ^ (c4 << 1 | c5 >>> 31);
+    l = c1 ^ (c5 << 1 | c4 >>> 31);
+    s[2] ^= h;
+    s[3] ^= l;
+    s[12] ^= h;
+    s[13] ^= l;
+    s[22] ^= h;
+    s[23] ^= l;
+    s[32] ^= h;
+    s[33] ^= l;
+    s[42] ^= h;
+    s[43] ^= l;
+    h = c2 ^ (c6 << 1 | c7 >>> 31);
+    l = c3 ^ (c7 << 1 | c6 >>> 31);
+    s[4] ^= h;
+    s[5] ^= l;
+    s[14] ^= h;
+    s[15] ^= l;
+    s[24] ^= h;
+    s[25] ^= l;
+    s[34] ^= h;
+    s[35] ^= l;
+    s[44] ^= h;
+    s[45] ^= l;
+    h = c4 ^ (c8 << 1 | c9 >>> 31);
+    l = c5 ^ (c9 << 1 | c8 >>> 31);
+    s[6] ^= h;
+    s[7] ^= l;
+    s[16] ^= h;
+    s[17] ^= l;
+    s[26] ^= h;
+    s[27] ^= l;
+    s[36] ^= h;
+    s[37] ^= l;
+    s[46] ^= h;
+    s[47] ^= l;
+    h = c6 ^ (c0 << 1 | c1 >>> 31);
+    l = c7 ^ (c1 << 1 | c0 >>> 31);
+    s[8] ^= h;
+    s[9] ^= l;
+    s[18] ^= h;
+    s[19] ^= l;
+    s[28] ^= h;
+    s[29] ^= l;
+    s[38] ^= h;
+    s[39] ^= l;
+    s[48] ^= h;
+    s[49] ^= l;
+
+    b0 = s[0];
+    b1 = s[1];
+    b32 = s[11] << 4 | s[10] >>> 28;
+    b33 = s[10] << 4 | s[11] >>> 28;
+    b14 = s[20] << 3 | s[21] >>> 29;
+    b15 = s[21] << 3 | s[20] >>> 29;
+    b46 = s[31] << 9 | s[30] >>> 23;
+    b47 = s[30] << 9 | s[31] >>> 23;
+    b28 = s[40] << 18 | s[41] >>> 14;
+    b29 = s[41] << 18 | s[40] >>> 14;
+    b20 = s[2] << 1 | s[3] >>> 31;
+    b21 = s[3] << 1 | s[2] >>> 31;
+    b2 = s[13] << 12 | s[12] >>> 20;
+    b3 = s[12] << 12 | s[13] >>> 20;
+    b34 = s[22] << 10 | s[23] >>> 22;
+    b35 = s[23] << 10 | s[22] >>> 22;
+    b16 = s[33] << 13 | s[32] >>> 19;
+    b17 = s[32] << 13 | s[33] >>> 19;
+    b48 = s[42] << 2 | s[43] >>> 30;
+    b49 = s[43] << 2 | s[42] >>> 30;
+    b40 = s[5] << 30 | s[4] >>> 2;
+    b41 = s[4] << 30 | s[5] >>> 2;
+    b22 = s[14] << 6 | s[15] >>> 26;
+    b23 = s[15] << 6 | s[14] >>> 26;
+    b4 = s[25] << 11 | s[24] >>> 21;
+    b5 = s[24] << 11 | s[25] >>> 21;
+    b36 = s[34] << 15 | s[35] >>> 17;
+    b37 = s[35] << 15 | s[34] >>> 17;
+    b18 = s[45] << 29 | s[44] >>> 3;
+    b19 = s[44] << 29 | s[45] >>> 3;
+    b10 = s[6] << 28 | s[7] >>> 4;
+    b11 = s[7] << 28 | s[6] >>> 4;
+    b42 = s[17] << 23 | s[16] >>> 9;
+    b43 = s[16] << 23 | s[17] >>> 9;
+    b24 = s[26] << 25 | s[27] >>> 7;
+    b25 = s[27] << 25 | s[26] >>> 7;
+    b6 = s[36] << 21 | s[37] >>> 11;
+    b7 = s[37] << 21 | s[36] >>> 11;
+    b38 = s[47] << 24 | s[46] >>> 8;
+    b39 = s[46] << 24 | s[47] >>> 8;
+    b30 = s[8] << 27 | s[9] >>> 5;
+    b31 = s[9] << 27 | s[8] >>> 5;
+    b12 = s[18] << 20 | s[19] >>> 12;
+    b13 = s[19] << 20 | s[18] >>> 12;
+    b44 = s[29] << 7 | s[28] >>> 25;
+    b45 = s[28] << 7 | s[29] >>> 25;
+    b26 = s[38] << 8 | s[39] >>> 24;
+    b27 = s[39] << 8 | s[38] >>> 24;
+    b8 = s[48] << 14 | s[49] >>> 18;
+    b9 = s[49] << 14 | s[48] >>> 18;
+
+    s[0] = b0 ^ ~b2 & b4;
+    s[1] = b1 ^ ~b3 & b5;
+    s[10] = b10 ^ ~b12 & b14;
+    s[11] = b11 ^ ~b13 & b15;
+    s[20] = b20 ^ ~b22 & b24;
+    s[21] = b21 ^ ~b23 & b25;
+    s[30] = b30 ^ ~b32 & b34;
+    s[31] = b31 ^ ~b33 & b35;
+    s[40] = b40 ^ ~b42 & b44;
+    s[41] = b41 ^ ~b43 & b45;
+    s[2] = b2 ^ ~b4 & b6;
+    s[3] = b3 ^ ~b5 & b7;
+    s[12] = b12 ^ ~b14 & b16;
+    s[13] = b13 ^ ~b15 & b17;
+    s[22] = b22 ^ ~b24 & b26;
+    s[23] = b23 ^ ~b25 & b27;
+    s[32] = b32 ^ ~b34 & b36;
+    s[33] = b33 ^ ~b35 & b37;
+    s[42] = b42 ^ ~b44 & b46;
+    s[43] = b43 ^ ~b45 & b47;
+    s[4] = b4 ^ ~b6 & b8;
+    s[5] = b5 ^ ~b7 & b9;
+    s[14] = b14 ^ ~b16 & b18;
+    s[15] = b15 ^ ~b17 & b19;
+    s[24] = b24 ^ ~b26 & b28;
+    s[25] = b25 ^ ~b27 & b29;
+    s[34] = b34 ^ ~b36 & b38;
+    s[35] = b35 ^ ~b37 & b39;
+    s[44] = b44 ^ ~b46 & b48;
+    s[45] = b45 ^ ~b47 & b49;
+    s[6] = b6 ^ ~b8 & b0;
+    s[7] = b7 ^ ~b9 & b1;
+    s[16] = b16 ^ ~b18 & b10;
+    s[17] = b17 ^ ~b19 & b11;
+    s[26] = b26 ^ ~b28 & b20;
+    s[27] = b27 ^ ~b29 & b21;
+    s[36] = b36 ^ ~b38 & b30;
+    s[37] = b37 ^ ~b39 & b31;
+    s[46] = b46 ^ ~b48 & b40;
+    s[47] = b47 ^ ~b49 & b41;
+    s[8] = b8 ^ ~b0 & b2;
+    s[9] = b9 ^ ~b1 & b3;
+    s[18] = b18 ^ ~b10 & b12;
+    s[19] = b19 ^ ~b11 & b13;
+    s[28] = b28 ^ ~b20 & b22;
+    s[29] = b29 ^ ~b21 & b23;
+    s[38] = b38 ^ ~b30 & b32;
+    s[39] = b39 ^ ~b31 & b33;
+    s[48] = b48 ^ ~b40 & b42;
+    s[49] = b49 ^ ~b41 & b43;
+
+    s[0] ^= RC[n];
+    s[1] ^= RC[n + 1];
+  }
+};
+
+var keccak = function keccak(bits) {
+  return function (str) {
+    var msg;
+    if (str.slice(0, 2) === "0x") {
+      msg = [];
+      for (var i = 2, l = str.length; i < l; i += 2) {
+        msg.push(parseInt(str.slice(i, i + 2), 16));
+      }
+    } else {
+      msg = str;
+    }
+    return update(Keccak(bits, bits), msg);
+  };
+};
+
+module.exports = {
+  keccak256: keccak(256),
+  keccak512: keccak(512),
+  keccak256s: keccak(256),
+  keccak512s: keccak(512)
+};
+},{}],20:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -1807,7 +2146,7 @@ module.exports = function (value, options) {
 };
 
 
-},{"crypto-js":59,"crypto-js/sha3":80}],20:[function(require,module,exports){
+},{"crypto-js":59,"crypto-js/sha3":80}],21:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -2428,12 +2767,12 @@ module.exports = {
     isTopic: isTopic,
 };
 
-},{"./sha3.js":19,"bignumber.js":"bignumber.js","utf8":85}],21:[function(require,module,exports){
+},{"./sha3.js":20,"bignumber.js":"bignumber.js","utf8":85}],22:[function(require,module,exports){
 module.exports={
     "version": "0.20.7"
 }
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -2464,7 +2803,6 @@ module.exports={
 var RequestManager = require('./vnt/requestmanager');
 var Iban = require('./vnt/iban');
 var Core = require('./vnt/methods/core');
-var DB = require('./vnt/methods/db');
 var Shh = require('./vnt/methods/shh');
 var Net = require('./vnt/methods/net');
 var Personal = require('./vnt/methods/personal');
@@ -2473,6 +2811,7 @@ var Settings = require('./vnt/settings');
 var version = require('./version.json');
 var utils = require('./utils/utils');
 var sha3 = require('./utils/sha3');
+var Hash = require('./utils/hash');
 var extend = require('./vnt/extend');
 var Batch = require('./vnt/batch');
 var Property = require('./vnt/property');
@@ -2486,9 +2825,10 @@ function Vnt (provider) {
     this._requestManager = new RequestManager(provider);
     this.currentProvider = provider;
     this.core = new Core(this);
-    this.db = new DB(this);
     this.shh = new Shh(this);
     this.net = new Net(this);
+    this.hash = Hash;
+    this.utils = utils;
     this.personal = new Personal(this);
     this.bzz = new Swarm(this);
     this.settings = new Settings();
@@ -2586,7 +2926,7 @@ Vnt.prototype.createBatch = function () {
 
 module.exports = Vnt;
 
-},{"./utils/sha3":19,"./utils/utils":20,"./version.json":21,"./vnt/batch":24,"./vnt/extend":28,"./vnt/httpprovider":32,"./vnt/iban":33,"./vnt/ipcprovider":34,"./vnt/methods/core":37,"./vnt/methods/db":38,"./vnt/methods/net":39,"./vnt/methods/personal":40,"./vnt/methods/shh":41,"./vnt/methods/swarm":42,"./vnt/property":45,"./vnt/requestmanager":46,"./vnt/settings":47,"bignumber.js":"bignumber.js"}],23:[function(require,module,exports){
+},{"./utils/hash":19,"./utils/sha3":20,"./utils/utils":21,"./version.json":22,"./vnt/batch":25,"./vnt/extend":29,"./vnt/httpprovider":33,"./vnt/iban":34,"./vnt/ipcprovider":35,"./vnt/methods/core":38,"./vnt/methods/net":39,"./vnt/methods/personal":40,"./vnt/methods/shh":41,"./vnt/methods/swarm":42,"./vnt/property":45,"./vnt/requestmanager":46,"./vnt/settings":47,"bignumber.js":"bignumber.js"}],24:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -2610,7 +2950,7 @@ module.exports = Vnt;
  */
 
 var sha3 = require('../utils/sha3');
-var SolidityEvent = require('./event');
+var Event = require('./event');
 var formatters = require('./formatters');
 var utils = require('../utils/utils');
 var Filter = require('./filter');
@@ -2650,7 +2990,7 @@ AllEvents.prototype.decode = function (data) {
         return formatters.outputLogFormatter(data);
     }
 
-    var event = new SolidityEvent(this._requestManager, match, this._address);
+    var event = new Event(this._requestManager, match, this._address);
     return event.decode(data);
 };
 
@@ -2674,7 +3014,7 @@ AllEvents.prototype.attachToContract = function (contract) {
 
 module.exports = AllEvents;
 
-},{"../utils/sha3":19,"../utils/utils":20,"./event":27,"./filter":29,"./formatters":30,"./methods/watches":43}],24:[function(require,module,exports){
+},{"../utils/sha3":20,"../utils/utils":21,"./event":28,"./filter":30,"./formatters":31,"./methods/watches":43}],25:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -2742,7 +3082,7 @@ Batch.prototype.execute = function () {
 module.exports = Batch;
 
 
-},{"./errors":26,"./jsonrpc":35}],25:[function(require,module,exports){
+},{"./errors":27,"./jsonrpc":36}],26:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -2765,11 +3105,13 @@ module.exports = Batch;
  * @date 2014
  */
 
+var fs = require('fs')
 var utils = require('../utils/utils');
-var coder = require('../solidity/coder');
+var coder = require('../types/coder');
 var Event = require('./event');
 var Func = require('./function');
 var AllEvents = require('./allevents');
+var sha3 = require('../utils/sha3');
 
 /**
  * Should be called to encode constructor params
@@ -2801,7 +3143,7 @@ var addFunctionsToContract = function (contract) {
     contract.abi.filter(function (json) {
         return json.type === 'function';
     }).map(function (json) {
-        return new Func(contract._vnt, json, contract.address);
+        return new Func(contract._core, json, contract.address);
     }).forEach(function (f) {
         f.attachToContract(contract);
     });
@@ -2819,11 +3161,11 @@ var addEventsToContract = function (contract) {
         return json.type === 'event';
     });
 
-    var All = new AllEvents(contract._vnt._requestManager, events, contract.address);
+    var All = new AllEvents(contract._core._requestManager, events, contract.address);
     All.attachToContract(contract);
 
     events.map(function (json) {
-        return new Event(contract._vnt._requestManager, json, contract.address);
+        return new Event(contract._core._requestManager, json, contract.address);
     }).forEach(function (e) {
         e.attachToContract(contract);
     });
@@ -2843,7 +3185,7 @@ var checkForContractAddress = function(contract, callback){
         callbackFired = false;
 
     // wait for receipt
-    var filter = contract._vnt.filter('latest', function(e){
+    var filter = contract._core.filter('latest', function(e){
         if (!e && !callbackFired) {
             count++;
 
@@ -2861,10 +3203,10 @@ var checkForContractAddress = function(contract, callback){
 
             } else {
 
-                contract._vnt.getTransactionReceipt(contract.transactionHash, function(e, receipt){
+                contract._core.getTransactionReceipt(contract.transactionHash, function(e, receipt){
                     if(receipt && receipt.blockHash && !callbackFired) {
 
-                        contract._vnt.getCode(receipt.contractAddress, function(e, code){
+                        contract._core.getCode(receipt.contractAddress, function(e, code){
                             /*jshint maxcomplexity: 6 */
 
                             if(callbackFired || !code)
@@ -2907,9 +3249,10 @@ var checkForContractAddress = function(contract, callback){
  * @method ContractFactory
  * @param {Array} abi
  */
-var ContractFactory = function (vnt, abi) {
-    this.vnt = vnt;
+var ContractFactory = function (core, abi) {
+    this.core = core;
     this.abi = abi;
+    this.code = null;
 
     /**
      * Should be called to create new contract on a blockchain
@@ -2924,7 +3267,7 @@ var ContractFactory = function (vnt, abi) {
     this.new = function () {
         /*jshint maxcomplexity: 7 */
 
-        var contract = new Contract(this.vnt, this.abi);
+        var contract = new Contract(this.core, this.abi);
 
         // parse arguments
         var options = {}; // required!
@@ -2956,7 +3299,7 @@ var ContractFactory = function (vnt, abi) {
         if (callback) {
 
             // wait for the contract address and check if the code was deployed
-            this.vnt.sendTransaction(options, function (err, hash) {
+            this.core.sendTransaction(options, function (err, hash) {
                 if (err) {
                     callback(err);
                 } else {
@@ -2970,7 +3313,7 @@ var ContractFactory = function (vnt, abi) {
                 }
             });
         } else {
-            var hash = this.vnt.sendTransaction(options);
+            var hash = this.core.sendTransaction(options);
             // add the transaction hash
             contract.transactionHash = hash;
             checkForContractAddress(contract);
@@ -3005,7 +3348,7 @@ var ContractFactory = function (vnt, abi) {
  * otherwise calls callback function (err, contract)
  */
 ContractFactory.prototype.at = function (address, callback) {
-    var contract = new Contract(this.vnt, this.abi, address);
+    var contract = new Contract(this.core, this.abi, address);
 
     // this functions are not part of prototype,
     // because we dont want to spoil the interface
@@ -3017,6 +3360,120 @@ ContractFactory.prototype.at = function (address, callback) {
     }
     return contract;
 };
+
+/**
+ * Use this method to specify the code file path
+ * Should be called when trying to deploy a new contract
+ *
+ * @method at
+ * @param {String} codeFile (required)
+ * @returns {ContractFactory} returns ContractFactory itself
+ */
+ContractFactory.prototype.codeFile = function(codeFile) {
+    var code = "0x" + fs.readFileSync(codeFile).toString('hex');
+    this.code = code;
+    return this;
+}
+
+/**
+ * Use this method to pack the code with constructor params
+ * Should be called when trying to deploy a new contract
+ *
+ * @method at
+ * @param {Array} the param list (required)
+ * @returns {HexString} returns the packed data
+ */
+ContractFactory.prototype.packContructorData = function() {
+    if(!this.code) {
+        throw new Error('There is no code file specified. Please specify it with codeFile method.');
+    }
+
+    var args = Array.prototype.slice.call(arguments);
+    var bytes = encodeConstructorParams(this.abi, args);
+    return this.code + bytes
+}
+
+/**
+ * Should be called to encode function params
+ *
+ * @method packFunctionData
+ * @param {Array} function name
+ * @param {Array} function params list
+ * @return {HexString} returns the packed data
+ */
+ContractFactory.prototype.packFunctionData = function () {
+    var args = Array.prototype.slice.call(arguments);
+    if(args.length < 1) {
+        throw new Error('Please specify the function name and parameters.');
+    }
+    var funcName = args[0];
+    var params = []
+    if(args.length > 1) {
+        params = args[1]
+    }
+
+    if(!utils.isString(funcName)) {
+        throw new Error('Invalide function name.');
+    }
+
+    if(!utils.isArray(params)) {
+        throw new Error('Invalide arguments array.');
+    }
+
+    var abiJson = this.abi.filter(function (json) {
+        return json.type === 'function' && json.name==funcName && json.inputs.length === params.length;
+    })[0]
+
+    if(!abiJson) {
+        throw new Error('Invalide function name or arguments.');
+    }
+
+    var types = abiJson.inputs.map(function (input) {
+        return input.type;
+    })
+
+    var sigName = funcName + "(" + types.toString() + ")"
+
+    var sig = sha3(sigName).slice(0, 8);
+    return '0x' + sig + coder.encodeParams(types, params);
+};
+
+ContractFactory.prototype.unPackOutput = function() {
+    var args = Array.prototype.slice.call(arguments);
+    if(args.length < 2) {
+        throw new Error('Please specify the function name and parameters.');
+    }
+    var funcName = args[0];
+    var output = args[1]
+
+    if (!output) {
+        return;
+    }
+
+    if(!utils.isString(funcName)) {
+        throw new Error('Invalide function name.');
+    }
+
+    if(!utils.isString(output)) {
+        throw new Error('Invalide output hex string.');
+    }
+
+    var abiJson = this.abi.filter(function (json) {
+        return json.type === 'function' && json.name==funcName;
+    })[0]
+
+    if(!abiJson) {
+        throw new Error('Invalide function name.');
+    }
+
+    var types = abiJson.outputs.map(function (output) {
+        return output.type;
+    })
+
+    output = output.length >= 2 ? output.slice(2) : output;
+    var result = coder.decodeParams(types, output);
+    return result.length === 1 ? result[0] : result;
+}
 
 /**
  * Gets the data, which is data to deploy plus constructor params
@@ -3045,8 +3502,8 @@ ContractFactory.prototype.getData = function () {
  * @param {Array} abi
  * @param {Address} contract address
  */
-var Contract = function (vnt, abi, address) {
-    this._vnt = vnt;
+var Contract = function (core, abi, address) {
+    this._core = core;
     this.transactionHash = null;
     this.address = address;
     this.abi = abi;
@@ -3054,7 +3511,7 @@ var Contract = function (vnt, abi, address) {
 
 module.exports = ContractFactory;
 
-},{"../solidity/coder":7,"../utils/utils":20,"./allevents":23,"./event":27,"./function":31}],26:[function(require,module,exports){
+},{"../types/coder":7,"../utils/sha3":20,"../utils/utils":21,"./allevents":24,"./event":28,"./function":32,"fs":50}],27:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -3071,15 +3528,15 @@ module.exports = ContractFactory;
     You should have received a copy of the GNU Lesser General Public License
     along with vnt.js.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** 
+/**
  * @file errors.js
  * @author Marek Kotewicz <marek@ethdev.com>
  * @date 2015
  */
 
 module.exports = {
-    InvalidNumberOfSolidityArgs: function () {
-        return new Error('Invalid number of arguments to Solidity function');
+    InvalidNumberOfArgs: function () {
+        return new Error('Invalid number of arguments to function');
     },
     InvalidNumberOfRPCParams: function () {
         return new Error('Invalid number of input parameters to RPC method');
@@ -3099,7 +3556,7 @@ module.exports = {
     }
 };
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -3123,7 +3580,7 @@ module.exports = {
  */
 
 var utils = require('../utils/utils');
-var coder = require('../solidity/coder');
+var coder = require('../types/coder');
 var formatters = require('./formatters');
 var sha3 = require('../utils/sha3');
 var Filter = require('./filter');
@@ -3309,7 +3766,7 @@ Event.prototype.attachToContract = function (contract) {
 
 module.exports = Event;
 
-},{"../solidity/coder":7,"../utils/sha3":19,"../utils/utils":20,"./filter":29,"./formatters":30,"./methods/watches":43}],28:[function(require,module,exports){
+},{"../types/coder":7,"../utils/sha3":20,"../utils/utils":21,"./filter":30,"./formatters":31,"./methods/watches":43}],29:[function(require,module,exports){
 var formatters = require('./formatters');
 var utils = require('./../utils/utils');
 var Method = require('./method');
@@ -3359,7 +3816,7 @@ var extend = function (vnt) {
 module.exports = extend;
 
 
-},{"./../utils/utils":20,"./formatters":30,"./method":36,"./property":45}],29:[function(require,module,exports){
+},{"./../utils/utils":21,"./formatters":31,"./method":37,"./property":45}],30:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -3605,7 +4062,7 @@ Filter.prototype.get = function (callback) {
 
 module.exports = Filter;
 
-},{"../utils/utils":20,"./formatters":30}],30:[function(require,module,exports){
+},{"../utils/utils":21,"./formatters":31}],31:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -3916,7 +4373,7 @@ module.exports = {
 };
 
 
-},{"../utils/config":18,"../utils/utils":20,"./iban":33}],31:[function(require,module,exports){
+},{"../utils/config":18,"../utils/utils":21,"./iban":34}],32:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -3939,14 +4396,14 @@ module.exports = {
  * @date 2015
  */
 
-var coder = require('../solidity/coder');
+var coder = require('../types/coder');
 var utils = require('../utils/utils');
 var errors = require('./errors');
 var formatters = require('./formatters');
 var sha3 = require('../utils/sha3');
 
 /**
- * This prototype should be used to call/sendTransaction to solidity functions
+ * This prototype should be used to call/sendTransaction to functions
  */
 var Func = function (vnt, json, address) {
     this._vnt = vnt;
@@ -3990,7 +4447,7 @@ Func.prototype.validateArgs = function (args) {
               );
     });
     if (inputArgs.length !== this._inputTypes.length) {
-        throw errors.InvalidNumberOfSolidityArgs();
+        throw errors.InvalidNumberOfArgs();
     }
 };
 
@@ -3998,7 +4455,7 @@ Func.prototype.validateArgs = function (args) {
  * Should be used to create payload from arguments
  *
  * @method toPayload
- * @param {Array} solidity function params
+ * @param {Array} function params
  * @param {Object} optional payload options
  */
 Func.prototype.toPayload = function (args) {
@@ -4072,7 +4529,7 @@ Func.prototype.call = function () {
 };
 
 /**
- * Should be used to sendTransaction to solidity function
+ * Should be used to sendTransaction to function
  *
  * @method sendTransaction
  */
@@ -4093,7 +4550,7 @@ Func.prototype.sendTransaction = function () {
 };
 
 /**
- * Should be used to estimateGas of solidity function
+ * Should be used to estimateGas of function
  *
  * @method estimateGas
  */
@@ -4143,7 +4600,7 @@ Func.prototype.typeName = function () {
 };
 
 /**
- * Should be called to get rpc requests from solidity function
+ * Should be called to get rpc requests from function
  *
  * @method request
  * @returns {Object}
@@ -4201,7 +4658,7 @@ Func.prototype.attachToContract = function (contract) {
 
 module.exports = Func;
 
-},{"../solidity/coder":7,"../utils/sha3":19,"../utils/utils":20,"./errors":26,"./formatters":30}],32:[function(require,module,exports){
+},{"../types/coder":7,"../utils/sha3":20,"../utils/utils":21,"./errors":27,"./formatters":31}],33:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -4322,7 +4779,6 @@ HttpProvider.prototype.sendAsync = function (payload, callback) {
     if (request.readyState === 4 && request.timeout !== 1) {
       var result = request.responseText;
       var error = null;
-
       try {
         result = JSON.parse(result);
       } catch (e) {
@@ -4366,7 +4822,7 @@ HttpProvider.prototype.isConnected = function () {
 
 module.exports = HttpProvider;
 
-},{"./errors":26,"xhr2":86,"xmlhttprequest":17}],33:[function(require,module,exports){
+},{"./errors":27,"xhr2":86,"xmlhttprequest":17}],34:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -4594,7 +5050,7 @@ Iban.prototype.toString = function () {
 
 module.exports = Iban;
 
-},{"bignumber.js":"bignumber.js"}],34:[function(require,module,exports){
+},{"bignumber.js":"bignumber.js"}],35:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -4627,7 +5083,7 @@ var IpcProvider = function (path, net) {
     var _this = this;
     this.responseCallbacks = {};
     this.path = path;
-    
+
     this.connection = net.connect({path: this.path});
 
     this.connection.on('error', function(e){
@@ -4637,7 +5093,7 @@ var IpcProvider = function (path, net) {
 
     this.connection.on('end', function(){
         _this._timeout();
-    }); 
+    });
 
 
     // LISTEN FOR CONNECTION RESPONSES
@@ -4676,7 +5132,7 @@ Will parse the response and make an array out of it.
 IpcProvider.prototype._parseResponse = function(data) {
     var _this = this,
         returnValues = [];
-    
+
     // DE-CHUNKER
     var dechunkedData = data
         .replace(/\}[\n\r]?\{/g,'}|--|{') // }{
@@ -4780,7 +5236,7 @@ IpcProvider.prototype.send = function (payload) {
         try {
             result = JSON.parse(data);
         } catch(e) {
-            throw errors.InvalidResponse(data);                
+            throw errors.InvalidResponse(data);
         }
 
         return result;
@@ -4802,8 +5258,7 @@ IpcProvider.prototype.sendAsync = function (payload, callback) {
 
 module.exports = IpcProvider;
 
-
-},{"../utils/utils":20,"./errors":26}],35:[function(require,module,exports){
+},{"../utils/utils":21,"./errors":27}],36:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -4890,7 +5345,7 @@ Jsonrpc.toBatchPayload = function (messages) {
 module.exports = Jsonrpc;
 
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -5056,7 +5511,7 @@ Method.prototype.request = function () {
 
 module.exports = Method;
 
-},{"../utils/utils":20,"./errors":26}],37:[function(require,module,exports){
+},{"../utils/utils":21,"./errors":27}],38:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -5103,16 +5558,8 @@ var transactionFromBlockCall = function (args) {
     return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'core_getTransactionByBlockHashAndIndex' : 'core_getTransactionByBlockNumberAndIndex';
 };
 
-var uncleCall = function (args) {
-    return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'core_getUncleByBlockHashAndIndex' : 'core_getUncleByBlockNumberAndIndex';
-};
-
 var getBlockTransactionCountCall = function (args) {
     return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'core_getBlockTransactionCountByHash' : 'core_getBlockTransactionCountByNumber';
-};
-
-var uncleCountCall = function (args) {
-    return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'core_getUncleCountByBlockHash' : 'core_getUncleCountByBlockNumber';
 };
 
 function Core(vnt) {
@@ -5186,32 +5633,9 @@ var methods = function () {
         outputFormatter: formatters.outputBlockFormatter
     });
 
-    var getUncle = new Method({
-        name: 'getUncle',
-        call: uncleCall,
-        params: 2,
-        inputFormatter: [formatters.inputBlockNumberFormatter, utils.toHex],
-        outputFormatter: formatters.outputBlockFormatter,
-
-    });
-
-    var getCompilers = new Method({
-        name: 'getCompilers',
-        call: 'core_getCompilers',
-        params: 0
-    });
-
     var getBlockTransactionCount = new Method({
         name: 'getBlockTransactionCount',
         call: getBlockTransactionCountCall,
-        params: 1,
-        inputFormatter: [formatters.inputBlockNumberFormatter],
-        outputFormatter: utils.toDecimal
-    });
-
-    var getBlockUncleCount = new Method({
-        name: 'getBlockUncleCount',
-        call: uncleCountCall,
         params: 1,
         inputFormatter: [formatters.inputBlockNumberFormatter],
         outputFormatter: utils.toDecimal
@@ -5290,33 +5714,12 @@ var methods = function () {
         outputFormatter: utils.toDecimal
     });
 
-    var compileSolidity = new Method({
-        name: 'compile.solidity',
-        call: 'core_compileSolidity',
-        params: 1
-    });
-
-    var compileLLL = new Method({
-        name: 'compile.lll',
-        call: 'core_compileLLL',
-        params: 1
-    });
-
-    var compileSerpent = new Method({
-        name: 'compile.serpent',
-        call: 'core_compileSerpent',
-        params: 1
-    });
-
     return [
         getBalance,
         getStorageAt,
         getCode,
         getBlock,
-        getUncle,
-        getCompilers,
         getBlockTransactionCount,
-        getBlockUncleCount,
         getTransaction,
         getTransactionFromBlock,
         getTransactionReceipt,
@@ -5326,10 +5729,7 @@ var methods = function () {
         sendRawTransaction,
         signTransaction,
         sendTransaction,
-        sign,
-        compileSolidity,
-        compileLLL,
-        compileSerpent
+        sign
     ];
 };
 
@@ -5341,8 +5741,8 @@ var properties = function () {
             getter: 'core_coinbase'
         }),
         new Property({
-            name: 'mining',
-            getter: 'core_mining'
+            name: 'producing',
+            getter: 'core_producing'
         }),
         new Property({
             name: 'syncing',
@@ -5393,75 +5793,7 @@ Core.prototype.isSyncing = function (callback) {
 
 module.exports = Core;
 
-},{"../../utils/config":18,"../../utils/utils":20,"../contract":25,"../filter":29,"../formatters":30,"../iban":33,"../method":36,"../namereg":44,"../property":45,"../syncing":48,"../transfer":49,"./watches":43}],38:[function(require,module,exports){
-/*
-    This file is part of vnt.js.
-
-    vnt.js is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    vnt.js is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with vnt.js.  If not, see <http://www.gnu.org/licenses/>.
-*/
-/** @file db.js
- * @authors:
- *   Marek Kotewicz <marek@ethdev.com>
- * @date 2015
- */
-
-var Method = require('../method');
-
-var DB = function (vnt) {
-    this._requestManager = vnt._requestManager;
-
-    var self = this;
-    
-    methods().forEach(function(method) { 
-        method.attachToObject(self);
-        method.setRequestManager(vnt._requestManager);
-    });
-};
-
-var methods = function () {
-    var putString = new Method({
-        name: 'putString',
-        call: 'db_putString',
-        params: 3
-    });
-
-    var getString = new Method({
-        name: 'getString',
-        call: 'db_getString',
-        params: 2
-    });
-
-    var putHex = new Method({
-        name: 'putHex',
-        call: 'db_putHex',
-        params: 3
-    });
-
-    var getHex = new Method({
-        name: 'getHex',
-        call: 'db_getHex',
-        params: 2
-    });
-
-    return [
-        putString, getString, putHex, getHex
-    ];
-};
-
-module.exports = DB;
-
-},{"../method":36}],39:[function(require,module,exports){
+},{"../../utils/config":18,"../../utils/utils":21,"../contract":26,"../filter":30,"../formatters":31,"../iban":34,"../method":37,"../namereg":44,"../property":45,"../syncing":48,"../transfer":49,"./watches":43}],39:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -5515,7 +5847,7 @@ var properties = function () {
 
 module.exports = Net;
 
-},{"../../utils/utils":20,"../property":45}],40:[function(require,module,exports){
+},{"../../utils/utils":21,"../property":45}],40:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -5632,7 +5964,7 @@ var properties = function () {
 
 module.exports = Personal;
 
-},{"../formatters":30,"../method":36,"../property":45}],41:[function(require,module,exports){
+},{"../formatters":31,"../method":37,"../property":45}],41:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -5778,7 +6110,7 @@ var methods = function () {
 module.exports = Shh;
 
 
-},{"../filter":29,"../method":36,"./watches":43}],42:[function(require,module,exports){
+},{"../filter":30,"../method":37,"./watches":43}],42:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -5924,7 +6256,7 @@ var properties = function () {
 
 module.exports = Swarm;
 
-},{"../method":36,"../property":45}],43:[function(require,module,exports){
+},{"../method":37,"../property":45}],43:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -6032,7 +6364,7 @@ module.exports = {
     shh: shh
 };
 
-},{"../method":36}],44:[function(require,module,exports){
+},{"../method":37}],44:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -6219,7 +6551,7 @@ Property.prototype.request = function () {
 module.exports = Property;
 
 
-},{"../utils/utils":20}],46:[function(require,module,exports){
+},{"../utils/utils":21}],46:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -6485,7 +6817,7 @@ RequestManager.prototype.poll = function () {
 
 module.exports = RequestManager;
 
-},{"../utils/config":18,"../utils/utils":20,"./errors":26,"./jsonrpc":35}],47:[function(require,module,exports){
+},{"../utils/config":18,"../utils/utils":21,"./errors":27,"./jsonrpc":36}],47:[function(require,module,exports){
 
 
 var Settings = function () {
@@ -6590,7 +6922,7 @@ IsSyncing.prototype.stopWatching = function () {
 
 module.exports = IsSyncing;
 
-},{"../utils/utils":20,"./formatters":30}],49:[function(require,module,exports){
+},{"../utils/utils":21,"./formatters":31}],49:[function(require,module,exports){
 /*
     This file is part of vnt.js.
 
@@ -6657,7 +6989,7 @@ var transfer = function (vnt, from, to, value, callback) {
  */
 var transferToAddress = function (vnt, from, to, value, callback) {
     return vnt.sendTransaction({
-        address: to,
+        to: to,
         from: from,
         value: value
     }, callback);
@@ -6683,7 +7015,7 @@ var deposit = function (vnt, from, to, value, client, callback) {
 
 module.exports = transfer;
 
-},{"../contracts/SmartExchange.json":3,"./iban":33}],50:[function(require,module,exports){
+},{"../contracts/SmartExchange.json":3,"./iban":34}],50:[function(require,module,exports){
 
 },{}],51:[function(require,module,exports){
 ;(function (root, factory, undef) {
@@ -6779,18 +7111,13 @@ module.exports = transfer;
 	     */
 	    var AES = C_algo.AES = BlockCipher.extend({
 	        _doReset: function () {
-	            // Skip reset of nRounds has been set before and key did not change
-	            if (this._nRounds && this._keyPriorReset === this._key) {
-	                return;
-	            }
-
 	            // Shortcuts
-	            var key = this._keyPriorReset = this._key;
+	            var key = this._key;
 	            var keyWords = key.words;
 	            var keySize = key.sigBytes / 4;
 
 	            // Compute number of rounds
-	            var nRounds = this._nRounds = keySize + 6;
+	            var nRounds = this._nRounds = keySize + 6
 
 	            // Compute number of key schedule rows
 	            var ksRows = (nRounds + 1) * 4;
@@ -7814,25 +8141,6 @@ module.exports = transfer;
 	 * CryptoJS core components.
 	 */
 	var CryptoJS = CryptoJS || (function (Math, undefined) {
-	    /*
-	     * Local polyfil of Object.create
-	     */
-	    var create = Object.create || (function () {
-	        function F() {};
-
-	        return function (obj) {
-	            var subtype;
-
-	            F.prototype = obj;
-
-	            subtype = new F();
-
-	            F.prototype = null;
-
-	            return subtype;
-	        };
-	    }())
-
 	    /**
 	     * CryptoJS namespace.
 	     */
@@ -7847,7 +8155,7 @@ module.exports = transfer;
 	     * Base object for prototypal inheritance.
 	     */
 	    var Base = C_lib.Base = (function () {
-
+	        function F() {}
 
 	        return {
 	            /**
@@ -7870,7 +8178,8 @@ module.exports = transfer;
 	             */
 	            extend: function (overrides) {
 	                // Spawn
-	                var subtype = create(this);
+	                F.prototype = this;
+	                var subtype = new F();
 
 	                // Augment
 	                if (overrides) {
@@ -7878,7 +8187,7 @@ module.exports = transfer;
 	                }
 
 	                // Create default initializer
-	                if (!subtype.hasOwnProperty('init') || this.init === subtype.init) {
+	                if (!subtype.hasOwnProperty('init')) {
 	                    subtype.init = function () {
 	                        subtype.$super.init.apply(this, arguments);
 	                    };
@@ -8040,11 +8349,14 @@ module.exports = transfer;
 	                    var thatByte = (thatWords[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
 	                    thisWords[(thisSigBytes + i) >>> 2] |= thatByte << (24 - ((thisSigBytes + i) % 4) * 8);
 	                }
-	            } else {
+	            } else if (thatWords.length > 0xffff) {
 	                // Copy one word at a time
 	                for (var i = 0; i < thatSigBytes; i += 4) {
 	                    thisWords[(thisSigBytes + i) >>> 2] = thatWords[i >>> 2];
 	                }
+	            } else {
+	                // Copy all words at once
+	                thisWords.push.apply(thisWords, thatWords);
 	            }
 	            this.sigBytes += thatSigBytes;
 
@@ -8646,45 +8958,33 @@ module.exports = transfer;
 	            // Shortcuts
 	            var base64StrLength = base64Str.length;
 	            var map = this._map;
-	            var reverseMap = this._reverseMap;
-
-	            if (!reverseMap) {
-	                    reverseMap = this._reverseMap = [];
-	                    for (var j = 0; j < map.length; j++) {
-	                        reverseMap[map.charCodeAt(j)] = j;
-	                    }
-	            }
 
 	            // Ignore padding
 	            var paddingChar = map.charAt(64);
 	            if (paddingChar) {
 	                var paddingIndex = base64Str.indexOf(paddingChar);
-	                if (paddingIndex !== -1) {
+	                if (paddingIndex != -1) {
 	                    base64StrLength = paddingIndex;
 	                }
 	            }
 
 	            // Convert
-	            return parseLoop(base64Str, base64StrLength, reverseMap);
+	            var words = [];
+	            var nBytes = 0;
+	            for (var i = 0; i < base64StrLength; i++) {
+	                if (i % 4) {
+	                    var bits1 = map.indexOf(base64Str.charAt(i - 1)) << ((i % 4) * 2);
+	                    var bits2 = map.indexOf(base64Str.charAt(i)) >>> (6 - (i % 4) * 2);
+	                    words[nBytes >>> 2] |= (bits1 | bits2) << (24 - (nBytes % 4) * 8);
+	                    nBytes++;
+	                }
+	            }
 
+	            return WordArray.create(words, nBytes);
 	        },
 
 	        _map: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
 	    };
-
-	    function parseLoop(base64Str, base64StrLength, reverseMap) {
-	      var words = [];
-	      var nBytes = 0;
-	      for (var i = 0; i < base64StrLength; i++) {
-	          if (i % 4) {
-	              var bits1 = reverseMap[base64Str.charCodeAt(i - 1)] << ((i % 4) * 2);
-	              var bits2 = reverseMap[base64Str.charCodeAt(i)] >>> (6 - (i % 4) * 2);
-	              words[nBytes >>> 2] |= (bits1 | bits2) << (24 - (nBytes % 4) * 8);
-	              nBytes++;
-	          }
-	      }
-	      return WordArray.create(words, nBytes);
-	    }
 	}());
 
 
@@ -13293,7 +13593,7 @@ module.exports = transfer;
 
 }));
 },{"./core":53}],85:[function(require,module,exports){
-/*! https://mths.be/utf8js v2.1.2 by @mathias */
+/*! https://mths.be/utf8js v2.0.0 by @mathias */
 ;(function(root) {
 
 	// Detect free variables `exports`
@@ -13452,7 +13752,7 @@ module.exports = transfer;
 
 		// 2-byte sequence
 		if ((byte1 & 0xE0) == 0xC0) {
-			byte2 = readContinuationByte();
+			var byte2 = readContinuationByte();
 			codePoint = ((byte1 & 0x1F) << 6) | byte2;
 			if (codePoint >= 0x80) {
 				return codePoint;
@@ -13479,7 +13779,7 @@ module.exports = transfer;
 			byte2 = readContinuationByte();
 			byte3 = readContinuationByte();
 			byte4 = readContinuationByte();
-			codePoint = ((byte1 & 0x07) << 0x12) | (byte2 << 0x0C) |
+			codePoint = ((byte1 & 0x0F) << 0x12) | (byte2 << 0x0C) |
 				(byte3 << 0x06) | byte4;
 			if (codePoint >= 0x010000 && codePoint <= 0x10FFFF) {
 				return codePoint;
@@ -13507,7 +13807,7 @@ module.exports = transfer;
 	/*--------------------------------------------------------------------------*/
 
 	var utf8 = {
-		'version': '2.1.2',
+		'version': '2.0.0',
 		'encode': utf8encode,
 		'decode': utf8decode
 	};
@@ -16236,5 +16536,5 @@ if (typeof window !== 'undefined' && typeof window.Vnt === 'undefined') {
 
 module.exports = Vnt;
 
-},{"./lib/vnt":22}]},{},["vnt"])
+},{"./lib/vnt":23}]},{},["vnt"])
 //# sourceMappingURL=vnt.js.map

@@ -43,7 +43,7 @@ func TestConsoleWelcome(t *testing.T) {
 	// Start a gvnt console, make sure it's cleaned up and terminate the console
 	gvnt := runGvnt(t,
 		"--port", "0", "--maxpeers", "0", "--nodiscover", "--nat", "none",
-		"--etherbase", coinbase, "--shh",
+		"--coinbase", coinbase, "--shh",
 		"console")
 
 	// Gather all the infos the welcome message needs to contain
@@ -59,7 +59,7 @@ func TestConsoleWelcome(t *testing.T) {
 Welcome to the Gvnt JavaScript console!
 
 instance: Gvnt/v{{gvntver}}/{{goos}}-{{goarch}}/{{gover}}
-coinbase: {{.Etherbase}}
+coinbase: {{.Coinbase}}
 at block: 0 ({{niltime}})
  datadir: {{.Datadir}}
  modules: {{apis}}
@@ -85,7 +85,7 @@ func TestIPCAttachWelcome(t *testing.T) {
 	// list of ipc modules and shh is included there.
 	gvnt := runGvnt(t,
 		"--port", "0", "--maxpeers", "0", "--nodiscover", "--nat", "none",
-		"--etherbase", coinbase, "--shh", "--ipcpath", ipc)
+		"--coinbase", coinbase, "--shh", "--ipcpath", ipc)
 
 	time.Sleep(2 * time.Second) // Simple way to wait for the RPC endpoint to open
 	testAttachWelcome(t, gvnt, "ipc:"+ipc, ipcAPIs)
@@ -99,7 +99,7 @@ func TestHTTPAttachWelcome(t *testing.T) {
 	port := strconv.Itoa(trulyRandInt(1024, 65536)) // Yeah, sometimes this will fail, sorry :P
 	gvnt := runGvnt(t,
 		"--port", "0", "--maxpeers", "0", "--nodiscover", "--nat", "none",
-		"--etherbase", coinbase, "--rpc", "--rpcport", port, "--rpcapi", "db,core,net,vnt,personal,bp")
+		"--coinbase", coinbase, "--rpc", "--rpcport", port, "--rpcapi", "db,core,net,vnt,personal,bp")
 
 	time.Sleep(2 * time.Second) // Simple way to wait for the RPC endpoint to open
 	testAttachWelcome(t, gvnt, "http://localhost:"+port, httpAPIs)
@@ -114,7 +114,7 @@ func TestWSAttachWelcome(t *testing.T) {
 
 	gvnt := runGvnt(t,
 		"--port", "0", "--maxpeers", "0", "--nodiscover", "--nat", "none",
-		"--etherbase", coinbase, "--ws", "--wsport", port, "--wsapi", "db,core,net,vnt,personal,bp")
+		"--coinbase", coinbase, "--ws", "--wsport", port, "--wsapi", "db,core,net,vnt,personal,bp")
 
 	time.Sleep(2 * time.Second) // Simple way to wait for the RPC endpoint to open
 	testAttachWelcome(t, gvnt, "ws://localhost:"+port, httpAPIs)
@@ -134,7 +134,7 @@ func testAttachWelcome(t *testing.T, gvnt *testgvnt, endpoint, apis string) {
 	attach.SetTemplateFunc("goarch", func() string { return runtime.GOARCH })
 	attach.SetTemplateFunc("gover", runtime.Version)
 	attach.SetTemplateFunc("gvntver", func() string { return params.Version })
-	attach.SetTemplateFunc("etherbase", func() string { return gvnt.Etherbase })
+	attach.SetTemplateFunc("coinbase", func() string { return gvnt.Coinbase })
 	attach.SetTemplateFunc("niltime", func() string { return time.Unix(0, 0).Format(time.RFC1123) })
 	attach.SetTemplateFunc("ipc", func() bool { return strings.HasPrefix(endpoint, "ipc") })
 	attach.SetTemplateFunc("datadir", func() string { return gvnt.Datadir })
@@ -145,7 +145,7 @@ func testAttachWelcome(t *testing.T, gvnt *testgvnt, endpoint, apis string) {
 Welcome to the Gvnt JavaScript console!
 
 instance: Gvnt/v{{gvntver}}/{{goos}}-{{goarch}}/{{gover}}
-coinbase: {{etherbase}}
+coinbase: {{coinbase}}
 at block: 0 ({{niltime}}){{if ipc}}
  datadir: {{datadir}}{{end}}
  modules: {{apis}}

@@ -19,7 +19,6 @@ package vntapi
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -39,7 +38,7 @@ import (
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/vm/election"
-	"github.com/vntchain/go-vnt/core/wavm"
+	"github.com/vntchain/go-vnt/core/wavm/contract"
 	"github.com/vntchain/go-vnt/core/wavm/utils"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/log"
@@ -50,7 +49,7 @@ import (
 )
 
 const (
-	defaultGasPrice = 50 * params.Shannon
+	defaultGasPrice = 50 * params.Gwei
 )
 
 // PublicVntAPI provides an API to access VNT related information.
@@ -259,22 +258,6 @@ func (s *PrivateAccountAPI) ListWallets() []rawWallet {
 	return wallets
 }
 
-// OpenWallet initiates a hardware wallet opening procedure, establishing a USB
-// connection and attempting to authenticate via the provided passphrase. Note,
-// the method may return an extra challenge requiring a second open (e.g. the
-// Trezor PIN matrix challenge).
-func (s *PrivateAccountAPI) OpenWallet(url string, passphrase *string) error {
-	wallet, err := s.am.Wallet(url)
-	if err != nil {
-		return err
-	}
-	pass := ""
-	if passphrase != nil {
-		pass = *passphrase
-	}
-	return wallet.Open(pass)
-}
-
 // DeriveAccount requests a HD wallet to derive a new account, optionally pinning
 // it for later reuse.
 func (s *PrivateAccountAPI) DeriveAccount(url string, path string, pin *bool) (accounts.Account, error) {
@@ -367,7 +350,6 @@ func (s *PrivateAccountAPI) signTransaction(ctx context.Context, args SendTxArgs
 // tries to sign it with the key associated with args.To. If the given passwd isn't
 // able to decrypt the key it fails.
 func (s *PrivateAccountAPI) SendTransaction(ctx context.Context, args SendTxArgs, passwd string) (common.Hash, error) {
-	log.Debug("api", "SendTransaction args", args, "password", passwd)
 	if args.Nonce == nil {
 		// Hold the addresse's mutex around signing to prevent concurrent assignment of
 		// the same nonce to multiple accounts.
@@ -539,20 +521,17 @@ func (s *PublicBlockChainAPI) GetCode(ctx context.Context, address common.Addres
 	if state == nil || err != nil {
 		return nil, err
 	}
-	code := state.GetCode(address)
-	wasmcode := wavm.WasmCode{}
-	decompress, err := utils.DeCompress(code)
+	compress := state.GetCode(address)
+	var code contract.WasmCode
+	decompress, err := utils.DeCompress(compress)
 	if err != nil {
 		return nil, err
 	}
-	sep := []byte{0x7d} // 分割符'}',是{Code: "0x2da32be...", Abi: "0x23290da98acb032..."}的最后一位
-	sepIdx := bytes.Index(decompress, sep)
-
-	err = json.Unmarshal(decompress[:sepIdx+1], &wasmcode)
+	err = rlp.Decode(bytes.NewBuffer(decompress), &code)
 	if err != nil {
 		return nil, err
 	}
-	return wasmcode.Code, state.Error()
+	return code.Code, state.Error()
 }
 
 // GetAbi returns the abi stored at the given address in the state for the given block number.
@@ -561,20 +540,17 @@ func (s *PublicBlockChainAPI) GetAbi(ctx context.Context, address common.Address
 	if state == nil || err != nil {
 		return nil, err
 	}
-	code := state.GetCode(address)
-	wasmcode := wavm.WasmCode{}
-	decompress, err := utils.DeCompress(code)
+	compress := state.GetCode(address)
+	var code contract.WasmCode
+	decompress, err := utils.DeCompress(compress)
 	if err != nil {
 		return nil, err
 	}
-	sep := []byte{0x7d} // 分割符'}',是{Code: "0x2da32be...", Abi: "0x23290da98acb032..."}的最后一位
-	sepIdx := bytes.Index(decompress, sep)
-
-	err = json.Unmarshal(decompress[:sepIdx+1], &wasmcode)
+	err = rlp.Decode(bytes.NewBuffer(decompress), &code)
 	if err != nil {
 		return nil, err
 	}
-	return wasmcode.Abi, state.Error()
+	return code.Abi, state.Error()
 }
 
 // GetStorageAt returns the storage from the state at the given address, key and
@@ -725,7 +701,7 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 		return nil, err
 	}
 	// Get the list
-	list := election.GetAllCandidates(stateDB)
+	list := election.GetAllCandidates(stateDB, true)
 	if len(list) == 0 {
 		return nil, errors.New("empty witness candidates list")
 	}
@@ -734,17 +710,19 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 	rpcCandidates := make([]rpc.Candidate, len(list))
 	for i, ca := range list {
 		rpcCandidates[i].Owner = ca.Owner.String()
+		rpcCandidates[i].Name = string(ca.Name)
 		rpcCandidates[i].Active = ca.Active
 		rpcCandidates[i].Url = string(ca.Url)
-		rpcCandidates[i].VoteCount = ca.VoteCount
-		rpcCandidates[i].TotalBounty = ca.TotalBounty
-		rpcCandidates[i].ExtractedBounty = ca.ExtractedBounty
-		rpcCandidates[i].LastExtractTime = ca.LastExtractTime
+		rpcCandidates[i].VoteCount = (*hexutil.Big)(ca.VoteCount)
+		rpcCandidates[i].TotalBounty = (*hexutil.Big)(ca.TotalBounty)
+		rpcCandidates[i].ExtractedBounty = (*hexutil.Big)(ca.ExtractedBounty)
+		rpcCandidates[i].LastExtractTime = (*hexutil.Big)(ca.LastExtractTime)
+		rpcCandidates[i].Website = string(ca.Website)
 	}
 	return rpcCandidates, nil
 }
 
-// GetVoter returns a voter's information, stake information included
+// GetVoter returns a voter's information.
 func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Address) (*rpc.Voter, error) {
 	// Get stateDB of current block
 	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
@@ -753,11 +731,12 @@ func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Addre
 		return nil, err
 	}
 
+	// Fill voter information
+	empty := common.Address{}
 	v := election.GetVoter(stateDB, address)
-	if v == nil {
+	if v == nil || v.Owner == empty {
 		return nil, fmt.Errorf("no vorter information for address: %s", address.String())
 	}
-
 	voter := &rpc.Voter{
 		Owner:             v.Owner,
 		IsProxy:           v.IsProxy,
@@ -768,13 +747,31 @@ func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Addre
 		VoteCandidates:    v.VoteCandidates,
 	}
 
-	// Fill stake information
-	stake := election.GetStake(stateDB, address)
-	if stake != nil {
-		voter.StakeCount = stake.StakeCount
-		voter.LastStakeTimeStamp = stake.TimeStamp
-	}
 	return voter, nil
+}
+
+// GetStake returns a stake information.
+func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Address) (*rpc.Stake, error) {
+	// Get stateDB of current block
+	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
+	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	if stateDB == nil || err != nil {
+		return nil, err
+	}
+
+	// Fill stake information
+	empty := common.Address{}
+	st := election.GetStake(stateDB, address)
+	if st == nil || st.Owner == empty {
+		return nil, fmt.Errorf("no stake information for address: %s", address.String())
+	}
+	stake := &rpc.Stake{
+		Owner:              st.Owner,
+		StakeCount:         st.StakeCount,
+		LastStakeTimeStamp: st.TimeStamp,
+	}
+
+	return stake, nil
 }
 
 // GetRestVNTBounty returns the rest VNT bounty.
@@ -1226,11 +1223,6 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 	} else if args.Input != nil {
 		input = *args.Input
 	}
-	if args.Data != nil {
-		log.Debug("api", "toTransaction input 1", args.Data.String())
-	}
-	log.Debug("api", "toTransaction input 2", input, "input string", string(input), "data", args.Data)
-	log.Debug("api", "toTransaction input 3", common.ToHex(input))
 	if args.To == nil {
 		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input)
 	}
@@ -1242,7 +1234,6 @@ func submitTransaction(ctx context.Context, b Backend, tx *types.Transaction) (c
 	if err := b.SendTx(ctx, tx); err != nil {
 		return common.Hash{}, err
 	}
-	log.Debug("api", "submitTransaction", tx.Data())
 	if tx.To() == nil {
 		signer := types.MakeSigner(b.ChainConfig(), b.CurrentBlock().Number())
 		from, err := types.Sender(signer, tx)
