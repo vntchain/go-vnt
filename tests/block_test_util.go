@@ -27,7 +27,7 @@ import (
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/common/hexutil"
 	"github.com/vntchain/go-vnt/common/math"
-	"github.com/vntchain/go-vnt/consensus/dpos"
+	"github.com/vntchain/go-vnt/consensus/mock"
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/types"
@@ -107,7 +107,7 @@ func (t *BlockTest) Run() error {
 		return fmt.Errorf("genesis block state root does not match test: computed=%x, test=%x", gblock.Root().Bytes()[:6], t.json.Genesis.StateRoot[:6])
 	}
 
-	chain, err := core.NewBlockChain(db, nil, config, dpos.NewFaker(), vm.Config{})
+	chain, err := core.NewBlockChain(db, nil, config, mock.NewMock(), vm.Config{})
 	if err != nil {
 		return err
 	}
