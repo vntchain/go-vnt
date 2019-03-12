@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
-	"strconv"
 	"testing"
 
 	"github.com/vntchain/go-vnt/common"
