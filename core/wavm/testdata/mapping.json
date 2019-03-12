@@ -30,7 +30,7 @@
           }
      },
      "testcase": [{
-          "code": "mapping/mapping.wasm",
+          "code": "mapping/MappingTest.compress",
           "abi": "mapping/abi.json",
           "initcase": {
                "needinit": true,

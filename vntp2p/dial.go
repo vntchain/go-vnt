@@ -1,3 +1,19 @@
+// Copyright 2019 The go-vnt Authors
+// This file is part of the go-vnt library.
+//
+// The go-vnt library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-vnt library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-vnt library. If not, see <http://www.gnu.org/licenses/>.
+
 package vntp2p
 
 import (
@@ -5,9 +21,10 @@ import (
 
 	"errors"
 	"fmt"
-	"github.com/vntchain/go-vnt/log"
-	"github.com/libp2p/go-libp2p-peer"
 	"time"
+
+	peer "github.com/libp2p/go-libp2p-peer"
+	"github.com/vntchain/go-vnt/log"
 )
 
 var (
@@ -147,6 +164,7 @@ func (s *taskstate) taskDone(t task) {
 
 func (s *taskstate) addStatic(n *Node) {
 	s.static[n.Id] = &dialTask{flag: staticDialedDail, target: n.Id, pid: PID}
+	log.Debug("cq-test", "staticPeer", n.Id)
 }
 
 func newTaskState(maxdail int, bootnodes []peer.ID, dht DhtTable) *taskstate {
@@ -174,7 +192,7 @@ func (t *dialTask) Do(ctx context.Context, server *Server) {
 
 	// 直接连接
 	// fmt.Println("it's time to dial")
-
+	// log.Info("cq-test", "DailTaskTarget", t.target)
 	t.dial(ctx, server, t.target, t.pid)
 }
 

@@ -1,3 +1,19 @@
+// Copyright 2019 The go-vnt Authors
+// This file is part of the go-vnt library.
+//
+// The go-vnt library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-vnt library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-vnt library. If not, see <http://www.gnu.org/licenses/>.
+
 package election
 
 import (
@@ -5,6 +21,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"reflect"
 	"sort"
 	"strings"
 	"unicode"
@@ -14,6 +31,7 @@ import (
 	"github.com/vntchain/go-vnt/common"
 	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/log"
+	"github.com/vntchain/go-vnt/vntp2p"
 )
 
 const (
@@ -28,7 +46,7 @@ var (
 	ErrCandiNameLenInvalid    = errors.New("the length of candidate's name should between [3, 20]")
 	ErrCandiUrlLenInvalid     = errors.New("the length of candidate's website url should between [3, 60]")
 	ErrCandiNameInvalid       = errors.New("candidate's name should consist of digits and lowercase letters")
-	ErrCandiNameOrUrlDup      = errors.New("candidate's name or website url is duplicated with a candidate")
+	ErrCandiInfoDup           = errors.New("candidate's name, website url or node url is duplicated with a registered candidate")
 	ErrCandiAlreadyRegistered = errors.New("candidate is already registered")
 )
 
@@ -87,9 +105,9 @@ type Candidate struct {
 	Name            []byte         // 节点名字
 }
 
-func (c *Candidate) dump() {
-	fmt.Printf("candidate dump, addr:%s, votes:%s, active:%v, url:%x, totalBounty: %v, extractedBounty: %v, lastExtractTime: %v, WebSite: %s, Name: %s\n",
-		c.Owner.String(), c.VoteCount.String(), c.Active, c.Url, c.TotalBounty, c.ExtractedBounty, c.LastExtractTime, c.Website, c.Name)
+func (c *Candidate) String() string {
+	return fmt.Sprintf("candidate, addr:%s, votes:%s, active:%v, url:%s, totalBounty: %v, extractedBounty: %v, lastExtractTime: %v, WebSite: %s, Name: %s\n",
+		c.Owner.String(), c.VoteCount.String(), c.Active, string(c.Url), c.TotalBounty, c.ExtractedBounty, c.LastExtractTime, string(c.Website), string(c.Name))
 }
 
 func newVoter() Voter {
@@ -123,7 +141,7 @@ func (c *Candidate) votes() *big.Int {
 
 // Equal two object is equal
 func (c *Candidate) equal(d *Candidate) bool {
-	return c.Owner == d.Owner && c.VoteCount.Cmp(d.VoteCount) == 0 && c.Active == d.Active
+	return reflect.DeepEqual(c, d)
 }
 
 type CandidateList []Candidate
@@ -277,11 +295,6 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
 }
 
 func (ec electionContext) registerWitness(address common.Address, url []byte, website []byte, name []byte) error {
-	// Sanity check
-	if err := ec.checkCandi(address, string(name), string(website)); err != nil {
-		return err
-	}
-
 	// get candidate from db
 	candidate := ec.getCandidate(address)
 
@@ -297,6 +310,11 @@ func (ec electionContext) registerWitness(address common.Address, url []byte, we
 		// make a new candidate
 		candidate.Owner = address
 		candidate.VoteCount = big.NewInt(0)
+	}
+
+	// Sanity check
+	if err := ec.checkCandi(address, string(name), string(website), string(url)); err != nil {
+		return err
 	}
 
 	// Mark candidate as active
@@ -315,7 +333,8 @@ func (ec electionContext) registerWitness(address common.Address, url []byte, we
 	return nil
 }
 
-func (ec electionContext) checkCandi(addr common.Address, name string, website string) error {
+// checkCandi 候选人基本参数的校验
+func (ec electionContext) checkCandi(addr common.Address, name string, website string, url string) error {
 	// length check
 	if len(name) < 3 || len(name) > 20 {
 		return ErrCandiNameLenInvalid
@@ -336,11 +355,16 @@ func (ec electionContext) checkCandi(addr common.Address, name string, website s
 		return ErrCandiNameInvalid
 	}
 
+	// p2p node url format check
+	if _, err := vntp2p.ParseNode(url); err != nil {
+		return fmt.Errorf("registerWitness node url is error: %s", err)
+	}
+
 	// duplication check
 	wits := getAllCandidate(ec.context.GetStateDb())
 	for _, w := range wits {
-		if w.Owner != addr && (string(w.Name) == name || string(w.Website) == website) {
-			return ErrCandiNameOrUrlDup
+		if w.Owner != addr && (string(w.Name) == name || string(w.Website) == website || string(w.Url) == url) {
+			return ErrCandiInfoDup
 		}
 	}
 	return nil

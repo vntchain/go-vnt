@@ -30,7 +30,7 @@
           }
      },
      "testcase": [{
-          "code": "erc20/erc20.wasm",
+          "code": "erc20/TokenERC20.compress",
           "abi": "erc20/abi.json",
           "initcase": {
                "needinit": true,

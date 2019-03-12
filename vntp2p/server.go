@@ -1,3 +1,19 @@
+// Copyright 2019 The go-vnt Authors
+// This file is part of the go-vnt library.
+//
+// The go-vnt library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-vnt library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-vnt library. If not, see <http://www.gnu.org/licenses/>.
+
 package vntp2p
 
 import (
@@ -40,41 +56,27 @@ const (
 )
 
 type Config struct {
-	PrivateKey *ecdsa.PrivateKey `toml:"-"`
-
-	MaxPeers int
-
+	PrivateKey      *ecdsa.PrivateKey `toml:"-"`
+	MaxPeers        int
 	MaxPendingPeers int `toml:",omitempty"`
-
-	DialRatio int `toml:",omitempty"`
-
-	NoDiscovery bool
-
-	Name string `toml:"-"`
+	DialRatio       int `toml:",omitempty"`
+	NoDiscovery     bool
+	Name            string `toml:"-"`
 
 	BootstrapNodes []*Node
+	StaticNodes    []*Node
+	TrustedNodes   []*Node
 
-	StaticNodes []*Node
-
-	TrustedNodes []*Node
-
-	NetRestrict []*net.IPNet `toml:",omitempty"`
-
-	NodeDatabase string `toml:",omitempty"`
-
-	Protocols []Protocol `toml:"-"`
-
-	ListenAddr string
-
-	NAT libp2p.Option `toml:",omitempty"`
-
+	NetRestrict  []*net.IPNet `toml:",omitempty"`
+	NodeDatabase string       `toml:",omitempty"`
+	Protocols    []Protocol   `toml:"-"`
+	ListenAddr   string
+	NAT          libp2p.Option `toml:"-"`
 	// Dialer NodeDialer `toml:"-"`
-
 	// NoDial bool `toml:",omitempty"`
 
 	EnableMsgEvents bool
-
-	Logger log.Logger `toml:",omitempty"`
+	Logger          log.Logger `toml:",omitempty"`
 }
 
 type Server struct {
@@ -257,6 +259,7 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 			log.Info("yhx-test", "peers", peers)
 
 		case t := <-server.addstatic:
+			log.Info("cq-test", "addStaticPeers", t.Id)
 			tasker.addStatic(t)
 		case t := <-server.removestatic:
 			tasker.removeStatic(t)
@@ -271,8 +274,8 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 
 		case pd := <-server.delpeer:
 			// A peer disconnected.
-			//log.Debug("Removing p2p peer", "peers", len(peers)-1, "req", "err", pd.err)
-			// fmt.Println("Del peer", pd.RemoteID())
+
+			log.Info("Removing p2p peer", "peers", pd.RemoteID())
 			delete(peers, pd.RemoteID())
 		}
 	}

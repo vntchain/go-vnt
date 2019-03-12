@@ -45,7 +45,7 @@ func (ui *HeadlessUI) OnSignerStartup(info StartupInfo) {
 }
 
 func (ui *HeadlessUI) OnApprovedTx(tx vntapi.SignTransactionResult) {
-	fmt.Printf("OnApproved called")
+	fmt.Printf("OnApproved called\n")
 }
 
 func (ui *HeadlessUI) ApproveTx(request *SignTxRequest) (SignTxResponse, error) {
@@ -134,7 +134,6 @@ func setup(t *testing.T) (*SignerAPI, chan string) {
 		api = NewSignerAPI(
 			1,
 			tmpDirName(t),
-			true,
 			ui,
 			db,
 			true)
@@ -212,7 +211,6 @@ func TestNewAcc(t *testing.T) {
 }
 
 func TestSignData(t *testing.T) {
-
 	api, control := setup(t)
 	//Create two accounts
 	createAccount(control, api, t)
@@ -233,6 +231,7 @@ func TestSignData(t *testing.T) {
 	if err != keystore.ErrDecrypt {
 		t.Errorf("Expected ErrLocked! %v", err)
 	}
+	fmt.Println()
 
 	control <- "No way"
 	h, err = api.Sign(context.Background(), a, []byte("EHLO world"))

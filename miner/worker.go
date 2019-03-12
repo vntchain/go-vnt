@@ -167,7 +167,7 @@ func newWorker(config *params.ChainConfig, engine consensus.Engine, coinbase com
 	return worker
 }
 
-func (self *worker) setEtherbase(addr common.Address) {
+func (self *worker) setCoinbase(addr common.Address) {
 	self.mu.Lock()
 	defer self.mu.Unlock()
 	self.coinbase = addr
@@ -279,7 +279,7 @@ func (self *worker) update() {
 		select {
 		// Handle ChainHeadEvent
 		case headEvent := <-self.chainHeadCh:
-			log.Debug("Worker: new block write finished", "block hash", headEvent.Block.Hash())
+			log.Debug("Worker: new block write finished", "block hash", headEvent.Block.Hash().String())
 			if self.config.Dpos != nil {
 				if dp, ok := self.engine.(*dpos.Dpos); ok {
 					dp.CleanOldMsg(headEvent.Block.Number())

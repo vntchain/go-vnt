@@ -1,0 +1,24 @@
+{
+     "config": {
+          "chainId": 1015,
+          "dpos": {
+               "period": 2,
+               "witnessesNum": /*replacenumber*/,
+               "witnessesUrl": [ /*replaceaddress*/ ]
+          }
+     },
+     "nonce": "0x0",
+     "timestamp": "0x5b45b949",
+     "extraData": "0x",
+     "gasLimit": "0x47b760",
+     "difficulty": "0x1",
+     "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+     "coinbase": "0x0000000000000000000000000000000000000000",
+     "alloc": {
+          /*replacealloc*/
+     },
+     "witnesses": [/*replacewitnesses*/],
+     "number": "0x0",
+     "gasUsed": "0x0",
+     "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000"
+}

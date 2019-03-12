@@ -251,9 +251,9 @@ func detectEnsAddr(client *rpc.Client) (common.Address, error) {
 		log.Info("using Mainnet ENS contract address", "addr", ens.MainNetAddress)
 		return ens.MainNetAddress, nil
 
-	case version == "3" && block.Hash() == params.TestnetGenesisHash:
-		log.Info("using Testnet ENS contract address", "addr", ens.TestNetAddress)
-		return ens.TestNetAddress, nil
+	//case version == "3" && block.Hash() == params.TestnetGenesisHash:
+	//	log.Info("using Testnet ENS contract address", "addr", ens.TestNetAddress)
+	//	return ens.TestNetAddress, nil
 
 	default:
 		return common.Address{}, fmt.Errorf("unknown version and genesis hash: %s %s", version, block.Hash())

@@ -1,3 +1,19 @@
+// Copyright 2019 The go-vnt Authors
+// This file is part of the go-vnt library.
+//
+// The go-vnt library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-vnt library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-vnt library. If not, see <http://www.gnu.org/licenses/>.
+
 package wavm
 
 import (
@@ -148,9 +164,9 @@ func (ef *EnvFunctions) GetBlockHash(proc *exec.WavmProcess, blockNum uint64) ui
 	}
 }
 
-func (ef *EnvFunctions) GetCoinBase(proc *exec.WavmProcess) uint64 {
+func (ef *EnvFunctions) GetBlockProduser(proc *exec.WavmProcess) uint64 {
 	ctx := ef.ctx
-	ctx.GasCounter.GasGetCoinBase()
+	ctx.GasCounter.GasGetBlockProduser()
 	coinbase := ctx.Coinbase.Bytes()
 	return ef.returnAddress(proc, coinbase)
 }
@@ -178,14 +194,6 @@ func (ef *EnvFunctions) GetGasLimit(proc *exec.WavmProcess) uint64 {
 	ctx := ef.ctx
 	ctx.GasCounter.GasGetGasLimit()
 	return ctx.GasLimit
-}
-
-//todo uint256 test
-func (ef *EnvFunctions) GetDifficulty(proc *exec.WavmProcess) uint64 {
-	ctx := ef.ctx
-	ctx.GasCounter.GasGetDifficulty()
-	diff := ctx.Difficulty
-	return ef.returnU256(proc, diff)
 }
 
 //todo 不能转成uint64 必须是uint256
@@ -222,7 +230,7 @@ func (ef *EnvFunctions) Assert(proc *exec.WavmProcess, condition uint64, msgIdx 
 
 func (ef *EnvFunctions) SendFromContract(proc *exec.WavmProcess, addrIdx uint64, amountIdx uint64) {
 	log.Debug("instructions", "func", "SendFromContract")
-	ef.ForbiddenMutable(proc)
+	ef.forbiddenMutable(proc)
 	addr := common.BytesToAddress(proc.ReadAt(addrIdx))
 	amount := utils.GetU256(proc.ReadAt(amountIdx))
 	if ef.ctx.CanTransfer(ef.ctx.StateDB, ef.ctx.Contract.Address(), amount) {
@@ -238,7 +246,7 @@ func (ef *EnvFunctions) SendFromContract(proc *exec.WavmProcess, addrIdx uint64,
 
 func (ef *EnvFunctions) TransferFromContract(proc *exec.WavmProcess, addrIdx uint64, amountIdx uint64) uint64 {
 	log.Debug("instructions", "func", "TransferFromContract")
-	ef.ForbiddenMutable(proc)
+	ef.forbiddenMutable(proc)
 	// ef.ctx.GasCounter.GasSendFromContract()
 	addr := common.BytesToAddress(proc.ReadAt(addrIdx))
 	amount := utils.GetU256(proc.ReadAt(amountIdx))
@@ -266,14 +274,14 @@ func (ef *EnvFunctions) fromU64(proc *exec.WavmProcess, amount uint64) uint64 {
 	return uint64(proc.SetBytes([]byte(str)))
 }
 
-func (ef *EnvFunctions) toI64(proc *exec.WavmProcess, strIdx uint64) int64 {
+func (ef *EnvFunctions) toI64(proc *exec.WavmProcess, strIdx uint64) uint64 {
 	ef.ctx.GasCounter.GasToI64()
 	b := proc.ReadAt(strIdx)
 	amount, err := strconv.Atoi(string(b))
 	if err != nil {
 		return 0
 	} else {
-		return int64(amount)
+		return uint64(amount)
 	}
 }
 
@@ -310,7 +318,7 @@ func (ef *EnvFunctions) Equal(proc *exec.WavmProcess, str1Idx uint64, str2Idx ui
 
 func (ef *EnvFunctions) getEvent(funcName string) interface{} {
 	fnDef := func(proc *exec.WavmProcess, vars ...uint64) {
-		ef.ForbiddenMutable(proc)
+		ef.forbiddenMutable(proc)
 		Abi := ef.ctx.Abi
 
 		var event abi.Event
@@ -400,7 +408,7 @@ func (ef *EnvFunctions) getEvent(funcName string) interface{} {
 	return fnDef
 }
 
-//todo 第三个参数里需要设置为gaslimit，用于跨合约调用的gas消耗
+//todo 如果一个unmutable的方法跨合约调用了一个mutable的方法 则会报错
 func (ef *EnvFunctions) getContractCall(funcName string) interface{} {
 	Abi := ef.ctx.Abi
 
@@ -411,7 +419,7 @@ func (ef *EnvFunctions) getContractCall(funcName string) interface{} {
 	}
 
 	fnDef := func(proc *exec.WavmProcess, vars ...uint64) interface{} {
-		ef.ForbiddenMutable(proc)
+		// ef.forbiddenMutable(proc)
 		abiParamLen := len(dc.Inputs)
 		paramLen := len(vars)
 		if abiParamLen+1 != paramLen {
@@ -432,7 +440,7 @@ func (ef *EnvFunctions) getContractCall(funcName string) interface{} {
 				args = append(args, addr)
 			case "string":
 				value = proc.ReadAt(param)
-				args = append(args, value)
+				args = append(args, string(value))
 			case "uint64":
 				args = append(args, uint64(param))
 			case "int64":
@@ -685,6 +693,14 @@ func (ef *EnvFunctions) AddressFrom(proc *exec.WavmProcess, idx uint64) uint64 {
 	return ef.returnAddress(proc, address)
 }
 
+func (ef *EnvFunctions) AddressToString(proc *exec.WavmProcess, idx uint64) uint64 {
+	ctx := ef.ctx
+	ctx.GasCounter.GasQuickStep()
+	addrBytes := proc.ReadAt(idx)
+	address := common.BytesToAddress(addrBytes)
+	return uint64(proc.SetBytes([]byte(address.Hex())))
+}
+
 func (ef *EnvFunctions) U256From(proc *exec.WavmProcess, idx uint64) uint64 {
 	ctx := ef.ctx
 	ctx.GasCounter.GasQuickStep()
@@ -694,6 +710,13 @@ func (ef *EnvFunctions) U256From(proc *exec.WavmProcess, idx uint64) uint64 {
 		panic(fmt.Sprintf("Can't Convert strin %s to uint256", u256Str))
 	}
 	return ef.returnU256(proc, bigint)
+}
+
+func (ef *EnvFunctions) U256ToString(proc *exec.WavmProcess, idx uint64) uint64 {
+	ctx := ef.ctx
+	ctx.GasCounter.GasQuickStep()
+	u256Bytes := proc.ReadAt(idx)
+	return uint64(proc.SetBytes(u256Bytes))
 }
 
 // // Open for unit testing
@@ -836,7 +859,7 @@ func (ef *EnvFunctions) WriteWithPointer(proc *exec.WavmProcess, offsetAddr, bas
 	valAddr := offsetAddr + baseAddr
 	storageMap := ef.ctx.StorageMapping
 	if _, ok := storageMap[valAddr]; ok {
-		ef.ForbiddenMutable(proc)
+		ef.forbiddenMutable(proc)
 	}
 	op := func(val storage.StorageMapping, keyHash common.Hash) {
 
@@ -985,6 +1008,19 @@ func (ef *EnvFunctions) U256Div(proc *exec.WavmProcess, x, y uint64) uint64 {
 	return ef.returnU256(proc, res)
 }
 
+func (ef *EnvFunctions) U256Mod(proc *exec.WavmProcess, x, y uint64) uint64 {
+	bigx := readU256FromMemory(proc, x)
+	bigy := readU256FromMemory(proc, y)
+	res := new(big.Int)
+	if bigy.Sign() != 0 {
+		res = math.U256(bigy.Mod(bigx, bigy))
+	} else {
+		res = bigy.SetUint64(0)
+	}
+	ef.ctx.GasCounter.GasFastestStep()
+	return ef.returnU256(proc, res)
+}
+
 func (ef *EnvFunctions) U256Pow(proc *exec.WavmProcess, base, exponent uint64) uint64 {
 	b := readU256FromMemory(proc, base)
 	e := readU256FromMemory(proc, exponent)
@@ -1099,7 +1135,7 @@ func (ef *EnvFunctions) getQString(proc *exec.WavmProcess, strPtr uint64) []byte
 	return strData
 }
 
-func (ef *EnvFunctions) ForbiddenMutable(proc *exec.WavmProcess) {
+func (ef *EnvFunctions) forbiddenMutable(proc *exec.WavmProcess) {
 	if proc.Mutable() == false {
 		log.Debug("ForbiddenMutable", "msg", "this function is not a mutable function")
 		err := errors.New("Mutable Forbidden: This function is not a mutable function")

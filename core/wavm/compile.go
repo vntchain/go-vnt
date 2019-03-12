@@ -44,6 +44,7 @@ import (
 
 	"github.com/vntchain/go-vnt/core/wavm/gas"
 	"github.com/vntchain/go-vnt/core/wavm/utils"
+	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/vnt-wasm/disasm"
 	"github.com/vntchain/vnt-wasm/vnt"
 	"github.com/vntchain/vnt-wasm/wasm"
@@ -183,6 +184,7 @@ func (cb *CodeBlock) buildCode(blockDepth int, n int) *Code {
 		code.Children = append([]*Code{pop}, tmp...)
 		//w.code.Children = append(w.code.Children, pop)
 	}
+
 	return code
 }
 
@@ -216,9 +218,7 @@ func CompileModule(module *wasm.Module, chainctx ChainContext, mutable Mutable) 
 			totalLocalVars += int(entry.Count)
 		}
 		disassembly.Code = gas.InjectCounter(disassembly.Code, module, chainctx.GasRule)
-
 		code, table = Compile(disassembly.Code, module, mutable)
-
 		Compiled[i] = vnt.Compiled{
 			Code:           code,
 			Table:          table,
@@ -236,7 +236,6 @@ func CompileModule(module *wasm.Module, chainctx ChainContext, mutable Mutable) 
 // Compile rewrites WebAssembly bytecode from its disassembly.
 // TODO(vibhavp): Add options for optimizing code. Operators like i32.reinterpret/f32
 // are no-ops, and can be safely removed.
-// todo 处理control flow的堆栈问题
 func Compile(disassembly []disasm.Instr, module *wasm.Module, mutable Mutable) ([]byte, []*vnt.BranchTable) {
 	buffer := new(bytes.Buffer)
 	branchTables := []*vnt.BranchTable{}
@@ -680,6 +679,8 @@ func Compile(disassembly []disasm.Instr, module *wasm.Module, mutable Mutable) (
 					}
 				}
 				newInstr = append(newInstr, readInstr...)
+			} else {
+				log.Warn("Compile warning", "Msg", "Can't find ReadWithPointer env function!!")
 			}
 		}
 		buffer.WriteByte(instr.Op.Code)
@@ -702,6 +703,8 @@ func Compile(disassembly []disasm.Instr, module *wasm.Module, mutable Mutable) (
 					}
 				}
 				newInstr = append(newInstr, writeInstr...)
+			} else {
+				log.Warn("Compile warning", "Msg", "Can't find WriteWithPointer env function!!")
 			}
 		}
 	}

@@ -1,3 +1,19 @@
+// Copyright 2019 The go-vnt Authors
+// This file is part of the go-vnt library.
+//
+// The go-vnt library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-vnt library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-vnt library. If not, see <http://www.gnu.org/licenses/>.
+
 package vntp2p
 
 import (
@@ -9,9 +25,9 @@ import (
 	"io/ioutil"
 	"time"
 
+	inet "github.com/libp2p/go-libp2p-net"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/rlp"
-	inet "github.com/libp2p/go-libp2p-net"
 )
 
 type MsgReadWriter interface {
@@ -149,10 +165,11 @@ func (msg *Msg) GetBodySize() uint32 {
 
 // VNTMessenger vnt chain message readwriter
 type VNTMessenger struct {
-	protocol Protocol
-	in       chan Msg
-	err      chan error
-	w        inet.Stream
+	protocol    Protocol
+	in          chan Msg
+	err         chan error
+	w           inet.Stream
+	peerPointer *Peer
 }
 
 // WriteMsg implement MsgReadWriter interface
@@ -161,6 +178,7 @@ func (rw *VNTMessenger) WriteMsg(msg Msg) (err error) {
 	//	return newPeerError(errInvalidMsgCode, "not handled")
 	//}
 	// 暂时先不管主动关闭需要告知对方的情况，目前聚焦于发送消息这件基本工作
+
 	msgHeaderByte := msg.Header[:]
 	msgBodyByte, err := json.Marshal(msg.Body)
 	if err != nil {
@@ -173,6 +191,11 @@ func (rw *VNTMessenger) WriteMsg(msg Msg) (err error) {
 	_, err = rw.w.Write(m)
 	if err != nil {
 		log.Error("WriteMsg()", "write msg error", err)
+		if !rw.peerPointer.closed {
+			log.Info("WriteMsg()", "underlay will close this connection which remotePID", rw.peerPointer.RemoteID())
+			rw.peerPointer.err <- err
+		}
+		log.Trace("WriteMsg() exit", "peer", rw.peerPointer.RemoteID())
 		return err
 	}
 	return nil

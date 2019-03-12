@@ -625,7 +625,7 @@ func (f *Fetcher) enqueue(peer libp2p.ID, block *types.Block) {
 		if f.queueChangeHook != nil {
 			f.queueChangeHook(op.block.Hash(), true)
 		}
-		log.Debug("Queued propagated block", "peer", peer, "number", block.Number(), "hash", hash, "queued", f.queue.Size())
+		log.Debug("Queued propagated block", "peer", peer, "number", block.Number(), "hash", hash, "queued", f.queue.Size(), "peer queues", count)
 	}
 }
 
@@ -725,6 +725,7 @@ func (f *Fetcher) forgetHash(hash common.Hash) {
 func (f *Fetcher) forgetBlock(hash common.Hash) {
 	if insert := f.queued[hash]; insert != nil {
 		f.queues[insert.origin]--
+		log.Debug("Unqueue propagated block", "peer", insert.origin, "hash", hash, "peer queues", f.queues[insert.origin])
 		if f.queues[insert.origin] == 0 {
 			delete(f.queues, insert.origin)
 		}
