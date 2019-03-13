@@ -26,7 +26,7 @@ import (
 
 	libp2p "github.com/libp2p/go-libp2p-peer"
 	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/consensus/dpos"
+	"github.com/vntchain/go-vnt/consensus/mock"
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/crypto"
@@ -47,7 +47,7 @@ var (
 // contains a transaction  to allow testing correct block
 // reassembly.
 func makeChain(n int, seed byte, parent *types.Block) ([]common.Hash, map[common.Hash]*types.Block) {
-	blocks, _ := core.GenerateChain(params.TestChainConfig, parent, dpos.NewFaker(), testdb, n, func(i int, block *core.BlockGen) {
+	blocks, _ := core.GenerateChain(params.TestChainConfig, parent, mock.NewMock(), testdb, n, func(i int, block *core.BlockGen) {
 		block.SetCoinbase(common.Address{seed})
 
 		// If the block number is multiple of 3, send a bonus transaction to the miner

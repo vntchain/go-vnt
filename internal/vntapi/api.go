@@ -258,22 +258,6 @@ func (s *PrivateAccountAPI) ListWallets() []rawWallet {
 	return wallets
 }
 
-// OpenWallet initiates a hardware wallet opening procedure, establishing a USB
-// connection and attempting to authenticate via the provided passphrase. Note,
-// the method may return an extra challenge requiring a second open (e.g. the
-// Trezor PIN matrix challenge).
-func (s *PrivateAccountAPI) OpenWallet(url string, passphrase *string) error {
-	wallet, err := s.am.Wallet(url)
-	if err != nil {
-		return err
-	}
-	pass := ""
-	if passphrase != nil {
-		pass = *passphrase
-	}
-	return wallet.Open(pass)
-}
-
 // DeriveAccount requests a HD wallet to derive a new account, optionally pinning
 // it for later reuse.
 func (s *PrivateAccountAPI) DeriveAccount(url string, path string, pin *bool) (accounts.Account, error) {
@@ -719,7 +703,7 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 	// Get the list
 	list := election.GetAllCandidates(stateDB, true)
 	if len(list) == 0 {
-		return nil, errors.New("empty witness candidates list")
+		return nil, nil
 	}
 
 	// Transform to rpc candidate
@@ -729,10 +713,10 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 		rpcCandidates[i].Name = string(ca.Name)
 		rpcCandidates[i].Active = ca.Active
 		rpcCandidates[i].Url = string(ca.Url)
-		rpcCandidates[i].VoteCount = ca.VoteCount
-		rpcCandidates[i].TotalBounty = ca.TotalBounty
-		rpcCandidates[i].ExtractedBounty = ca.ExtractedBounty
-		rpcCandidates[i].LastExtractTime = ca.LastExtractTime
+		rpcCandidates[i].VoteCount = (*hexutil.Big)(ca.VoteCount)
+		rpcCandidates[i].TotalBounty = (*hexutil.Big)(ca.TotalBounty)
+		rpcCandidates[i].ExtractedBounty = (*hexutil.Big)(ca.ExtractedBounty)
+		rpcCandidates[i].LastExtractTime = (*hexutil.Big)(ca.LastExtractTime)
 		rpcCandidates[i].Website = string(ca.Website)
 	}
 	return rpcCandidates, nil
@@ -751,7 +735,7 @@ func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Addre
 	empty := common.Address{}
 	v := election.GetVoter(stateDB, address)
 	if v == nil || v.Owner == empty {
-		return nil, fmt.Errorf("no vorter information for address: %s", address.String())
+		return nil, nil
 	}
 	voter := &rpc.Voter{
 		Owner:             v.Owner,
@@ -779,7 +763,7 @@ func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Addre
 	empty := common.Address{}
 	st := election.GetStake(stateDB, address)
 	if st == nil || st.Owner == empty {
-		return nil, fmt.Errorf("no stake information for address: %s", address.String())
+		return nil, nil
 	}
 	stake := &rpc.Stake{
 		Owner:              st.Owner,

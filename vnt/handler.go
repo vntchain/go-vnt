@@ -98,6 +98,8 @@ type ProtocolManager struct {
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg sync.WaitGroup
+
+	urlsCh chan []string // 传递p2p urls of witnesses
 }
 
 // NewProtocolManager returns a new VNT sub protocol manager. The VNT sub protocol manages peers capable
@@ -116,6 +118,8 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 		txsyncCh:    make(chan *txsync),
 		quitSync:    make(chan struct{}),
 		node:        node,
+
+		urlsCh: make(chan []string),
 	}
 	// Figure out whether to allow fast sync or not
 	if mode == downloader.FastSync && blockchain.CurrentBlock().NumberU64() > 0 {
@@ -250,6 +254,8 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	go pm.minedBroadcastLoop()
 	go pm.bftBroadcastLoop()
 
+	go pm.resetBftPeerLoop()
+
 	// start sync handlers
 	go pm.syncer()
 	go pm.txsyncLoop()
@@ -263,6 +269,8 @@ func (pm *ProtocolManager) Stop() {
 	pm.minedBlockSub.Unsubscribe() // quits blockBroadcastLoop
 	pm.bftMsgSub.Unsubscribe()
 	pm.bftPeerSub.Unsubscribe()
+
+	close(pm.urlsCh)
 
 	// Quit the sync loop.
 	// After this send has completed, no new peers will be accepted.
@@ -787,13 +795,21 @@ func (pm *ProtocolManager) BroadcastTxs(txs types.Transactions) {
 func (pm *ProtocolManager) BroadcastBftMsg(bftMsg types.BftMsg) {
 	peers := pm.peers.PeersForBft()
 	log.Trace("BroadcastBftMsg", "type", bftMsg.BftType, "hash", bftMsg.Msg.Hash(), "number of bft peer", len(peers))
-	for _, peer := range peers {
-		log.Trace("BroadcastBftMsg", "to peer", peer.id.ToString())
-		err := peer.SendBftMsg(bftMsg)
-		if err != nil {
-			log.Error("BroadcastBftMsg ", "to peer", peer.id.ToString(), "error", err)
-		}
+
+	for _, p := range peers {
+		// using goroutine for each peer for peer may connection
+		go func(p *peer) {
+			log.Trace("BroadcastBftMsg", "to peer", p.id.ToString())
+			err := p.SendBftMsg(bftMsg)
+			if err != nil {
+				log.Error("BroadcastBftMsg error", "to peer", p.id.ToString(), "error", err)
+			} else {
+				log.Trace("BroadcastBftMsg success", "to peer", p.id.ToString())
+			}
+		}(p)
 	}
+
+	log.Trace("BroadcastBftMsg exit")
 }
 
 // Mined broadcast loop
@@ -828,7 +844,6 @@ func (pm *ProtocolManager) bftBroadcastLoop() {
 			pm.BroadcastBftMsg(ev.BftMsg) // First propagate block to peers
 		}
 	}
-
 }
 
 func (pm *ProtocolManager) bftPeerLoop() {
@@ -836,7 +851,8 @@ func (pm *ProtocolManager) bftPeerLoop() {
 		switch ev := obj.Data.(type) {
 		case core.BftPeerChangeEvent:
 			log.Trace("Receive BftPeerChangeEvent")
-			pm.resetBftPeer(ev.Urls) // First propagate block to peers
+			pm.urlsCh <- ev.Urls
+			// pm.resetBftPeer(ev.Urls) // First propagate block to peers
 		}
 	}
 }
@@ -844,7 +860,7 @@ func (pm *ProtocolManager) bftPeerLoop() {
 // NodeInfo represents a short summary of the VNT sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
-	Network    uint64              `json:"network"`    // VNT network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
+	Network    uint64              `json:"network"`    // VNT network ID (1=Frontier)
 	Difficulty *big.Int            `json:"difficulty"` // Total difficulty of the host's blockchain
 	Genesis    common.Hash         `json:"genesis"`    // SHA3 hash of the host's genesis block
 	Config     *params.ChainConfig `json:"config"`     // Chain configuration for the fork rules
@@ -861,4 +877,33 @@ func (pm *ProtocolManager) NodeInfo() *NodeInfo {
 		Config:     pm.blockchain.Config(),
 		Head:       currentBlock.Hash(),
 	}
+}
+
+func (pm *ProtocolManager) resetBftPeerLoop() {
+	log.Debug("resetBftPeerLoop start")
+
+	var (
+		urls []string
+		ok   bool
+	)
+
+	ticker := time.NewTicker(time.Minute)
+	exit := false
+	for exit == false {
+		select {
+		case urls, ok = <-pm.urlsCh:
+			if !ok {
+				exit = true
+			} else {
+				log.Debug("resetBftPeerLoop, new urls")
+				pm.resetBftPeer(urls)
+			}
+
+		case <-ticker.C:
+			// log.Debug("resetBftPeerLoop, time to reset bft peer")
+			// pm.resetBftPeer(urls)
+		}
+	}
+
+	log.Debug("resetBftPeerLoop exit")
 }

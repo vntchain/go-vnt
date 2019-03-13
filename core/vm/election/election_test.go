@@ -1,3 +1,19 @@
+// Copyright 2019 The go-vnt Authors
+// This file is part of the go-vnt library.
+//
+// The go-vnt library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-vnt library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-vnt library. If not, see <http://www.gnu.org/licenses/>.
+
 package election
 
 import (
@@ -100,7 +116,7 @@ func getAllVoter(db inter.StateDB) []*Voter {
 	voters := make(map[common.Hash]common.Hash)
 	addrs := make(map[common.Address]struct{})
 
-	db.ForEachStorage(electionAddr, func(key common.Hash, value common.Hash) bool {
+	db.ForEachStorage(contractAddr, func(key common.Hash, value common.Hash) bool {
 		if key[0] == VOTERPREFIX {
 			voters[key] = value
 
@@ -332,7 +348,7 @@ func TestVoteTooManyCandidates(t *testing.T) {
 	addr := common.BytesToAddress([]byte{111})
 
 	var candidates []common.Address
-	for i := 1; i <= voteLimit+1; i++ {
+	for i := 1; i <= VoteLimit+1; i++ {
 		candidate := common.BytesToAddress([]byte{byte(i)})
 		candidates = append(candidates, candidate)
 		website := "www.testnet.info" + strconv.Itoa(i)
@@ -340,7 +356,7 @@ func TestVoteTooManyCandidates(t *testing.T) {
 		c.registerWitness(candidate, url, []byte(website), []byte(name))
 	}
 	err := c.voteWitnesses(addr, candidates)
-	if err.Error() != fmt.Sprintf("you voted too many candidates: the limit is %d, you voted %d", voteLimit, len(candidates)) {
+	if err.Error() != fmt.Sprintf("you voted too many candidates: the limit is %d, you voted %d", VoteLimit, len(candidates)) {
 		t.Error(err)
 	}
 }

@@ -1,14 +1,30 @@
+// Copyright 2019 The go-vnt Authors
+// This file is part of the go-vnt library.
+//
+// The go-vnt library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The go-vnt library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the go-vnt library. If not, see <http://www.gnu.org/licenses/>.
+
 package election
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"math/big"
 	"reflect"
 
-	"bytes"
-	"encoding/binary"
 	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/core/vm/interface"
+	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/rlp"
 )
@@ -66,11 +82,11 @@ func (ec electionContext) setStake(stake Stake) error {
 }
 
 func (ec electionContext) setToDB(key common.Hash, value common.Hash) {
-	ec.context.GetStateDb().SetState(electionAddr, key, value)
+	ec.context.GetStateDb().SetState(contractAddr, key, value)
 }
 
 func (ec electionContext) getFromDB(key common.Hash) common.Hash {
-	return ec.context.GetStateDb().GetState(electionAddr, key)
+	return ec.context.GetStateDb().GetState(contractAddr, key)
 }
 
 // getVoterFrom get a voter's information from a specific stateDB
@@ -121,7 +137,7 @@ func convertToKV(prefix byte, v interface{}, fn func(key common.Hash, value comm
 			return fmt.Errorf("error: owner %v is not address", owner)
 		}
 	} else {
-		copy(key[PREFIXLENGTH:], electionAddr.Bytes())
+		copy(key[PREFIXLENGTH:], contractAddr.Bytes())
 	}
 
 	// 结构体中的每个元素都要分别存储
@@ -294,7 +310,7 @@ func getAllCandidate(db inter.StateDB) CandidateList {
 	var result CandidateList
 	addrs := make(map[common.Address]struct{})
 	// 从数据库的value中找到所有的address
-	db.ForEachStorage(electionAddr, func(key common.Hash, value common.Hash) bool {
+	db.ForEachStorage(contractAddr, func(key common.Hash, value common.Hash) bool {
 		_, content, _, err := rlp.Split(value.Big().Bytes())
 		if err != nil {
 			// 这个地方长的bytes做过处理这里split会出错，所以这个错改成debug打印日志
@@ -316,7 +332,7 @@ func getAllCandidate(db inter.StateDB) CandidateList {
 	})
 
 	getFn := func(key common.Hash) common.Hash {
-		return db.GetState(electionAddr, key)
+		return db.GetState(contractAddr, key)
 	}
 	// 用这些address尝试去数据库中找候选者，当没有这个地址的候选者时会报错
 	// 有可能并不是见证人所以报错
@@ -338,7 +354,7 @@ func getAllProxy(db inter.StateDB) []*Voter {
 	var result []*Voter
 	addrs := make(map[common.Address]struct{})
 
-	db.ForEachStorage(electionAddr, func(key common.Hash, value common.Hash) bool {
+	db.ForEachStorage(contractAddr, func(key common.Hash, value common.Hash) bool {
 		if key[0] == VOTERPREFIX {
 			var addr common.Address
 			copy(addr[:], key[PREFIXLENGTH:PREFIXLENGTH+common.AddressLength])
@@ -348,7 +364,7 @@ func getAllProxy(db inter.StateDB) []*Voter {
 	})
 
 	getFn := func(key common.Hash) common.Hash {
-		return db.GetState(electionAddr, key)
+		return db.GetState(contractAddr, key)
 	}
 
 	for addr := range addrs {
@@ -366,7 +382,7 @@ func getAllProxy(db inter.StateDB) []*Voter {
 }
 func addCandidateBounty(stateDB inter.StateDB, addr common.Address, bouns *big.Int) error {
 	getFn := func(key common.Hash) common.Hash {
-		return stateDB.GetState(electionAddr, key)
+		return stateDB.GetState(contractAddr, key)
 	}
 	candidate := newCandidate()
 	err := convertToStruct(CANDIDATEPREFIX, addr, &candidate, getFn)
@@ -375,7 +391,7 @@ func addCandidateBounty(stateDB inter.StateDB, addr common.Address, bouns *big.I
 	}
 
 	setFn := func(key common.Hash, value common.Hash) {
-		stateDB.SetState(electionAddr, key, value)
+		stateDB.SetState(contractAddr, key, value)
 	}
 	candidate.TotalBounty = new(big.Int).Add(candidate.TotalBounty, bouns)
 	err = convertToKV(CANDIDATEPREFIX, &candidate, setFn)
@@ -387,10 +403,10 @@ func addCandidateBounty(stateDB inter.StateDB, addr common.Address, bouns *big.I
 
 func getRestBounty(stateDB inter.StateDB) Bounty {
 	getFn := func(key common.Hash) common.Hash {
-		return stateDB.GetState(electionAddr, key)
+		return stateDB.GetState(contractAddr, key)
 	}
 	var bounty Bounty
-	err := convertToStruct(BOUNTYPREFIX, electionAddr, &bounty, getFn)
+	err := convertToStruct(BOUNTYPREFIX, contractAddr, &bounty, getFn)
 	if err != nil {
 		return Bounty{big.NewInt(0)}
 	}
@@ -399,7 +415,7 @@ func getRestBounty(stateDB inter.StateDB) Bounty {
 
 func setRestBounty(stateDB inter.StateDB, restBounty Bounty) error {
 	setFn := func(key common.Hash, value common.Hash) {
-		stateDB.SetState(electionAddr, key, value)
+		stateDB.SetState(contractAddr, key, value)
 	}
 	err := convertToKV(BOUNTYPREFIX, restBounty, setFn)
 	if err != nil {

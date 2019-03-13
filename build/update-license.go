@@ -58,6 +58,11 @@ var (
 		"common/bitutil/bitutil",
 		// don't license generated files
 		"contracts/chequebook/contract/code.go",
+		"metrics/",
+		"cmd/vntkey/changepassphrase.go",
+		"accounts/usbwallet/",
+		"cmd/faucet",
+		"signer/rules/deps/bignumber.js",
 	}
 
 	// paths with this prefix are licensed as GPL. all other files are LGPL.
@@ -172,7 +177,8 @@ func skipFile(path string) bool {
 }
 
 func getFiles() []string {
-	cmd := exec.Command("git", "ls-tree", "-r", "--name-only", "HEAD")
+	cmdstr := `git ls-files | xargs ls -d 2>/dev/null | xargs grep -L -E "Copyright 2014|2015|2016|2017|2018|2019 The go-ethereum|go-vnt Authors|Code generated"`
+	cmd := exec.Command("sh", "-c", cmdstr)
 	var files []string
 	err := doLines(cmd, func(line string) {
 		if skipFile(line) {
@@ -190,6 +196,9 @@ func getFiles() []string {
 	})
 	if err != nil {
 		log.Fatal("error getting files:", err)
+	}
+	for _, v := range files {
+		fmt.Printf("Find file %s\n", v)
 	}
 	return files
 }
