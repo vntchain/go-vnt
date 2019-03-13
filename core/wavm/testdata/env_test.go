@@ -323,9 +323,11 @@ func run(t *testing.T, jspath string) {
 					}
 
 				}
+
 				verify(t, ret, testcase.Wanted, abiobj, testcase.Function)
 				if testcase.Event != nil {
 					fmt.Printf("logs %s\n", rlpHash(envtest.statedb.Logs()).Hex())
+					fmt.Printf("logs %+v\n", envtest.statedb.Logs())
 					res := envtest.statedb.Logs()[0].Data
 					fmt.Printf("data %v\n", res)
 					type testevent struct {

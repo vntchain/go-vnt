@@ -29,135 +29,194 @@
                "storage": {}
           }
      },
-     "testcase": [{
-          "code": "mutableCall/TestMutableCall.compress",
-          "abi": "mutableCall/abi.json",
-          "initcase": {
-               "needinit": false,
-               "input": []
+     "testcase": [
+          {
+               "code": "mutableCall/$TestMutableCall.compress",
+               "abi": "mutableCall/abi.json",
+               "initcase": {
+                    "needinit": false,
+                    "input": []
+               },
+               "tests": []
           },
-          "tests": []
-     }, {
-          "code": "mutable/TestMutable.compress",
-          "abi": "mutable/abi.json",
-          "initcase": {
-               "needinit": true,
-               "input": []
-          },
-          "tests": [{
-               "function": "TestWriteWithMutable",
-               "input": [],
-               "wanted": {
-                    "data": "false",
-                    "type": "bool"
-               }
-          }, {
-               "function": "TestWriteWithUnmutable",
-               "input": [],
-               "error": "Mutable Forbidden: This function is not a mutable function"
-          }, {
-               "function": "TestEventWithMutable",
-               "input": [],
-               "wanted": {
-                    "data": "false",
-                    "type": "bool"
-               }
-          }, {
-               "function": "TestEventWithUnmutable",
-               "input": [],
-               "error": "Mutable Forbidden: This function is not a mutable function"
-          }, {
-               "function": "TestMutableCallWithMutable",
-               "input": [{
-                    "data": "0xcccccccccccccccccccccccccccccccccccccccc",
-                    "type": "address"
-               }, {
-                    "data": "0",
-                    "type": "uint256"
-               }, {
-                    "data": "50000",
-                    "type": "uint64"
-               }, {
-                    "data": "0xcccccccccccccccccccccccccccccccccccccccc",
-                    "type": "address"
-               }, {
-                    "data": "0",
-                    "type": "uint256"
-               }],
-               "wanted": {
-                    "data": "false",
-                    "type": "bool"
-               }
-          }, {
-               "function": "TestMutableCallWithUnmutable",
-               "input": [{
-                    "data": "0xcccccccccccccccccccccccccccccccccccccccc",
-                    "type": "address"
-               }, {
-                    "data": "0",
-                    "type": "uint256"
-               }, {
-                    "data": "50000",
-                    "type": "uint64"
-               }],
-               "wanted": {
-                    "data": "false",
-                    "type": "bool"
-               }
-          }, {
-               "function": "TestMutableCallWithUnmutableString",
-               "input": [{
-                    "data": "0xcccccccccccccccccccccccccccccccccccccccc",
-                    "type": "string"
-               }, {
-                    "data": "0",
-                    "type": "uint256"
-               }, {
-                    "data": "50000",
-                    "type": "uint64"
-               }],
-               "wanted": {
-                    "data": "false",
-                    "type": "bool"
-               }
-          }, {
-               "function": "Call_testSHA3",
-               "input": [{
-                    "data": "0xcccccccccccccccccccccccccccccccccccccccc",
-                    "type": "string"
-               }, {
-                    "data": "0",
-                    "type": "uint256"
-               }, {
-                    "data": "50000",
-                    "type": "uint64"
-               }, {
-                    "data": "aaaaaaaaaaaaaaaaaaa",
-                    "type": "string"
-               }],
-               "wanted": {
-                    "data": "0x9db3025b34b5ed7402fc01db6f1b69cd3d9a64a268e4c2275b498a7af5f67932",
-                    "type": "string"
-               }
-          }, {
-               "function": "TestUnmutableCallWithMutable",
-               "input": [{
-                    "data": "0xcccccccccccccccccccccccccccccccccccccccc",
-                    "type": "address"
-               }, {
-                    "data": "0",
-                    "type": "uint256"
-               }, {
-                    "data": "50000",
-                    "type": "uint64"
-               }, {
-                    "data": "0xcccccccccccccccccccccccccccccccccccccccc",
-                    "type": "address"
-               }, {
-                    "data": "0",
-                    "type": "uint256"
-               }],
-               "error": "failed to get result in contract call. Reason : Mismatch mutable type , parent function type : unmutable , current function type : mutable"
-          }]
-     }]
+          {
+               "code": "mutable/$TestMutable.compress",
+               "abi": "mutable/abi.json",
+               "initcase": {
+                    "needinit": true,
+                    "input": []
+               },
+               "tests": [
+                    {
+                         "function": "TestWriteWithMutable",
+                         "input": [],
+                         "wanted": {
+                              "data": "false",
+                              "type": "bool"
+                         }
+                    },
+                    {
+                         "function": "TestWriteWithUnmutable",
+                         "input": [],
+                         "error": "Mutable Forbidden: This function is not a mutable function"
+                    },
+                    {
+                         "function": "TestEventWithMutable",
+                         "input": [],
+                         "wanted": {
+                              "data": "false",
+                              "type": "bool"
+                         }
+                    },
+                    {
+                         "function": "TestEventWithUnmutable",
+                         "input": [],
+                         "error": "Mutable Forbidden: This function is not a mutable function"
+                    },
+                    {
+                         "function": "TestMutableCallWithMutable",
+                         "input": [
+                              {
+                                   "data": "0xcccccccccccccccccccccccccccccccccccccccc",
+                                   "type": "address"
+                              },
+                              {
+                                   "data": "0",
+                                   "type": "uint256"
+                              },
+                              {
+                                   "data": "50000",
+                                   "type": "uint64"
+                              },
+                              {
+                                   "data": "0xcccccccccccccccccccccccccccccccccccccccc",
+                                   "type": "address"
+                              },
+                              {
+                                   "data": "0",
+                                   "type": "uint256"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "false",
+                              "type": "bool"
+                         }
+                    },
+                    {
+                         "function": "TestMutableCallWithUnmutable",
+                         "input": [
+                              {
+                                   "data": "0xcccccccccccccccccccccccccccccccccccccccc",
+                                   "type": "address"
+                              },
+                              {
+                                   "data": "0",
+                                   "type": "uint256"
+                              },
+                              {
+                                   "data": "50000",
+                                   "type": "uint64"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "false",
+                              "type": "bool"
+                         }
+                    },
+                    {
+                         "function": "TestMutableCallWithUnmutableString",
+                         "input": [
+                              {
+                                   "data": "0xcccccccccccccccccccccccccccccccccccccccc",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "0",
+                                   "type": "uint256"
+                              },
+                              {
+                                   "data": "50000",
+                                   "type": "uint64"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "false",
+                              "type": "bool"
+                         }
+                    },
+                    {
+                         "function": "Call_testSHA3",
+                         "input": [
+                              {
+                                   "data": "0xcccccccccccccccccccccccccccccccccccccccc",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "0",
+                                   "type": "uint256"
+                              },
+                              {
+                                   "data": "50000",
+                                   "type": "uint64"
+                              },
+                              {
+                                   "data": "aaaaaaaaaaaaaaaaaaa",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0x9db3025b34b5ed7402fc01db6f1b69cd3d9a64a268e4c2275b498a7af5f67932",
+                              "type": "string"
+                         }
+                    },
+                    {
+                         "function": "TestUnmutableCallWithMutable",
+                         "input": [
+                              {
+                                   "data": "0xcccccccccccccccccccccccccccccccccccccccc",
+                                   "type": "address"
+                              },
+                              {
+                                   "data": "0",
+                                   "type": "uint256"
+                              },
+                              {
+                                   "data": "50000",
+                                   "type": "uint64"
+                              },
+                              {
+                                   "data": "0xcccccccccccccccccccccccccccccccccccccccc",
+                                   "type": "address"
+                              },
+                              {
+                                   "data": "0",
+                                   "type": "uint256"
+                              }
+                         ],
+                         "error": "failed to get result in contract call. Reason : Mismatch mutable type , parent function type : unmutable , current function type : mutable"
+                    },
+                    {
+                         "function": "Call_TestCallGas",
+                         "input": [
+                              {
+                                   "data": "0xcccccccccccccccccccccccccccccccccccccccc",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "0",
+                                   "type": "uint256"
+                              },
+                              {
+                                   "data": "50000",
+                                   "type": "uint64"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "call success",
+                              "type": "string"
+                         }
+                    }
+               ]
+          }
+     ]
 }

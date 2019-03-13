@@ -1,1 +1,221 @@
-[{"name":"$TestCall","constant":false,"inputs":[],"outputs":[],"type":"constructor"},{"name":"Test_GetTokenName","constant":false,"inputs":[{"name":"contractaddress","type":"address","indexed":false},{"name":"amount","type":"uint256","indexed":false},{"name":"gas","type":"uint64","indexed":false}],"outputs":[{"name":"output","type":"string","indexed":false}],"type":"function"},{"name":"Test_GetTokenName1","constant":true,"inputs":[{"name":"contractaddress","type":"address","indexed":false},{"name":"amount","type":"uint256","indexed":false},{"name":"gas","type":"uint64","indexed":false}],"outputs":[{"name":"output","type":"string","indexed":false}],"type":"function"},{"name":"Test_UnmutableCall","constant":true,"inputs":[{"name":"contractaddress","type":"address","indexed":false},{"name":"amount","type":"uint256","indexed":false},{"name":"gas","type":"uint64","indexed":false},{"name":"to","type":"address","indexed":false},{"name":"value","type":"uint256","indexed":false}],"outputs":[{"name":"output","type":"string","indexed":false}],"type":"function"},{"name":"Test_MutableCall","constant":false,"inputs":[{"name":"contractaddress","type":"address","indexed":false},{"name":"amount","type":"uint256","indexed":false},{"name":"gas","type":"uint64","indexed":false},{"name":"to","type":"address","indexed":false},{"name":"value","type":"uint256","indexed":false}],"outputs":[{"name":"output","type":"bool","indexed":false}],"type":"function"},{"name":"Test_MutableCallWithStringAddress","constant":false,"inputs":[{"name":"contractaddress","type":"string","indexed":false},{"name":"amount","type":"uint256","indexed":false},{"name":"gas","type":"uint64","indexed":false},{"name":"to","type":"address","indexed":false},{"name":"value","type":"uint256","indexed":false}],"outputs":[{"name":"output","type":"bool","indexed":false}],"type":"function"},{"name":"GetTokenName","constant":false,"inputs":[],"outputs":[{"name":"output","type":"string","indexed":false}],"type":"call"},{"name":"transfer","constant":false,"inputs":[{"name":"_to","type":"address","indexed":false},{"name":"_value","type":"uint256","indexed":false}],"outputs":[{"name":"output","type":"bool","indexed":false}],"type":"call"}]
+[
+     {
+          "name": "$TestCall",
+          "constant": false,
+          "inputs": [],
+          "outputs": [],
+          "type": "constructor"
+     },
+     {
+          "name": "Test_GetTokenName",
+          "constant": false,
+          "inputs": [
+               {
+                    "name": "contractaddress",
+                    "type": "address",
+                    "indexed": false
+               },
+               {
+                    "name": "amount",
+                    "type": "uint256",
+                    "indexed": false
+               },
+               {
+                    "name": "gas",
+                    "type": "uint64",
+                    "indexed": false
+               }
+          ],
+          "outputs": [
+               {
+                    "name": "output",
+                    "type": "string",
+                    "indexed": false
+               }
+          ],
+          "type": "function"
+     },
+     {
+          "name": "Test_GetTokenName1",
+          "constant": true,
+          "inputs": [
+               {
+                    "name": "contractaddress",
+                    "type": "address",
+                    "indexed": false
+               },
+               {
+                    "name": "amount",
+                    "type": "uint256",
+                    "indexed": false
+               },
+               {
+                    "name": "gas",
+                    "type": "uint64",
+                    "indexed": false
+               }
+          ],
+          "outputs": [
+               {
+                    "name": "output",
+                    "type": "string",
+                    "indexed": false
+               }
+          ],
+          "type": "function"
+     },
+     {
+          "name": "Test_UnmutableCall",
+          "constant": true,
+          "inputs": [
+               {
+                    "name": "contractaddress",
+                    "type": "address",
+                    "indexed": false
+               },
+               {
+                    "name": "amount",
+                    "type": "uint256",
+                    "indexed": false
+               },
+               {
+                    "name": "gas",
+                    "type": "uint64",
+                    "indexed": false
+               },
+               {
+                    "name": "to",
+                    "type": "address",
+                    "indexed": false
+               },
+               {
+                    "name": "value",
+                    "type": "uint256",
+                    "indexed": false
+               }
+          ],
+          "outputs": [
+               {
+                    "name": "output",
+                    "type": "string",
+                    "indexed": false
+               }
+          ],
+          "type": "function"
+     },
+     {
+          "name": "Test_MutableCall",
+          "constant": false,
+          "inputs": [
+               {
+                    "name": "contractaddress",
+                    "type": "address",
+                    "indexed": false
+               },
+               {
+                    "name": "amount",
+                    "type": "uint256",
+                    "indexed": false
+               },
+               {
+                    "name": "gas",
+                    "type": "uint64",
+                    "indexed": false
+               },
+               {
+                    "name": "to",
+                    "type": "address",
+                    "indexed": false
+               },
+               {
+                    "name": "value",
+                    "type": "uint256",
+                    "indexed": false
+               }
+          ],
+          "outputs": [
+               {
+                    "name": "output",
+                    "type": "bool",
+                    "indexed": false
+               }
+          ],
+          "type": "function"
+     },
+     {
+          "name": "Test_MutableCallWithStringAddress",
+          "constant": false,
+          "inputs": [
+               {
+                    "name": "contractaddress",
+                    "type": "string",
+                    "indexed": false
+               },
+               {
+                    "name": "amount",
+                    "type": "uint256",
+                    "indexed": false
+               },
+               {
+                    "name": "gas",
+                    "type": "uint64",
+                    "indexed": false
+               },
+               {
+                    "name": "to",
+                    "type": "address",
+                    "indexed": false
+               },
+               {
+                    "name": "value",
+                    "type": "uint256",
+                    "indexed": false
+               }
+          ],
+          "outputs": [
+               {
+                    "name": "output",
+                    "type": "bool",
+                    "indexed": false
+               }
+          ],
+          "type": "function"
+     },
+     {
+          "name": "GetTokenName",
+          "constant": false,
+          "inputs": [],
+          "outputs": [
+               {
+                    "name": "output",
+                    "type": "string",
+                    "indexed": false
+               }
+          ],
+          "type": "call"
+     },
+     {
+          "name": "transfer",
+          "constant": false,
+          "inputs": [
+               {
+                    "name": "_to",
+                    "type": "address",
+                    "indexed": false
+               },
+               {
+                    "name": "_value",
+                    "type": "uint256",
+                    "indexed": false
+               }
+          ],
+          "outputs": [
+               {
+                    "name": "output",
+                    "type": "bool",
+                    "indexed": false
+               }
+          ],
+          "type": "call"
+     }
+]
