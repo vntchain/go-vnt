@@ -246,7 +246,7 @@ func run(t *testing.T, jspath string) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	vmconfig := vm.Config{}
+	vmconfig := vm.Config{Debug: true}
 	envtest := new(ENVTest)
 	envtest.callCost = 0
 	envtest.createCost = 0
@@ -308,7 +308,7 @@ func run(t *testing.T, jspath string) {
 
 				ret, err := envtest.Run(vmconfig, pack, false, v.InitCase.NeedInit, t)
 				if err != nil {
-					if testcase.Error == err.Error() {
+					if testcase.Error == err.Error() && testcase.Error != "" {
 						t.Logf("funcName %s\n", testcase.Function)
 						t.Logf("wavm err match, got %s, want %s", err, testcase.Error)
 						continue
@@ -323,7 +323,6 @@ func run(t *testing.T, jspath string) {
 					}
 
 				}
-
 				verify(t, ret, testcase.Wanted, abiobj, testcase.Function)
 				if testcase.Event != nil {
 					fmt.Printf("logs %s\n", rlpHash(envtest.statedb.Logs()).Hex())
