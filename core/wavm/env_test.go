@@ -25,20 +25,20 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/wavm/contract"
-	"github.com/vntchain/vnt-wasm/exec"
 	g "github.com/vntchain/go-vnt/core/wavm/gas"
-	"github.com/vntchain/vnt-wasm/validate"
-	"github.com/vntchain/vnt-wasm/wasm"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/params"
 	"github.com/vntchain/go-vnt/trie"
-	"github.com/stretchr/testify/assert"
+	"github.com/vntchain/go-vnt/vntdb"
+	"github.com/vntchain/vnt-wasm/exec"
+	"github.com/vntchain/vnt-wasm/validate"
+	"github.com/vntchain/vnt-wasm/wasm"
 )
 
 var debugCodePath = filepath.Join("testdata/debug", "program.wasm")
@@ -46,7 +46,6 @@ var debugAbiPath = filepath.Join("testdata/debug", "abi.json")
 
 var eventCodePath = filepath.Join("testdata/event", "program.wasm")
 var eventAbiPath = filepath.Join("testdata/event", "abi.json")
-
 
 var logMsg = ""
 var logCtx []interface{} = nil
@@ -152,10 +151,9 @@ func getVM(codeFile string, abiPath string) (*exec.Interpreter, EnvFunctions) {
 		GasRule:     gasRule,
 		GasCounter:  gasCounter,
 		GasLimit:    10000000,
-		Wavm: &WAVM {
-			Wavm: &Wavm{
-
-			},
+		Wavm: &WAVM{
+			vmConfig: vm.Config{Debug: true},
+			Wavm:     &Wavm{},
 		},
 	}
 
