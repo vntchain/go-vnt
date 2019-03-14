@@ -954,7 +954,7 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 		if ret > 0 {
 			log.Info("Two blocks have same difficulty", "block1",
 				currentBlock.Hash(), "time1", currentBlock.Time().String(), "block2", block.Hash(), "time2", block.Time().String())
-			return NonStatTy, fmt.Errorf("two blocks have same height and different tiemstamp")
+			return NonStatTy, fmt.Errorf("two blocks have same height and different tiemstamp, but this block is later")
 		} else if ret == 0 {
 			log.Info("Two blocks have same difficulty and same timestamp", "block1",
 				currentBlock.Hash(), "time1", currentBlock.Time().String(), "block2", block.Hash(), "time2", block.Time().String())
