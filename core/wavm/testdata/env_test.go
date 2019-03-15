@@ -163,7 +163,7 @@ func (t *ENVTest) newWAVM(statedb *state.StateDB, vmconfig vm.Config) vm.VM {
 		Difficulty:  t.json.Env.Difficulty,
 		GasPrice:    t.json.Exec.GasPrice,
 	}
-	return wavm.NewWAVM(context, statedb, params.MainnetChainConfig, vmconfig)
+	return wavm.NewWAVM(context, statedb, params.AllCliqueProtocolChanges, vmconfig)
 }
 
 func (t *ENVTest) Run(vmconfig vm.Config, data []byte, iscreate bool, needinit bool, test *testing.T) ([]byte, error) {
