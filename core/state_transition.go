@@ -21,8 +21,6 @@ import (
 	"math"
 	"math/big"
 
-	"bytes"
-
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/vm"
 	inter "github.com/vntchain/go-vnt/core/vm/interface"
@@ -193,17 +191,13 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 	homestead := st.vm.ChainConfig().IsHomestead(st.vm.GetContext().BlockNumber)
 	contractCreation := msg.To() == nil
 
-	// Election contract do not cost gas，But other contract still need cost gas
-	electionContractAddr := common.HexToAddress("0x9")
-	if msg.To() == nil || bytes.Equal(msg.To().Bytes(), electionContractAddr.Bytes()) == false {
-		// Pay intrinsic gas
-		gas, err := IntrinsicGas(st.data, contractCreation, homestead)
-		if err != nil {
-			return nil, 0, false, err
-		}
-		if err = st.useGas(gas); err != nil {
-			return nil, 0, false, err
-		}
+	// Pay intrinsic gas
+	gas, err := IntrinsicGas(st.data, contractCreation, homestead)
+	if err != nil {
+		return nil, 0, false, err
+	}
+	if err = st.useGas(gas); err != nil {
+		return nil, 0, false, err
 	}
 
 	var (
