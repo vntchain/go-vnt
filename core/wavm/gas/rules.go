@@ -504,7 +504,6 @@ func (gas GasCounter) GasLog(size uint64, topics uint64) {
 	if costgas, overflow = math.SafeAdd(costgas, topics*params.LogTopicGas); overflow {
 		panic(errGasUintOverflow)
 	}
-
 	var memorySizeGas uint64
 	if memorySizeGas, overflow = math.SafeMul(requestedSize, params.LogDataGas); overflow {
 		panic(errGasUintOverflow)

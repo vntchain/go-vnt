@@ -1,1 +1,0 @@
-[{"name":"testSignature","constant":false,"inputs":[],"outputs":[],"type":"constructor"},{"name":"testGetBalanceFromAddress","constant":true,"inputs":[{"name":"addr","type":"address","indexed":false}],"outputs":[{"name":"output","type":"uint256","indexed":false}],"type":"function"}]

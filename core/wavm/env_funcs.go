@@ -231,11 +231,12 @@ func (ef *EnvFunctions) Assert(proc *exec.WavmProcess, condition uint64, msgIdx 
 func (ef *EnvFunctions) SendFromContract(proc *exec.WavmProcess, addrIdx uint64, amountIdx uint64) {
 	log.Debug("instructions", "func", "SendFromContract")
 	ef.forbiddenMutable(proc)
+	ef.ctx.GasCounter.GasSendFromContract()
 	addr := common.BytesToAddress(proc.ReadAt(addrIdx))
 	amount := utils.GetU256(proc.ReadAt(amountIdx))
 	if ef.ctx.CanTransfer(ef.ctx.StateDB, ef.ctx.Contract.Address(), amount) {
-		_, returnGas, err := ef.ctx.Wavm.Call(ef.ctx.Contract, addr, nil, params.CallStipend, amount)
-		ef.ctx.GasCounter.Charge(returnGas)
+		_, _, err := ef.ctx.Wavm.Call(ef.ctx.Contract, addr, nil, params.CallStipend, amount)
+		// ef.ctx.GasCounter.Charge(returnGas)
 		if err != nil {
 			panic(errormsg.ErrExecutionReverted)
 		}
@@ -247,12 +248,12 @@ func (ef *EnvFunctions) SendFromContract(proc *exec.WavmProcess, addrIdx uint64,
 func (ef *EnvFunctions) TransferFromContract(proc *exec.WavmProcess, addrIdx uint64, amountIdx uint64) uint64 {
 	log.Debug("instructions", "func", "TransferFromContract")
 	ef.forbiddenMutable(proc)
-	// ef.ctx.GasCounter.GasSendFromContract()
+	ef.ctx.GasCounter.GasSendFromContract()
 	addr := common.BytesToAddress(proc.ReadAt(addrIdx))
 	amount := utils.GetU256(proc.ReadAt(amountIdx))
 	if ef.ctx.CanTransfer(ef.ctx.StateDB, ef.ctx.Contract.Address(), amount) {
-		_, returnGas, err := ef.ctx.Wavm.Call(ef.ctx.Contract, addr, nil, params.CallStipend, amount)
-		ef.ctx.GasCounter.Charge(returnGas)
+		_, _, err := ef.ctx.Wavm.Call(ef.ctx.Contract, addr, nil, params.CallStipend, amount)
+		// ef.ctx.GasCounter.Charge(returnGas)
 		if err != nil {
 			return 0
 		}
@@ -394,7 +395,7 @@ func (ef *EnvFunctions) getEvent(funcName string) interface{} {
 			}
 		}
 
-		log.Debug("Will add event log: ", "topics", topics, "data", data)
+		log.Debug("Will add event log: ", "topics", topics, "data", data, "len", len(data))
 		ef.ctx.StateDB.AddLog(&types.Log{
 			Address:     ef.ctx.Contract.Address(),
 			Topics:      topics,
@@ -626,6 +627,9 @@ func (ef *EnvFunctions) GetPrintRemark(proc *exec.WavmProcess, remarkIdx uint64)
 
 // Print an Address
 func (ef *EnvFunctions) PrintAddress(proc *exec.WavmProcess, remarkIdx uint64, strIdx uint64) {
+	if !ef.ctx.Wavm.vmConfig.Debug {
+		return
+	}
 	addrValue := proc.ReadAt(strIdx)
 	msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), common.BytesToAddress(addrValue).String())
 	ef.printLine(msg)
@@ -633,6 +637,9 @@ func (ef *EnvFunctions) PrintAddress(proc *exec.WavmProcess, remarkIdx uint64, s
 
 // Print a string
 func (ef *EnvFunctions) PrintStr(proc *exec.WavmProcess, remarkIdx uint64, strIdx uint64) {
+	if !ef.ctx.Wavm.vmConfig.Debug {
+		return
+	}
 	strValue := proc.ReadAt(strIdx)
 	msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), string(strValue))
 	ef.printLine(msg)
@@ -640,7 +647,9 @@ func (ef *EnvFunctions) PrintStr(proc *exec.WavmProcess, remarkIdx uint64, strId
 
 // Print a string
 func (ef *EnvFunctions) PrintQStr(proc *exec.WavmProcess, remarkIdx uint64, strIdx uint64) {
-
+	if !ef.ctx.Wavm.vmConfig.Debug {
+		return
+	}
 	size := endianess.Uint32(proc.GetData()[strIdx : strIdx+4])
 	offset := endianess.Uint32(proc.GetData()[strIdx+4 : strIdx+8])
 	strValue := proc.GetData()[offset : offset+size]
@@ -657,29 +666,44 @@ func (ef *EnvFunctions) PrintQStr(proc *exec.WavmProcess, remarkIdx uint64, strI
 
 // Print a uint64
 func (ef *EnvFunctions) PrintUint64T(proc *exec.WavmProcess, remarkIdx uint64, intValue uint64) {
+	if !ef.ctx.Wavm.vmConfig.Debug {
+		return
+	}
 	msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), intValue)
 	ef.printLine(msg)
 }
 
 // Print a uint32
 func (ef *EnvFunctions) PrintUint32T(proc *exec.WavmProcess, remarkIdx uint64, intValue uint64) {
+	if !ef.ctx.Wavm.vmConfig.Debug {
+		return
+	}
 	msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), uint32(intValue))
 	ef.printLine(msg)
 }
 
 // Print a int64
 func (ef *EnvFunctions) PrintInt64T(proc *exec.WavmProcess, remarkIdx uint64, intValue uint64) {
+	if !ef.ctx.Wavm.vmConfig.Debug {
+		return
+	}
 	msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), int64(intValue))
 	ef.printLine(msg)
 }
 
 // Print a int32
 func (ef *EnvFunctions) PrintInt32T(proc *exec.WavmProcess, remarkIdx uint64, intValue uint64) {
+	if !ef.ctx.Wavm.vmConfig.Debug {
+		return
+	}
 	msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), int32(intValue))
 	ef.printLine(msg)
 }
 
 func (ef *EnvFunctions) PrintUint256T(proc *exec.WavmProcess, remarkIdx uint64, idx uint64) {
+	if !ef.ctx.Wavm.vmConfig.Debug {
+		return
+	}
 	u256 := readU256FromMemory(proc, idx)
 	msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), u256.String())
 	ef.printLine(msg)
@@ -867,21 +891,28 @@ func (ef *EnvFunctions) WriteWithPointer(proc *exec.WavmProcess, offsetAddr, bas
 		statedb := ef.ctx.StateDB
 		contractAddr := ef.ctx.Contract.Address()
 		if val.StorageValue.ValueType == abi.TY_STRING {
+			beforeN := statedb.GetState(contractAddr, keyHash).Big().Int64()
 			n, s := utils.Split(valMem)
-			statedb.SetState(contractAddr, keyHash, common.BigToHash(new(big.Int).SetInt64(int64(n))))
 			ef.ctx.GasCounter.GasStore(statedb, contractAddr, keyHash, common.BigToHash(new(big.Int).SetInt64(int64(n))))
+			statedb.SetState(contractAddr, keyHash, common.BigToHash(new(big.Int).SetInt64(int64(n))))
 			for i := 1; i <= n; i++ {
 				loc0 := new(big.Int).Add(keyHash.Big(), new(big.Int).SetInt64(int64(i)))
-				statedb.SetState(contractAddr, common.BigToHash(loc0), common.BytesToHash(s[i-1]))
 				ef.ctx.GasCounter.GasStore(statedb, contractAddr, common.BigToHash(loc0), common.BytesToHash(s[i-1]))
+				statedb.SetState(contractAddr, common.BigToHash(loc0), common.BytesToHash(s[i-1]))
+			}
+			for i := n + 1; i <= int(beforeN); i++ {
+				loc0 := new(big.Int).Add(keyHash.Big(), new(big.Int).SetInt64(int64(i)))
+				empty := common.Hash{}
+				ef.ctx.GasCounter.GasStore(statedb, contractAddr, common.BigToHash(loc0), empty)
+				statedb.SetState(contractAddr, common.BigToHash(loc0), empty)
 			}
 		} else if val.StorageValue.ValueType == abi.TY_UINT256 {
 			bigint := utils.GetU256(valMem)
+			ef.ctx.GasCounter.GasStore(statedb, contractAddr, keyHash, common.BytesToHash(valMem))
 			statedb.SetState(contractAddr, keyHash, common.BigToHash(bigint))
-			ef.ctx.GasCounter.GasStore(statedb, contractAddr, keyHash, common.BytesToHash(valMem))
 		} else {
-			statedb.SetState(contractAddr, keyHash, common.BytesToHash(valMem))
 			ef.ctx.GasCounter.GasStore(statedb, contractAddr, keyHash, common.BytesToHash(valMem))
+			statedb.SetState(contractAddr, keyHash, common.BytesToHash(valMem))
 		}
 	}
 	callStateDb(ef, proc, valAddr, op)
