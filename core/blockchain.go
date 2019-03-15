@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	mrand "math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -943,14 +942,26 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 	}
 	rawdb.WriteReceipts(batch, block.Hash(), block.NumberU64(), receipts)
 
-	// If the total difficulty is higher than our known, add it to the canonical chain
-	// Second clause in the if statement reduces the vulnerability to selfish mining.
-	// Please refer to http://www.cs.cornell.edu/~ie53/publications/btcProcFC.pdf
 	reorg := externTd.Cmp(localTd) > 0
 	currentBlock = bc.CurrentBlock()
 	if !reorg && externTd.Cmp(localTd) == 0 {
-		// Split same-difficulty blocks by number, then at random
-		reorg = block.NumberU64() < currentBlock.NumberU64() || (block.NumberU64() == currentBlock.NumberU64() && mrand.Float64() < 0.5)
+		if block.Hash() == currentBlock.Hash() {
+			return NonStatTy, fmt.Errorf("block already in chain")
+		}
+
+		// two blocks choose by timestamp
+		ret := block.Time().Cmp(currentBlock.Time())
+		if ret > 0 {
+			log.Info("Two blocks have same difficulty", "block1",
+				currentBlock.Hash(), "time1", currentBlock.Time().String(), "block2", block.Hash(), "time2", block.Time().String())
+			return NonStatTy, fmt.Errorf("two blocks have same height and different tiemstamp, but this block is later")
+		} else if ret == 0 {
+			log.Info("Two blocks have same difficulty and same timestamp", "block1",
+				currentBlock.Hash(), "time1", currentBlock.Time().String(), "block2", block.Hash(), "time2", block.Time().String())
+			return NonStatTy, fmt.Errorf("two blocks have same height and same tiemstamp")
+		}
+
+		reorg = true
 	}
 	if reorg {
 		// Reorganise the chain if the parent is not the head block
