@@ -38,7 +38,6 @@ import (
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/vm/election"
-	"github.com/vntchain/go-vnt/core/wavm/contract"
 	"github.com/vntchain/go-vnt/core/wavm/utils"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/log"
@@ -522,16 +521,8 @@ func (s *PublicBlockChainAPI) GetCode(ctx context.Context, address common.Addres
 		return nil, err
 	}
 	compress := state.GetCode(address)
-	var code contract.WasmCode
-	decompress, err := utils.DeCompress(compress)
-	if err != nil {
-		return nil, err
-	}
-	err = rlp.Decode(bytes.NewBuffer(decompress), &code)
-	if err != nil {
-		return nil, err
-	}
-	return code.Code, state.Error()
+	wasmcode, _, _ := utils.DecodeContractCode(compress)
+	return wasmcode.Code, state.Error()
 }
 
 // GetAbi returns the abi stored at the given address in the state for the given block number.
@@ -541,16 +532,8 @@ func (s *PublicBlockChainAPI) GetAbi(ctx context.Context, address common.Address
 		return nil, err
 	}
 	compress := state.GetCode(address)
-	var code contract.WasmCode
-	decompress, err := utils.DeCompress(compress)
-	if err != nil {
-		return nil, err
-	}
-	err = rlp.Decode(bytes.NewBuffer(decompress), &code)
-	if err != nil {
-		return nil, err
-	}
-	return code.Abi, state.Error()
+	wasmcode, _, _ := utils.DecodeContractCode(compress)
+	return wasmcode.Abi, state.Error()
 }
 
 // GetStorageAt returns the storage from the state at the given address, key and
