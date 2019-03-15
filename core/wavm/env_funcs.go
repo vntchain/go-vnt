@@ -231,11 +231,12 @@ func (ef *EnvFunctions) Assert(proc *exec.WavmProcess, condition uint64, msgIdx 
 func (ef *EnvFunctions) SendFromContract(proc *exec.WavmProcess, addrIdx uint64, amountIdx uint64) {
 	log.Debug("instructions", "func", "SendFromContract")
 	ef.forbiddenMutable(proc)
+	ef.ctx.GasCounter.GasSendFromContract()
 	addr := common.BytesToAddress(proc.ReadAt(addrIdx))
 	amount := utils.GetU256(proc.ReadAt(amountIdx))
 	if ef.ctx.CanTransfer(ef.ctx.StateDB, ef.ctx.Contract.Address(), amount) {
-		_, returnGas, err := ef.ctx.Wavm.Call(ef.ctx.Contract, addr, nil, params.CallStipend, amount)
-		ef.ctx.GasCounter.Charge(returnGas)
+		_, _, err := ef.ctx.Wavm.Call(ef.ctx.Contract, addr, nil, params.CallStipend, amount)
+		// ef.ctx.GasCounter.Charge(returnGas)
 		if err != nil {
 			panic(errormsg.ErrExecutionReverted)
 		}
@@ -247,12 +248,12 @@ func (ef *EnvFunctions) SendFromContract(proc *exec.WavmProcess, addrIdx uint64,
 func (ef *EnvFunctions) TransferFromContract(proc *exec.WavmProcess, addrIdx uint64, amountIdx uint64) uint64 {
 	log.Debug("instructions", "func", "TransferFromContract")
 	ef.forbiddenMutable(proc)
-	// ef.ctx.GasCounter.GasSendFromContract()
+	ef.ctx.GasCounter.GasSendFromContract()
 	addr := common.BytesToAddress(proc.ReadAt(addrIdx))
 	amount := utils.GetU256(proc.ReadAt(amountIdx))
 	if ef.ctx.CanTransfer(ef.ctx.StateDB, ef.ctx.Contract.Address(), amount) {
-		_, returnGas, err := ef.ctx.Wavm.Call(ef.ctx.Contract, addr, nil, params.CallStipend, amount)
-		ef.ctx.GasCounter.Charge(returnGas)
+		_, _, err := ef.ctx.Wavm.Call(ef.ctx.Contract, addr, nil, params.CallStipend, amount)
+		// ef.ctx.GasCounter.Charge(returnGas)
 		if err != nil {
 			return 0
 		}
