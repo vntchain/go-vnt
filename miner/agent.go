@@ -36,7 +36,7 @@ type CpuAgent struct {
 	chain  consensus.ChainReader
 	engine consensus.Engine
 
-	isMining int32 // isMining indicates whether the agent is currently mining
+	isProducing int32 // isProducing indicates whether the agent is currently producing block
 }
 
 func NewCpuAgent(chain consensus.ChainReader, engine consensus.Engine) *CpuAgent {
@@ -53,7 +53,7 @@ func (self *CpuAgent) Work() chan<- *Work            { return self.workCh }
 func (self *CpuAgent) SetReturnCh(ch chan<- *Result) { self.returnCh = ch }
 
 func (self *CpuAgent) Stop() {
-	if !atomic.CompareAndSwapInt32(&self.isMining, 1, 0) {
+	if !atomic.CompareAndSwapInt32(&self.isProducing, 1, 0) {
 		return // agent already stopped
 	}
 	self.stop <- struct{}{}
@@ -69,7 +69,7 @@ done:
 }
 
 func (self *CpuAgent) Start() {
-	if !atomic.CompareAndSwapInt32(&self.isMining, 0, 1) {
+	if !atomic.CompareAndSwapInt32(&self.isProducing, 0, 1) {
 		return // agent already started
 	}
 	go self.update()

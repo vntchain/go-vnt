@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-// Package miner implements VNT block creation and mining.
+// Package miner implements VNT block creation and producing.
 package miner
 
 import (
@@ -34,7 +34,7 @@ import (
 	"github.com/vntchain/go-vnt/vntdb"
 )
 
-// Backend wraps all methods required for mining.
+// Backend wraps all methods required for producing.
 type Backend interface {
 	AccountManager() *accounts.Manager
 	BlockChain() *core.BlockChain
@@ -48,12 +48,12 @@ type Miner struct {
 
 	worker *worker
 
-	coinbase common.Address
-	mining   int32
-	vnt      Backend
-	engine   consensus.Engine
+	coinbase  common.Address
+	producing int32
+	vnt       Backend
+	engine    consensus.Engine
 
-	canStart    int32 // can start indicates whether we can start the mining operation
+	canStart    int32 // can start indicates whether we can start the block producing operation
 	shouldStart int32 // should start indicates whether we should start after sync
 }
 
@@ -74,7 +74,7 @@ func New(vnt Backend, config *params.ChainConfig, mux *event.TypeMux, engine con
 // update keeps track of the downloader events. Please be aware that this is a one shot type of update loop.
 // It's entered once and as soon as `Done` or `Failed` has been broadcasted the events are unregistered and
 // the loop is exited. This to prevent a major security vuln where external parties can DOS you with blocks
-// and halt your mining operation for as long as the DOS continues.
+// and halt your producing operation for as long as the DOS continues.
 func (self *Miner) update() {
 	events := self.mux.Subscribe(downloader.StartEvent{}, downloader.DoneEvent{}, downloader.FailedEvent{})
 out:
@@ -82,10 +82,10 @@ out:
 		switch ev.Data.(type) {
 		case downloader.StartEvent:
 			atomic.StoreInt32(&self.canStart, 0)
-			if self.Mining() {
+			if self.Producing() {
 				self.Stop()
 				atomic.StoreInt32(&self.shouldStart, 1)
-				log.Info("Mining aborted due to sync")
+				log.Info("Producing aborted due to sync")
 			}
 		case downloader.DoneEvent, downloader.FailedEvent:
 			shouldStart := atomic.LoadInt32(&self.shouldStart) == 1
@@ -111,21 +111,21 @@ func (self *Miner) Start(coinbase common.Address) {
 		log.Info("Network syncing, will start miner afterwards")
 		return
 	}
-	atomic.StoreInt32(&self.mining, 1)
+	atomic.StoreInt32(&self.producing, 1)
 
-	log.Info("Starting mining operation")
+	log.Info("Starting block producing operation")
 	self.worker.start()
 	self.worker.commitNewWork()
 }
 
 func (self *Miner) Stop() {
 	self.worker.stop()
-	atomic.StoreInt32(&self.mining, 0)
+	atomic.StoreInt32(&self.producing, 0)
 	atomic.StoreInt32(&self.shouldStart, 0)
 }
 
 func (self *Miner) Register(agent Agent) {
-	if self.Mining() {
+	if self.Producing() {
 		agent.Start()
 	}
 	self.worker.register(agent)
@@ -135,8 +135,8 @@ func (self *Miner) Unregister(agent Agent) {
 	self.worker.unregister(agent)
 }
 
-func (self *Miner) Mining() bool {
-	return atomic.LoadInt32(&self.mining) > 0
+func (self *Miner) Producing() bool {
+	return atomic.LoadInt32(&self.producing) > 0
 }
 
 func (self *Miner) SetExtra(extra []byte) error {
