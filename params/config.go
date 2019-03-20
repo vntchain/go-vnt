@@ -33,10 +33,6 @@ var (
 	MainnetChainConfig = &ChainConfig{
 		ChainID:             big.NewInt(1),
 		HubbleBlock:         big.NewInt(1150000),
-		EIP150Block:         big.NewInt(2463000),
-		EIP150Hash:          common.HexToHash("0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0"),
-		EIP155Block:         big.NewInt(2675000),
-		EIP158Block:         big.NewInt(2675000),
 		ByzantiumBlock:      big.NewInt(4370000),
 		ConstantinopleBlock: nil,
 		Dpos: &DposConfig{
@@ -49,10 +45,6 @@ var (
 	TestnetChainConfig = &ChainConfig{
 		ChainID:             big.NewInt(3),
 		HubbleBlock:         big.NewInt(0),
-		EIP150Block:         big.NewInt(0),
-		EIP150Hash:          common.HexToHash("0x41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d"),
-		EIP155Block:         big.NewInt(10),
-		EIP158Block:         big.NewInt(10),
 		ByzantiumBlock:      big.NewInt(1700000),
 		ConstantinopleBlock: nil,
 		Dpos: &DposConfig{
@@ -65,10 +57,6 @@ var (
 	RinkebyChainConfig = &ChainConfig{
 		ChainID:             big.NewInt(4),
 		HubbleBlock:         big.NewInt(1),
-		EIP150Block:         big.NewInt(2),
-		EIP150Hash:          common.HexToHash("0x9b095b36c15eaf13044373aef8ee0bd3a382a5abb92e402afa44b8249c3a90e9"),
-		EIP155Block:         big.NewInt(3),
-		EIP158Block:         big.NewInt(3),
 		ByzantiumBlock:      big.NewInt(1035301),
 		ConstantinopleBlock: nil,
 	}
@@ -82,10 +70,6 @@ var (
 		big.NewInt(1337),
 		big.NewInt(0),
 		big.NewInt(0),
-		common.Hash{},
-		big.NewInt(0),
-		big.NewInt(0),
-		big.NewInt(0),
 		big.NewInt(0),
 		&DposConfig{
 			WitnessesNum: 4,
@@ -93,7 +77,7 @@ var (
 		},
 	}
 
-	TestChainConfig = &ChainConfig{big.NewInt(1), big.NewInt(0), big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil}
+	TestChainConfig = &ChainConfig{big.NewInt(1), big.NewInt(0), big.NewInt(0), nil, nil}
 	TestRules       = TestChainConfig.Rules(new(big.Int))
 )
 
@@ -106,13 +90,6 @@ type ChainConfig struct {
 	ChainID *big.Int `json:"chainId"` // chainId identifies the current chain and is used for replay protection
 
 	HubbleBlock *big.Int `json:"homesteadBlock,omitempty"` // Hubble switch block (nil = no fork, 0 = already hubble)
-
-	// EIP150 implements the Gas price changes (https://github.com/ethereum/EIPs/issues/150)
-	EIP150Block *big.Int    `json:"eip150Block,omitempty"` // EIP150 HF block (nil = no fork)
-	EIP150Hash  common.Hash `json:"eip150Hash,omitempty"`  // EIP150 HF hash (needed for header only clients as only gas pricing changed)
-
-	EIP155Block *big.Int `json:"eip155Block,omitempty"` // EIP155 HF block
-	EIP158Block *big.Int `json:"eip158Block,omitempty"` // EIP158 HF block
 
 	ByzantiumBlock      *big.Int `json:"byzantiumBlock,omitempty"`      // Byzantium switch block (nil = no fork, 0 = already on byzantium)
 	ConstantinopleBlock *big.Int `json:"constantinopleBlock,omitempty"` // Constantinople switch block (nil = no fork, 0 = already activated)
@@ -142,36 +119,18 @@ func (c *ChainConfig) String() string {
 		engine = "unknown"
 	}
 
-	return fmt.Sprintf("{ChainID: %v Hubble: %v EIP150: %v EIP155: %v EIP158: %v Byzantium: %v Constantinople: %v Engine: %v}",
+	return fmt.Sprintf("{ChainID: %v Hubble: %v Byzantium: %v Constantinople: %v Engine: %v}",
 		c.ChainID,
 		c.HubbleBlock,
-		c.EIP150Block,
-		c.EIP155Block,
-		c.EIP158Block,
 		c.ByzantiumBlock,
 		c.ConstantinopleBlock,
 		engine,
 	)
 }
 
-// IsHomestead returns whether num is either equal to the homestead block or greater.
+// IsHubble returns whether num is either equal to the hubble block or greater.
 func (c *ChainConfig) IsHubble(num *big.Int) bool {
 	return isForked(c.HubbleBlock, num)
-}
-
-// IsEIP150 returns whether num is either equal to the EIP150 fork block or greater.
-func (c *ChainConfig) IsEIP150(num *big.Int) bool {
-	return isForked(c.EIP150Block, num)
-}
-
-// IsEIP155 returns whether num is either equal to the EIP155 fork block or greater.
-func (c *ChainConfig) IsEIP155(num *big.Int) bool {
-	return isForked(c.EIP155Block, num)
-}
-
-// IsEIP158 returns whether num is either equal to the EIP158 fork block or greater.
-func (c *ChainConfig) IsEIP158(num *big.Int) bool {
-	return isForked(c.EIP158Block, num)
 }
 
 // IsByzantium returns whether num is either equal to the Byzantium fork block or greater.
@@ -218,18 +177,6 @@ func (c *ChainConfig) CheckCompatible(newcfg *ChainConfig, height uint64) *Confi
 func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, head *big.Int) *ConfigCompatError {
 	if isForkIncompatible(c.HubbleBlock, newcfg.HubbleBlock, head) {
 		return newCompatError("Hubble fork block", c.HubbleBlock, newcfg.HubbleBlock)
-	}
-	if isForkIncompatible(c.EIP150Block, newcfg.EIP150Block, head) {
-		return newCompatError("EIP150 fork block", c.EIP150Block, newcfg.EIP150Block)
-	}
-	if isForkIncompatible(c.EIP155Block, newcfg.EIP155Block, head) {
-		return newCompatError("EIP155 fork block", c.EIP155Block, newcfg.EIP155Block)
-	}
-	if isForkIncompatible(c.EIP158Block, newcfg.EIP158Block, head) {
-		return newCompatError("EIP158 fork block", c.EIP158Block, newcfg.EIP158Block)
-	}
-	if c.IsEIP158(head) && !configNumEqual(c.ChainID, newcfg.ChainID) {
-		return newCompatError("EIP158 chain ID", c.EIP158Block, newcfg.EIP158Block)
 	}
 	if isForkIncompatible(c.ByzantiumBlock, newcfg.ByzantiumBlock, head) {
 		return newCompatError("Byzantium fork block", c.ByzantiumBlock, newcfg.ByzantiumBlock)
@@ -301,9 +248,9 @@ func (err *ConfigCompatError) Error() string {
 // Rules is a one time interface meaning that it shouldn't be used in between transition
 // phases.
 type Rules struct {
-	ChainID                                *big.Int
-	IsHubble, IsEIP150, IsEIP155, IsEIP158 bool
-	IsByzantium                            bool
+	ChainID     *big.Int
+	IsHubble    bool
+	IsByzantium bool
 }
 
 // Rules ensures c's ChainID is not nil.
@@ -312,5 +259,5 @@ func (c *ChainConfig) Rules(num *big.Int) Rules {
 	if chainID == nil {
 		chainID = new(big.Int)
 	}
-	return Rules{ChainID: new(big.Int).Set(chainID), IsHubble: c.IsHubble(num), IsEIP150: c.IsEIP150(num), IsEIP155: c.IsEIP155(num), IsEIP158: c.IsEIP158(num), IsByzantium: c.IsByzantium(num)}
+	return Rules{ChainID: new(big.Int).Set(chainID), IsHubble: c.IsHubble(num), IsByzantium: c.IsByzantium(num)}
 }

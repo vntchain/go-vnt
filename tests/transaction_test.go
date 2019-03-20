@@ -30,18 +30,8 @@ func TestTransaction(t *testing.T) {
 	txt.config(`^Homestead/`, params.ChainConfig{
 		HubbleBlock: big.NewInt(0),
 	})
-	txt.config(`^EIP155/`, params.ChainConfig{
-		HubbleBlock: big.NewInt(0),
-		EIP150Block: big.NewInt(0),
-		EIP155Block: big.NewInt(0),
-		EIP158Block: big.NewInt(0),
-		ChainID:     big.NewInt(1),
-	})
 	txt.config(`^Byzantium/`, params.ChainConfig{
 		HubbleBlock:    big.NewInt(0),
-		EIP150Block:    big.NewInt(0),
-		EIP155Block:    big.NewInt(0),
-		EIP158Block:    big.NewInt(0),
 		ByzantiumBlock: big.NewInt(0),
 	})
 

@@ -30,13 +30,6 @@ func TestCheckCompatible(t *testing.T) {
 	}
 	tests := []test{
 		{stored: TestChainConfig, new: TestChainConfig, head: 0, wantErr: nil},
-		{stored: TestChainConfig, new: TestChainConfig, head: 100, wantErr: nil},
-		{
-			stored:  &ChainConfig{EIP150Block: big.NewInt(10)},
-			new:     &ChainConfig{EIP150Block: big.NewInt(20)},
-			head:    9,
-			wantErr: nil,
-		},
 		{
 			stored: TestChainConfig,
 			new:    &ChainConfig{HubbleBlock: nil},
@@ -57,17 +50,6 @@ func TestCheckCompatible(t *testing.T) {
 				StoredConfig: big.NewInt(0),
 				NewConfig:    big.NewInt(1),
 				RewindTo:     0,
-			},
-		},
-		{
-			stored: &ChainConfig{HubbleBlock: big.NewInt(30), EIP150Block: big.NewInt(10)},
-			new:    &ChainConfig{HubbleBlock: big.NewInt(25), EIP150Block: big.NewInt(20)},
-			head:   25,
-			wantErr: &ConfigCompatError{
-				What:         "EIP150 fork block",
-				StoredConfig: big.NewInt(10),
-				NewConfig:    big.NewInt(20),
-				RewindTo:     9,
 			},
 		},
 	}

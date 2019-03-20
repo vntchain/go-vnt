@@ -32,9 +32,9 @@ import (
 	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/crypto/sha3"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/params"
 	"github.com/vntchain/go-vnt/rlp"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 // StateTest checks transaction processing without block context.
@@ -146,7 +146,7 @@ func (t *StateTest) Run(subtest StateSubtest, vmconfig vm.Config) (*state.StateD
 	if logs := rlpHash(statedb.Logs()); logs != common.Hash(post.Logs) {
 		return statedb, fmt.Errorf("post state logs hash mismatch: got %x, want %x", logs, post.Logs)
 	}
-	root, _ := statedb.Commit(config.IsEIP158(block.Number()))
+	root, _ := statedb.Commit(true)
 	if root != common.Hash(post.Root) {
 		return statedb, fmt.Errorf("post state root mismatch: got %x, want %x", root, post.Root)
 	}

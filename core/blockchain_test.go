@@ -1027,7 +1027,7 @@ func TestEIP155Transition(t *testing.T) {
 		funds      = big.NewInt(1000000000)
 		deleteAddr = common.Address{1}
 		gspec      = &Genesis{
-			Config: &params.ChainConfig{ChainID: big.NewInt(1), EIP155Block: big.NewInt(2), HubbleBlock: new(big.Int)},
+			Config: &params.ChainConfig{ChainID: big.NewInt(1), HubbleBlock: new(big.Int)},
 			Alloc:  GenesisAlloc{address: {Balance: funds}, deleteAddr: {Balance: new(big.Int)}},
 		}
 		genesis = gspec.MustCommit(db)
@@ -1098,7 +1098,7 @@ func TestEIP155Transition(t *testing.T) {
 	}
 
 	// generate an invalid chain id transaction
-	config := &params.ChainConfig{ChainID: big.NewInt(2), EIP155Block: big.NewInt(2), HubbleBlock: new(big.Int)}
+	config := &params.ChainConfig{ChainID: big.NewInt(2), HubbleBlock: new(big.Int)}
 	blocks, _ = GenerateChain(config, blocks[len(blocks)-1], mock.NewMock(), db, 4, func(i int, block *BlockGen) {
 		var (
 			tx      *types.Transaction
@@ -1134,8 +1134,6 @@ func TestEIP161AccountRemoval(t *testing.T) {
 			Config: &params.ChainConfig{
 				ChainID:     big.NewInt(1),
 				HubbleBlock: new(big.Int),
-				EIP155Block: new(big.Int),
-				EIP158Block: big.NewInt(2),
 			},
 			Alloc: GenesisAlloc{address: {Balance: funds}},
 		}
@@ -1163,12 +1161,13 @@ func TestEIP161AccountRemoval(t *testing.T) {
 		}
 		block.AddTx(tx)
 	})
+
 	// account must exist pre eip 161
 	if _, err := blockchain.InsertChain(types.Blocks{blocks[0]}); err != nil {
 		t.Fatal(err)
 	}
-	if st, _ := blockchain.State(); !st.Exist(theAddr) {
-		t.Error("expected account to exist")
+	if st, _ := blockchain.State(); st.Exist(theAddr) {
+		t.Error("account should not exist")
 	}
 
 	// account needs to be deleted post eip 161

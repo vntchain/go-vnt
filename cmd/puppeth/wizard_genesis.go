@@ -40,9 +40,6 @@ func (w *wizard) makeGenesis() {
 		Alloc:      make(core.GenesisAlloc),
 		Config: &params.ChainConfig{
 			HubbleBlock:    big.NewInt(1),
-			EIP150Block:    big.NewInt(2),
-			EIP155Block:    big.NewInt(3),
-			EIP158Block:    big.NewInt(3),
 			ByzantiumBlock: big.NewInt(4),
 		},
 	}
@@ -145,18 +142,6 @@ func (w *wizard) manageGenesis() {
 		fmt.Println()
 		fmt.Printf("Which block should Hubble come into effect? (default = %v)\n", w.conf.Genesis.Config.HubbleBlock)
 		w.conf.Genesis.Config.HubbleBlock = w.readDefaultBigInt(w.conf.Genesis.Config.HubbleBlock)
-
-		fmt.Println()
-		fmt.Printf("Which block should EIP150 come into effect? (default = %v)\n", w.conf.Genesis.Config.EIP150Block)
-		w.conf.Genesis.Config.EIP150Block = w.readDefaultBigInt(w.conf.Genesis.Config.EIP150Block)
-
-		fmt.Println()
-		fmt.Printf("Which block should EIP155 come into effect? (default = %v)\n", w.conf.Genesis.Config.EIP155Block)
-		w.conf.Genesis.Config.EIP155Block = w.readDefaultBigInt(w.conf.Genesis.Config.EIP155Block)
-
-		fmt.Println()
-		fmt.Printf("Which block should EIP158 come into effect? (default = %v)\n", w.conf.Genesis.Config.EIP158Block)
-		w.conf.Genesis.Config.EIP158Block = w.readDefaultBigInt(w.conf.Genesis.Config.EIP158Block)
 
 		fmt.Println()
 		fmt.Printf("Which block should Byzantium come into effect? (default = %v)\n", w.conf.Genesis.Config.ByzantiumBlock)

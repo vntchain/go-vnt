@@ -139,7 +139,7 @@ func (m *Mock) Prepare(chain consensus.ChainReader, header *types.Header) error 
 func (m *Mock) Finalize(chain consensus.ChainReader, header *types.Header, state *state.StateDB, txs []*types.Transaction,
 	receipts []*types.Receipt) (*types.Block, error) {
 	state.AddBalance(header.Coinbase, big.NewInt(5e18))
-	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
+	header.Root = state.IntermediateRoot(true)
 
 	// Assemble and return the final block for sealing
 	return types.NewBlock(header, txs, receipts), nil
