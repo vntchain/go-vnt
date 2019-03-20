@@ -4,31 +4,33 @@
 package contract
 
 import (
+	"math/big"
 	"strings"
+
+	"github.com/vntchain/go-vnt/common"
+	"github.com/vntchain/go-vnt/core/types"
 
 	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/accounts/abi/bind"
-	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/core/types"
 )
 
 // FIFSRegistrarABI is the input ABI used to generate the binding from.
 const FIFSRegistrarABI = "[{\"constant\":false,\"inputs\":[{\"name\":\"subnode\",\"type\":\"bytes32\"},{\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"register\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"ensAddr\",\"type\":\"address\"},{\"name\":\"node\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"}]"
 
 // FIFSRegistrarBin is the compiled bytecode used for deploying new contracts.
-const FIFSRegistrarBin = `0x6060604052341561000f57600080fd5b604051604080610224833981016040528080519190602001805160008054600160a060020a03909516600160a060020a03199095169490941790935550506001556101c58061005f6000396000f3006060604052600436106100275763ffffffff60e060020a600035041663d22057a9811461002c575b600080fd5b341561003757600080fd5b61004e600435600160a060020a0360243516610050565b005b816000806001548360405191825260208201526040908101905190819003902060008054919350600160a060020a03909116906302571be39084906040516020015260405160e060020a63ffffffff84160281526004810191909152602401602060405180830381600087803b15156100c857600080fd5b6102c65a03f115156100d957600080fd5b5050506040518051915050600160a060020a0381161580159061010e575033600160a060020a031681600160a060020a031614155b1561011857600080fd5b600054600154600160a060020a03909116906306ab592390878760405160e060020a63ffffffff861602815260048101939093526024830191909152600160a060020a03166044820152606401600060405180830381600087803b151561017e57600080fd5b6102c65a03f1151561018f57600080fd5b50505050505050505600a165627a7a723058206fb963cb168d5e3a51af12cd6bb23e324dbd32dd4954f43653ba27e66b68ea650029`
+const FIFSRegistrarBin = `0x608060405234801561001057600080fd5b5060405160408061029f83398101604052805160209091015160008054600160a060020a031916600160a060020a0390931692909217825560015561024490819061005b90396000f3006080604052600436106100405763ffffffff7c0100000000000000000000000000000000000000000000000000000000600035041663d22057a98114610045575b600080fd5b34801561005157600080fd5b5061007660043573ffffffffffffffffffffffffffffffffffffffff60243516610078565b005b60015460408051918252602080830185905281519283900382018320600080547f02571be300000000000000000000000000000000000000000000000000000000865260048601839052935187959294919373ffffffffffffffffffffffffffffffffffffffff909216926302571be392602480830193919282900301818787803b15801561010657600080fd5b505af115801561011a573d6000803e3d6000fd5b505050506040513d602081101561013057600080fd5b5051905073ffffffffffffffffffffffffffffffffffffffff81161580159061016f575073ffffffffffffffffffffffffffffffffffffffff81163314155b1561017957600080fd5b60008054600154604080517f06ab592300000000000000000000000000000000000000000000000000000000815260048101929092526024820189905273ffffffffffffffffffffffffffffffffffffffff888116604484015290519216926306ab59239260648084019382900301818387803b1580156101f957600080fd5b505af115801561020d573d6000803e3d6000fd5b5050505050505050505600a165627a7a7230582001ff545becf7f5b37176e9618183e883f201758b5d3fce867e376996b0dcf6680029`
 
 // DeployFIFSRegistrar deploys a new VNT contract, binding an instance of FIFSRegistrar to it.
-func DeployFIFSRegistrar(auth *bind.TransactOpts, backend bind.ContractBackend, ensAddr common.Address, node [32]byte) (common.Address, *types.Transaction, *FIFSRegistrar, error) {
+func DeployFIFSRegistrar(chainID *big.Int, auth *bind.TransactOpts, backend bind.ContractBackend, ensAddr common.Address, node [32]byte) (common.Address, *types.Transaction, *FIFSRegistrar, error) {
 	parsed, err := abi.JSON(strings.NewReader(FIFSRegistrarABI))
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	address, tx, contract, err := bind.DeployContract(auth, parsed, common.FromHex(FIFSRegistrarBin), backend, ensAddr, node)
+	address, tx, contract, err := bind.DeployContract(auth, chainID, parsed, common.FromHex(FIFSRegistrarBin), backend, ensAddr, node)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	return address, tx, &FIFSRegistrar{FIFSRegistrarCaller: FIFSRegistrarCaller{contract: contract}, FIFSRegistrarTransactor: FIFSRegistrarTransactor{contract: contract}, FIFSRegistrarFilterer: FIFSRegistrarFilterer{contract: contract}}, nil
+	return address, tx, &FIFSRegistrar{FIFSRegistrarCaller: FIFSRegistrarCaller{chainID: chainID, contract: contract}, FIFSRegistrarTransactor: FIFSRegistrarTransactor{chainID: chainID, contract: contract}, FIFSRegistrarFilterer: FIFSRegistrarFilterer{chainID: chainID, contract: contract}}, nil
 }
 
 // FIFSRegistrar is an auto generated Go binding around an VNT contract.
@@ -40,16 +42,19 @@ type FIFSRegistrar struct {
 
 // FIFSRegistrarCaller is an auto generated read-only Go binding around an VNT contract.
 type FIFSRegistrarCaller struct {
+	chainID  *big.Int
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
 // FIFSRegistrarTransactor is an auto generated write-only Go binding around an VNT contract.
 type FIFSRegistrarTransactor struct {
+	chainID  *big.Int
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
 // FIFSRegistrarFilterer is an auto generated log filtering Go binding around an VNT contract events.
 type FIFSRegistrarFilterer struct {
+	chainID  *big.Int
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
@@ -77,53 +82,56 @@ type FIFSRegistrarTransactorSession struct {
 
 // FIFSRegistrarRaw is an auto generated low-level Go binding around an VNT contract.
 type FIFSRegistrarRaw struct {
+	ChainID  *big.Int
 	Contract *FIFSRegistrar // Generic contract binding to access the raw methods on
 }
 
 // FIFSRegistrarCallerRaw is an auto generated low-level read-only Go binding around an VNT contract.
 type FIFSRegistrarCallerRaw struct {
+	ChainID  *big.Int
 	Contract *FIFSRegistrarCaller // Generic read-only contract binding to access the raw methods on
 }
 
 // FIFSRegistrarTransactorRaw is an auto generated low-level write-only Go binding around an VNT contract.
 type FIFSRegistrarTransactorRaw struct {
+	ChainID  *big.Int
 	Contract *FIFSRegistrarTransactor // Generic write-only contract binding to access the raw methods on
 }
 
 // NewFIFSRegistrar creates a new instance of FIFSRegistrar, bound to a specific deployed contract.
-func NewFIFSRegistrar(address common.Address, backend bind.ContractBackend) (*FIFSRegistrar, error) {
+func NewFIFSRegistrar(chainID *big.Int, address common.Address, backend bind.ContractBackend) (*FIFSRegistrar, error) {
 	contract, err := bindFIFSRegistrar(address, backend, backend, backend)
 	if err != nil {
 		return nil, err
 	}
-	return &FIFSRegistrar{FIFSRegistrarCaller: FIFSRegistrarCaller{contract: contract}, FIFSRegistrarTransactor: FIFSRegistrarTransactor{contract: contract}, FIFSRegistrarFilterer: FIFSRegistrarFilterer{contract: contract}}, nil
+	return &FIFSRegistrar{FIFSRegistrarCaller: FIFSRegistrarCaller{chainID: chainID, contract: contract}, FIFSRegistrarTransactor: FIFSRegistrarTransactor{chainID: chainID, contract: contract}, FIFSRegistrarFilterer: FIFSRegistrarFilterer{chainID: chainID, contract: contract}}, nil
 }
 
 // NewFIFSRegistrarCaller creates a new read-only instance of FIFSRegistrar, bound to a specific deployed contract.
-func NewFIFSRegistrarCaller(address common.Address, caller bind.ContractCaller) (*FIFSRegistrarCaller, error) {
+func NewFIFSRegistrarCaller(chainID *big.Int, address common.Address, caller bind.ContractCaller) (*FIFSRegistrarCaller, error) {
 	contract, err := bindFIFSRegistrar(address, caller, nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	return &FIFSRegistrarCaller{contract: contract}, nil
+	return &FIFSRegistrarCaller{chainID: chainID, contract: contract}, nil
 }
 
 // NewFIFSRegistrarTransactor creates a new write-only instance of FIFSRegistrar, bound to a specific deployed contract.
-func NewFIFSRegistrarTransactor(address common.Address, transactor bind.ContractTransactor) (*FIFSRegistrarTransactor, error) {
+func NewFIFSRegistrarTransactor(chainID *big.Int, address common.Address, transactor bind.ContractTransactor) (*FIFSRegistrarTransactor, error) {
 	contract, err := bindFIFSRegistrar(address, nil, transactor, nil)
 	if err != nil {
 		return nil, err
 	}
-	return &FIFSRegistrarTransactor{contract: contract}, nil
+	return &FIFSRegistrarTransactor{chainID: chainID, contract: contract}, nil
 }
 
 // NewFIFSRegistrarFilterer creates a new log filterer instance of FIFSRegistrar, bound to a specific deployed contract.
-func NewFIFSRegistrarFilterer(address common.Address, filterer bind.ContractFilterer) (*FIFSRegistrarFilterer, error) {
+func NewFIFSRegistrarFilterer(chainID *big.Int, address common.Address, filterer bind.ContractFilterer) (*FIFSRegistrarFilterer, error) {
 	contract, err := bindFIFSRegistrar(address, nil, nil, filterer)
 	if err != nil {
 		return nil, err
 	}
-	return &FIFSRegistrarFilterer{contract: contract}, nil
+	return &FIFSRegistrarFilterer{chainID: chainID, contract: contract}, nil
 }
 
 // bindFIFSRegistrar binds a generic wrapper to an already deployed contract.
@@ -146,12 +154,12 @@ func (_FIFSRegistrar *FIFSRegistrarRaw) Call(opts *bind.CallOpts, result interfa
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
 func (_FIFSRegistrar *FIFSRegistrarRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _FIFSRegistrar.Contract.FIFSRegistrarTransactor.contract.Transfer(opts)
+	return _FIFSRegistrar.Contract.FIFSRegistrarTransactor.contract.Transfer(opts, _FIFSRegistrar.ChainID)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
 func (_FIFSRegistrar *FIFSRegistrarRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
-	return _FIFSRegistrar.Contract.FIFSRegistrarTransactor.contract.Transact(opts, method, params...)
+	return _FIFSRegistrar.Contract.FIFSRegistrarTransactor.contract.Transact(opts, _FIFSRegistrar.ChainID, method, params...)
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -165,19 +173,19 @@ func (_FIFSRegistrar *FIFSRegistrarCallerRaw) Call(opts *bind.CallOpts, result i
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
 func (_FIFSRegistrar *FIFSRegistrarTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _FIFSRegistrar.Contract.contract.Transfer(opts)
+	return _FIFSRegistrar.Contract.contract.Transfer(opts, _FIFSRegistrar.ChainID)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
 func (_FIFSRegistrar *FIFSRegistrarTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
-	return _FIFSRegistrar.Contract.contract.Transact(opts, method, params...)
+	return _FIFSRegistrar.Contract.contract.Transact(opts, _FIFSRegistrar.ChainID, method, params...)
 }
 
 // Register is a paid mutator transaction binding the contract method 0xd22057a9.
 //
 // Solidity: function register(subnode bytes32, owner address) returns()
 func (_FIFSRegistrar *FIFSRegistrarTransactor) Register(opts *bind.TransactOpts, subnode [32]byte, owner common.Address) (*types.Transaction, error) {
-	return _FIFSRegistrar.contract.Transact(opts, "register", subnode, owner)
+	return _FIFSRegistrar.contract.Transact(opts, _FIFSRegistrar.chainID, "register", subnode, owner)
 }
 
 // Register is a paid mutator transaction binding the contract method 0xd22057a9.

@@ -127,7 +127,7 @@ func (self *SwapParams) Init(contract common.Address, prvkey *ecdsa.PrivateKey) 
 // n < 0  called when receiving chunks = receiving delivery responses
 //                 OR receiving cheques.
 
-func NewSwap(local *SwapParams, remote *SwapProfile, backend chequebook.Backend, proto swap.Protocol) (self *swap.Swap, err error) {
+func NewSwap(chainID *big.Int, local *SwapParams, remote *SwapProfile, backend chequebook.Backend, proto swap.Protocol) (self *swap.Swap, err error) {
 	var (
 		ctx = context.TODO()
 		ok  bool
@@ -148,7 +148,7 @@ func NewSwap(local *SwapParams, remote *SwapProfile, backend chequebook.Backend,
 		log.Info(fmt.Sprintf("invalid contract %v for peer %v: %v)", remote.Contract.Hex()[:8], proto, err))
 	} else {
 		// remote contract valid, create inbox
-		in, err = chequebook.NewInbox(local.privateKey, remote.Contract, local.Beneficiary, remotekey, backend)
+		in, err = chequebook.NewInbox(chainID, local.privateKey, remote.Contract, local.Beneficiary, remotekey, backend)
 		if err != nil {
 			log.Warn(fmt.Sprintf("unable to set up inbox for chequebook contract %v for peer %v: %v)", remote.Contract.Hex()[:8], proto, err))
 		}
@@ -211,7 +211,7 @@ func (self *SwapParams) SetKey(prvkey *ecdsa.PrivateKey) {
 
 // setChequebook(path, backend) wraps the
 // chequebook initialiser and sets up autoDeposit to cover spending.
-func (self *SwapParams) SetChequebook(ctx context.Context, backend chequebook.Backend, path string) error {
+func (self *SwapParams) SetChequebook(ctx context.Context, chainID *big.Int, backend chequebook.Backend, path string) error {
 	self.lock.Lock()
 	contract := self.Contract
 	self.lock.Unlock()
@@ -220,18 +220,18 @@ func (self *SwapParams) SetChequebook(ctx context.Context, backend chequebook.Ba
 	if err != nil {
 		return err
 	} else if valid {
-		return self.newChequebookFromContract(path, backend)
+		return self.newChequebookFromContract(chainID, path, backend)
 	}
-	return self.deployChequebook(ctx, backend, path)
+	return self.deployChequebook(ctx, chainID, backend, path)
 }
 
-func (self *SwapParams) deployChequebook(ctx context.Context, backend chequebook.Backend, path string) error {
+func (self *SwapParams) deployChequebook(ctx context.Context, chainID *big.Int, backend chequebook.Backend, path string) error {
 	opts := bind.NewKeyedTransactor(self.privateKey)
 	opts.Value = self.AutoDepositBuffer
 	opts.Context = ctx
 
 	log.Info(fmt.Sprintf("Deploying new chequebook (owner: %v)", opts.From.Hex()))
-	contract, err := deployChequebookLoop(opts, backend)
+	contract, err := deployChequebookLoop(chainID, opts, backend)
 	if err != nil {
 		log.Error(fmt.Sprintf("unable to deploy new chequebook: %v", err))
 		return err
@@ -241,7 +241,7 @@ func (self *SwapParams) deployChequebook(ctx context.Context, backend chequebook
 	// need to save config at this point
 	self.lock.Lock()
 	self.Contract = contract
-	err = self.newChequebookFromContract(path, backend)
+	err = self.newChequebookFromContract(chainID, path, backend)
 	self.lock.Unlock()
 	if err != nil {
 		log.Warn(fmt.Sprintf("error initialising cheque book (owner: %v): %v", opts.From.Hex(), err))
@@ -250,13 +250,13 @@ func (self *SwapParams) deployChequebook(ctx context.Context, backend chequebook
 }
 
 // repeatedly tries to deploy a chequebook.
-func deployChequebookLoop(opts *bind.TransactOpts, backend chequebook.Backend) (addr common.Address, err error) {
+func deployChequebookLoop(chainID *big.Int, opts *bind.TransactOpts, backend chequebook.Backend) (addr common.Address, err error) {
 	var tx *types.Transaction
 	for try := 0; try < chequebookDeployRetries; try++ {
 		if try > 0 {
 			time.Sleep(chequebookDeployDelay)
 		}
-		if _, tx, _, err = contract.DeployChequebook(opts, backend); err != nil {
+		if _, tx, _, err = contract.DeployChequebook(chainID, opts, backend); err != nil {
 			log.Warn(fmt.Sprintf("can't send chequebook deploy tx (try %d): %v", try, err))
 			continue
 		}
@@ -271,7 +271,7 @@ func deployChequebookLoop(opts *bind.TransactOpts, backend chequebook.Backend) (
 
 // initialise the chequebook from a persisted json file or create a new one
 // caller holds the lock
-func (self *SwapParams) newChequebookFromContract(path string, backend chequebook.Backend) error {
+func (self *SwapParams) newChequebookFromContract(chainID *big.Int, path string, backend chequebook.Backend) error {
 	hexkey := common.Bytes2Hex(self.Contract.Bytes())
 	err := os.MkdirAll(filepath.Join(path, "chequebooks"), os.ModePerm)
 	if err != nil {
@@ -279,10 +279,10 @@ func (self *SwapParams) newChequebookFromContract(path string, backend chequeboo
 	}
 
 	chbookpath := filepath.Join(path, "chequebooks", hexkey+".json")
-	self.chbook, err = chequebook.LoadChequebook(chbookpath, self.privateKey, backend, true)
+	self.chbook, err = chequebook.LoadChequebook(chainID, chbookpath, self.privateKey, backend, true)
 
 	if err != nil {
-		self.chbook, err = chequebook.NewChequebook(chbookpath, self.Contract, self.privateKey, backend)
+		self.chbook, err = chequebook.NewChequebook(chainID, chbookpath, self.Contract, self.privateKey, backend)
 		if err != nil {
 			log.Warn(fmt.Sprintf("unable to initialise chequebook (owner: %v): %v", self.owner.Hex(), err))
 			return fmt.Errorf("unable to initialise chequebook (owner: %v): %v", self.owner.Hex(), err)

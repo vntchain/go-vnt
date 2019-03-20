@@ -138,7 +138,7 @@ func getVM(codeFile string, abiPath string) (*exec.Interpreter, EnvFunctions) {
 	abi := readAbi(abiPath)
 	addr := common.BytesToAddress([]byte("0xd2be7e0d40c1a73ec1709f00b11cb5e24c784077"))
 
-	chainconfig := &params.ChainConfig{HomesteadBlock: big.NewInt(1150000)}
+	chainconfig := &params.ChainConfig{HubbleBlock: big.NewInt(0)}
 	gasRule := g.NewGas(false)
 	gasTable := chainconfig.GasTable(new(big.Int).SetInt64(10000))
 	contract := contract.NewWASMContract(vm.AccountRef(addr),

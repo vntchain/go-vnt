@@ -8,9 +8,10 @@ import (
 	"strings"
 
 	hubble "github.com/vntchain/go-vnt"
+	"github.com/vntchain/go-vnt/common"
+
 	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/accounts/abi/bind"
-	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/event"
 )
@@ -19,19 +20,19 @@ import (
 const PublicResolverABI = "[{\"constant\":true,\"inputs\":[{\"name\":\"interfaceID\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"node\",\"type\":\"bytes32\"},{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"}],\"name\":\"setText\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"node\",\"type\":\"bytes32\"},{\"name\":\"contentTypes\",\"type\":\"uint256\"}],\"name\":\"ABI\",\"outputs\":[{\"name\":\"contentType\",\"type\":\"uint256\"},{\"name\":\"data\",\"type\":\"bytes\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"node\",\"type\":\"bytes32\"},{\"name\":\"x\",\"type\":\"bytes32\"},{\"name\":\"y\",\"type\":\"bytes32\"}],\"name\":\"setPubkey\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"node\",\"type\":\"bytes32\"}],\"name\":\"content\",\"outputs\":[{\"name\":\"ret\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"node\",\"type\":\"bytes32\"}],\"name\":\"addr\",\"outputs\":[{\"name\":\"ret\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"node\",\"type\":\"bytes32\"},{\"name\":\"key\",\"type\":\"string\"}],\"name\":\"text\",\"outputs\":[{\"name\":\"ret\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"node\",\"type\":\"bytes32\"},{\"name\":\"contentType\",\"type\":\"uint256\"},{\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"setABI\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"node\",\"type\":\"bytes32\"}],\"name\":\"name\",\"outputs\":[{\"name\":\"ret\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"node\",\"type\":\"bytes32\"},{\"name\":\"name\",\"type\":\"string\"}],\"name\":\"setName\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"node\",\"type\":\"bytes32\"},{\"name\":\"hash\",\"type\":\"bytes32\"}],\"name\":\"setContent\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"node\",\"type\":\"bytes32\"}],\"name\":\"pubkey\",\"outputs\":[{\"name\":\"x\",\"type\":\"bytes32\"},{\"name\":\"y\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"node\",\"type\":\"bytes32\"},{\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"setAddr\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"ensAddr\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"node\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"a\",\"type\":\"address\"}],\"name\":\"AddrChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"node\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"hash\",\"type\":\"bytes32\"}],\"name\":\"ContentChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"node\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"name\",\"type\":\"string\"}],\"name\":\"NameChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"node\",\"type\":\"bytes32\"},{\"indexed\":true,\"name\":\"contentType\",\"type\":\"uint256\"}],\"name\":\"ABIChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"node\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"x\",\"type\":\"bytes32\"},{\"indexed\":false,\"name\":\"y\",\"type\":\"bytes32\"}],\"name\":\"PubkeyChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"node\",\"type\":\"bytes32\"},{\"indexed\":true,\"name\":\"indexedKey\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"key\",\"type\":\"string\"}],\"name\":\"TextChanged\",\"type\":\"event\"}]"
 
 // PublicResolverBin is the compiled bytecode used for deploying new contracts.
-const PublicResolverBin = `0x6060604052341561000f57600080fd5b6040516020806111b28339810160405280805160008054600160a060020a03909216600160a060020a0319909216919091179055505061115e806100546000396000f3006060604052600436106100ab5763ffffffff60e060020a60003504166301ffc9a781146100b057806310f13a8c146100e45780632203ab561461017e57806329cd62ea146102155780632dff6941146102315780633b3b57de1461025957806359d1d43c1461028b578063623195b014610358578063691f3431146103b457806377372213146103ca578063c3d014d614610420578063c869023314610439578063d5fa2b0014610467575b600080fd5b34156100bb57600080fd5b6100d0600160e060020a031960043516610489565b604051901515815260200160405180910390f35b34156100ef57600080fd5b61017c600480359060446024803590810190830135806020601f8201819004810201604051908101604052818152929190602084018383808284378201915050505050509190803590602001908201803590602001908080601f0160208091040260200160405190810160405281815292919060208401838380828437509496506105f695505050505050565b005b341561018957600080fd5b610197600435602435610807565b60405182815260406020820181815290820183818151815260200191508051906020019080838360005b838110156101d95780820151838201526020016101c1565b50505050905090810190601f1680156102065780820380516001836020036101000a031916815260200191505b50935050505060405180910390f35b341561022057600080fd5b61017c600435602435604435610931565b341561023c57600080fd5b610247600435610a30565b60405190815260200160405180910390f35b341561026457600080fd5b61026f600435610a46565b604051600160a060020a03909116815260200160405180910390f35b341561029657600080fd5b6102e1600480359060446024803590810190830135806020601f82018190048102016040519081016040528181529291906020840183838082843750949650610a6195505050505050565b60405160208082528190810183818151815260200191508051906020019080838360005b8381101561031d578082015183820152602001610305565b50505050905090810190601f16801561034a5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b341561036357600080fd5b61017c600480359060248035919060649060443590810190830135806020601f82018190048102016040519081016040528181529291906020840183838082843750949650610b8095505050505050565b34156103bf57600080fd5b6102e1600435610c7c565b34156103d557600080fd5b61017c600480359060446024803590810190830135806020601f82018190048102016040519081016040528181529291906020840183838082843750949650610d4295505050505050565b341561042b57600080fd5b61017c600435602435610e8c565b341561044457600080fd5b61044f600435610f65565b60405191825260208201526040908101905180910390f35b341561047257600080fd5b61017c600435600160a060020a0360243516610f82565b6000600160e060020a031982167f3b3b57de0000000000000000000000000000000000000000000000000000000014806104ec5750600160e060020a031982167fd8389dc500000000000000000000000000000000000000000000000000000000145b806105205750600160e060020a031982167f691f343100000000000000000000000000000000000000000000000000000000145b806105545750600160e060020a031982167f2203ab5600000000000000000000000000000000000000000000000000000000145b806105885750600160e060020a031982167fc869023300000000000000000000000000000000000000000000000000000000145b806105bc5750600160e060020a031982167f59d1d43c00000000000000000000000000000000000000000000000000000000145b806105f05750600160e060020a031982167f01ffc9a700000000000000000000000000000000000000000000000000000000145b92915050565b600080548491600160a060020a033381169216906302571be39084906040516020015260405160e060020a63ffffffff84160281526004810191909152602401602060405180830381600087803b151561064f57600080fd5b6102c65a03f1151561066057600080fd5b50505060405180519050600160a060020a031614151561067f57600080fd5b6000848152600160205260409081902083916005909101908590518082805190602001908083835b602083106106c65780518252601f1990920191602091820191016106a7565b6001836020036101000a038019825116818451168082178552505050505050905001915050908152602001604051809103902090805161070a929160200190611085565b50826040518082805190602001908083835b6020831061073b5780518252601f19909201916020918201910161071c565b6001836020036101000a0380198251168184511617909252505050919091019250604091505051908190039020847fd8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a75508560405160208082528190810183818151815260200191508051906020019080838360005b838110156107c75780820151838201526020016107af565b50505050905090810190601f1680156107f45780820380516001836020036101000a031916815260200191505b509250505060405180910390a350505050565b6000610811611103565b60008481526001602081905260409091209092505b838311610924578284161580159061085f5750600083815260068201602052604081205460026000196101006001841615020190911604115b15610919578060060160008481526020019081526020016000208054600181600116156101000203166002900480601f01602080910402602001604051908101604052809291908181526020018280546001816001161561010002031660029004801561090d5780601f106108e25761010080835404028352916020019161090d565b820191906000526020600020905b8154815290600101906020018083116108f057829003601f168201915b50505050509150610929565b600290920291610826565b600092505b509250929050565b600080548491600160a060020a033381169216906302571be39084906040516020015260405160e060020a63ffffffff84160281526004810191909152602401602060405180830381600087803b151561098a57600080fd5b6102c65a03f1151561099b57600080fd5b50505060405180519050600160a060020a03161415156109ba57600080fd5b6040805190810160409081528482526020808301859052600087815260019091522060030181518155602082015160019091015550837f1d6f5e03d3f63eb58751986629a5439baee5079ff04f345becb66e23eb154e46848460405191825260208201526040908101905180910390a250505050565b6000908152600160208190526040909120015490565b600090815260016020526040902054600160a060020a031690565b610a69611103565b60008381526001602052604090819020600501908390518082805190602001908083835b60208310610aac5780518252601f199092019160209182019101610a8d565b6001836020036101000a03801982511681845116808217855250505050505090500191505090815260200160405180910390208054600181600116156101000203166002900480601f016020809104026020016040519081016040528092919081815260200182805460018160011615610100020316600290048015610b735780601f10610b4857610100808354040283529160200191610b73565b820191906000526020600020905b815481529060010190602001808311610b5657829003601f168201915b5050505050905092915050565b600080548491600160a060020a033381169216906302571be39084906040516020015260405160e060020a63ffffffff84160281526004810191909152602401602060405180830381600087803b1515610bd957600080fd5b6102c65a03f11515610bea57600080fd5b50505060405180519050600160a060020a0316141515610c0957600080fd5b6000198301831615610c1a57600080fd5b60008481526001602090815260408083208684526006019091529020828051610c47929160200190611085565b5082847faa121bbeef5f32f5961a2a28966e769023910fc9479059ee3495d4c1a696efe360405160405180910390a350505050565b610c84611103565b6001600083600019166000191681526020019081526020016000206002018054600181600116156101000203166002900480601f016020809104026020016040519081016040528092919081815260200182805460018160011615610100020316600290048015610d365780601f10610d0b57610100808354040283529160200191610d36565b820191906000526020600020905b815481529060010190602001808311610d1957829003601f168201915b50505050509050919050565b600080548391600160a060020a033381169216906302571be39084906040516020015260405160e060020a63ffffffff84160281526004810191909152602401602060405180830381600087803b1515610d9b57600080fd5b6102c65a03f11515610dac57600080fd5b50505060405180519050600160a060020a0316141515610dcb57600080fd5b6000838152600160205260409020600201828051610ded929160200190611085565b50827fb7d29e911041e8d9b843369e890bcb72c9388692ba48b65ac54e7214c4c348f78360405160208082528190810183818151815260200191508051906020019080838360005b83811015610e4d578082015183820152602001610e35565b50505050905090810190601f168015610e7a5780820380516001836020036101000a031916815260200191505b509250505060405180910390a2505050565b600080548391600160a060020a033381169216906302571be39084906040516020015260405160e060020a63ffffffff84160281526004810191909152602401602060405180830381600087803b1515610ee557600080fd5b6102c65a03f11515610ef657600080fd5b50505060405180519050600160a060020a0316141515610f1557600080fd5b6000838152600160208190526040918290200183905583907f0424b6fe0d9c3bdbece0e7879dc241bb0c22e900be8b6c168b4ee08bd9bf83bc9084905190815260200160405180910390a2505050565b600090815260016020526040902060038101546004909101549091565b600080548391600160a060020a033381169216906302571be39084906040516020015260405160e060020a63ffffffff84160281526004810191909152602401602060405180830381600087803b1515610fdb57600080fd5b6102c65a03f11515610fec57600080fd5b50505060405180519050600160a060020a031614151561100b57600080fd5b60008381526001602052604090819020805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a03851617905583907f52d7d861f09ab3d26239d492e8968629f95e9e318cf0b73bfddc441522a15fd290849051600160a060020a03909116815260200160405180910390a2505050565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f106110c657805160ff19168380011785556110f3565b828001600101855582156110f3579182015b828111156110f35782518255916020019190600101906110d8565b506110ff929150611115565b5090565b60206040519081016040526000815290565b61112f91905b808211156110ff576000815560010161111b565b905600a165627a7a723058201ecacbc445b9fbcd91b0ab164389f69d7283b856883bc7437eeed1008345a4920029`
+const PublicResolverBin = `0x608060405234801561001057600080fd5b506040516020806111dd833981016040525160008054600160a060020a03909216600160a060020a031990921691909117905561118b806100526000396000f3006080604052600436106100c45763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166301ffc9a781146100c957806310f13a8c146100ff5780632203ab561461019d57806329cd62ea146102375780632dff6941146102555780633b3b57de1461027f57806359d1d43c146102b3578063623195b014610386578063691f3431146103e657806377372213146103fe578063c3d014d61461045c578063c869023314610477578063d5fa2b00146104a8575b600080fd5b3480156100d557600080fd5b506100eb600160e060020a0319600435166104cc565b604080519115158252519081900360200190f35b34801561010b57600080fd5b5060408051602060046024803582810135601f810185900485028601850190965285855261019b95833595369560449491939091019190819084018382808284375050604080516020601f89358b018035918201839004830284018301909452808352979a9998810197919650918201945092508291508401838280828437509497506106399650505050505050565b005b3480156101a957600080fd5b506101b860043560243561084d565b6040518083815260200180602001828103825283818151815260200191508051906020019080838360005b838110156101fb5781810151838201526020016101e3565b50505050905090810190601f1680156102285780820380516001836020036101000a031916815260200191505b50935050505060405180910390f35b34801561024357600080fd5b5061019b600435602435604435610959565b34801561026157600080fd5b5061026d600435610a5d565b60408051918252519081900360200190f35b34801561028b57600080fd5b50610297600435610a73565b60408051600160a060020a039092168252519081900360200190f35b3480156102bf57600080fd5b5060408051602060046024803582810135601f8101859004850286018501909652858552610311958335953695604494919390910191908190840183828082843750949750610a8e9650505050505050565b6040805160208082528351818301528351919283929083019185019080838360005b8381101561034b578181015183820152602001610333565b50505050905090810190601f1680156103785780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561039257600080fd5b50604080516020600460443581810135601f810184900484028501840190955284845261019b948235946024803595369594606494920191908190840183828082843750949750610b979650505050505050565b3480156103f257600080fd5b50610311600435610c9c565b34801561040a57600080fd5b5060408051602060046024803582810135601f810185900485028601850190965285855261019b958335953695604494919390910191908190840183828082843750949750610d409650505050505050565b34801561046857600080fd5b5061019b600435602435610e9a565b34801561048357600080fd5b5061048f600435610f7f565b6040805192835260208301919091528051918290030190f35b3480156104b457600080fd5b5061019b600435600160a060020a0360243516610f9c565b6000600160e060020a031982167f3b3b57de00000000000000000000000000000000000000000000000000000000148061052f5750600160e060020a031982167fd8389dc500000000000000000000000000000000000000000000000000000000145b806105635750600160e060020a031982167f691f343100000000000000000000000000000000000000000000000000000000145b806105975750600160e060020a031982167f2203ab5600000000000000000000000000000000000000000000000000000000145b806105cb5750600160e060020a031982167fc869023300000000000000000000000000000000000000000000000000000000145b806105ff5750600160e060020a031982167f59d1d43c00000000000000000000000000000000000000000000000000000000145b806106335750600160e060020a031982167f01ffc9a700000000000000000000000000000000000000000000000000000000145b92915050565b6000805460408051600080516020611140833981519152815260048101879052905186933393600160a060020a0316926302571be39260248083019360209383900390910190829087803b15801561069057600080fd5b505af11580156106a4573d6000803e3d6000fd5b505050506040513d60208110156106ba57600080fd5b5051600160a060020a0316146106cf57600080fd5b6000848152600160209081526040918290209151855185936005019287929182918401908083835b602083106107165780518252601f1990920191602091820191016106f7565b51815160209384036101000a6000190180199092169116179052920194855250604051938490038101909320845161075795919491909101925090506110a4565b50826040518082805190602001908083835b602083106107885780518252601f199092019160209182019101610769565b51815160209384036101000a60001901801990921691161790526040805192909401829003822081835289518383015289519096508a95507fd8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550948a94508392908301919085019080838360005b8381101561080d5781810151838201526020016107f5565b50505050905090810190601f16801561083a5780820380516001836020036101000a031916815260200191505b509250505060405180910390a350505050565b60008281526001602081905260409091206060905b83831161094c578284161580159061089b5750600083815260068201602052604081205460026000196101006001841615020190911604115b1561094157600083815260068201602090815260409182902080548351601f6002600019610100600186161502019093169290920491820184900484028101840190945280845290918301828280156109355780601f1061090a57610100808354040283529160200191610935565b820191906000526020600020905b81548152906001019060200180831161091857829003601f168201915b50505050509150610951565b600290920291610862565b600092505b509250929050565b6000805460408051600080516020611140833981519152815260048101879052905186933393600160a060020a0316926302571be39260248083019360209383900390910190829087803b1580156109b057600080fd5b505af11580156109c4573d6000803e3d6000fd5b505050506040513d60208110156109da57600080fd5b5051600160a060020a0316146109ef57600080fd5b604080518082018252848152602080820185815260008881526001835284902092516003840155516004909201919091558151858152908101849052815186927f1d6f5e03d3f63eb58751986629a5439baee5079ff04f345becb66e23eb154e46928290030190a250505050565b6000908152600160208190526040909120015490565b600090815260016020526040902054600160a060020a031690565b600082815260016020908152604091829020915183516060936005019285929182918401908083835b60208310610ad65780518252601f199092019160209182019101610ab7565b518151600019602094850361010090810a820192831692199390931691909117909252949092019687526040805197889003820188208054601f6002600183161590980290950116959095049283018290048202880182019052818752929450925050830182828015610b8a5780601f10610b5f57610100808354040283529160200191610b8a565b820191906000526020600020905b815481529060010190602001808311610b6d57829003601f168201915b5050505050905092915050565b6000805460408051600080516020611140833981519152815260048101879052905186933393600160a060020a0316926302571be39260248083019360209383900390910190829087803b158015610bee57600080fd5b505af1158015610c02573d6000803e3d6000fd5b505050506040513d6020811015610c1857600080fd5b5051600160a060020a031614610c2d57600080fd5b6000198301831615610c3e57600080fd5b600084815260016020908152604080832086845260060182529091208351610c68928501906110a4565b50604051839085907faa121bbeef5f32f5961a2a28966e769023910fc9479059ee3495d4c1a696efe390600090a350505050565b6000818152600160208181526040928390206002908101805485516000199582161561010002959095011691909104601f81018390048302840183019094528383526060939091830182828015610d345780601f10610d0957610100808354040283529160200191610d34565b820191906000526020600020905b815481529060010190602001808311610d1757829003601f168201915b50505050509050919050565b6000805460408051600080516020611140833981519152815260048101869052905185933393600160a060020a0316926302571be39260248083019360209383900390910190829087803b158015610d9757600080fd5b505af1158015610dab573d6000803e3d6000fd5b505050506040513d6020811015610dc157600080fd5b5051600160a060020a031614610dd657600080fd5b60008381526001602090815260409091208351610dfb926002909201918501906110a4565b50604080516020808252845181830152845186937fb7d29e911041e8d9b843369e890bcb72c9388692ba48b65ac54e7214c4c348f79387939092839283019185019080838360005b83811015610e5b578181015183820152602001610e43565b50505050905090810190601f168015610e885780820380516001836020036101000a031916815260200191505b509250505060405180910390a2505050565b6000805460408051600080516020611140833981519152815260048101869052905185933393600160a060020a0316926302571be39260248083019360209383900390910190829087803b158015610ef157600080fd5b505af1158015610f05573d6000803e3d6000fd5b505050506040513d6020811015610f1b57600080fd5b5051600160a060020a031614610f3057600080fd5b6000838152600160208181526040928390209091018490558151848152915185927f0424b6fe0d9c3bdbece0e7879dc241bb0c22e900be8b6c168b4ee08bd9bf83bc92908290030190a2505050565b600090815260016020526040902060038101546004909101549091565b6000805460408051600080516020611140833981519152815260048101869052905185933393600160a060020a0316926302571be39260248083019360209383900390910190829087803b158015610ff357600080fd5b505af1158015611007573d6000803e3d6000fd5b505050506040513d602081101561101d57600080fd5b5051600160a060020a03161461103257600080fd5b600083815260016020908152604091829020805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a0386169081179091558251908152915185927f52d7d861f09ab3d26239d492e8968629f95e9e318cf0b73bfddc441522a15fd292908290030190a2505050565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f106110e557805160ff1916838001178555611112565b82800160010185558215611112579182015b828111156111125782518255916020019190600101906110f7565b5061111e929150611122565b5090565b61113c91905b8082111561111e5760008155600101611128565b90560002571be300000000000000000000000000000000000000000000000000000000a165627a7a72305820444a769a18a0fb74fa5d72acb62fa35132db944a5a8b80f5e402deed6c54bf4c0029`
 
 // DeployPublicResolver deploys a new VNT contract, binding an instance of PublicResolver to it.
-func DeployPublicResolver(auth *bind.TransactOpts, backend bind.ContractBackend, ensAddr common.Address) (common.Address, *types.Transaction, *PublicResolver, error) {
+func DeployPublicResolver(chainID *big.Int, auth *bind.TransactOpts, backend bind.ContractBackend, ensAddr common.Address) (common.Address, *types.Transaction, *PublicResolver, error) {
 	parsed, err := abi.JSON(strings.NewReader(PublicResolverABI))
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	address, tx, contract, err := bind.DeployContract(auth, parsed, common.FromHex(PublicResolverBin), backend, ensAddr)
+	address, tx, contract, err := bind.DeployContract(auth, chainID, parsed, common.FromHex(PublicResolverBin), backend, ensAddr)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	return address, tx, &PublicResolver{PublicResolverCaller: PublicResolverCaller{contract: contract}, PublicResolverTransactor: PublicResolverTransactor{contract: contract}, PublicResolverFilterer: PublicResolverFilterer{contract: contract}}, nil
+	return address, tx, &PublicResolver{PublicResolverCaller: PublicResolverCaller{chainID: chainID, contract: contract}, PublicResolverTransactor: PublicResolverTransactor{chainID: chainID, contract: contract}, PublicResolverFilterer: PublicResolverFilterer{chainID: chainID, contract: contract}}, nil
 }
 
 // PublicResolver is an auto generated Go binding around an VNT contract.
@@ -43,16 +44,19 @@ type PublicResolver struct {
 
 // PublicResolverCaller is an auto generated read-only Go binding around an VNT contract.
 type PublicResolverCaller struct {
+	chainID  *big.Int
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
 // PublicResolverTransactor is an auto generated write-only Go binding around an VNT contract.
 type PublicResolverTransactor struct {
+	chainID  *big.Int
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
 // PublicResolverFilterer is an auto generated log filtering Go binding around an VNT contract events.
 type PublicResolverFilterer struct {
+	chainID  *big.Int
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
@@ -80,53 +84,56 @@ type PublicResolverTransactorSession struct {
 
 // PublicResolverRaw is an auto generated low-level Go binding around an VNT contract.
 type PublicResolverRaw struct {
+	ChainID  *big.Int
 	Contract *PublicResolver // Generic contract binding to access the raw methods on
 }
 
 // PublicResolverCallerRaw is an auto generated low-level read-only Go binding around an VNT contract.
 type PublicResolverCallerRaw struct {
+	ChainID  *big.Int
 	Contract *PublicResolverCaller // Generic read-only contract binding to access the raw methods on
 }
 
 // PublicResolverTransactorRaw is an auto generated low-level write-only Go binding around an VNT contract.
 type PublicResolverTransactorRaw struct {
+	ChainID  *big.Int
 	Contract *PublicResolverTransactor // Generic write-only contract binding to access the raw methods on
 }
 
 // NewPublicResolver creates a new instance of PublicResolver, bound to a specific deployed contract.
-func NewPublicResolver(address common.Address, backend bind.ContractBackend) (*PublicResolver, error) {
+func NewPublicResolver(chainID *big.Int, address common.Address, backend bind.ContractBackend) (*PublicResolver, error) {
 	contract, err := bindPublicResolver(address, backend, backend, backend)
 	if err != nil {
 		return nil, err
 	}
-	return &PublicResolver{PublicResolverCaller: PublicResolverCaller{contract: contract}, PublicResolverTransactor: PublicResolverTransactor{contract: contract}, PublicResolverFilterer: PublicResolverFilterer{contract: contract}}, nil
+	return &PublicResolver{PublicResolverCaller: PublicResolverCaller{chainID: chainID, contract: contract}, PublicResolverTransactor: PublicResolverTransactor{chainID: chainID, contract: contract}, PublicResolverFilterer: PublicResolverFilterer{chainID: chainID, contract: contract}}, nil
 }
 
 // NewPublicResolverCaller creates a new read-only instance of PublicResolver, bound to a specific deployed contract.
-func NewPublicResolverCaller(address common.Address, caller bind.ContractCaller) (*PublicResolverCaller, error) {
+func NewPublicResolverCaller(chainID *big.Int, address common.Address, caller bind.ContractCaller) (*PublicResolverCaller, error) {
 	contract, err := bindPublicResolver(address, caller, nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	return &PublicResolverCaller{contract: contract}, nil
+	return &PublicResolverCaller{chainID: chainID, contract: contract}, nil
 }
 
 // NewPublicResolverTransactor creates a new write-only instance of PublicResolver, bound to a specific deployed contract.
-func NewPublicResolverTransactor(address common.Address, transactor bind.ContractTransactor) (*PublicResolverTransactor, error) {
+func NewPublicResolverTransactor(chainID *big.Int, address common.Address, transactor bind.ContractTransactor) (*PublicResolverTransactor, error) {
 	contract, err := bindPublicResolver(address, nil, transactor, nil)
 	if err != nil {
 		return nil, err
 	}
-	return &PublicResolverTransactor{contract: contract}, nil
+	return &PublicResolverTransactor{chainID: chainID, contract: contract}, nil
 }
 
 // NewPublicResolverFilterer creates a new log filterer instance of PublicResolver, bound to a specific deployed contract.
-func NewPublicResolverFilterer(address common.Address, filterer bind.ContractFilterer) (*PublicResolverFilterer, error) {
+func NewPublicResolverFilterer(chainID *big.Int, address common.Address, filterer bind.ContractFilterer) (*PublicResolverFilterer, error) {
 	contract, err := bindPublicResolver(address, nil, nil, filterer)
 	if err != nil {
 		return nil, err
 	}
-	return &PublicResolverFilterer{contract: contract}, nil
+	return &PublicResolverFilterer{chainID: chainID, contract: contract}, nil
 }
 
 // bindPublicResolver binds a generic wrapper to an already deployed contract.
@@ -149,12 +156,12 @@ func (_PublicResolver *PublicResolverRaw) Call(opts *bind.CallOpts, result inter
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
 func (_PublicResolver *PublicResolverRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _PublicResolver.Contract.PublicResolverTransactor.contract.Transfer(opts)
+	return _PublicResolver.Contract.PublicResolverTransactor.contract.Transfer(opts, _PublicResolver.ChainID)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
 func (_PublicResolver *PublicResolverRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
-	return _PublicResolver.Contract.PublicResolverTransactor.contract.Transact(opts, method, params...)
+	return _PublicResolver.Contract.PublicResolverTransactor.contract.Transact(opts, _PublicResolver.ChainID, method, params...)
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -168,12 +175,12 @@ func (_PublicResolver *PublicResolverCallerRaw) Call(opts *bind.CallOpts, result
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
 func (_PublicResolver *PublicResolverTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _PublicResolver.Contract.contract.Transfer(opts)
+	return _PublicResolver.Contract.contract.Transfer(opts, _PublicResolver.ChainID)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
 func (_PublicResolver *PublicResolverTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
-	return _PublicResolver.Contract.contract.Transact(opts, method, params...)
+	return _PublicResolver.Contract.contract.Transact(opts, _PublicResolver.ChainID, method, params...)
 }
 
 // ABI is a free data retrieval call binding the contract method 0x2203ab56.
@@ -382,7 +389,7 @@ func (_PublicResolver *PublicResolverCallerSession) Text(node [32]byte, key stri
 //
 // Solidity: function setABI(node bytes32, contentType uint256, data bytes) returns()
 func (_PublicResolver *PublicResolverTransactor) SetABI(opts *bind.TransactOpts, node [32]byte, contentType *big.Int, data []byte) (*types.Transaction, error) {
-	return _PublicResolver.contract.Transact(opts, "setABI", node, contentType, data)
+	return _PublicResolver.contract.Transact(opts, _PublicResolver.chainID, "setABI", node, contentType, data)
 }
 
 // SetABI is a paid mutator transaction binding the contract method 0x623195b0.
@@ -403,7 +410,7 @@ func (_PublicResolver *PublicResolverTransactorSession) SetABI(node [32]byte, co
 //
 // Solidity: function setAddr(node bytes32, addr address) returns()
 func (_PublicResolver *PublicResolverTransactor) SetAddr(opts *bind.TransactOpts, node [32]byte, addr common.Address) (*types.Transaction, error) {
-	return _PublicResolver.contract.Transact(opts, "setAddr", node, addr)
+	return _PublicResolver.contract.Transact(opts, _PublicResolver.chainID, "setAddr", node, addr)
 }
 
 // SetAddr is a paid mutator transaction binding the contract method 0xd5fa2b00.
@@ -424,7 +431,7 @@ func (_PublicResolver *PublicResolverTransactorSession) SetAddr(node [32]byte, a
 //
 // Solidity: function setContent(node bytes32, hash bytes32) returns()
 func (_PublicResolver *PublicResolverTransactor) SetContent(opts *bind.TransactOpts, node [32]byte, hash [32]byte) (*types.Transaction, error) {
-	return _PublicResolver.contract.Transact(opts, "setContent", node, hash)
+	return _PublicResolver.contract.Transact(opts, _PublicResolver.chainID, "setContent", node, hash)
 }
 
 // SetContent is a paid mutator transaction binding the contract method 0xc3d014d6.
@@ -445,7 +452,7 @@ func (_PublicResolver *PublicResolverTransactorSession) SetContent(node [32]byte
 //
 // Solidity: function setName(node bytes32, name string) returns()
 func (_PublicResolver *PublicResolverTransactor) SetName(opts *bind.TransactOpts, node [32]byte, name string) (*types.Transaction, error) {
-	return _PublicResolver.contract.Transact(opts, "setName", node, name)
+	return _PublicResolver.contract.Transact(opts, _PublicResolver.chainID, "setName", node, name)
 }
 
 // SetName is a paid mutator transaction binding the contract method 0x77372213.
@@ -466,7 +473,7 @@ func (_PublicResolver *PublicResolverTransactorSession) SetName(node [32]byte, n
 //
 // Solidity: function setPubkey(node bytes32, x bytes32, y bytes32) returns()
 func (_PublicResolver *PublicResolverTransactor) SetPubkey(opts *bind.TransactOpts, node [32]byte, x [32]byte, y [32]byte) (*types.Transaction, error) {
-	return _PublicResolver.contract.Transact(opts, "setPubkey", node, x, y)
+	return _PublicResolver.contract.Transact(opts, _PublicResolver.chainID, "setPubkey", node, x, y)
 }
 
 // SetPubkey is a paid mutator transaction binding the contract method 0x29cd62ea.
@@ -487,7 +494,7 @@ func (_PublicResolver *PublicResolverTransactorSession) SetPubkey(node [32]byte,
 //
 // Solidity: function setText(node bytes32, key string, value string) returns()
 func (_PublicResolver *PublicResolverTransactor) SetText(opts *bind.TransactOpts, node [32]byte, key string, value string) (*types.Transaction, error) {
-	return _PublicResolver.contract.Transact(opts, "setText", node, key, value)
+	return _PublicResolver.contract.Transact(opts, _PublicResolver.chainID, "setText", node, key, value)
 }
 
 // SetText is a paid mutator transaction binding the contract method 0x10f13a8c.
@@ -559,7 +566,7 @@ func (it *PublicResolverABIChangedIterator) Next() bool {
 	}
 }
 
-// Error retruned any retrieval or parsing error occurred during filtering.
+// Error returns any retrieval or parsing error occurred during filtering.
 func (it *PublicResolverABIChangedIterator) Error() error {
 	return it.fail
 }
@@ -580,7 +587,7 @@ type PublicResolverABIChanged struct {
 
 // FilterABIChanged is a free log retrieval operation binding the contract event 0xaa121bbeef5f32f5961a2a28966e769023910fc9479059ee3495d4c1a696efe3.
 //
-// Solidity: event ABIChanged(node indexed bytes32, contentType indexed uint256)
+// Solidity: e ABIChanged(node indexed bytes32, contentType indexed uint256)
 func (_PublicResolver *PublicResolverFilterer) FilterABIChanged(opts *bind.FilterOpts, node [][32]byte, contentType []*big.Int) (*PublicResolverABIChangedIterator, error) {
 
 	var nodeRule []interface{}
@@ -601,7 +608,7 @@ func (_PublicResolver *PublicResolverFilterer) FilterABIChanged(opts *bind.Filte
 
 // WatchABIChanged is a free log subscription operation binding the contract event 0xaa121bbeef5f32f5961a2a28966e769023910fc9479059ee3495d4c1a696efe3.
 //
-// Solidity: event ABIChanged(node indexed bytes32, contentType indexed uint256)
+// Solidity: e ABIChanged(node indexed bytes32, contentType indexed uint256)
 func (_PublicResolver *PublicResolverFilterer) WatchABIChanged(opts *bind.WatchOpts, sink chan<- *PublicResolverABIChanged, node [][32]byte, contentType []*big.Int) (event.Subscription, error) {
 
 	var nodeRule []interface{}
@@ -700,7 +707,7 @@ func (it *PublicResolverAddrChangedIterator) Next() bool {
 	}
 }
 
-// Error retruned any retrieval or parsing error occurred during filtering.
+// Error returns any retrieval or parsing error occurred during filtering.
 func (it *PublicResolverAddrChangedIterator) Error() error {
 	return it.fail
 }
@@ -721,7 +728,7 @@ type PublicResolverAddrChanged struct {
 
 // FilterAddrChanged is a free log retrieval operation binding the contract event 0x52d7d861f09ab3d26239d492e8968629f95e9e318cf0b73bfddc441522a15fd2.
 //
-// Solidity: event AddrChanged(node indexed bytes32, a address)
+// Solidity: e AddrChanged(node indexed bytes32, a address)
 func (_PublicResolver *PublicResolverFilterer) FilterAddrChanged(opts *bind.FilterOpts, node [][32]byte) (*PublicResolverAddrChangedIterator, error) {
 
 	var nodeRule []interface{}
@@ -738,7 +745,7 @@ func (_PublicResolver *PublicResolverFilterer) FilterAddrChanged(opts *bind.Filt
 
 // WatchAddrChanged is a free log subscription operation binding the contract event 0x52d7d861f09ab3d26239d492e8968629f95e9e318cf0b73bfddc441522a15fd2.
 //
-// Solidity: event AddrChanged(node indexed bytes32, a address)
+// Solidity: e AddrChanged(node indexed bytes32, a address)
 func (_PublicResolver *PublicResolverFilterer) WatchAddrChanged(opts *bind.WatchOpts, sink chan<- *PublicResolverAddrChanged, node [][32]byte) (event.Subscription, error) {
 
 	var nodeRule []interface{}
@@ -833,7 +840,7 @@ func (it *PublicResolverContentChangedIterator) Next() bool {
 	}
 }
 
-// Error retruned any retrieval or parsing error occurred during filtering.
+// Error returns any retrieval or parsing error occurred during filtering.
 func (it *PublicResolverContentChangedIterator) Error() error {
 	return it.fail
 }
@@ -854,7 +861,7 @@ type PublicResolverContentChanged struct {
 
 // FilterContentChanged is a free log retrieval operation binding the contract event 0x0424b6fe0d9c3bdbece0e7879dc241bb0c22e900be8b6c168b4ee08bd9bf83bc.
 //
-// Solidity: event ContentChanged(node indexed bytes32, hash bytes32)
+// Solidity: e ContentChanged(node indexed bytes32, hash bytes32)
 func (_PublicResolver *PublicResolverFilterer) FilterContentChanged(opts *bind.FilterOpts, node [][32]byte) (*PublicResolverContentChangedIterator, error) {
 
 	var nodeRule []interface{}
@@ -871,7 +878,7 @@ func (_PublicResolver *PublicResolverFilterer) FilterContentChanged(opts *bind.F
 
 // WatchContentChanged is a free log subscription operation binding the contract event 0x0424b6fe0d9c3bdbece0e7879dc241bb0c22e900be8b6c168b4ee08bd9bf83bc.
 //
-// Solidity: event ContentChanged(node indexed bytes32, hash bytes32)
+// Solidity: e ContentChanged(node indexed bytes32, hash bytes32)
 func (_PublicResolver *PublicResolverFilterer) WatchContentChanged(opts *bind.WatchOpts, sink chan<- *PublicResolverContentChanged, node [][32]byte) (event.Subscription, error) {
 
 	var nodeRule []interface{}
@@ -966,7 +973,7 @@ func (it *PublicResolverNameChangedIterator) Next() bool {
 	}
 }
 
-// Error retruned any retrieval or parsing error occurred during filtering.
+// Error returns any retrieval or parsing error occurred during filtering.
 func (it *PublicResolverNameChangedIterator) Error() error {
 	return it.fail
 }
@@ -987,7 +994,7 @@ type PublicResolverNameChanged struct {
 
 // FilterNameChanged is a free log retrieval operation binding the contract event 0xb7d29e911041e8d9b843369e890bcb72c9388692ba48b65ac54e7214c4c348f7.
 //
-// Solidity: event NameChanged(node indexed bytes32, name string)
+// Solidity: e NameChanged(node indexed bytes32, name string)
 func (_PublicResolver *PublicResolverFilterer) FilterNameChanged(opts *bind.FilterOpts, node [][32]byte) (*PublicResolverNameChangedIterator, error) {
 
 	var nodeRule []interface{}
@@ -1004,7 +1011,7 @@ func (_PublicResolver *PublicResolverFilterer) FilterNameChanged(opts *bind.Filt
 
 // WatchNameChanged is a free log subscription operation binding the contract event 0xb7d29e911041e8d9b843369e890bcb72c9388692ba48b65ac54e7214c4c348f7.
 //
-// Solidity: event NameChanged(node indexed bytes32, name string)
+// Solidity: e NameChanged(node indexed bytes32, name string)
 func (_PublicResolver *PublicResolverFilterer) WatchNameChanged(opts *bind.WatchOpts, sink chan<- *PublicResolverNameChanged, node [][32]byte) (event.Subscription, error) {
 
 	var nodeRule []interface{}
@@ -1099,7 +1106,7 @@ func (it *PublicResolverPubkeyChangedIterator) Next() bool {
 	}
 }
 
-// Error retruned any retrieval or parsing error occurred during filtering.
+// Error returns any retrieval or parsing error occurred during filtering.
 func (it *PublicResolverPubkeyChangedIterator) Error() error {
 	return it.fail
 }
@@ -1121,7 +1128,7 @@ type PublicResolverPubkeyChanged struct {
 
 // FilterPubkeyChanged is a free log retrieval operation binding the contract event 0x1d6f5e03d3f63eb58751986629a5439baee5079ff04f345becb66e23eb154e46.
 //
-// Solidity: event PubkeyChanged(node indexed bytes32, x bytes32, y bytes32)
+// Solidity: e PubkeyChanged(node indexed bytes32, x bytes32, y bytes32)
 func (_PublicResolver *PublicResolverFilterer) FilterPubkeyChanged(opts *bind.FilterOpts, node [][32]byte) (*PublicResolverPubkeyChangedIterator, error) {
 
 	var nodeRule []interface{}
@@ -1138,7 +1145,7 @@ func (_PublicResolver *PublicResolverFilterer) FilterPubkeyChanged(opts *bind.Fi
 
 // WatchPubkeyChanged is a free log subscription operation binding the contract event 0x1d6f5e03d3f63eb58751986629a5439baee5079ff04f345becb66e23eb154e46.
 //
-// Solidity: event PubkeyChanged(node indexed bytes32, x bytes32, y bytes32)
+// Solidity: e PubkeyChanged(node indexed bytes32, x bytes32, y bytes32)
 func (_PublicResolver *PublicResolverFilterer) WatchPubkeyChanged(opts *bind.WatchOpts, sink chan<- *PublicResolverPubkeyChanged, node [][32]byte) (event.Subscription, error) {
 
 	var nodeRule []interface{}
@@ -1233,7 +1240,7 @@ func (it *PublicResolverTextChangedIterator) Next() bool {
 	}
 }
 
-// Error retruned any retrieval or parsing error occurred during filtering.
+// Error returns any retrieval or parsing error occurred during filtering.
 func (it *PublicResolverTextChangedIterator) Error() error {
 	return it.fail
 }
@@ -1255,7 +1262,7 @@ type PublicResolverTextChanged struct {
 
 // FilterTextChanged is a free log retrieval operation binding the contract event 0xd8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550.
 //
-// Solidity: event TextChanged(node indexed bytes32, indexedKey indexed string, key string)
+// Solidity: e TextChanged(node indexed bytes32, indexedKey indexed string, key string)
 func (_PublicResolver *PublicResolverFilterer) FilterTextChanged(opts *bind.FilterOpts, node [][32]byte, indexedKey []string) (*PublicResolverTextChangedIterator, error) {
 
 	var nodeRule []interface{}
@@ -1276,7 +1283,7 @@ func (_PublicResolver *PublicResolverFilterer) FilterTextChanged(opts *bind.Filt
 
 // WatchTextChanged is a free log subscription operation binding the contract event 0xd8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550.
 //
-// Solidity: event TextChanged(node indexed bytes32, indexedKey indexed string, key string)
+// Solidity: e TextChanged(node indexed bytes32, indexedKey indexed string, key string)
 func (_PublicResolver *PublicResolverFilterer) WatchTextChanged(opts *bind.WatchOpts, sink chan<- *PublicResolverTextChanged, node [][32]byte, indexedKey []string) (event.Subscription, error) {
 
 	var nodeRule []interface{}

@@ -28,7 +28,7 @@ import (
 var (
 	mainnetChainConfig = params.ChainConfig{
 		ChainID:        big.NewInt(1),
-		HomesteadBlock: big.NewInt(1150000),
+		HubbleBlock:    big.NewInt(1150000),
 		DAOForkBlock:   big.NewInt(1920000),
 		DAOForkSupport: true,
 		EIP150Block:    big.NewInt(2463000),
@@ -58,8 +58,8 @@ func TestDifficulty(t *testing.T) {
 
 	dt.config("Frontier", params.ChainConfig{})
 
-	dt.config("Homestead", params.ChainConfig{
-		HomesteadBlock: big.NewInt(0),
+	dt.config("Hubble", params.ChainConfig{
+		HubbleBlock: big.NewInt(0),
 	})
 
 	dt.config("Byzantium", params.ChainConfig{

@@ -203,7 +203,7 @@ func odrContractCall(ctx context.Context, db vntdb.Database, bc *core.BlockChain
 }
 
 func testChainGen(i int, block *core.BlockGen) {
-	signer := types.HomesteadSigner{}
+	signer := types.NewHubbleSigner(big.NewInt(1))
 	switch i {
 	case 0:
 		// In block 1, the test bank sends account #1 some ether.

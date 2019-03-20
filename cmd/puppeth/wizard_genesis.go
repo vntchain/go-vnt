@@ -39,7 +39,7 @@ func (w *wizard) makeGenesis() {
 		Difficulty: big.NewInt(524288),
 		Alloc:      make(core.GenesisAlloc),
 		Config: &params.ChainConfig{
-			HomesteadBlock: big.NewInt(1),
+			HubbleBlock:    big.NewInt(1),
 			EIP150Block:    big.NewInt(2),
 			EIP155Block:    big.NewInt(3),
 			EIP158Block:    big.NewInt(3),
@@ -143,8 +143,8 @@ func (w *wizard) manageGenesis() {
 	case choice == "1":
 		// Fork rule updating requested, iterate over each fork
 		fmt.Println()
-		fmt.Printf("Which block should Homestead come into effect? (default = %v)\n", w.conf.Genesis.Config.HomesteadBlock)
-		w.conf.Genesis.Config.HomesteadBlock = w.readDefaultBigInt(w.conf.Genesis.Config.HomesteadBlock)
+		fmt.Printf("Which block should Hubble come into effect? (default = %v)\n", w.conf.Genesis.Config.HubbleBlock)
+		w.conf.Genesis.Config.HubbleBlock = w.readDefaultBigInt(w.conf.Genesis.Config.HubbleBlock)
 
 		fmt.Println()
 		fmt.Printf("Which block should EIP150 come into effect? (default = %v)\n", w.conf.Genesis.Config.EIP150Block)

@@ -25,8 +25,8 @@ import (
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/crypto"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/params"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 // Config is a basic type specifying certain configuration flags for running
@@ -53,7 +53,7 @@ func setDefaults(cfg *Config) {
 	if cfg.ChainConfig == nil {
 		cfg.ChainConfig = &params.ChainConfig{
 			ChainID:        big.NewInt(1),
-			HomesteadBlock: new(big.Int),
+			HubbleBlock:    new(big.Int),
 			DAOForkBlock:   new(big.Int),
 			DAOForkSupport: false,
 			EIP150Block:    new(big.Int),

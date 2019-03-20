@@ -7,10 +7,11 @@ import (
 	"math/big"
 	"strings"
 
-	hubble "github.com/vntchain/go-vnt"
+	"github.com/vntchain/go-vnt"
+	"github.com/vntchain/go-vnt/common"
+
 	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/accounts/abi/bind"
-	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/event"
 )
@@ -19,19 +20,19 @@ import (
 const ChequebookABI = "[{\"constant\":false,\"inputs\":[],\"name\":\"kill\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"address\"}],\"name\":\"sent\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"beneficiary\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"},{\"name\":\"sig_v\",\"type\":\"uint8\"},{\"name\":\"sig_r\",\"type\":\"bytes32\"},{\"name\":\"sig_s\",\"type\":\"bytes32\"}],\"name\":\"cash\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"deadbeat\",\"type\":\"address\"}],\"name\":\"Overdraft\",\"type\":\"event\"}]"
 
 // ChequebookBin is the compiled bytecode used for deploying new contracts.
-const ChequebookBin = `0x606060405260008054600160a060020a033316600160a060020a03199091161790556102ec806100306000396000f3006060604052600436106100565763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166341c0e1b581146100585780637bf786f81461006b578063fbf788d61461009c575b005b341561006357600080fd5b6100566100ca565b341561007657600080fd5b61008a600160a060020a03600435166100f1565b60405190815260200160405180910390f35b34156100a757600080fd5b610056600160a060020a036004351660243560ff60443516606435608435610103565b60005433600160a060020a03908116911614156100ef57600054600160a060020a0316ff5b565b60016020526000908152604090205481565b600160a060020a0385166000908152600160205260408120548190861161012957600080fd5b3087876040516c01000000000000000000000000600160a060020a03948516810282529290931690910260148301526028820152604801604051809103902091506001828686866040516000815260200160405260006040516020015260405193845260ff90921660208085019190915260408085019290925260608401929092526080909201915160208103908084039060008661646e5a03f115156101cf57600080fd5b505060206040510351600054600160a060020a039081169116146101f257600080fd5b50600160a060020a03808716600090815260016020526040902054860390301631811161026257600160a060020a0387166000818152600160205260409081902088905582156108fc0290839051600060405180830381858888f19350505050151561025d57600080fd5b6102b7565b6000547f2250e2993c15843b32621c89447cc589ee7a9f049c026986e545d3c2c0c6f97890600160a060020a0316604051600160a060020a03909116815260200160405180910390a186600160a060020a0316ff5b505050505050505600a165627a7a72305820533e856fc37e3d64d1706bcc7dfb6b1d490c8d566ea498d9d01ec08965a896ca0029`
+const ChequebookBin = `0x608060405260008054600160a060020a031916331790556102d0806100256000396000f3006080604052600436106100565763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166341c0e1b581146100585780637bf786f81461006d578063fbf788d6146100a0575b005b34801561006457600080fd5b506100566100d0565b34801561007957600080fd5b5061008e600160a060020a03600435166100f3565b60408051918252519081900360200190f35b3480156100ac57600080fd5b50610056600160a060020a036004351660243560ff60443516606435608435610105565b600054600160a060020a03163314156100f157600054600160a060020a0316ff5b565b60016020526000908152604090205481565b600160a060020a0385166000908152600160205260408120548190861161012b57600080fd5b604080516c010000000000000000000000003081028252600160a060020a038a160260148201526028810188905281519081900360480181206000808352602083810180865283905260ff8a16848601526060840189905260808401889052935191955060019360a0808501949193601f198101939281900390910191865af11580156101bc573d6000803e3d6000fd5b5050604051601f190151600054600160a060020a0390811691161490506101e257600080fd5b50600160a060020a03861660009081526001602052604090205485033031811161025057600160a060020a0387166000818152600160205260408082208990555183156108fc0291849190818181858888f1935050505015801561024a573d6000803e3d6000fd5b5061029b565b60005460408051600160a060020a039092168252517f2250e2993c15843b32621c89447cc589ee7a9f049c026986e545d3c2c0c6f9789181900360200190a186600160a060020a0316ff5b505050505050505600a165627a7a72305820b2c4748d2140dcc903f965abe3187ac942f8c04dacb9887c47bdb86a6c84dfc70029`
 
 // DeployChequebook deploys a new VNT contract, binding an instance of Chequebook to it.
-func DeployChequebook(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *Chequebook, error) {
+func DeployChequebook(chainID *big.Int, auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *Chequebook, error) {
 	parsed, err := abi.JSON(strings.NewReader(ChequebookABI))
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	address, tx, contract, err := bind.DeployContract(auth, parsed, common.FromHex(ChequebookBin), backend)
+	address, tx, contract, err := bind.DeployContract(auth, chainID, parsed, common.FromHex(ChequebookBin), backend)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	return address, tx, &Chequebook{ChequebookCaller: ChequebookCaller{contract: contract}, ChequebookTransactor: ChequebookTransactor{contract: contract}, ChequebookFilterer: ChequebookFilterer{contract: contract}}, nil
+	return address, tx, &Chequebook{ChequebookCaller: ChequebookCaller{chainID: chainID, contract: contract}, ChequebookTransactor: ChequebookTransactor{chainID: chainID, contract: contract}, ChequebookFilterer: ChequebookFilterer{chainID: chainID, contract: contract}}, nil
 }
 
 // Chequebook is an auto generated Go binding around an VNT contract.
@@ -43,16 +44,19 @@ type Chequebook struct {
 
 // ChequebookCaller is an auto generated read-only Go binding around an VNT contract.
 type ChequebookCaller struct {
+	chainID  *big.Int
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
 // ChequebookTransactor is an auto generated write-only Go binding around an VNT contract.
 type ChequebookTransactor struct {
+	chainID  *big.Int
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
 // ChequebookFilterer is an auto generated log filtering Go binding around an VNT contract events.
 type ChequebookFilterer struct {
+	chainID  *big.Int
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
@@ -80,6 +84,7 @@ type ChequebookTransactorSession struct {
 
 // ChequebookRaw is an auto generated low-level Go binding around an VNT contract.
 type ChequebookRaw struct {
+	ChainID  *big.Int
 	Contract *Chequebook // Generic contract binding to access the raw methods on
 }
 
@@ -90,43 +95,44 @@ type ChequebookCallerRaw struct {
 
 // ChequebookTransactorRaw is an auto generated low-level write-only Go binding around an VNT contract.
 type ChequebookTransactorRaw struct {
+	ChainID  *big.Int
 	Contract *ChequebookTransactor // Generic write-only contract binding to access the raw methods on
 }
 
 // NewChequebook creates a new instance of Chequebook, bound to a specific deployed contract.
-func NewChequebook(address common.Address, backend bind.ContractBackend) (*Chequebook, error) {
+func NewChequebook(chainID *big.Int, address common.Address, backend bind.ContractBackend) (*Chequebook, error) {
 	contract, err := bindChequebook(address, backend, backend, backend)
 	if err != nil {
 		return nil, err
 	}
-	return &Chequebook{ChequebookCaller: ChequebookCaller{contract: contract}, ChequebookTransactor: ChequebookTransactor{contract: contract}, ChequebookFilterer: ChequebookFilterer{contract: contract}}, nil
+	return &Chequebook{ChequebookCaller: ChequebookCaller{chainID: chainID, contract: contract}, ChequebookTransactor: ChequebookTransactor{chainID: chainID, contract: contract}, ChequebookFilterer: ChequebookFilterer{chainID: chainID, contract: contract}}, nil
 }
 
 // NewChequebookCaller creates a new read-only instance of Chequebook, bound to a specific deployed contract.
-func NewChequebookCaller(address common.Address, caller bind.ContractCaller) (*ChequebookCaller, error) {
+func NewChequebookCaller(chainID *big.Int, address common.Address, caller bind.ContractCaller) (*ChequebookCaller, error) {
 	contract, err := bindChequebook(address, caller, nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	return &ChequebookCaller{contract: contract}, nil
+	return &ChequebookCaller{chainID: chainID, contract: contract}, nil
 }
 
 // NewChequebookTransactor creates a new write-only instance of Chequebook, bound to a specific deployed contract.
-func NewChequebookTransactor(address common.Address, transactor bind.ContractTransactor) (*ChequebookTransactor, error) {
+func NewChequebookTransactor(chainID *big.Int, address common.Address, transactor bind.ContractTransactor) (*ChequebookTransactor, error) {
 	contract, err := bindChequebook(address, nil, transactor, nil)
 	if err != nil {
 		return nil, err
 	}
-	return &ChequebookTransactor{contract: contract}, nil
+	return &ChequebookTransactor{chainID: chainID, contract: contract}, nil
 }
 
 // NewChequebookFilterer creates a new log filterer instance of Chequebook, bound to a specific deployed contract.
-func NewChequebookFilterer(address common.Address, filterer bind.ContractFilterer) (*ChequebookFilterer, error) {
+func NewChequebookFilterer(chainID *big.Int, address common.Address, filterer bind.ContractFilterer) (*ChequebookFilterer, error) {
 	contract, err := bindChequebook(address, nil, nil, filterer)
 	if err != nil {
 		return nil, err
 	}
-	return &ChequebookFilterer{contract: contract}, nil
+	return &ChequebookFilterer{chainID: chainID, contract: contract}, nil
 }
 
 // bindChequebook binds a generic wrapper to an already deployed contract.
@@ -149,12 +155,12 @@ func (_Chequebook *ChequebookRaw) Call(opts *bind.CallOpts, result interface{}, 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
 func (_Chequebook *ChequebookRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _Chequebook.Contract.ChequebookTransactor.contract.Transfer(opts)
+	return _Chequebook.Contract.ChequebookTransactor.contract.Transfer(opts, _Chequebook.ChainID)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
 func (_Chequebook *ChequebookRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
-	return _Chequebook.Contract.ChequebookTransactor.contract.Transact(opts, method, params...)
+	return _Chequebook.Contract.ChequebookTransactor.contract.Transact(opts, _Chequebook.ChainID, method, params...)
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -168,12 +174,12 @@ func (_Chequebook *ChequebookCallerRaw) Call(opts *bind.CallOpts, result interfa
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
 func (_Chequebook *ChequebookTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _Chequebook.Contract.contract.Transfer(opts)
+	return _Chequebook.Contract.contract.Transfer(opts, _Chequebook.ChainID)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
 func (_Chequebook *ChequebookTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
-	return _Chequebook.Contract.contract.Transact(opts, method, params...)
+	return _Chequebook.Contract.contract.Transact(opts, _Chequebook.ChainID, method, params...)
 }
 
 // Sent is a free data retrieval call binding the contract method 0x7bf786f8.
@@ -206,7 +212,7 @@ func (_Chequebook *ChequebookCallerSession) Sent(arg0 common.Address) (*big.Int,
 //
 // Solidity: function cash(beneficiary address, amount uint256, sig_v uint8, sig_r bytes32, sig_s bytes32) returns()
 func (_Chequebook *ChequebookTransactor) Cash(opts *bind.TransactOpts, beneficiary common.Address, amount *big.Int, sig_v uint8, sig_r [32]byte, sig_s [32]byte) (*types.Transaction, error) {
-	return _Chequebook.contract.Transact(opts, "cash", beneficiary, amount, sig_v, sig_r, sig_s)
+	return _Chequebook.contract.Transact(opts, _Chequebook.chainID, "cash", beneficiary, amount, sig_v, sig_r, sig_s)
 }
 
 // Cash is a paid mutator transaction binding the contract method 0xfbf788d6.
@@ -227,7 +233,7 @@ func (_Chequebook *ChequebookTransactorSession) Cash(beneficiary common.Address,
 //
 // Solidity: function kill() returns()
 func (_Chequebook *ChequebookTransactor) Kill(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _Chequebook.contract.Transact(opts, "kill")
+	return _Chequebook.contract.Transact(opts, _Chequebook.chainID, "kill")
 }
 
 // Kill is a paid mutator transaction binding the contract method 0x41c0e1b5.
@@ -299,7 +305,7 @@ func (it *ChequebookOverdraftIterator) Next() bool {
 	}
 }
 
-// Error retruned any retrieval or parsing error occurred during filtering.
+// Error returns any retrieval or parsing error occurred during filtering.
 func (it *ChequebookOverdraftIterator) Error() error {
 	return it.fail
 }
@@ -319,7 +325,7 @@ type ChequebookOverdraft struct {
 
 // FilterOverdraft is a free log retrieval operation binding the contract event 0x2250e2993c15843b32621c89447cc589ee7a9f049c026986e545d3c2c0c6f978.
 //
-// Solidity: event Overdraft(deadbeat address)
+// Solidity: e Overdraft(deadbeat address)
 func (_Chequebook *ChequebookFilterer) FilterOverdraft(opts *bind.FilterOpts) (*ChequebookOverdraftIterator, error) {
 
 	logs, sub, err := _Chequebook.contract.FilterLogs(opts, "Overdraft")
@@ -331,7 +337,7 @@ func (_Chequebook *ChequebookFilterer) FilterOverdraft(opts *bind.FilterOpts) (*
 
 // WatchOverdraft is a free log subscription operation binding the contract event 0x2250e2993c15843b32621c89447cc589ee7a9f049c026986e545d3c2c0c6f978.
 //
-// Solidity: event Overdraft(deadbeat address)
+// Solidity: e Overdraft(deadbeat address)
 func (_Chequebook *ChequebookFilterer) WatchOverdraft(opts *bind.WatchOpts, sink chan<- *ChequebookOverdraft) (event.Subscription, error) {
 
 	logs, sub, err := _Chequebook.contract.WatchLogs(opts, "Overdraft")

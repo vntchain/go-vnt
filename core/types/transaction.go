@@ -37,11 +37,7 @@ var (
 
 // deriveSigner makes a *best* guess about which signer to use.
 func deriveSigner(V *big.Int) Signer {
-	if V.Sign() != 0 && isProtectedV(V) {
-		return NewEIP155Signer(deriveChainId(V))
-	} else {
-		return HomesteadSigner{}
-	}
+	return NewHubbleSigner(deriveChainId(V))
 }
 
 type Transaction struct {
@@ -163,12 +159,8 @@ func (tx *Transaction) UnmarshalJSON(input []byte) error {
 		return err
 	}
 	var V byte
-	if isProtectedV(dec.V) {
-		chainID := deriveChainId(dec.V).Uint64()
-		V = byte(dec.V.Uint64() - 35 - 2*chainID)
-	} else {
-		V = byte(dec.V.Uint64() - 27)
-	}
+	chainID := deriveChainId(dec.V).Uint64()
+	V = byte(dec.V.Uint64() - 35 - 2*chainID)
 	if !crypto.ValidateSignatureValues(V, dec.R, dec.S, false) {
 		return ErrInvalidSig
 	}
@@ -419,8 +411,3 @@ func (m Message) Gas() uint64          { return m.gasLimit }
 func (m Message) Nonce() uint64        { return m.nonce }
 func (m Message) Data() []byte         { return m.data }
 func (m Message) CheckNonce() bool     { return m.checkNonce }
-
-//之后删除
-func (m *Message) SetData(data []byte) {
-	m.data = data
-}

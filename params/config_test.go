@@ -39,10 +39,10 @@ func TestCheckCompatible(t *testing.T) {
 		},
 		{
 			stored: TestChainConfig,
-			new:    &ChainConfig{HomesteadBlock: nil},
+			new:    &ChainConfig{HubbleBlock: nil},
 			head:   3,
 			wantErr: &ConfigCompatError{
-				What:         "Homestead fork block",
+				What:         "Hubble fork block",
 				StoredConfig: big.NewInt(0),
 				NewConfig:    nil,
 				RewindTo:     0,
@@ -50,18 +50,18 @@ func TestCheckCompatible(t *testing.T) {
 		},
 		{
 			stored: TestChainConfig,
-			new:    &ChainConfig{HomesteadBlock: big.NewInt(1)},
+			new:    &ChainConfig{HubbleBlock: big.NewInt(1)},
 			head:   3,
 			wantErr: &ConfigCompatError{
-				What:         "Homestead fork block",
+				What:         "Hubble fork block",
 				StoredConfig: big.NewInt(0),
 				NewConfig:    big.NewInt(1),
 				RewindTo:     0,
 			},
 		},
 		{
-			stored: &ChainConfig{HomesteadBlock: big.NewInt(30), EIP150Block: big.NewInt(10)},
-			new:    &ChainConfig{HomesteadBlock: big.NewInt(25), EIP150Block: big.NewInt(20)},
+			stored: &ChainConfig{HubbleBlock: big.NewInt(30), EIP150Block: big.NewInt(10)},
+			new:    &ChainConfig{HubbleBlock: big.NewInt(25), EIP150Block: big.NewInt(20)},
 			head:   25,
 			wantErr: &ConfigCompatError{
 				What:         "EIP150 fork block",

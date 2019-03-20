@@ -28,17 +28,17 @@ func TestTransaction(t *testing.T) {
 
 	txt := new(testMatcher)
 	txt.config(`^Homestead/`, params.ChainConfig{
-		HomesteadBlock: big.NewInt(0),
+		HubbleBlock: big.NewInt(0),
 	})
 	txt.config(`^EIP155/`, params.ChainConfig{
-		HomesteadBlock: big.NewInt(0),
-		EIP150Block:    big.NewInt(0),
-		EIP155Block:    big.NewInt(0),
-		EIP158Block:    big.NewInt(0),
-		ChainID:        big.NewInt(1),
+		HubbleBlock: big.NewInt(0),
+		EIP150Block: big.NewInt(0),
+		EIP155Block: big.NewInt(0),
+		EIP158Block: big.NewInt(0),
+		ChainID:     big.NewInt(1),
 	})
 	txt.config(`^Byzantium/`, params.ChainConfig{
-		HomesteadBlock: big.NewInt(0),
+		HubbleBlock:    big.NewInt(0),
 		EIP150Block:    big.NewInt(0),
 		EIP155Block:    big.NewInt(0),
 		EIP158Block:    big.NewInt(0),

@@ -25,12 +25,12 @@ import (
 	"github.com/vntchain/go-vnt/vntclient"
 )
 
-// EthereumClient provides access to the VNT APIs.
+// VNTClient provides access to the VNT APIs.
 type VNTClient struct {
 	client *vntclient.Client
 }
 
-// NewEthereumClient connects a client to the given URL.
+// NewVNTClient connects a client to the given URL.
 func NewVNTClient(rawurl string) (client *VNTClient, _ error) {
 	rawClient, err := vntclient.Dial(rawurl)
 	return &VNTClient{rawClient}, err
