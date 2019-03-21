@@ -26,9 +26,11 @@ import (
 	"github.com/vntchain/go-vnt/contracts/ens/contract"
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/crypto"
+	"github.com/vntchain/go-vnt/params"
 )
 
 var (
+	chainID  = params.TestChainConfig.ChainID
 	key, _   = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	name     = "my name on ENS"
 	hash     = crypto.Keccak256Hash([]byte("my content"))
@@ -40,7 +42,7 @@ func TestENS(t *testing.T) {
 	contractBackend := backends.NewSimulatedBackend(core.GenesisAlloc{addr: {Balance: big.NewInt(1000000000)}})
 	transactOpts := bind.NewKeyedTransactor(key)
 
-	ensAddr, ens, err := DeployENS(transactOpts, contractBackend)
+	ensAddr, ens, err := DeployENS(chainID, transactOpts, contractBackend)
 	if err != nil {
 		t.Fatalf("can't deploy root registry: %v", err)
 	}
@@ -53,7 +55,7 @@ func TestENS(t *testing.T) {
 	contractBackend.Commit()
 
 	// Deploy a resolver and make it responsible for the name.
-	resolverAddr, _, _, err := contract.DeployPublicResolver(transactOpts, contractBackend, ensAddr)
+	resolverAddr, _, _, err := contract.DeployPublicResolver(chainID, transactOpts, contractBackend, ensAddr)
 	if err != nil {
 		t.Fatalf("can't deploy resolver: %v", err)
 	}

@@ -41,14 +41,14 @@ func TestSetupGenesis(t *testing.T) {
 	var (
 		customghash = common.HexToHash("0x5ebf429a94e504ecb570a2c0591ef098ffd1307d35152f0572c503ec442db4a3")
 		customg     = Genesis{
-			Config: &params.ChainConfig{HomesteadBlock: big.NewInt(3)},
+			Config: &params.ChainConfig{HubbleBlock: big.NewInt(3)},
 			Alloc: GenesisAlloc{
 				{1}: {Balance: big.NewInt(1), Storage: map[common.Hash]common.Hash{{1}: {1}}},
 			},
 		}
 		oldcustomg = customg
 	)
-	oldcustomg.Config = &params.ChainConfig{HomesteadBlock: big.NewInt(2)}
+	oldcustomg.Config = &params.ChainConfig{HubbleBlock: big.NewInt(2)}
 	tests := []struct {
 		name       string
 		fn         func(vntdb.Database) (*params.ChainConfig, common.Hash, error)
@@ -102,8 +102,8 @@ func TestSetupGenesis(t *testing.T) {
 		{
 			name: "incompatible config in DB",
 			fn: func(db vntdb.Database) (*params.ChainConfig, common.Hash, error) {
-				// Commit the 'old' genesis block with Homestead transition at #2.
-				// Advance to block #4, past the homestead transition block of customg.
+				// Commit the 'old' genesis block with Hubble transition at #2.
+				// Advance to block #4, past the Hubble transition block of customg.
 				genesis := oldcustomg.MustCommit(db)
 
 				bc, _ := NewBlockChain(db, nil, oldcustomg.Config, mock.NewMock(), vm.Config{})
@@ -118,7 +118,7 @@ func TestSetupGenesis(t *testing.T) {
 			wantHash:   customghash,
 			wantConfig: customg.Config,
 			wantErr: &params.ConfigCompatError{
-				What:         "Homestead fork block",
+				What:         "Hubble fork block",
 				StoredConfig: big.NewInt(2),
 				NewConfig:    big.NewInt(3),
 				RewindTo:     1,

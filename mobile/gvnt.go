@@ -193,7 +193,7 @@ func (n *Node) Stop() error {
 	return n.node.Stop()
 }
 
-// GetEthereumClient retrieves a client to access the VNT subsystem.
+// GetVNTClient retrieves a client to access the VNT subsystem.
 func (n *Node) GetVNTClient() (client *VNTClient, _ error) {
 	rpc, err := n.node.Attach()
 	if err != nil {

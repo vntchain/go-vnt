@@ -72,16 +72,7 @@ func NewInterpreter(evm *EVM, cfg Config) *Interpreter {
 	// the jump table was initialised. If it was not
 	// we'll set the default jump table.
 	if !cfg.JumpTable[STOP].valid {
-		switch {
-		case evm.ChainConfig().IsConstantinople(evm.BlockNumber):
-			cfg.JumpTable = constantinopleInstructionSet
-		case evm.ChainConfig().IsByzantium(evm.BlockNumber):
-			cfg.JumpTable = byzantiumInstructionSet
-		case evm.ChainConfig().IsHomestead(evm.BlockNumber):
-			cfg.JumpTable = homesteadInstructionSet
-		default:
-			cfg.JumpTable = frontierInstructionSet
-		}
+		cfg.JumpTable = constantinopleInstructionSet
 	}
 
 	return &Interpreter{
@@ -93,16 +84,14 @@ func NewInterpreter(evm *EVM, cfg Config) *Interpreter {
 }
 
 func (in *Interpreter) enforceRestrictions(op OpCode, operation operation, stack *Stack) error {
-	if in.evm.chainRules.IsByzantium {
-		if in.readOnly {
-			// If the interpreter is operating in readonly mode, make sure no
-			// state-modifying operation is performed. The 3rd stack item
-			// for a call operation is the value. Transferring value from one
-			// account to the others means the state is modified and should also
-			// return with an error.
-			if operation.writes || (op == CALL && stack.Back(2).BitLen() > 0) {
-				return errWriteProtection
-			}
+	if in.readOnly {
+		// If the interpreter is operating in readonly mode, make sure no
+		// state-modifying operation is performed. The 3rd stack item
+		// for a call operation is the value. Transferring value from one
+		// account to the others means the state is modified and should also
+		// return with an error.
+		if operation.writes || (op == CALL && stack.Back(2).BitLen() > 0) {
+			return errWriteProtection
 		}
 	}
 	return nil

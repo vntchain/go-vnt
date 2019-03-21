@@ -297,8 +297,8 @@ func (b *SimulatedBackend) callContract(ctx context.Context, call hubble.CallMsg
 func (b *SimulatedBackend) SendTransaction(ctx context.Context, tx *types.Transaction) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-
-	sender, err := types.Sender(types.HomesteadSigner{}, tx)
+	signer := types.NewHubbleSigner(b.config.ChainID)
+	sender, err := types.Sender(signer, tx)
 	if err != nil {
 		panic(fmt.Errorf("invalid transaction: %v", err))
 	}

@@ -66,6 +66,7 @@ func BenchmarkInsertChain_ring1000_diskdb(b *testing.B) {
 }
 
 var (
+	chainID = big.NewInt(10000)
 	// This is the content of the genesis block used by the benchmarks.
 	benchRootKey, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	benchRootAddr   = crypto.PubkeyToAddress(benchRootKey.PublicKey)
@@ -79,8 +80,9 @@ func genValueTx(nbytes int) func(int, *BlockGen) {
 	return func(i int, gen *BlockGen) {
 		toaddr := common.Address{}
 		data := make([]byte, nbytes)
-		gas, _ := IntrinsicGas(data, false, false)
-		tx, _ := types.SignTx(types.NewTransaction(gen.TxNonce(benchRootAddr), toaddr, big.NewInt(1), gas, nil, data), types.HomesteadSigner{}, benchRootKey)
+		gas, _ := IntrinsicGas(data, false)
+		signer := types.NewHubbleSigner(chainID)
+		tx, _ := types.SignTx(types.NewTransaction(gen.TxNonce(benchRootAddr), toaddr, big.NewInt(1), gas, nil, data), signer, benchRootKey)
 		gen.AddTx(tx)
 	}
 }
@@ -120,7 +122,8 @@ func genTxRing(naccounts int) func(int, *BlockGen) {
 				nil,
 				nil,
 			)
-			tx, _ = types.SignTx(tx, types.HomesteadSigner{}, ringKeys[from])
+			signer := types.NewHubbleSigner(chainID)
+			tx, _ = types.SignTx(tx, signer, ringKeys[from])
 			gen.AddTx(tx)
 			from = to
 		}

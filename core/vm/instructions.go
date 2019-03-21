@@ -25,7 +25,6 @@ import (
 	"github.com/vntchain/go-vnt/common/math"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/crypto"
-	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/params"
 )
 
@@ -413,7 +412,6 @@ func opCallValue(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack
 func opCallDataLoad(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	start := stack.pop()
 	databig := getDataBig(contract.Input, start, big32)
-	log.Debug("instructions", "function", "opCallDataLoad", "input", contract.Input, "start", start, "get data big", databig)
 	stack.push(evm.interpreter.intPool.get().SetBytes(databig))
 	return nil, nil
 }
@@ -642,9 +640,7 @@ func opCreate(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *S
 		input        = memory.Get(offset.Int64(), size.Int64())
 		gas          = contract.Gas
 	)
-	if evm.ChainConfig().IsEIP150(evm.BlockNumber) {
-		gas -= gas / 64
-	}
+	gas -= gas / 64
 
 	contract.UseGas(gas)
 	res, addr, returnGas, suberr := evm.Create(contract, input, gas, value)
@@ -652,7 +648,7 @@ func opCreate(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *S
 	// homestead we must check for CodeStoreOutOfGasError (homestead only
 	// rule) and treat as an error, if the ruleset is frontier we must
 	// ignore this error and pretend the operation was successful.
-	if evm.ChainConfig().IsHomestead(evm.BlockNumber) && suberr == ErrCodeStoreOutOfGas {
+	if suberr == ErrCodeStoreOutOfGas {
 		stack.push(evm.interpreter.intPool.getZero())
 	} else if suberr != nil && suberr != ErrCodeStoreOutOfGas {
 		stack.push(evm.interpreter.intPool.getZero())

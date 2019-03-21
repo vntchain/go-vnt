@@ -88,6 +88,7 @@ var ContractParams = &Params{contract.ChequebookBin, contract.ChequebookABI}
 // Chequebook can create and sign cheques from a single contract to multiple beneficiaries.
 // It is the outgoing payment handler for peer to peer micropayments.
 type Chequebook struct {
+	chainID  *big.Int
 	path     string                      // path to chequebook file
 	prvKey   *ecdsa.PrivateKey           // private key to sign cheque with
 	lock     sync.Mutex                  //
@@ -114,11 +115,11 @@ func (self *Chequebook) String() string {
 }
 
 // NewChequebook creates a new Chequebook.
-func NewChequebook(path string, contractAddr common.Address, prvKey *ecdsa.PrivateKey, backend Backend) (self *Chequebook, err error) {
+func NewChequebook(chainID *big.Int, path string, contractAddr common.Address, prvKey *ecdsa.PrivateKey, backend Backend) (self *Chequebook, err error) {
 	balance := new(big.Int)
 	sent := make(map[common.Address]*big.Int)
 
-	chbook, err := contract.NewChequebook(contractAddr, backend)
+	chbook, err := contract.NewChequebook(chainID, contractAddr, backend)
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +130,7 @@ func NewChequebook(path string, contractAddr common.Address, prvKey *ecdsa.Priva
 	}
 
 	self = &Chequebook{
+		chainID:      chainID,
 		prvKey:       prvKey,
 		balance:      balance,
 		contractAddr: contractAddr,
@@ -158,13 +160,13 @@ func (self *Chequebook) setBalanceFromBlockChain() {
 }
 
 // LoadChequebook loads a chequebook from disk (file path).
-func LoadChequebook(path string, prvKey *ecdsa.PrivateKey, backend Backend, checkBalance bool) (self *Chequebook, err error) {
+func LoadChequebook(chainID *big.Int, path string, prvKey *ecdsa.PrivateKey, backend Backend, checkBalance bool) (self *Chequebook, err error) {
 	var data []byte
 	data, err = ioutil.ReadFile(path)
 	if err != nil {
 		return
 	}
-	self, _ = NewChequebook(path, common.Address{}, prvKey, backend)
+	self, _ = NewChequebook(chainID, path, common.Address{}, prvKey, backend)
 
 	err = json.Unmarshal(data, self)
 	if err != nil {
@@ -338,7 +340,7 @@ func (self *Chequebook) deposit(amount *big.Int) (string, error) {
 	// since the amount is variable here, we do not use sessions
 	depositTransactor := bind.NewKeyedTransactor(self.prvKey)
 	depositTransactor.Value = amount
-	chbookRaw := &contract.ChequebookRaw{Contract: self.contract}
+	chbookRaw := &contract.ChequebookRaw{ChainID: self.chainID, Contract: self.contract}
 	tx, err := chbookRaw.Transfer(depositTransactor)
 	if err != nil {
 		self.log.Warn("Failed to fund chequebook", "amount", amount, "balance", self.balance, "target", self.buffer, "err", err)
@@ -429,6 +431,7 @@ func (self *Outbox) String() string {
 // Inbox can deposit, verify and cash cheques from a single contract to a single
 // beneficiary. It is the incoming payment handler for peer to peer micropayments.
 type Inbox struct {
+	chainID     *big.Int
 	lock        sync.Mutex
 	contract    common.Address              // peer's chequebook contract
 	beneficiary common.Address              // local peer's receiving address
@@ -445,11 +448,11 @@ type Inbox struct {
 
 // NewInbox creates an Inbox. An Inboxes is not persisted, the cumulative sum is updated
 // from blockchain when first cheque is received.
-func NewInbox(prvKey *ecdsa.PrivateKey, contractAddr, beneficiary common.Address, signer *ecdsa.PublicKey, abigen bind.ContractBackend) (self *Inbox, err error) {
+func NewInbox(chainID *big.Int, prvKey *ecdsa.PrivateKey, contractAddr, beneficiary common.Address, signer *ecdsa.PublicKey, abigen bind.ContractBackend) (self *Inbox, err error) {
 	if signer == nil {
 		return nil, fmt.Errorf("signer is null")
 	}
-	chbook, err := contract.NewChequebook(contractAddr, abigen)
+	chbook, err := contract.NewChequebook(chainID, contractAddr, abigen)
 	if err != nil {
 		return nil, err
 	}
@@ -462,6 +465,7 @@ func NewInbox(prvKey *ecdsa.PrivateKey, contractAddr, beneficiary common.Address
 	sender := transactOpts.From
 
 	self = &Inbox{
+		chainID:     chainID,
 		contract:    contractAddr,
 		beneficiary: beneficiary,
 		sender:      sender,

@@ -518,13 +518,8 @@ func (gas GasCounter) GasCall(address common.Address, value, gasLimit, blockNumb
 	var (
 		callgas        = gas.GasTable.Calls
 		transfersValue = value.Sign() != 0
-		eip158         = chainConfig.IsEIP158(blockNumber)
 	)
-	if eip158 {
-		if transfersValue && statedb.Empty(address) {
-			callgas += params.CallNewAccountGas
-		}
-	} else if !statedb.Exist(address) {
+	if transfersValue && statedb.Empty(address) {
 		callgas += params.CallNewAccountGas
 	}
 	if transfersValue {

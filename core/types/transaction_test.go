@@ -37,7 +37,7 @@ var (
 		big.NewInt(0), 0, big.NewInt(0),
 		nil,
 	)
-
+	signer        = NewHubbleSigner(big.NewInt(10000))
 	rightvrsTx, _ = NewTransaction(
 		3,
 		common.HexToAddress("b94f5374fce5edbc8e2a8697c15331677e6ebf0b"),
@@ -46,17 +46,16 @@ var (
 		big.NewInt(1),
 		common.FromHex("5544"),
 	).WithSignature(
-		HomesteadSigner{},
+		signer,
 		common.Hex2Bytes("98ff921201554726367d2be8c804a7ff89ccf285ebc57dff8ae4c44b9c19ac4a8887321be575c8095f789dd4c743dfe42c1820f9231f98a962b210e3ac2452a301"),
 	)
 )
 
 func TestTransactionSigHash(t *testing.T) {
-	var homestead HomesteadSigner
-	if homestead.Hash(emptyTx) != common.HexToHash("c775b99e7ad12f50d819fcd602390467e28141316969f4b57f0626f74fe3b386") {
+	if signer.Hash(emptyTx) != common.HexToHash("c019e296cbbbd4af58b8178dca34062a0fdbc0b1c20f7ddc96689e690a6718b8") {
 		t.Errorf("empty transaction hash mismatch, got %x", emptyTx.Hash())
 	}
-	if homestead.Hash(rightvrsTx) != common.HexToHash("fe7a79529ed5f7c3375d06b26b186a8644e0e16c373d7a12be41c62d6042b77a") {
+	if signer.Hash(rightvrsTx) != common.HexToHash("d72456b388ee34e28df60e3e8b4a1049e64a4329e49c050e38c19805d8a6f594") {
 		t.Errorf("RightVRS transaction hash mismatch, got %x", rightvrsTx.Hash())
 	}
 }
@@ -66,7 +65,7 @@ func TestTransactionEncode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("encode error: %v", err)
 	}
-	should := common.FromHex("f86103018207d094b94f5374fce5edbc8e2a8697c15331677e6ebf0b0a8255441ca098ff921201554726367d2be8c804a7ff89ccf285ebc57dff8ae4c44b9c19ac4aa08887321be575c8095f789dd4c743dfe42c1820f9231f98a962b210e3ac2452a3")
+	should := common.FromHex("f86303018207d094b94f5374fce5edbc8e2a8697c15331677e6ebf0b0a825544824e44a098ff921201554726367d2be8c804a7ff89ccf285ebc57dff8ae4c44b9c19ac4aa08887321be575c8095f789dd4c743dfe42c1820f9231f98a962b210e3ac2452a3")
 	if !bytes.Equal(txb, should) {
 		t.Errorf("encoded RLP mismatch, got %x", txb)
 	}
@@ -87,13 +86,13 @@ func defaultTestKey() (*ecdsa.PrivateKey, common.Address) {
 
 func TestRecipientEmpty(t *testing.T) {
 	_, addr := defaultTestKey()
-	tx, err := decodeTx(common.Hex2Bytes("f8498080808080011ca09b16de9d5bdee2cf56c28d16275a4da68cd30273e2525f3959f5d62557489921a0372ebd8fb3345f7db7b5a86d42e24d36e983e259b0664ceb8c227ec9af572f3d"))
+	tx, err := decodeTx(common.Hex2Bytes("f86303018207d094b94f5374fce5edbc8e2a8697c15331677e6ebf0b0a825544824e44a0ecc37fc3d519db2e7a991076ac78741b26ef177612cbb83841da768f0c8621bea0509db19a20b0296be9ac82749d1828724736f485f5c8d67568ced04d60a2c82c"))
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 
-	from, err := Sender(HomesteadSigner{}, tx)
+	from, err := Sender(signer, tx)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -106,13 +105,13 @@ func TestRecipientEmpty(t *testing.T) {
 func TestRecipientNormal(t *testing.T) {
 	_, addr := defaultTestKey()
 
-	tx, err := decodeTx(common.Hex2Bytes("f85d80808094000000000000000000000000000000000000000080011ca0527c0d8f5c63f7b9f41324a7c8a563ee1190bcbf0dac8ab446291bdbf32f5c79a0552c4ef0a09a04395074dab9ed34d3fbfb843c2f2546cc30fe89ec143ca94ca6"))
+	tx, err := decodeTx(common.Hex2Bytes("f85f8080809400000000000000000000000000000000000000008001824e43a0d89930c3cb6c3af4542f9343ae9a64dae83d2c6f8577891183b5607109bdaae4a004e208c8fcb4d42be39f2e0a88ad30cf0322111b70f300804d778dcd0e30d558"))
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
 
-	from, err := Sender(HomesteadSigner{}, tx)
+	from, err := Sender(signer, tx)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -133,7 +132,6 @@ func TestTransactionPriceNonceSort(t *testing.T) {
 		keys[i], _ = crypto.GenerateKey()
 	}
 
-	signer := HomesteadSigner{}
 	// Generate a batch of transactions with overlapping values, but shifted nonces
 	groups := map[common.Address]Transactions{}
 	for start, key := range keys {
@@ -183,7 +181,6 @@ func TestTransactionJSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not generate key: %v", err)
 	}
-	signer := NewEIP155Signer(common.Big1)
 
 	for i := uint64(0); i < 25; i++ {
 		var tx *Transaction
