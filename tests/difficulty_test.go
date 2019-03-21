@@ -26,9 +26,8 @@ import (
 
 var (
 	mainnetChainConfig = params.ChainConfig{
-		ChainID:        big.NewInt(1),
-		HubbleBlock:    big.NewInt(1150000),
-		ByzantiumBlock: big.NewInt(4370000),
+		ChainID:     big.NewInt(1),
+		HubbleBlock: big.NewInt(1150000),
 	}
 )
 
@@ -56,7 +55,7 @@ func TestDifficulty(t *testing.T) {
 	})
 
 	dt.config("Byzantium", params.ChainConfig{
-		ByzantiumBlock: big.NewInt(0),
+	// ByzantiumBlock: big.NewInt(0),
 	})
 
 	dt.config("MainNetwork", mainnetChainConfig)

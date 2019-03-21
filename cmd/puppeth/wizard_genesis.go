@@ -39,8 +39,7 @@ func (w *wizard) makeGenesis() {
 		Difficulty: big.NewInt(524288),
 		Alloc:      make(core.GenesisAlloc),
 		Config: &params.ChainConfig{
-			HubbleBlock:    big.NewInt(1),
-			ByzantiumBlock: big.NewInt(4),
+			HubbleBlock: big.NewInt(1),
 		},
 	}
 	// Figure out which consensus engine to choose
@@ -142,10 +141,6 @@ func (w *wizard) manageGenesis() {
 		fmt.Println()
 		fmt.Printf("Which block should Hubble come into effect? (default = %v)\n", w.conf.Genesis.Config.HubbleBlock)
 		w.conf.Genesis.Config.HubbleBlock = w.readDefaultBigInt(w.conf.Genesis.Config.HubbleBlock)
-
-		fmt.Println()
-		fmt.Printf("Which block should Byzantium come into effect? (default = %v)\n", w.conf.Genesis.Config.ByzantiumBlock)
-		w.conf.Genesis.Config.ByzantiumBlock = w.readDefaultBigInt(w.conf.Genesis.Config.ByzantiumBlock)
 
 		out, _ := json.MarshalIndent(w.conf.Genesis.Config, "", "  ")
 		fmt.Printf("Chain configuration updated:\n\n%s\n", out)

@@ -37,9 +37,8 @@ var Forks = map[string]*params.ChainConfig{
 		HubbleBlock: big.NewInt(0),
 	},
 	"Byzantium": {
-		ChainID:        big.NewInt(1),
-		HubbleBlock:    big.NewInt(0),
-		ByzantiumBlock: big.NewInt(0),
+		ChainID:     big.NewInt(1),
+		HubbleBlock: big.NewInt(0),
 	},
 	"FrontierToHomesteadAt5": {
 		ChainID:     big.NewInt(1),
@@ -50,9 +49,8 @@ var Forks = map[string]*params.ChainConfig{
 		HubbleBlock: big.NewInt(0),
 	},
 	"EIP158ToByzantiumAt5": {
-		ChainID:        big.NewInt(1),
-		HubbleBlock:    big.NewInt(0),
-		ByzantiumBlock: big.NewInt(5),
+		ChainID:     big.NewInt(1),
+		HubbleBlock: big.NewInt(0),
 	},
 }
 

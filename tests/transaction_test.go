@@ -27,12 +27,9 @@ func TestTransaction(t *testing.T) {
 	t.Parallel()
 
 	txt := new(testMatcher)
-	txt.config(`^Homestead/`, params.ChainConfig{
+	txt.config(`^Hubble/`, params.ChainConfig{
+		ChainID:     big.NewInt(1),
 		HubbleBlock: big.NewInt(0),
-	})
-	txt.config(`^Byzantium/`, params.ChainConfig{
-		HubbleBlock:    big.NewInt(0),
-		ByzantiumBlock: big.NewInt(0),
 	})
 
 	txt.walk(t, transactionTestDir, func(t *testing.T, name string, test *TransactionTest) {

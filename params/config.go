@@ -31,10 +31,8 @@ var (
 var (
 	// MainnetChainConfig is the chain parameters to run a node on the main network.
 	MainnetChainConfig = &ChainConfig{
-		ChainID:             big.NewInt(1),
-		HubbleBlock:         big.NewInt(1150000),
-		ByzantiumBlock:      big.NewInt(4370000),
-		ConstantinopleBlock: nil,
+		ChainID:     big.NewInt(1),
+		HubbleBlock: big.NewInt(1150000),
 		Dpos: &DposConfig{
 			Period:       2,
 			WitnessesNum: 4,
@@ -43,10 +41,8 @@ var (
 
 	// TestnetChainConfig contains the chain parameters to run a node on the Ropsten test network.
 	TestnetChainConfig = &ChainConfig{
-		ChainID:             big.NewInt(3),
-		HubbleBlock:         big.NewInt(0),
-		ByzantiumBlock:      big.NewInt(1700000),
-		ConstantinopleBlock: nil,
+		ChainID:     big.NewInt(3),
+		HubbleBlock: big.NewInt(0),
 		Dpos: &DposConfig{
 			Period:       2,
 			WitnessesNum: 4,
@@ -55,10 +51,8 @@ var (
 
 	// RinkebyChainConfig contains the chain parameters to run a node on the Rinkeby test network.
 	RinkebyChainConfig = &ChainConfig{
-		ChainID:             big.NewInt(4),
-		HubbleBlock:         big.NewInt(1),
-		ByzantiumBlock:      big.NewInt(1035301),
-		ConstantinopleBlock: nil,
+		ChainID:     big.NewInt(4),
+		HubbleBlock: big.NewInt(1),
 	}
 
 	// AllCliqueProtocolChanges contains every protocol change (EIPs) introduced
@@ -69,15 +63,13 @@ var (
 	AllCliqueProtocolChanges = &ChainConfig{
 		big.NewInt(1337),
 		big.NewInt(0),
-		big.NewInt(0),
-		big.NewInt(0),
 		&DposConfig{
 			WitnessesNum: 4,
 			Period:       2,
 		},
 	}
 
-	TestChainConfig = &ChainConfig{big.NewInt(1), big.NewInt(0), big.NewInt(0), nil, nil}
+	TestChainConfig = &ChainConfig{big.NewInt(1), nil, nil}
 	TestRules       = TestChainConfig.Rules(new(big.Int))
 )
 
@@ -89,10 +81,7 @@ var (
 type ChainConfig struct {
 	ChainID *big.Int `json:"chainId"` // chainId identifies the current chain and is used for replay protection
 
-	HubbleBlock *big.Int `json:"homesteadBlock,omitempty"` // Hubble switch block (nil = no fork, 0 = already hubble)
-
-	ByzantiumBlock      *big.Int `json:"byzantiumBlock,omitempty"`      // Byzantium switch block (nil = no fork, 0 = already on byzantium)
-	ConstantinopleBlock *big.Int `json:"constantinopleBlock,omitempty"` // Constantinople switch block (nil = no fork, 0 = already activated)
+	HubbleBlock *big.Int `json:"HubbleBlock,omitempty"` // Hubble switch block (nil = no fork, 0 = already hubble)
 
 	// Various consensus engines
 	Dpos *DposConfig `json:"dpos,omitempty"`
@@ -119,11 +108,9 @@ func (c *ChainConfig) String() string {
 		engine = "unknown"
 	}
 
-	return fmt.Sprintf("{ChainID: %v Hubble: %v Byzantium: %v Constantinople: %v Engine: %v}",
+	return fmt.Sprintf("{ChainID: %v Hubble: %v Engine: %v}",
 		c.ChainID,
 		c.HubbleBlock,
-		c.ByzantiumBlock,
-		c.ConstantinopleBlock,
 		engine,
 	)
 }
@@ -133,17 +120,7 @@ func (c *ChainConfig) IsHubble(num *big.Int) bool {
 	return isForked(c.HubbleBlock, num)
 }
 
-// IsByzantium returns whether num is either equal to the Byzantium fork block or greater.
-func (c *ChainConfig) IsByzantium(num *big.Int) bool {
-	return isForked(c.ByzantiumBlock, num)
-}
-
-// IsConstantinople returns whether num is either equal to the Constantinople fork block or greater.
-func (c *ChainConfig) IsConstantinople(num *big.Int) bool {
-	return isForked(c.ConstantinopleBlock, num)
-}
-
-// GasTable returns the gas table corresponding to the current phase (homestead or homestead reprice).
+// GasTable returns the gas table corresponding to the current phase .
 //
 // The returned GasTable's fields shouldn't, under any circumstances, be changed.
 func (c *ChainConfig) GasTable(num *big.Int) GasTable {
@@ -177,12 +154,6 @@ func (c *ChainConfig) CheckCompatible(newcfg *ChainConfig, height uint64) *Confi
 func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, head *big.Int) *ConfigCompatError {
 	if isForkIncompatible(c.HubbleBlock, newcfg.HubbleBlock, head) {
 		return newCompatError("Hubble fork block", c.HubbleBlock, newcfg.HubbleBlock)
-	}
-	if isForkIncompatible(c.ByzantiumBlock, newcfg.ByzantiumBlock, head) {
-		return newCompatError("Byzantium fork block", c.ByzantiumBlock, newcfg.ByzantiumBlock)
-	}
-	if isForkIncompatible(c.ConstantinopleBlock, newcfg.ConstantinopleBlock, head) {
-		return newCompatError("Constantinople fork block", c.ConstantinopleBlock, newcfg.ConstantinopleBlock)
 	}
 	return nil
 }
@@ -248,9 +219,8 @@ func (err *ConfigCompatError) Error() string {
 // Rules is a one time interface meaning that it shouldn't be used in between transition
 // phases.
 type Rules struct {
-	ChainID     *big.Int
-	IsHubble    bool
-	IsByzantium bool
+	ChainID  *big.Int
+	IsHubble bool
 }
 
 // Rules ensures c's ChainID is not nil.
@@ -259,5 +229,5 @@ func (c *ChainConfig) Rules(num *big.Int) Rules {
 	if chainID == nil {
 		chainID = new(big.Int)
 	}
-	return Rules{ChainID: new(big.Int).Set(chainID), IsHubble: c.IsHubble(num), IsByzantium: c.IsByzantium(num)}
+	return Rules{ChainID: new(big.Int).Set(chainID), IsHubble: c.IsHubble(num)}
 }

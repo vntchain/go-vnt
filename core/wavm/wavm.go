@@ -86,10 +86,7 @@ func (wavm *WAVM) GetChainConfig() *params.ChainConfig {
 // run runs the given contract and takes care of running precompiles with a fallback to the byte code interpreter.
 func runWavm(wavm *WAVM, contract *wasmcontract.WASMContract, input []byte, isCreate bool) ([]byte, error) {
 	if contract.CodeAddr != nil {
-		precompiles := vm.PrecompiledContractsHomestead
-		if wavm.ChainConfig().IsByzantium(wavm.BlockNumber) {
-			precompiles = vm.PrecompiledContractsByzantium
-		}
+		precompiles := vm.PrecompiledContractsHubble
 		if p := precompiles[*contract.CodeAddr]; p != nil {
 			return vm.RunPrecompiledContract(wavm, p, input, contract)
 		}
@@ -250,7 +247,7 @@ func (wavm *WAVM) Create(caller vm.ContractRef, code []byte, gas uint64, value *
 
 	// When an error was returned by the wavm or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
-	// when we're in homestead this also counts for code storage gas errors.
+	// also counts for code storage gas errors.
 	if maxCodeSizeExceeded || err != nil {
 		wavm.StateDB.RevertToSnapshot(snapshot)
 		if err.Error() != errorsmsg.ErrExecutionReverted.Error() {
@@ -290,10 +287,7 @@ func (wavm *WAVM) Call(caller vm.ContractRef, addr common.Address, input []byte,
 		snapshot = wavm.StateDB.Snapshot()
 	)
 	if !wavm.StateDB.Exist(addr) {
-		precompiles := vm.PrecompiledContractsHomestead
-		if wavm.ChainConfig().IsByzantium(wavm.BlockNumber) {
-			precompiles = vm.PrecompiledContractsByzantium
-		}
+		precompiles := vm.PrecompiledContractsHubble
 		if precompiles[addr] == nil && value.Sign() == 0 {
 			// Calling a non existing account, don't do antything, but ping the tracer
 			// if wavm.vmConfig.Debug && wavm.depth == 0 {
@@ -327,7 +321,7 @@ func (wavm *WAVM) Call(caller vm.ContractRef, addr common.Address, input []byte,
 	ret, err = runWavm(wavm, contract, input, false)
 	// When an error was returned by the EVM or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
-	// when we're in homestead this also counts for code storage gas errors.
+	// this also counts for code storage gas errors.
 	if err != nil {
 		wavm.StateDB.RevertToSnapshot(snapshot)
 		if err.Error() != errorsmsg.ErrExecutionReverted.Error() && !bytes.Equal(to.Address().Bytes(), electionAddress.Bytes()) {
