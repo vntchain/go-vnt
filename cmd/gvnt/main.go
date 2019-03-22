@@ -390,17 +390,17 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 	if ctx.GlobalBool(utils.ProducingEnabledFlag.Name) {
 		// Producing only makes sense if a full VNT node is running
 		if ctx.GlobalString(utils.SyncModeFlag.Name) == "light" {
-			utils.Fatalf("Light clients do not support mining")
+			utils.Fatalf("Light clients do not support block producing")
 		}
 		var vnt *vnt.VNT
 		if err := stack.Service(&vnt); err != nil {
 			utils.Fatalf("VNT service not running: %v", err)
 		}
 
-		// Set the gas price to the limits from the CLI and start mining
+		// Set the gas price to the limits from the CLI and start producing
 		vnt.TxPool().SetGasPrice(utils.GlobalBig(ctx, utils.GasPriceFlag.Name))
-		if err := vnt.StartMining(true); err != nil {
-			utils.Fatalf("Failed to start mining: %v", err)
+		if err := vnt.StartProducing(true); err != nil {
+			utils.Fatalf("Failed to start block producing: %v", err)
 		}
 	}
 }

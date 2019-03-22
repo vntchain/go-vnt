@@ -647,25 +647,25 @@ func (s *Service) reportPending(conn *websocket.Conn) error {
 
 // nodeStats is the information to report about the local node.
 type nodeStats struct {
-	Active   bool `json:"active"`
-	Syncing  bool `json:"syncing"`
-	Mining   bool `json:"mining"`
-	Peers    int  `json:"peers"`
-	GasPrice int  `json:"gasPrice"`
-	Uptime   int  `json:"uptime"`
+	Active    bool `json:"active"`
+	Syncing   bool `json:"syncing"`
+	Producing bool `json:"producing"`
+	Peers     int  `json:"peers"`
+	GasPrice  int  `json:"gasPrice"`
+	Uptime    int  `json:"uptime"`
 }
 
 // reportPending retrieves various stats about the node at the networking and
-// mining layer and reports it to the stats server.
+// block producing layer and reports it to the stats server.
 func (s *Service) reportStats(conn *websocket.Conn) error {
-	// Gather the syncing and mining infos from the local miner instance
+	// Gather the syncing and block producing infos from the local miner instance
 	var (
-		mining   bool
-		syncing  bool
-		gasprice int
+		producing bool
+		syncing   bool
+		gasprice  int
 	)
 	if s.vnt != nil {
-		mining = s.vnt.Miner().Mining()
+		producing = s.vnt.Miner().Producing()
 
 		sync := s.vnt.Downloader().Progress()
 		syncing = s.vnt.BlockChain().CurrentHeader().Number.Uint64() >= sync.HighestBlock
@@ -682,12 +682,12 @@ func (s *Service) reportStats(conn *websocket.Conn) error {
 	stats := map[string]interface{}{
 		"id": s.node,
 		"stats": &nodeStats{
-			Active:   true,
-			Mining:   mining,
-			Peers:    s.server.PeerCount(),
-			GasPrice: gasprice,
-			Syncing:  syncing,
-			Uptime:   100,
+			Active:    true,
+			Producing: producing,
+			Peers:     s.server.PeerCount(),
+			GasPrice:  gasprice,
+			Syncing:   syncing,
+			Uptime:    100,
 		},
 	}
 	report := map[string][]interface{}{

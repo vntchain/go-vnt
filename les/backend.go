@@ -152,13 +152,13 @@ func New(ctx *node.ServiceContext, config *vnt.Config) (*LightVnt, error) {
 
 type LightDummyAPI struct{}
 
-// Coinbase is the address that mining rewards will be send to
+// Coinbase is the address that block producing rewards will be send to
 func (s *LightDummyAPI) Coinbase() (common.Address, error) {
 	return common.Address{}, fmt.Errorf("not supported")
 }
 
-// Mining returns an indication if this node is currently mining.
-func (s *LightDummyAPI) Mining() bool {
+// Producing returns an indication if this node is currently producing block.
+func (s *LightDummyAPI) Producing() bool {
 	return false
 }
 

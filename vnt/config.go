@@ -79,7 +79,7 @@ type Config struct {
 	TrieCache          int
 	TrieTimeout        time.Duration
 
-	// Mining-related options
+	// Producing-related options
 	Coinbase  common.Address `toml:",omitempty"`
 	ExtraData []byte         `toml:",omitempty"`
 	GasPrice  *big.Int

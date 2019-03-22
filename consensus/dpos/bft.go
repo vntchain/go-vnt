@@ -51,12 +51,12 @@ type BftManager struct {
 	h           *big.Int                    // local block chain height, protect by newRoundRWLock
 	r           uint32                      // local BFT round, protect by newRoundRWLock
 	step        uint32                      // local BFT round, protect by atomic operation
-	witnessList map[common.Address]struct{} // current witness list, rely on mining
+	witnessList map[common.Address]struct{} // current witness list, rely on producing
 
 	newRoundRWLock sync.RWMutex // RW lock for switch to new round
 
 	blockRound uint32 // round of sealing block, no need lock
-	mining     uint32 // mining or not, atomic read and write
+	producing  uint32 // producing or not, atomic read and write
 
 	// callbacks
 	sendBftMsg  func(types.ConsensusMsg)
@@ -76,7 +76,7 @@ func newBftManager(dp *Dpos) *BftManager {
 		r:           0,
 		step:        newRound,
 		witnessList: make(map[common.Address]struct{}, dp.config.WitnessesNum),
-		mining:      0,
+		producing:   0,
 	}
 }
 
@@ -110,12 +110,12 @@ func (b *BftManager) handleBftMsg(msg types.ConsensusMsg) error {
 		log.Trace("handle msg end", "hash", msgHash)
 	}()
 
-	// If not mining, no need deal with these bft msg right now,
-	// save to msg pool, if you are witness and mining after sync,
+	// If not producing, no need deal with these bft msg right now,
+	// save to msg pool, if you are witness and producing after sync,
 	// you will fast deal with these msg.
-	if atomic.LoadUint32(&b.mining) == 0 {
+	if atomic.LoadUint32(&b.producing) == 0 {
 		b.mp.addMsg(msg)
-		log.Debug("HandleBftMsg: return for not mining")
+		log.Debug("HandleBftMsg: return for not producing")
 		return nil
 	}
 
@@ -405,14 +405,14 @@ func (b *BftManager) startSync(block *types.Block) {
 	log.Debug("Bft manager startPrePrepare sync")
 }
 
-func (b *BftManager) miningStop() {
-	atomic.StoreUint32(&b.mining, 0)
-	log.Debug("BFT stop mining")
+func (b *BftManager) producingStop() {
+	atomic.StoreUint32(&b.producing, 0)
+	log.Debug("BFT stop producing")
 }
 
-func (b *BftManager) miningStart() {
-	atomic.StoreUint32(&b.mining, 1)
-	log.Debug("BFT start mining")
+func (b *BftManager) producingStart() {
+	atomic.StoreUint32(&b.producing, 1)
+	log.Debug("BFT start producing")
 }
 
 func (b *BftManager) validWitness(wit common.Address) bool {

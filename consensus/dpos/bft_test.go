@@ -17,11 +17,12 @@
 package dpos
 
 import (
+	"math/big"
+	"testing"
+
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/params"
-	"math/big"
-	"testing"
 )
 
 func newDefaultBft() *BftManager {
@@ -40,7 +41,7 @@ func TestHandleBftMsg_FutureMsg(t *testing.T) {
 	// set state
 	bft.h = big.NewInt(10)
 	bft.r = 0
-	bft.mining = 1
+	bft.producing = 1
 
 	tests := []struct {
 		h int64
@@ -82,7 +83,7 @@ func TestHandleBftMsg_OutdatedMsg(t *testing.T) {
 	// set state
 	bft.h = big.NewInt(10)
 	bft.r = 1
-	bft.mining = 1
+	bft.producing = 1
 
 	tests := []struct {
 		h int64
@@ -116,13 +117,13 @@ func TestHandleBftMsg_OutdatedMsg(t *testing.T) {
 	}
 }
 
-func TestHandleBftMsg_NoMining(t *testing.T) {
+func TestHandleBftMsg_NoProducing(t *testing.T) {
 	bft := newDefaultBft()
 
 	// set state
 	bft.h = big.NewInt(10)
 	bft.r = 1
-	bft.mining = 0
+	bft.producing = 0
 
 	// Create msg
 	h1 := big.NewInt(10)
