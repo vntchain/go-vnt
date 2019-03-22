@@ -511,11 +511,11 @@ func (jst *Tracer) CaptureStart(from common.Address, to common.Address, create b
 }
 
 // CaptureState implements the Tracer interface to trace a single step of VM execution.
-func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, depth int, err error) error {
+func (jst *Tracer) CaptureState(env vm.VM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, depth int, err error) error {
 	if jst.err == nil {
 		// Initialize the context if it wasn't done yet
 		if !jst.inited {
-			jst.ctx["block"] = env.BlockNumber.Uint64()
+			jst.ctx["block"] = env.GetContext().BlockNumber.Uint64()
 			jst.inited = true
 		}
 		// If tracing was interrupted, set the error and stop
@@ -527,7 +527,7 @@ func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost 
 		jst.stackWrapper.stack = stack
 		jst.memoryWrapper.memory = memory
 		jst.contractWrapper.contract = contract
-		jst.dbWrapper.db = env.StateDB
+		jst.dbWrapper.db = env.GetStateDb()
 
 		*jst.pcValue = uint(pc)
 		*jst.gasValue = uint(gas)
@@ -547,9 +547,13 @@ func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost 
 	return nil
 }
 
+func (jst *Tracer) CaptureLog(env vm.VM, msg string) error {
+	return nil
+}
+
 // CaptureFault implements the Tracer interface to trace an execution fault
 // while running an opcode.
-func (jst *Tracer) CaptureFault(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, depth int, err error) error {
+func (jst *Tracer) CaptureFault(env vm.VM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, depth int, err error) error {
 	if jst.err == nil {
 		// Apart from the error, everything matches the previous invocation
 		jst.errorValue = new(string)

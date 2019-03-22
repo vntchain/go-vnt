@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"math/big"
 	"sync/atomic"
+	"time"
 
 	wasmcontract "github.com/vntchain/go-vnt/core/wavm/contract"
 	"github.com/vntchain/go-vnt/core/wavm/gas"
@@ -225,10 +226,10 @@ func (wavm *WAVM) Create(caller vm.ContractRef, code []byte, gas uint64, value *
 		return nil, contractAddr, gas, nil
 	}
 
-	// if wavm.vmConfig.Debug && wavm.depth == 0 {
-	// 	wavm.vmConfig.Tracer.CaptureStart(caller.Address(), contractAddr, true, code, gas, value)
-	// }
-	// start := time.Now()
+	if wavm.vmConfig.Debug && wavm.depth == 0 {
+		wavm.vmConfig.Tracer.CaptureStart(caller.Address(), contractAddr, true, code, gas, value)
+	}
+	start := time.Now()
 	ret, err = runWavm(wavm, contract, nil, true)
 	// check whether the max code size has been exceeded
 	maxCodeSizeExceeded := len(ret) > params.MaxCodeSize
@@ -258,9 +259,9 @@ func (wavm *WAVM) Create(caller vm.ContractRef, code []byte, gas uint64, value *
 	if maxCodeSizeExceeded && err == nil {
 		err = errorsmsg.ErrMaxCodeSizeExceeded
 	}
-	// if wavm.vmConfig.Debug && wavm.depth == 0 {
-	// 	wavm.vmConfig.Tracer.CaptureEnd(ret, gas-contract.Gas, time.Since(start), err)
-	// }
+	if wavm.vmConfig.Debug && wavm.depth == 0 {
+		wavm.vmConfig.Tracer.CaptureEnd(ret, gas-contract.Gas, time.Since(start), err)
+	}
 	log.Debug(">>>>WAVM CREATE<<<<", "gas left", contract.Gas)
 	return ret, contractAddr, contract.Gas, err
 }
@@ -290,10 +291,10 @@ func (wavm *WAVM) Call(caller vm.ContractRef, addr common.Address, input []byte,
 		precompiles := vm.PrecompiledContractsHubble
 		if precompiles[addr] == nil && value.Sign() == 0 {
 			// Calling a non existing account, don't do antything, but ping the tracer
-			// if wavm.vmConfig.Debug && wavm.depth == 0 {
-			// 	wavm.vmConfig.Tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
-			// 	wavm.vmConfig.Tracer.CaptureEnd(ret, 0, 0, nil)
-			// }
+			if wavm.vmConfig.Debug && wavm.depth == 0 {
+				wavm.vmConfig.Tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
+				wavm.vmConfig.Tracer.CaptureEnd(ret, 0, 0, nil)
+			}
 			return nil, gas, nil
 		}
 		wavm.StateDB.CreateAccount(addr)
@@ -308,16 +309,16 @@ func (wavm *WAVM) Call(caller vm.ContractRef, addr common.Address, input []byte,
 
 	contract.SetCallCode(&addr, wavm.StateDB.GetCodeHash(addr), code)
 
-	//start := time.Now()
+	start := time.Now()
 
 	// Capture the tracer start/end events in debug mode
-	// if wavm.vmConfig.Debug && wavm.depth == 0 {
-	// 	wavm.vmConfig.Tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
+	if wavm.vmConfig.Debug && wavm.depth == 0 {
+		wavm.vmConfig.Tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
 
-	// 	defer func() { // Lazy evaluation of the parameters
-	// 		wavm.vmConfig.Tracer.CaptureEnd(ret, gas-contract.Gas, time.Since(start), err)
-	// 	}()
-	// }
+		defer func() { // Lazy evaluation of the parameters
+			wavm.vmConfig.Tracer.CaptureEnd(ret, gas-contract.Gas, time.Since(start), err)
+		}()
+	}
 	ret, err = runWavm(wavm, contract, input, false)
 	// When an error was returned by the EVM or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally

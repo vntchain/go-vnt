@@ -601,11 +601,13 @@ func (api *PrivateDebugAPI) traceTx(ctx context.Context, message core.Message, v
 	// Depending on the tracer type, format and return the output
 	switch tracer := tracer.(type) {
 	case *vm.StructLogger:
+		slogs, dlogs := vntapi.FormatLogs(tracer.StructLogs(), tracer.DebugLogs())
 		return &vntapi.ExecutionResult{
 			Gas:         gas,
 			Failed:      failed,
 			ReturnValue: fmt.Sprintf("%x", ret),
-			StructLogs:  vntapi.FormatLogs(tracer.StructLogs()),
+			StructLogs:  slogs,
+			DebugLogs:   dlogs,
 		}, nil
 
 	case *tracers.Tracer:

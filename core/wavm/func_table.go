@@ -22,65 +22,6 @@ import (
 	"github.com/vntchain/vnt-wasm/wasm"
 )
 
-//const (
-//	OpCodeGetBalanceFromAddress = byte(0xc8 + iota)
-//	OpCodeStorageWrite
-//	OpCodeStorageRead
-//	OpCodeGetBlockNumber
-//	OpCodeRet
-//	OpCodeFetchInput
-//	OpCodeInputLength
-//	OpCodeGetGas
-//	OpCodeGetBlockHash
-//	OpCodeGetCoinBase
-//	OpCodeGetTimestamp
-//	OpCodeGetOrigin
-//	OpCodeGetSender
-//	OpCodeGetGasLimit
-//	OpCodeGetDifficulty
-//	OpCodeGenerateKey
-//	OpCodeGetStorageCount
-//	OpCodeGetValue
-//	OpCodeSHA3
-//	OpCodeGetContractAddress
-//	OpCodeAssert
-//
-//	// OpCodeFallback
-//	OpCodeSendFromContract
-//	OpCodeGetContractValue
-//
-//	OpCodeEvent
-//
-//	OpCodePrintAddress
-//	OpCodePrintStr
-//	OpCodePrintUint64T
-//	OpCodePrintUint32T
-//	OpCodePrintInt64T
-//	OpCodePrintInt32T
-//
-//	OpCodeFromI64
-//	OpCodeFromU64
-//	OpCodeToI64
-//	OpCodeToU64
-//
-//	OpCodeConcat
-//
-//	OpCodeContractCall
-//	OpCodeWrite
-//	OpCodeRead
-//	OpCodePuta
-//	OpCodeRegister
-//
-//	//Array操作
-//	OpCodePushArray
-//	OpCodeSetArray
-//	OpCodeReadArray
-//	OpCodeLength
-//
-//	//将字符串转化为地址
-//	OpCodeAddress
-//)
-
 const (
 	OpNameGetBalanceFromAddress = "GetBalanceFromAddress"
 	OpNameGetBlockNumber        = "GetBlockNumber"

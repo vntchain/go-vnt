@@ -775,6 +775,7 @@ type ExecutionResult struct {
 	Failed      bool           `json:"failed"`
 	ReturnValue string         `json:"returnValue"`
 	StructLogs  []StructLogRes `json:"structLogs"`
+	DebugLogs   []DebugLogRes  `json:"debugLogs"`
 }
 
 // StructLogRes stores a structured log emitted by the EVM while replaying a
@@ -791,9 +792,14 @@ type StructLogRes struct {
 	Storage *map[string]string `json:"storage,omitempty"`
 }
 
+type DebugLogRes struct {
+	PrintMsg string `json:"printMsg"`
+}
+
 // formatLogs formats EVM returned structured logs for json output
-func FormatLogs(logs []vm.StructLog) []StructLogRes {
+func FormatLogs(logs []vm.StructLog, debugLog []vm.DebugLog) ([]StructLogRes, []DebugLogRes) {
 	formatted := make([]StructLogRes, len(logs))
+
 	for index, trace := range logs {
 		formatted[index] = StructLogRes{
 			Pc:      trace.Pc,
@@ -825,7 +831,13 @@ func FormatLogs(logs []vm.StructLog) []StructLogRes {
 			formatted[index].Storage = &storage
 		}
 	}
-	return formatted
+	debugFormatted := make([]DebugLogRes, len(debugLog))
+	for index, trace := range debugLog {
+		debugFormatted[index] = DebugLogRes{
+			PrintMsg: trace.PrintMsg,
+		}
+	}
+	return formatted, debugFormatted
 }
 
 // RPCMarshalBlock converts the given block to the RPC output which depends on fullTx. If inclTx is true transactions are
@@ -1219,7 +1231,6 @@ func submitTransaction(ctx context.Context, b Backend, tx *types.Transaction) (c
 // SendTransaction creates a transaction for the given argument, sign it and submit it to the
 // transaction pool.
 func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args SendTxArgs) (common.Hash, error) {
-	log.Debug("api", "SendTransaction args", args)
 	// Look up the wallet containing the requested signer
 	account := accounts.Account{Address: args.From}
 
