@@ -24,11 +24,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vntchain/go-vnt"
+	hubble "github.com/vntchain/go-vnt"
 	"github.com/vntchain/go-vnt/accounts/abi/bind"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/common/math"
-	"github.com/vntchain/go-vnt/consensus/dpos"
+	"github.com/vntchain/go-vnt/consensus/mock"
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/bloombits"
 	"github.com/vntchain/go-vnt/core/rawdb"
@@ -69,7 +69,7 @@ func NewSimulatedBackend(alloc core.GenesisAlloc) *SimulatedBackend {
 	database := vntdb.NewMemDatabase()
 	genesis := core.Genesis{Config: params.TestChainConfig, Alloc: alloc}
 	genesis.MustCommit(database)
-	blockchain, _ := core.NewBlockChain(database, nil, genesis.Config, dpos.NewFaker(), vm.Config{})
+	blockchain, _ := core.NewBlockChain(database, nil, genesis.Config, mock.NewMock(), vm.Config{})
 
 	backend := &SimulatedBackend{
 		database:   database,
@@ -102,7 +102,7 @@ func (b *SimulatedBackend) Rollback() {
 }
 
 func (b *SimulatedBackend) rollback() {
-	blocks, _ := core.GenerateChain(b.config, b.blockchain.CurrentBlock(), dpos.NewFaker(), b.database, 1, func(int, *core.BlockGen) {})
+	blocks, _ := core.GenerateChain(b.config, b.blockchain.CurrentBlock(), mock.NewMock(), b.database, 1, func(int, *core.BlockGen) {})
 	statedb, _ := b.blockchain.State()
 
 	b.pendingBlock = blocks[0]
@@ -297,8 +297,8 @@ func (b *SimulatedBackend) callContract(ctx context.Context, call hubble.CallMsg
 func (b *SimulatedBackend) SendTransaction(ctx context.Context, tx *types.Transaction) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-
-	sender, err := types.Sender(types.HomesteadSigner{}, tx)
+	signer := types.NewHubbleSigner(b.config.ChainID)
+	sender, err := types.Sender(signer, tx)
 	if err != nil {
 		panic(fmt.Errorf("invalid transaction: %v", err))
 	}
@@ -307,7 +307,7 @@ func (b *SimulatedBackend) SendTransaction(ctx context.Context, tx *types.Transa
 		panic(fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce))
 	}
 
-	blocks, _ := core.GenerateChain(b.config, b.blockchain.CurrentBlock(), dpos.NewFaker(), b.database, 1, func(number int, block *core.BlockGen) {
+	blocks, _ := core.GenerateChain(b.config, b.blockchain.CurrentBlock(), mock.NewMock(), b.database, 1, func(number int, block *core.BlockGen) {
 		for _, tx := range b.pendingBlock.Transactions() {
 			block.AddTxWithChain(b.blockchain, tx)
 		}
@@ -386,7 +386,7 @@ func (b *SimulatedBackend) SubscribeFilterLogs(ctx context.Context, query hubble
 func (b *SimulatedBackend) AdjustTime(adjustment time.Duration) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	blocks, _ := core.GenerateChain(b.config, b.blockchain.CurrentBlock(), dpos.NewFaker(), b.database, 1, func(number int, block *core.BlockGen) {
+	blocks, _ := core.GenerateChain(b.config, b.blockchain.CurrentBlock(), mock.NewMock(), b.database, 1, func(number int, block *core.BlockGen) {
 		for _, tx := range b.pendingBlock.Transactions() {
 			block.AddTx(tx)
 		}

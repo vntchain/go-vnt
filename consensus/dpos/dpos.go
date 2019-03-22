@@ -102,7 +102,7 @@ type Dpos struct {
 	config         *params.DposConfig
 	bft            *BftManager
 	db             vntdb.Database // Database to store and retrieve dpos temp data, current not used
-	signatures     *lru.ARCCache  // Signatures of recent blocks to speed up mining
+	signatures     *lru.ARCCache  // Signatures of recent blocks to speed up block producing
 	signer         common.Address // VNT address of the signing key
 	signFn         SignerFn       // Signer function to authorize hashes with
 	lock           sync.RWMutex   // Protects the signer fields
@@ -181,17 +181,6 @@ func New(config *params.DposConfig, db vntdb.Database) *Dpos {
 	return d
 }
 
-// Fake dpos for tests
-func NewFaker() *Dpos {
-	cfg := &params.DposConfig{
-		WitnessesNum: 4,
-		Period:       2,
-	}
-
-	dp := New(cfg, nil)
-	return dp
-}
-
 func (d *Dpos) InitBft(sendBftMsg func(types.ConsensusMsg), SendPeerUpdate func(urls []string), verifyBlock func(*types.Block) (types.Receipts, []*types.Log, uint64, error), writeBlock func(*types.Block) error) {
 	d.sendBftPeerUpdateFn = SendPeerUpdate
 
@@ -203,7 +192,7 @@ func (d *Dpos) InitBft(sendBftMsg func(types.ConsensusMsg), SendPeerUpdate func(
 	// Init bft field
 	d.bft.coinBase = d.coinBase()
 
-	d.bft.miningStart()
+	d.bft.producingStart()
 }
 
 // Author implements consensus.Engine, returning the VNT address recovered
@@ -470,7 +459,7 @@ func (d *Dpos) Finalize(chain consensus.ChainReader, header *types.Header, state
 	}
 
 	// Commit db
-	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
+	header.Root = state.IntermediateRoot(true)
 
 	// Assemble and return the final block for sealing
 	return types.NewBlock(header, txs, receipts), nil
@@ -784,8 +773,8 @@ func (d *Dpos) VerifyCommitMsg(block *types.Block) error {
 	return d.bft.VerifyCmtMsgOf(block)
 }
 
-func (d *Dpos) MiningStop() {
-	d.bft.miningStop()
+func (d *Dpos) ProducingStop() {
+	d.bft.producingStop()
 }
 
 type updateTime [updateTimeLen]byte

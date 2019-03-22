@@ -38,8 +38,9 @@ type signer struct {
 	sign bind.SignerFn
 }
 
-func (s *signer) Sign(addr *Address, unsignedTx *Transaction) (signedTx *Transaction, _ error) {
-	sig, err := s.sign(types.HomesteadSigner{}, addr.address, unsignedTx.tx)
+func (s *signer) Sign(addr *Address, unsignedTx *Transaction, chainID *big.Int) (signedTx *Transaction, _ error) {
+	si := types.NewHubbleSigner(chainID)
+	sig, err := s.sign(si, addr.address, unsignedTx.tx)
 	if err != nil {
 		return nil, err
 	}
@@ -113,13 +114,13 @@ type BoundContract struct {
 
 // DeployContract deploys a contract onto the VNT blockchain and binds the
 // deployment address with a wrapper.
-func DeployContract(opts *TransactOpts, abiJSON string, bytecode []byte, client *VNTClient, args *Interfaces) (contract *BoundContract, _ error) {
+func DeployContract(opts *TransactOpts, chainID *big.Int, abiJSON string, bytecode []byte, client *VNTClient, args *Interfaces) (contract *BoundContract, _ error) {
 	// Deploy the contract to the network
 	parsed, err := abi.JSON(strings.NewReader(abiJSON))
 	if err != nil {
 		return nil, err
 	}
-	addr, tx, bound, err := bind.DeployContract(&opts.opts, parsed, common.CopyBytes(bytecode), client.client, args.objects...)
+	addr, tx, bound, err := bind.DeployContract(&opts.opts, chainID, parsed, common.CopyBytes(bytecode), client.client, args.objects...)
 	if err != nil {
 		return nil, err
 	}
@@ -172,8 +173,8 @@ func (c *BoundContract) Call(opts *CallOpts, out *Interfaces, method string, arg
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (c *BoundContract) Transact(opts *TransactOpts, method string, args *Interfaces) (tx *Transaction, _ error) {
-	rawTx, err := c.contract.Transact(&opts.opts, method, args.objects...)
+func (c *BoundContract) Transact(opts *TransactOpts, chainID *big.Int, method string, args *Interfaces) (tx *Transaction, _ error) {
+	rawTx, err := c.contract.Transact(&opts.opts, chainID, method, args.objects...)
 	if err != nil {
 		return nil, err
 	}
@@ -182,8 +183,8 @@ func (c *BoundContract) Transact(opts *TransactOpts, method string, args *Interf
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (c *BoundContract) Transfer(opts *TransactOpts) (tx *Transaction, _ error) {
-	rawTx, err := c.contract.Transfer(&opts.opts)
+func (c *BoundContract) Transfer(opts *TransactOpts, chainID *big.Int) (tx *Transaction, _ error) {
+	rawTx, err := c.contract.Transfer(&opts.opts, chainID)
 	if err != nil {
 		return nil, err
 	}

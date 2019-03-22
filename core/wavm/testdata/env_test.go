@@ -163,7 +163,7 @@ func (t *ENVTest) newWAVM(statedb *state.StateDB, vmconfig vm.Config) vm.VM {
 		Difficulty:  t.json.Env.Difficulty,
 		GasPrice:    t.json.Exec.GasPrice,
 	}
-	return wavm.NewWAVM(context, statedb, params.MainnetChainConfig, vmconfig)
+	return wavm.NewWAVM(context, statedb, params.AllCliqueProtocolChanges, vmconfig)
 }
 
 func (t *ENVTest) Run(vmconfig vm.Config, data []byte, iscreate bool, needinit bool, test *testing.T) ([]byte, error) {
@@ -246,7 +246,7 @@ func run(t *testing.T, jspath string) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	vmconfig := vm.Config{}
+	vmconfig := vm.Config{Debug: true}
 	envtest := new(ENVTest)
 	envtest.callCost = 0
 	envtest.createCost = 0
@@ -308,7 +308,7 @@ func run(t *testing.T, jspath string) {
 
 				ret, err := envtest.Run(vmconfig, pack, false, v.InitCase.NeedInit, t)
 				if err != nil {
-					if testcase.Error == err.Error() {
+					if testcase.Error == err.Error() && testcase.Error != "" {
 						t.Logf("funcName %s\n", testcase.Function)
 						t.Logf("wavm err match, got %s, want %s", err, testcase.Error)
 						continue
@@ -326,6 +326,7 @@ func run(t *testing.T, jspath string) {
 				verify(t, ret, testcase.Wanted, abiobj, testcase.Function)
 				if testcase.Event != nil {
 					fmt.Printf("logs %s\n", rlpHash(envtest.statedb.Logs()).Hex())
+					fmt.Printf("logs %+v\n", envtest.statedb.Logs())
 					res := envtest.statedb.Logs()[0].Data
 					fmt.Printf("data %v\n", res)
 					type testevent struct {

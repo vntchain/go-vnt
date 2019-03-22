@@ -207,7 +207,7 @@ func TestConvertToStruct(t *testing.T) {
 	}
 
 	var bounty1 Bounty
-	err = convertToStruct(BOUNTYPREFIX, electionAddr, &bounty1, getFn)
+	err = convertToStruct(BOUNTYPREFIX, contractAddr, &bounty1, getFn)
 	if err != nil {
 		t.Error(err)
 	}

@@ -84,8 +84,7 @@ type peer struct {
 	*vntp2p.Peer
 	rw vntp2p.MsgReadWriter
 
-	version  int         // Protocol version negotiated
-	forkDrop *time.Timer // Timed connection dropper if forks aren't validated in time
+	version int // Protocol version negotiated
 
 	head common.Hash
 	td   *big.Int

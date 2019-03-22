@@ -23,11 +23,14 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 
 	hubble "github.com/vntchain/go-vnt"
+	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/common/hexutil"
 	"github.com/vntchain/go-vnt/core/types"
+	"github.com/vntchain/go-vnt/core/vm/election"
 	"github.com/vntchain/go-vnt/rlp"
 	"github.com/vntchain/go-vnt/rpc"
 )
@@ -485,4 +488,93 @@ func toCallArg(msg hubble.CallMsg) interface{} {
 		arg["gasPrice"] = (*hexutil.Big)(msg.GasPrice)
 	}
 	return arg
+}
+
+// NewElectionTx returns a unsigned transaction of calling election contract.
+//
+// It support all operation in election contract, such as stake/unStake, vote/cancelVote, more operation see election
+// abi: github.com/vntchain/go-vnt/core/vm/election.AbiJSON .
+//
+// parameter sender only used for to get nonce of the account who send this transaction. funcName name is the operation
+// what you want to do, and args is the parameters of funcName in election contract.
+func (ec *Client) NewElectionTx(ctx context.Context, sender common.Address, gasLimit uint64, gasPrice *big.Int, funcName string, args ...interface{}) (*types.Transaction, error) {
+	// 	Generate tx txData
+	electAbi, err := getElectionABI()
+	if err != nil {
+		return nil, err
+	}
+	txData, err := packInput(electAbi, funcName, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	// 	Query nonce
+	nonce, err := ec.NonceAt(ctx, sender, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return types.NewTransaction(nonce, common.HexToAddress(election.ContractAddr), common.Big0, gasLimit, gasPrice, txData), nil
+}
+
+func getElectionABI() (abi.ABI, error) {
+	return abi.JSON(strings.NewReader(election.AbiJSON))
+}
+
+func packInput(abiobj abi.ABI, name string, args ...interface{}) ([]byte, error) {
+	abires := abiobj
+	var res []byte
+	var err error
+	if len(args) == 0 {
+		res, err = abires.Pack(name)
+	} else {
+		res, err = abires.Pack(name, args...)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// StakeAt returns the stake information of the given account.
+func (ec *Client) StakeAt(ctx context.Context, account common.Address) (*rpc.Stake, error) {
+	var ret *rpc.Stake
+	err := ec.c.CallContext(ctx, &ret, "core_getStake", account)
+	if err != nil {
+		return nil, err
+	} else if ret == nil {
+		return nil, hubble.NotFound
+	}
+	return ret, err
+}
+
+// VoteAt returns the vote information of the given account.
+func (ec *Client) VoteAt(ctx context.Context, account common.Address) (*rpc.Voter, error) {
+	var ret *rpc.Voter
+	err := ec.c.CallContext(ctx, &ret, "core_getVoter", account)
+	if err != nil {
+		return nil, err
+	} else if ret == nil {
+		return nil, hubble.NotFound
+	}
+	return ret, err
+}
+
+// WitnessCandidates returns a list of witness candidates.
+func (ec *Client) WitnessCandidates(ctx context.Context) ([]rpc.Candidate, error) {
+	var ret []rpc.Candidate
+	err := ec.c.CallContext(ctx, &ret, "core_getAllCandidates")
+	if err != nil {
+		return nil, err
+	} else if ret == nil {
+		return nil, hubble.NotFound
+	}
+	return ret, err
+}
+
+// RestVNTBounty return a integer of the left VNT bounty in wei.
+func (ec *Client) RestVNTBounty(ctx context.Context) (*big.Int, error) {
+	var ret big.Int
+	err := ec.c.CallContext(ctx, &ret, "core_getRestVNTBounty")
+	return &ret, err
 }

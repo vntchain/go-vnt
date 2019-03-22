@@ -38,7 +38,6 @@ import (
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/vm/election"
-	"github.com/vntchain/go-vnt/core/wavm/contract"
 	"github.com/vntchain/go-vnt/core/wavm/utils"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/log"
@@ -339,10 +338,7 @@ func (s *PrivateAccountAPI) signTransaction(ctx context.Context, args SendTxArgs
 	// Assemble the transaction and sign with the wallet
 	tx := args.toTransaction()
 
-	var chainID *big.Int
-	if config := s.b.ChainConfig(); config.IsEIP155(s.b.CurrentBlock().Number()) {
-		chainID = config.ChainID
-	}
+	chainID := s.b.ChainConfig().ChainID
 	return wallet.SignTxWithPassphrase(account, passwd, tx, chainID)
 }
 
@@ -522,16 +518,8 @@ func (s *PublicBlockChainAPI) GetCode(ctx context.Context, address common.Addres
 		return nil, err
 	}
 	compress := state.GetCode(address)
-	var code contract.WasmCode
-	decompress, err := utils.DeCompress(compress)
-	if err != nil {
-		return nil, err
-	}
-	err = rlp.Decode(bytes.NewBuffer(decompress), &code)
-	if err != nil {
-		return nil, err
-	}
-	return code.Code, state.Error()
+	wasmcode, _, _ := utils.DecodeContractCode(compress)
+	return wasmcode.Code, state.Error()
 }
 
 // GetAbi returns the abi stored at the given address in the state for the given block number.
@@ -541,16 +529,8 @@ func (s *PublicBlockChainAPI) GetAbi(ctx context.Context, address common.Address
 		return nil, err
 	}
 	compress := state.GetCode(address)
-	var code contract.WasmCode
-	decompress, err := utils.DeCompress(compress)
-	if err != nil {
-		return nil, err
-	}
-	err = rlp.Decode(bytes.NewBuffer(decompress), &code)
-	if err != nil {
-		return nil, err
-	}
-	return code.Abi, state.Error()
+	wasmcode, _, _ := utils.DecodeContractCode(compress)
+	return wasmcode.Abi, state.Error()
 }
 
 // GetStorageAt returns the storage from the state at the given address, key and
@@ -577,9 +557,7 @@ type CallArgs struct {
 
 func (s *PublicBlockChainAPI) doCall(ctx context.Context, args CallArgs, blockNr rpc.BlockNumber, vmCfg vm.Config, timeout time.Duration) ([]byte, uint64, bool, error) {
 	defer func(start time.Time) { log.Debug("Executing EVM call finished", "runtime", time.Since(start)) }(time.Now())
-	log.Debug("api", "docall args", args)
 	state, header, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
-	log.Debug("api", "core.ApplyMessage", state, "err", err)
 	if state == nil || err != nil {
 		return nil, 0, false, err
 	}
@@ -639,7 +617,6 @@ func (s *PublicBlockChainAPI) doCall(ctx context.Context, args CallArgs, blockNr
 // It doesn't make and changes in the state/blockchain and is useful to execute and retrieve values.
 func (s *PublicBlockChainAPI) Call(ctx context.Context, args CallArgs, blockNr rpc.BlockNumber) (hexutil.Bytes, error) {
 	result, _, _, err := s.doCall(ctx, args, blockNr, vm.Config{}, 5*time.Second)
-	log.Debug("api", "call result", result, "err", err)
 	return (hexutil.Bytes)(result), err
 }
 
@@ -703,7 +680,7 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 	// Get the list
 	list := election.GetAllCandidates(stateDB, true)
 	if len(list) == 0 {
-		return nil, errors.New("empty witness candidates list")
+		return nil, nil
 	}
 
 	// Transform to rpc candidate
@@ -735,7 +712,7 @@ func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Addre
 	empty := common.Address{}
 	v := election.GetVoter(stateDB, address)
 	if v == nil || v.Owner == empty {
-		return nil, fmt.Errorf("no vorter information for address: %s", address.String())
+		return nil, nil
 	}
 	voter := &rpc.Voter{
 		Owner:             v.Owner,
@@ -763,7 +740,7 @@ func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Addre
 	empty := common.Address{}
 	st := election.GetStake(stateDB, address)
 	if st == nil || st.Owner == empty {
-		return nil, fmt.Errorf("no stake information for address: %s", address.String())
+		return nil, nil
 	}
 	stake := &rpc.Stake{
 		Owner:              st.Owner,
@@ -931,10 +908,7 @@ type RPCTransaction struct {
 // newRPCTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
 func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber uint64, index uint64) *RPCTransaction {
-	var signer types.Signer = types.FrontierSigner{}
-	if tx.Protected() {
-		signer = types.NewEIP155Signer(tx.ChainId())
-	}
+	signer := types.NewHubbleSigner(tx.ChainId())
 	from, _ := types.Sender(signer, tx)
 	v, r, s := tx.RawSignatureValues()
 
@@ -1108,10 +1082,7 @@ func (s *PublicTransactionPoolAPI) GetTransactionReceipt(ctx context.Context, ha
 	}
 	receipt := receipts[index]
 
-	var signer types.Signer = types.FrontierSigner{}
-	if tx.Protected() {
-		signer = types.NewEIP155Signer(tx.ChainId())
-	}
+	signer := types.NewHubbleSigner(tx.ChainId())
 	from, _ := types.Sender(signer, tx)
 
 	fields := map[string]interface{}{
@@ -1154,10 +1125,7 @@ func (s *PublicTransactionPoolAPI) sign(addr common.Address, tx *types.Transacti
 		return nil, err
 	}
 	// Request the wallet to sign the transaction
-	var chainID *big.Int
-	if config := s.b.ChainConfig(); config.IsEIP155(s.b.CurrentBlock().Number()) {
-		chainID = config.ChainID
-	}
+	chainID := s.b.ChainConfig().ChainID
 	return wallet.SignTx(account, tx, chainID)
 }
 
@@ -1274,10 +1242,7 @@ func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args Sen
 	// Assemble the transaction and sign with the wallet
 	tx := args.toTransaction()
 
-	var chainID *big.Int
-	if config := s.b.ChainConfig(); config.IsEIP155(s.b.CurrentBlock().Number()) {
-		chainID = config.ChainID
-	}
+	chainID := s.b.ChainConfig().ChainID
 	signed, err := wallet.SignTx(account, tx, chainID)
 	if err != nil {
 		return common.Hash{}, err
@@ -1288,7 +1253,6 @@ func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args Sen
 // SendRawTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
 func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encodedTx hexutil.Bytes) (common.Hash, error) {
-	log.Debug("api", "SendRawTransaction", encodedTx)
 	tx := new(types.Transaction)
 	if err := rlp.DecodeBytes(encodedTx, tx); err != nil {
 		return common.Hash{}, err
@@ -1369,10 +1333,7 @@ func (s *PublicTransactionPoolAPI) PendingTransactions() ([]*RPCTransaction, err
 	}
 	transactions := make([]*RPCTransaction, 0, len(pending))
 	for _, tx := range pending {
-		var signer types.Signer = types.HomesteadSigner{}
-		if tx.Protected() {
-			signer = types.NewEIP155Signer(tx.ChainId())
-		}
+		signer := types.NewHubbleSigner(tx.ChainId())
 		from, _ := types.Sender(signer, tx)
 		if _, exists := accounts[from]; exists {
 			transactions = append(transactions, newRPCPendingTransaction(tx))
@@ -1397,10 +1358,7 @@ func (s *PublicTransactionPoolAPI) Resend(ctx context.Context, sendArgs SendTxAr
 	}
 
 	for _, p := range pending {
-		var signer types.Signer = types.HomesteadSigner{}
-		if p.Protected() {
-			signer = types.NewEIP155Signer(p.ChainId())
-		}
+		signer := types.NewHubbleSigner(p.ChainId())
 		wantSigHash := signer.Hash(matchTx)
 
 		if pFrom, err := types.Sender(signer, p); err == nil && pFrom == sendArgs.From && signer.Hash(p) == wantSigHash {

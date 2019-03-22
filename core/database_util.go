@@ -220,7 +220,6 @@ func GetBody(db DatabaseReader, hash common.Hash, number uint64) *types.Body {
 // none found.
 func GetTd(db DatabaseReader, hash common.Hash, number uint64) *big.Int {
 	data, _ := db.Get(append(append(append(headerPrefix, encodeBlockNumber(number)...), hash[:]...), tdSuffix...))
-	log.Debug("database_util", "func", "GetTd", "prefix", headerPrefix, "hash", hash, "number", number, "suffix", tdSuffix)
 	if len(data) == 0 {
 		return nil
 	}

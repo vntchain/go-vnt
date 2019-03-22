@@ -308,7 +308,7 @@ func (s *VNT) Coinbase() (eb common.Address, err error) {
 	return common.Address{}, fmt.Errorf("coinbase must be explicitly specified")
 }
 
-// SetCoinbase sets the mining reward address.
+// SetCoinbase sets the block producing reward address.
 func (s *VNT) SetCoinbase(coinbase common.Address) {
 	s.lock.Lock()
 	s.coinbase = coinbase
@@ -317,10 +317,10 @@ func (s *VNT) SetCoinbase(coinbase common.Address) {
 	s.miner.SetCoinbase(coinbase)
 }
 
-func (s *VNT) StartMining(local bool) error {
+func (s *VNT) StartProducing(local bool) error {
 	eb, err := s.Coinbase()
 	if err != nil {
-		log.Error("Cannot start mining without coinbase", "err", err)
+		log.Error("Cannot start block producing without coinbase", "err", err)
 		return fmt.Errorf("coinbase missing: %v", err)
 	}
 
@@ -333,9 +333,9 @@ func (s *VNT) StartMining(local bool) error {
 		dpos.Authorize(eb, wallet.SignHash)
 	}
 	if local {
-		// If local (CPU) mining is started, we can disable the transaction rejection
-		// mechanism introduced to speed sync times. CPU mining on mainnet is ludicrous
-		// so none will ever hit this path, whereas marking sync done on CPU mining
+		// If local (CPU) block producing is started, we can disable the transaction rejection
+		// mechanism introduced to speed sync times. CPU block producing on mainnet is ludicrous
+		// so none will ever hit this path, whereas marking sync done on CPU block producing
 		// will ensure that private networks work in single miner mode too.
 		atomic.StoreUint32(&s.protocolManager.acceptTxs, 1)
 	}
@@ -343,8 +343,8 @@ func (s *VNT) StartMining(local bool) error {
 	return nil
 }
 
-func (s *VNT) StopMining()         { s.miner.Stop() }
-func (s *VNT) IsMining() bool      { return s.miner.Mining() }
+func (s *VNT) StopProducing()      { s.miner.Stop() }
+func (s *VNT) IsProducing() bool   { return s.miner.Producing() }
 func (s *VNT) Miner() *miner.Miner { return s.miner }
 
 func (s *VNT) AccountManager() *accounts.Manager  { return s.accountManager }

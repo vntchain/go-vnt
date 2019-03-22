@@ -97,7 +97,7 @@ func NewBoundContract(address common.Address, abi abi.ABI, caller ContractCaller
 
 // DeployContract deploys a contract onto the VNT blockchain and binds the
 // deployment address with a Go wrapper.
-func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (common.Address, *types.Transaction, *BoundContract, error) {
+func DeployContract(opts *TransactOpts, chainID *big.Int, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (common.Address, *types.Transaction, *BoundContract, error) {
 	// Otherwise try to deploy the contract
 	c := NewBoundContract(common.Address{}, abi, backend, backend, backend)
 
@@ -105,7 +105,7 @@ func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend Co
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	tx, err := c.transact(opts, nil, append(bytecode, input...))
+	tx, err := c.transact(opts, chainID, nil, append(bytecode, input...))
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -165,24 +165,24 @@ func (c *BoundContract) Call(opts *CallOpts, result interface{}, method string, 
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (c *BoundContract) Transact(opts *TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+func (c *BoundContract) Transact(opts *TransactOpts, chainID *big.Int, method string, params ...interface{}) (*types.Transaction, error) {
 	// Otherwise pack up the parameters and invoke the contract
 	input, err := c.abi.Pack(method, params...)
 	if err != nil {
 		return nil, err
 	}
-	return c.transact(opts, &c.address, input)
+	return c.transact(opts, chainID, &c.address, input)
 }
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (c *BoundContract) Transfer(opts *TransactOpts) (*types.Transaction, error) {
-	return c.transact(opts, &c.address, nil)
+func (c *BoundContract) Transfer(opts *TransactOpts, chainID *big.Int) (*types.Transaction, error) {
+	return c.transact(opts, chainID, &c.address, nil)
 }
 
 // transact executes an actual transaction invocation, first deriving any missing
 // authorization fields, and then scheduling the transaction for execution.
-func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
+func (c *BoundContract) transact(opts *TransactOpts, chainID *big.Int, contract *common.Address, input []byte) (*types.Transaction, error) {
 	var err error
 
 	// Ensure a valid value field and resolve the account nonce
@@ -234,7 +234,8 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 	if opts.Signer == nil {
 		return nil, errors.New("no signer to authorize the transaction with")
 	}
-	signedTx, err := opts.Signer(types.HomesteadSigner{}, opts.From, rawTx)
+	signer := types.NewHubbleSigner(chainID)
+	signedTx, err := opts.Signer(signer, opts.From, rawTx)
 	if err != nil {
 		return nil, err
 	}
