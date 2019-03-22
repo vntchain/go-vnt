@@ -87,7 +87,7 @@ func (a *RemoteAgent) GetWork() ([3]string, error) {
 	return res, errors.New("No work available yet, don't panic.")
 }
 
-// loop monitors mining events on the work and quit channels, updating the internal
+// loop monitors producing events on the work and quit channels, updating the internal
 // state of the remote miner until a termination is requested.
 //
 // Note, the reason the work and quit channels are passed as parameters is because

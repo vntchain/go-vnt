@@ -52,7 +52,7 @@ func NewPublicVntAPI(e *VNT) *PublicVntAPI {
 	return &PublicVntAPI{e}
 }
 
-// Coinbase is the address that mining rewards will be send to
+// Coinbase is the address that block producing rewards will be send to
 func (api *PublicVntAPI) Coinbase() (common.Address, error) {
 	return api.e.Coinbase()
 }
@@ -72,9 +72,9 @@ func NewPublicMinerAPI(e *VNT) *PublicMinerAPI {
 	return &PublicMinerAPI{e, agent}
 }
 
-// Mining returns an indication if this node is currently mining.
+// Producing returns an indication if this node is currently block producing.
 func (api *PublicMinerAPI) Producing() bool {
-	return api.e.IsMining()
+	return api.e.IsProducing()
 }
 
 // PrivateMinerAPI provides private RPC methods to control the miner.
@@ -90,7 +90,7 @@ func NewPrivateMinerAPI(e *VNT) *PrivateMinerAPI {
 
 // Start the miner with the given number of threads. If threads is nil the number
 // of workers started is equal to the number of logical CPUs that are usable by
-// this process. If mining is already running, this method adjust the number of
+// this process. If block producing is already running, this method adjust the number of
 // threads allowed to use.
 func (api *PrivateMinerAPI) Start(threads *int) error {
 	// Set the number of threads if the seal engine supports it
@@ -103,18 +103,18 @@ func (api *PrivateMinerAPI) Start(threads *int) error {
 		SetThreads(threads int)
 	}
 	if th, ok := api.e.engine.(threaded); ok {
-		log.Info("Updated mining threads", "threads", *threads)
+		log.Info("Updated block producing threads", "threads", *threads)
 		th.SetThreads(*threads)
 	}
 	// Start the miner and return
-	if !api.e.IsMining() {
+	if !api.e.IsProducing() {
 		// Propagate the initial price point to the transaction pool
 		api.e.lock.RLock()
 		price := api.e.gasPrice
 		api.e.lock.RUnlock()
 
 		api.e.txPool.SetGasPrice(price)
-		return api.e.StartMining(true)
+		return api.e.StartProducing(true)
 	}
 	return nil
 }
@@ -127,7 +127,7 @@ func (api *PrivateMinerAPI) Stop() bool {
 	if th, ok := api.e.engine.(threaded); ok {
 		th.SetThreads(-1)
 	}
-	api.e.StopMining()
+	api.e.StopProducing()
 	return true
 }
 

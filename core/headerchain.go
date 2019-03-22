@@ -26,14 +26,14 @@ import (
 	"sync/atomic"
 	"time"
 
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/consensus"
 	"github.com/vntchain/go-vnt/core/rawdb"
 	"github.com/vntchain/go-vnt/core/types"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/params"
-	"github.com/hashicorp/golang-lru"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 const (
@@ -152,7 +152,7 @@ func (hc *HeaderChain) WriteHeader(header *types.Header) (status WriteStatus, er
 	rawdb.WriteHeader(hc.chainDb, header)
 
 	// If the total difficulty is higher than our known, add it to the canonical chain
-	// Second clause in the if statement reduces the vulnerability to selfish mining.
+	// Second clause in the if statement reduces the vulnerability to selfish block producing.
 	// Please refer to http://www.cs.cornell.edu/~ie53/publications/btcProcFC.pdf
 	if externTd.Cmp(localTd) > 0 || (externTd.Cmp(localTd) == 0 && mrand.Float64() < 0.5) {
 		// Delete any canonical number assignments above the new head
