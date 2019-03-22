@@ -193,7 +193,14 @@ func (wavm *Wavm) Apply(input []byte, compiled []vnt.Compiled, mutable Mutable) 
 		}
 	}()
 	wavm.MutableList = mutable
-	vm, err := exec.NewInterpreter(wavm.Module, compiled, instantiateMemory)
+
+	var vm *exec.Interpreter
+	if wavm.VmConfig.Tracer != nil {
+		vm, err = exec.NewInterpreter(wavm.Module, compiled, instantiateMemory, reflect.ValueOf(wavm.VmConfig.Tracer.CaptureState))
+	} else {
+		vm, err = exec.NewInterpreter(wavm.Module, compiled, instantiateMemory, reflect.ValueOf(nil))
+	}
+
 	if err != nil {
 		log.Error("could not create VM: ", "error", err)
 		return nil, err

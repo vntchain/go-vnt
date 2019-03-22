@@ -52,6 +52,7 @@ type EnvFunctions struct {
 	funcTable map[string]wasm.Function
 }
 
+//InitFuncTable init event and contract_call function
 func (ef *EnvFunctions) InitFuncTable(context *ChainContext) {
 	ef.ctx = context
 	ef.funcTable = ef.getFuncTable()
@@ -125,11 +126,12 @@ func (ef *EnvFunctions) InitFuncTable(context *ChainContext) {
 	}
 }
 
+//GetFuncTable get the env function table
 func (ef *EnvFunctions) GetFuncTable() map[string]wasm.Function {
 	return ef.funcTable
 }
 
-//todo uint64 =>uint256
+//GetBalanceFromAddress get balance from address
 func (ef *EnvFunctions) GetBalanceFromAddress(proc *exec.WavmProcess, locIndex uint64) uint64 {
 	ef.ctx.GasCounter.GasGetBalanceFromAddress()
 	ctx := ef.ctx
@@ -138,17 +140,19 @@ func (ef *EnvFunctions) GetBalanceFromAddress(proc *exec.WavmProcess, locIndex u
 	return ef.returnU256(proc, balance)
 }
 
+//GetBlockNumber get the block number
 func (ef *EnvFunctions) GetBlockNumber(proc *exec.WavmProcess) uint64 {
 	ef.ctx.GasCounter.GasGetBlockNumber()
 	return ef.ctx.BlockNumber.Uint64()
 }
 
+//GetGas get the rest gas
 func (ef *EnvFunctions) GetGas(proc *exec.WavmProcess) uint64 {
-	//当前剩余gas
 	ef.ctx.GasCounter.GasGetGas()
 	return ef.ctx.Contract.Gas
 }
 
+//GetBlockHash get the block hash
 func (ef *EnvFunctions) GetBlockHash(proc *exec.WavmProcess, blockNum uint64) uint64 {
 	ctx := ef.ctx
 	ctx.GasCounter.GasGetBlockHash()
@@ -164,6 +168,7 @@ func (ef *EnvFunctions) GetBlockHash(proc *exec.WavmProcess, blockNum uint64) ui
 	}
 }
 
+//GetBlockProduser get the block produser address
 func (ef *EnvFunctions) GetBlockProduser(proc *exec.WavmProcess) uint64 {
 	ctx := ef.ctx
 	ctx.GasCounter.GasGetBlockProduser()
@@ -171,11 +176,13 @@ func (ef *EnvFunctions) GetBlockProduser(proc *exec.WavmProcess) uint64 {
 	return ef.returnAddress(proc, coinbase)
 }
 
+//GetTimestamp get the block timestamp
 func (ef *EnvFunctions) GetTimestamp(proc *exec.WavmProcess) uint64 {
 	ef.ctx.GasCounter.GasGetTimestamp()
 	return ef.ctx.Time.Uint64()
 }
 
+//GetOrigin get tx origin
 func (ef *EnvFunctions) GetOrigin(proc *exec.WavmProcess) uint64 {
 	ctx := ef.ctx
 	ctx.GasCounter.GasGetOrigin()
@@ -183,6 +190,7 @@ func (ef *EnvFunctions) GetOrigin(proc *exec.WavmProcess) uint64 {
 	return ef.returnAddress(proc, origin)
 }
 
+//GetSender get tx sender
 func (ef *EnvFunctions) GetSender(proc *exec.WavmProcess) uint64 {
 	ctx := ef.ctx
 	ctx.GasCounter.GasGetSender()
@@ -190,13 +198,14 @@ func (ef *EnvFunctions) GetSender(proc *exec.WavmProcess) uint64 {
 	return ef.returnAddress(proc, sender)
 }
 
+//GetGasLimit get the block gaslimit
 func (ef *EnvFunctions) GetGasLimit(proc *exec.WavmProcess) uint64 {
 	ctx := ef.ctx
 	ctx.GasCounter.GasGetGasLimit()
 	return ctx.GasLimit
 }
 
-//todo 不能转成uint64 必须是uint256
+//GetValue get tranfer vnt amount of a tx
 func (ef *EnvFunctions) GetValue(proc *exec.WavmProcess) uint64 {
 	ctx := ef.ctx
 	ctx.GasCounter.GasGetValue()
@@ -204,6 +213,7 @@ func (ef *EnvFunctions) GetValue(proc *exec.WavmProcess) uint64 {
 	return ef.returnU256(proc, val)
 }
 
+//SHA3
 func (ef *EnvFunctions) SHA3(proc *exec.WavmProcess, dataIdx uint64) uint64 {
 	data := proc.ReadAt(dataIdx)
 	ef.ctx.GasCounter.GasSHA3(uint64(len(data)))
@@ -211,6 +221,7 @@ func (ef *EnvFunctions) SHA3(proc *exec.WavmProcess, dataIdx uint64) uint64 {
 	return uint64(proc.SetBytes(hash))
 }
 
+//GetContractAddress get contract address
 func (ef *EnvFunctions) GetContractAddress(proc *exec.WavmProcess) uint64 {
 	ctx := ef.ctx
 	ctx.GasCounter.GasGetContractAddress()
@@ -229,7 +240,6 @@ func (ef *EnvFunctions) Assert(proc *exec.WavmProcess, condition uint64, msgIdx 
 }
 
 func (ef *EnvFunctions) SendFromContract(proc *exec.WavmProcess, addrIdx uint64, amountIdx uint64) {
-	log.Debug("instructions", "func", "SendFromContract")
 	ef.forbiddenMutable(proc)
 	ef.ctx.GasCounter.GasSendFromContract()
 	addr := common.BytesToAddress(proc.ReadAt(addrIdx))
@@ -246,7 +256,6 @@ func (ef *EnvFunctions) SendFromContract(proc *exec.WavmProcess, addrIdx uint64,
 }
 
 func (ef *EnvFunctions) TransferFromContract(proc *exec.WavmProcess, addrIdx uint64, amountIdx uint64) uint64 {
-	log.Debug("instructions", "func", "TransferFromContract")
 	ef.forbiddenMutable(proc)
 	ef.ctx.GasCounter.GasSendFromContract()
 	addr := common.BytesToAddress(proc.ReadAt(addrIdx))
@@ -492,7 +501,6 @@ func (ef *EnvFunctions) getContractCall(funcName string) interface{} {
 			gas += params.CallStipend
 		}
 		ret, returnGas, err := ef.ctx.Wavm.Call(ef.ctx.Contract, toAddr, res, gas, amount)
-		log.Debug("instructions", "func", "contractcall", "ret", ret, "gas", gas, "returnGas", returnGas, "err", err, "gasused", gas-returnGas)
 		failError := errors.New("failed to get result in contract call.")
 		if err != nil {
 			e := fmt.Errorf("%s Reason : %s", failError, err)
@@ -617,10 +625,13 @@ func (ef *EnvFunctions) getContractCall(funcName string) interface{} {
 func (ef *EnvFunctions) printLine(msg string) error {
 	funcName := ef.ctx.Wavm.Wavm.GetFuncName()
 	log.Info("Contract Debug >>>>", "func", funcName, "message", msg)
+	if ef.ctx.Wavm.vmConfig.Debug == true && ef.ctx.Wavm.vmConfig.Tracer != nil {
+		ef.ctx.Wavm.vmConfig.Tracer.CaptureLog(nil, msg)
+	}
 	return nil
 }
 
-func (ef *EnvFunctions) GetPrintRemark(proc *exec.WavmProcess, remarkIdx uint64) string {
+func (ef *EnvFunctions) getPrintRemark(proc *exec.WavmProcess, remarkIdx uint64) string {
 	strValue := proc.ReadAt(remarkIdx)
 	return string(strValue)
 }
@@ -631,7 +642,7 @@ func (ef *EnvFunctions) PrintAddress(proc *exec.WavmProcess, remarkIdx uint64, s
 		return
 	}
 	addrValue := proc.ReadAt(strIdx)
-	msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), common.BytesToAddress(addrValue).String())
+	msg := fmt.Sprint(ef.getPrintRemark(proc, remarkIdx), common.BytesToAddress(addrValue).String())
 	ef.printLine(msg)
 }
 
@@ -641,7 +652,7 @@ func (ef *EnvFunctions) PrintStr(proc *exec.WavmProcess, remarkIdx uint64, strId
 		return
 	}
 	strValue := proc.ReadAt(strIdx)
-	msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), string(strValue))
+	msg := fmt.Sprint(ef.getPrintRemark(proc, remarkIdx), string(strValue))
 	ef.printLine(msg)
 }
 
@@ -660,7 +671,7 @@ func (ef *EnvFunctions) PrintQStr(proc *exec.WavmProcess, remarkIdx uint64, strI
 	log.Debug("memory", "data", proc.GetData()[0:length])
 	log.Debug("PrintQStr", "remarkIdx", remarkIdx, "strIdx", strIdx, "offset", offset, "size", size, "data", strValue)
 	// msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), string(strValue))
-	msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), hex.EncodeToString(strValue))
+	msg := fmt.Sprint(ef.getPrintRemark(proc, remarkIdx), hex.EncodeToString(strValue))
 	ef.printLine(msg)
 }
 
@@ -669,7 +680,7 @@ func (ef *EnvFunctions) PrintUint64T(proc *exec.WavmProcess, remarkIdx uint64, i
 	if !ef.ctx.Wavm.vmConfig.Debug {
 		return
 	}
-	msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), intValue)
+	msg := fmt.Sprint(ef.getPrintRemark(proc, remarkIdx), intValue)
 	ef.printLine(msg)
 }
 
@@ -678,34 +689,35 @@ func (ef *EnvFunctions) PrintUint32T(proc *exec.WavmProcess, remarkIdx uint64, i
 	if !ef.ctx.Wavm.vmConfig.Debug {
 		return
 	}
-	msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), uint32(intValue))
+	msg := fmt.Sprint(ef.getPrintRemark(proc, remarkIdx), uint32(intValue))
 	ef.printLine(msg)
 }
 
-// Print a int64
+//PrintInt64T  Print a int64
 func (ef *EnvFunctions) PrintInt64T(proc *exec.WavmProcess, remarkIdx uint64, intValue uint64) {
 	if !ef.ctx.Wavm.vmConfig.Debug {
 		return
 	}
-	msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), int64(intValue))
+	msg := fmt.Sprint(ef.getPrintRemark(proc, remarkIdx), int64(intValue))
 	ef.printLine(msg)
 }
 
-// Print a int32
+//PrintInt32T Print a int32
 func (ef *EnvFunctions) PrintInt32T(proc *exec.WavmProcess, remarkIdx uint64, intValue uint64) {
 	if !ef.ctx.Wavm.vmConfig.Debug {
 		return
 	}
-	msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), int32(intValue))
+	msg := fmt.Sprint(ef.getPrintRemark(proc, remarkIdx), int32(intValue))
 	ef.printLine(msg)
 }
 
+//PrintUint256T Print a uint256
 func (ef *EnvFunctions) PrintUint256T(proc *exec.WavmProcess, remarkIdx uint64, idx uint64) {
 	if !ef.ctx.Wavm.vmConfig.Debug {
 		return
 	}
 	u256 := readU256FromMemory(proc, idx)
-	msg := fmt.Sprint(ef.GetPrintRemark(proc, remarkIdx), u256.String())
+	msg := fmt.Sprint(ef.getPrintRemark(proc, remarkIdx), u256.String())
 	ef.printLine(msg)
 }
 
@@ -791,7 +803,6 @@ func callStateDb(ef *EnvFunctions, proc *exec.WavmProcess, valAddr uint64, state
 	storageMap := ef.ctx.StorageMapping
 	if val, ok := storageMap[valAddr]; ok {
 		for _, v := range val.StorageKey {
-			log.Debug("env_funcs", "func", "callStateDb", "key", v, "keytype", v.KeyType)
 			var lengthKeyHash common.Hash
 			if v.IsArrayIndex {
 				lengthKeyHash = keyHash
@@ -805,7 +816,6 @@ func callStateDb(ef *EnvFunctions, proc *exec.WavmProcess, valAddr uint64, state
 			} else {
 				keyHash = utils.MapLocation(keyHash.Bytes(), keyMem)
 			}
-			log.Debug("env_funcs", "func", "callStateDb", "keyhash", keyHash.String())
 		}
 		stateDbOp(val, keyHash)
 	}
@@ -813,7 +823,6 @@ func callStateDb(ef *EnvFunctions, proc *exec.WavmProcess, valAddr uint64, state
 
 func getArrayLength(ef *EnvFunctions, lengthKeyHash common.Hash) uint64 {
 	length := ef.ctx.StateDB.GetState(ef.ctx.Contract.Address(), lengthKeyHash).Bytes()
-	log.Debug("env_funcs", "func", "getArrayLength", "hash", lengthKeyHash.String(), "len", length)
 	return endianess.Uint64(length[len(length)-8:])
 }
 
@@ -824,7 +833,6 @@ func inBounds(memoryData []byte, end uint64) {
 }
 
 func getMemory(proc *exec.WavmProcess, addr uint64, addrType int32, isArrayIndex bool, length uint64) []byte {
-	log.Debug("func", "getMemory", "")
 	var mem []byte
 	memoryData := proc.GetData()
 	switch addrType {
@@ -879,7 +887,6 @@ func getMemory(proc *exec.WavmProcess, addr uint64, addrType int32, isArrayIndex
 	return mem
 }
 func (ef *EnvFunctions) WriteWithPointer(proc *exec.WavmProcess, offsetAddr, baseAddr uint64) {
-	log.Debug("instruction", "func", ">>>>>>>WriteWithPointer<<<<<<<")
 	valAddr := offsetAddr + baseAddr
 	storageMap := ef.ctx.StorageMapping
 	if _, ok := storageMap[valAddr]; ok {
@@ -919,7 +926,6 @@ func (ef *EnvFunctions) WriteWithPointer(proc *exec.WavmProcess, offsetAddr, bas
 }
 
 func (ef *EnvFunctions) ReadWithPointer(proc *exec.WavmProcess, offsetAddr, baseAddr uint64) {
-	log.Debug("instruction", "func", ">>>>>>ReadWithPointer<<<<<<<<<")
 	valAddr := offsetAddr + baseAddr
 	op := func(val storage.StorageMapping, keyHash common.Hash) {
 		stateVal := []byte{}
@@ -967,7 +973,6 @@ func (ef *EnvFunctions) ReadWithPointer(proc *exec.WavmProcess, offsetAddr, base
 
 func (ef *EnvFunctions) InitializeVariables(proc *exec.WavmProcess) {
 	// 普通类型初始化，忽略mapping和array
-	log.Debug("EnvFunctions", "call", "InitializeVariables")
 	//need to ignore array type because array init need array length
 	storageMap := ef.ctx.StorageMapping
 	for k, v := range storageMap {
@@ -1117,14 +1122,14 @@ func (ef *EnvFunctions) returnHash(proc *exec.WavmProcess, hash []byte) uint64 {
 	return uint64(proc.SetBytes(hash))
 }
 
+//Sender for qlang
 func (ef *EnvFunctions) Sender(proc *exec.WavmProcess, ptr uint64) {
 	sender := ef.ctx.Contract.Address().Bytes()
-	log.Debug("EnvFunctions", "func", "Sender", "ptr", ptr, "data", sender)
 	proc.WriteAt(sender, int64(ptr))
 }
 
+//Load for qlang
 func (ef *EnvFunctions) Load(proc *exec.WavmProcess, keyptr uint64, dataptr uint64) uint64 {
-	log.Debug("EnvFunctions", "func", "Load")
 	keyData := ef.getQString(proc, keyptr)
 	log.Debug("EnvFunctions", "func", "Load", "key data", keyData, "data ptr", dataptr)
 	keyHash := common.BytesToHash(keyData)
@@ -1142,6 +1147,7 @@ func (ef *EnvFunctions) Load(proc *exec.WavmProcess, keyptr uint64, dataptr uint
 	return uint64(len(stateVal))
 }
 
+//Store for qlang
 func (ef *EnvFunctions) Store(proc *exec.WavmProcess, keyptr uint64, dataptr uint64) {
 	log.Debug("EnvFunctions", "func", "Store")
 	keyData := ef.getQString(proc, keyptr)

@@ -17,6 +17,7 @@
 package wavm
 
 import (
+	"reflect"
 	"testing"
 
 	"fmt"
@@ -152,7 +153,7 @@ func getVM(codeFile string, abiPath string) (*exec.Interpreter, EnvFunctions) {
 		GasCounter:  gasCounter,
 		GasLimit:    10000000,
 		Wavm: &WAVM{
-			vmConfig: vm.Config{Debug: true},
+			vmConfig: vm.Config{Debug: true, Tracer: vm.NewStructLogger(nil)},
 			Wavm:     &Wavm{},
 		},
 	}
@@ -177,7 +178,7 @@ func getVM(codeFile string, abiPath string) (*exec.Interpreter, EnvFunctions) {
 	//compiled, err := CompileModule(m, cc)
 	//compiled := make([]vnt.Compiled, 0)
 
-	vm, err := exec.NewInterpreter(m, nil, instantiateMemory)
+	vm, err := exec.NewInterpreter(m, nil, instantiateMemory, reflect.ValueOf(nil))
 	if err != nil {
 		log.Crit("failed to create vm: ", "error", err)
 	}
@@ -350,7 +351,7 @@ func TestVM_getPrintRemark(t *testing.T) {
 
 	remarkIdx := uint64(vm.Memory.SetBytes([]byte("The value is: ")))
 
-	remark := ef.GetPrintRemark(proc, remarkIdx)
+	remark := ef.getPrintRemark(proc, remarkIdx)
 
 	assert.Equal(t, "The value is: ", remark)
 }
