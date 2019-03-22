@@ -35,10 +35,11 @@ import (
 )
 
 const (
-	voteLimit = 30
-	oneDay    = int64(24) * 3600
-	oneWeek   = oneDay * 7
-	year2019  = 1546272000
+	ContractAddr = "0x0000000000000000000000000000000000000009"
+	VoteLimit    = 30
+	OneDay       = int64(24) * 3600
+	oneWeek      = OneDay * 7
+	year2019     = 1546272000
 )
 
 var (
@@ -50,15 +51,29 @@ var (
 )
 
 var (
-	electionAddr = common.BytesToAddress([]byte{9})
+	contractAddr = common.HexToAddress(ContractAddr)
 	emptyAddress = common.Address{}
 	eraTimeStamp = big.NewInt(year2019)
 
 	// stake minimum time period
-	unstakePeriod   = big.NewInt(oneDay)
+	unstakePeriod   = big.NewInt(OneDay)
 	baseBounty      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1000))
 	restTotalBounty = big.NewInt(0).Mul(big.NewInt(1e18), big.NewInt(1e9))
 )
+
+const AbiJSON = `[
+{"name":"registerWitness","inputs":[{"name":"nodeUrl","type":"bytes"},{"name":"website","type":"bytes"},{"name":"nodeName","type":"bytes"}],"outputs":[],"type":"function"},
+{"name":"unregisterWitness","inputs":[],"outputs":[],"type":"function"},
+{"name":"voteWitnesses","inputs":[{"name":"candidate","type":"address[]"}],"outputs":[],"type":"function"},
+{"name":"cancelVote","inputs":[],"outputs":[],"type":"function"},
+{"name":"startProxy","inputs":[],"outputs":[],"type":"function"},
+{"name":"stopProxy","inputs":[],"outputs":[],"type":"function"},
+{"name":"cancelProxy","inputs":[],"outputs":[],"type":"function"},
+{"name":"setProxy","inputs":[{"name":"proxy","type":"address"}],"outputs":[],"type":"function"},
+{"name":"stake","inputs":[{"name":"stakeCount","type":"uint256"}],"outputs":[],"type":"function"},
+{"name":"unStake","inputs":[],"outputs":[],"type":"function"},
+{"name":"extractOwnBounty","inputs":[],"outputs":[],"type":"function"}
+]`
 
 type Election struct{}
 
@@ -194,25 +209,13 @@ func (e *Election) RequiredGas(input []byte) uint64 {
 }
 
 func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
-	nonce := ctx.GetStateDb().GetNonce(electionAddr)
+	nonce := ctx.GetStateDb().GetNonce(contractAddr)
 	if nonce == 0 {
 		setRestBounty(ctx.GetStateDb(), Bounty{restTotalBounty})
 	}
-	ctx.GetStateDb().SetNonce(electionAddr, nonce+1)
-	abiJSON := `[
-{"inputs":[{"name":"nodeUrl","type":"bytes"},{"name":"website","type":"bytes"},{"name":"nodeName","type":"bytes"}],"name":"registerWitness","outputs":[],"type":"function"},
-{"inputs":[],"name":"unregisterWitness","outputs":[],"type":"function"},
-{"inputs":[{"name":"candidate","type":"address[]"}],"name":"voteWitnesses","outputs":[],"type":"function"},
-{"inputs":[],"name":"cancelVote","outputs":[],"type":"function"},
-{"inputs":[],"name":"startProxy","outputs":[],"type":"function"},
-{"inputs":[],"name":"stopProxy","outputs":[],"type":"function"},
-{"inputs":[],"name":"cancelProxy","outputs":[],"type":"function"},
-{"inputs":[{"name":"proxy","type":"address"}],"name":"setProxy","outputs":[],"type":"function"},
-{"inputs":[{"name":"stakeCount","type":"uint256"}],"name":"stake","outputs":[],"type":"function"},
-{"inputs":[],"name":"unStake","outputs":[],"type":"function"},
-{"inputs":[],"name":"extractOwnBounty","outputs":[],"type":"function"}
-]`
-	electionABI, err := abi.JSON(strings.NewReader(abiJSON))
+	ctx.GetStateDb().SetNonce(contractAddr, nonce+1)
+
+	electionABI, err := abi.JSON(strings.NewReader(AbiJSON))
 	if err != nil {
 		return nil, err
 	}
@@ -398,8 +401,8 @@ func (ec electionContext) unregisterWitness(address common.Address) error {
 
 func (ec electionContext) voteWitnesses(address common.Address, candidates []common.Address) error {
 	// 入参校验，如果投的候选人过多，返回错误
-	if len(candidates) > voteLimit {
-		return fmt.Errorf("you voted too many candidates: the limit is %d, you voted %d", voteLimit, len(candidates))
+	if len(candidates) > VoteLimit {
+		return fmt.Errorf("you voted too many candidates: the limit is %d, you voted %d", VoteLimit, len(candidates))
 	}
 
 	voter := ec.getVoter(address)
@@ -724,7 +727,7 @@ func (ec electionContext) extractOwnBounty(addr common.Address) error {
 		return fmt.Errorf("extractOwnBounty unknown witness.")
 	}
 	now := ec.context.GetTime()
-	if now.Cmp(candidate.LastExtractTime) < 0 || now.Cmp(new(big.Int).Add(candidate.LastExtractTime, big.NewInt(oneDay))) < 0 {
+	if now.Cmp(candidate.LastExtractTime) < 0 || now.Cmp(new(big.Int).Add(candidate.LastExtractTime, big.NewInt(OneDay))) < 0 {
 		return fmt.Errorf("it's less than 24h after your last extract bounty,lastExtractTime: %v , now: %v", candidate.LastExtractTime, now)
 	}
 
@@ -758,7 +761,7 @@ func (ec electionContext) prepareForVote(voter *Voter, address common.Address) (
 		voter.TimeStamp = now
 	} else {
 		// 如果距离上次投票时间不足24小时，拒绝投票
-		if now.Cmp(voter.TimeStamp) < 0 || now.Cmp(new(big.Int).Add(voter.TimeStamp, big.NewInt(oneDay))) < 0 {
+		if now.Cmp(voter.TimeStamp) < 0 || now.Cmp(new(big.Int).Add(voter.TimeStamp, big.NewInt(OneDay))) < 0 {
 			return nil, fmt.Errorf("it's less than 24h after your last vote or setProxy, lastTime: %v, now: %v", voter.TimeStamp, ec.context.GetTime())
 		} else {
 			voter.TimeStamp = now
@@ -864,7 +867,7 @@ func GetAllCandidates(stateDB inter.StateDB, sorted bool) CandidateList {
 // GetVoter returns a voter's information
 func GetVoter(stateDB inter.StateDB, addr common.Address) *Voter {
 	getFromDB := func(key common.Hash) common.Hash {
-		return stateDB.GetState(electionAddr, key)
+		return stateDB.GetState(contractAddr, key)
 	}
 
 	v := getVoterFrom(addr, getFromDB)
@@ -874,7 +877,7 @@ func GetVoter(stateDB inter.StateDB, addr common.Address) *Voter {
 // GetStake returns a user's information
 func GetStake(stateDB inter.StateDB, addr common.Address) *Stake {
 	getFromDB := func(key common.Hash) common.Hash {
-		return stateDB.GetState(electionAddr, key)
+		return stateDB.GetState(contractAddr, key)
 	}
 
 	s := getStakeFrom(addr, getFromDB)
@@ -904,8 +907,8 @@ func GrantBounty(stateDB inter.StateDB, grantAmount *big.Int) (*big.Int, error) 
 
 // QueryRestVNTBounty returns the value of RestTotalBounty.
 func QueryRestVNTBounty(stateDB inter.StateDB) *big.Int {
-	if !stateDB.Exist(electionAddr) {
-		stateDB.SetNonce(electionAddr, 1)
+	if !stateDB.Exist(contractAddr) {
+		stateDB.SetNonce(contractAddr, 1)
 		setRestBounty(stateDB, Bounty{restTotalBounty})
 		return restTotalBounty
 	}

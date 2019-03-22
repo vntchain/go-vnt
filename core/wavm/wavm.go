@@ -86,10 +86,7 @@ func (wavm *WAVM) GetChainConfig() *params.ChainConfig {
 // run runs the given contract and takes care of running precompiles with a fallback to the byte code interpreter.
 func runWavm(wavm *WAVM, contract *wasmcontract.WASMContract, input []byte, isCreate bool) ([]byte, error) {
 	if contract.CodeAddr != nil {
-		precompiles := vm.PrecompiledContractsHomestead
-		if wavm.ChainConfig().IsByzantium(wavm.BlockNumber) {
-			precompiles = vm.PrecompiledContractsByzantium
-		}
+		precompiles := vm.PrecompiledContractsHubble
 		if p := precompiles[*contract.CodeAddr]; p != nil {
 			return vm.RunPrecompiledContract(wavm, p, input, contract)
 		}
@@ -215,9 +212,7 @@ func (wavm *WAVM) Create(caller vm.ContractRef, code []byte, gas uint64, value *
 	// Create a new account on the state
 	snapshot := wavm.StateDB.Snapshot()
 	wavm.StateDB.CreateAccount(contractAddr)
-	if wavm.ChainConfig().IsEIP158(wavm.BlockNumber) {
-		wavm.StateDB.SetNonce(contractAddr, 1)
-	}
+	wavm.StateDB.SetNonce(contractAddr, 1)
 	wavm.Transfer(wavm.StateDB, caller.Address(), contractAddr, value)
 
 	// initialise a new contract and set the code that is to be used by the
@@ -236,7 +231,7 @@ func (wavm *WAVM) Create(caller vm.ContractRef, code []byte, gas uint64, value *
 	// start := time.Now()
 	ret, err = runWavm(wavm, contract, nil, true)
 	// check whether the max code size has been exceeded
-	maxCodeSizeExceeded := wavm.ChainConfig().IsEIP158(wavm.BlockNumber) && len(ret) > params.MaxCodeSize
+	maxCodeSizeExceeded := len(ret) > params.MaxCodeSize
 	// if the contract creation ran successfully and no errors were returned
 	// calculate the gas required to store the code. If the code could not
 	// be stored due to not enough gas set an error and let it be handled
@@ -247,14 +242,13 @@ func (wavm *WAVM) Create(caller vm.ContractRef, code []byte, gas uint64, value *
 			wavm.StateDB.SetCode(contractAddr, ret)
 		} else {
 			err = errorsmsg.ErrCodeStoreOutOfGas
-
 		}
 	}
 
 	// When an error was returned by the wavm or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
-	// when we're in homestead this also counts for code storage gas errors.
-	if maxCodeSizeExceeded || (err != nil && (wavm.ChainConfig().IsHomestead(wavm.BlockNumber) || err != errorsmsg.ErrCodeStoreOutOfGas)) {
+	// also counts for code storage gas errors.
+	if maxCodeSizeExceeded || err != nil {
 		wavm.StateDB.RevertToSnapshot(snapshot)
 		if err.Error() != errorsmsg.ErrExecutionReverted.Error() {
 			contract.UseGas(contract.Gas)
@@ -293,11 +287,8 @@ func (wavm *WAVM) Call(caller vm.ContractRef, addr common.Address, input []byte,
 		snapshot = wavm.StateDB.Snapshot()
 	)
 	if !wavm.StateDB.Exist(addr) {
-		precompiles := vm.PrecompiledContractsHomestead
-		if wavm.ChainConfig().IsByzantium(wavm.BlockNumber) {
-			precompiles = vm.PrecompiledContractsByzantium
-		}
-		if precompiles[addr] == nil && wavm.ChainConfig().IsEIP158(wavm.BlockNumber) && value.Sign() == 0 {
+		precompiles := vm.PrecompiledContractsHubble
+		if precompiles[addr] == nil && value.Sign() == 0 {
 			// Calling a non existing account, don't do antything, but ping the tracer
 			// if wavm.vmConfig.Debug && wavm.depth == 0 {
 			// 	wavm.vmConfig.Tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
@@ -330,7 +321,7 @@ func (wavm *WAVM) Call(caller vm.ContractRef, addr common.Address, input []byte,
 	ret, err = runWavm(wavm, contract, input, false)
 	// When an error was returned by the EVM or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
-	// when we're in homestead this also counts for code storage gas errors.
+	// this also counts for code storage gas errors.
 	if err != nil {
 		wavm.StateDB.RevertToSnapshot(snapshot)
 		if err.Error() != errorsmsg.ErrExecutionReverted.Error() && !bytes.Equal(to.Address().Bytes(), electionAddress.Bytes()) {

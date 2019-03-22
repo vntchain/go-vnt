@@ -33,6 +33,7 @@ The bzz protocol component speaks the bzz protocol
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"net"
 	"strconv"
 	"time"
@@ -383,7 +384,7 @@ func (self *bzz) handleStatus() (err error) {
 
 	if self.swapEnabled {
 		// set remote profile for accounting
-		self.swap, err = bzzswap.NewSwap(self.swapParams, status.Swap, self.backend, self)
+		self.swap, err = bzzswap.NewSwap(big.NewInt(int64(self.NetworkId)), self.swapParams, status.Swap, self.backend, self)
 		if err != nil {
 			return err
 		}

@@ -2830,7 +2830,6 @@ function Vnt (provider) {
     this.hash = Hash;
     this.utils = utils;
     this.personal = new Personal(this);
-    this.bzz = new Swarm(this);
     this.settings = new Settings();
     this.version = {
         api: version.version

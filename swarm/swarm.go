@@ -32,7 +32,6 @@ import (
 	"github.com/vntchain/go-vnt/contracts/chequebook"
 	"github.com/vntchain/go-vnt/contracts/ens"
 	"github.com/vntchain/go-vnt/crypto"
-	"github.com/vntchain/go-vnt/vntclient"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/metrics"
 	"github.com/vntchain/go-vnt/node"
@@ -43,6 +42,7 @@ import (
 	"github.com/vntchain/go-vnt/swarm/fuse"
 	"github.com/vntchain/go-vnt/swarm/network"
 	"github.com/vntchain/go-vnt/swarm/storage"
+	"github.com/vntchain/go-vnt/vntclient"
 	"github.com/vntchain/go-vnt/vntp2p"
 )
 
@@ -220,7 +220,7 @@ func newEnsClient(endpoint string, addr common.Address, config *api.Config) (*en
 		}
 	}
 	transactOpts := bind.NewKeyedTransactor(config.Swap.PrivateKey())
-	dns, err := ens.NewENS(transactOpts, ensRoot, ensClient)
+	dns, err := ens.NewENS(big.NewInt(int64(config.NetworkId)), transactOpts, ensRoot, ensClient)
 	if err != nil {
 		return nil, err
 	}
@@ -423,7 +423,7 @@ func (self *Swarm) Api() *api.Api {
 
 // SetChequebook ensures that the local checquebook is set up on chain.
 func (self *Swarm) SetChequebook(ctx context.Context) error {
-	err := self.config.Swap.SetChequebook(ctx, self.backend, self.config.Path)
+	err := self.config.Swap.SetChequebook(ctx, big.NewInt(int64(self.config.NetworkId)), self.backend, self.config.Path)
 	if err != nil {
 		return err
 	}

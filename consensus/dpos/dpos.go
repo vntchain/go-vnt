@@ -459,7 +459,7 @@ func (d *Dpos) Finalize(chain consensus.ChainReader, header *types.Header, state
 	}
 
 	// Commit db
-	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
+	header.Root = state.IntermediateRoot(true)
 
 	// Assemble and return the final block for sealing
 	return types.NewBlock(header, txs, receipts), nil

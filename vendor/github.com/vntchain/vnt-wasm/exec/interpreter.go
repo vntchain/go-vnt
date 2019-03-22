@@ -31,7 +31,6 @@ func NewInterpreter(module *wasm.Module, compiled []vnt.Compiled, initMem func(m
 		if len(module.Memory.Entries) > 1 {
 			return nil, ErrMultipleLinearMemories
 		}
-
 		vm.memory = make([]byte, uint(module.Memory.Entries[0].Limits.Initial)*wasmPageSize)
 		copy(vm.memory, module.LinearMemoryIndexSpace[0])
 	} else {
