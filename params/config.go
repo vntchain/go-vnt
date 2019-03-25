@@ -31,28 +31,20 @@ var (
 var (
 	// MainnetChainConfig is the chain parameters to run a node on the main network.
 	MainnetChainConfig = &ChainConfig{
-		ChainID:     big.NewInt(1),
-		HubbleBlock: big.NewInt(1150000),
+		ChainID: big.NewInt(1),
 		Dpos: &DposConfig{
 			Period:       2,
-			WitnessesNum: 4,
+			WitnessesNum: 19,
 		},
 	}
 
 	// TestnetChainConfig contains the chain parameters to run a node on the Ropsten test network.
 	TestnetChainConfig = &ChainConfig{
-		ChainID:     big.NewInt(3),
-		HubbleBlock: big.NewInt(0),
+		ChainID: big.NewInt(3),
 		Dpos: &DposConfig{
 			Period:       2,
-			WitnessesNum: 4,
+			WitnessesNum: 19,
 		},
-	}
-
-	// RinkebyChainConfig contains the chain parameters to run a node on the Rinkeby test network.
-	RinkebyChainConfig = &ChainConfig{
-		ChainID:     big.NewInt(4),
-		HubbleBlock: big.NewInt(1),
 	}
 
 	// AllCliqueProtocolChanges contains every protocol change (EIPs) introduced
@@ -64,13 +56,19 @@ var (
 		big.NewInt(1337),
 		big.NewInt(0),
 		&DposConfig{
-			WitnessesNum: 4,
 			Period:       2,
+			WitnessesNum: 4,
 		},
 	}
 
-	TestChainConfig = &ChainConfig{big.NewInt(1), nil, nil}
-	TestRules       = TestChainConfig.Rules(new(big.Int))
+	TestChainConfig = &ChainConfig{
+		big.NewInt(1),
+		big.NewInt(0),
+		&DposConfig{
+			Period:       2,
+			WitnessesNum: 4,
+		}}
+	TestRules = TestChainConfig.Rules(new(big.Int))
 )
 
 // ChainConfig is the core config which determines the blockchain settings.
