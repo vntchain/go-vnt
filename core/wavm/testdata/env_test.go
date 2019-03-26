@@ -246,7 +246,7 @@ func run(t *testing.T, jspath string) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	vmconfig := vm.Config{Debug: true, Tracer: vm.NewStructLogger(nil)}
+	vmconfig := vm.Config{Debug: true, Tracer: wavm.NewWasmLogger()}
 	envtest := new(ENVTest)
 	envtest.callCost = 0
 	envtest.createCost = 0

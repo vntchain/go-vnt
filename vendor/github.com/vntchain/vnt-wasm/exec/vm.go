@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"reflect"
 
 	"github.com/vntchain/vnt-wasm/disasm"
 	"github.com/vntchain/vnt-wasm/exec/internal/compile"
@@ -71,10 +70,10 @@ type VM struct {
 	// or encountering an invalid instruction, e.g. `unreachable`.
 	RecoverPanic bool
 
-	abort bool // Flag for host functions to terminate execution
-
+	abort              bool // Flag for host functions to terminate execution
+	debug              bool
+	captureState       func(pc uint64, op byte) error
 	recursiveCallDepth int
-	captureState       reflect.Value
 }
 
 // As per the WebAssembly spec: https://github.com/WebAssembly/design/blob/27ac254c854994103c24834a994be16f74f54186/Semantics.md#linear-memory
@@ -329,12 +328,12 @@ func (vm *VM) ExecCode(fnIndex int64, args ...uint64) (rtrn interface{}, err err
 func (vm *VM) execCode(compiled compiledFunction) uint64 {
 outer:
 	for int(vm.ctx.pc) < len(vm.ctx.code) && !vm.abort {
-		// vm.captureState
 		if vm.recursiveCallDepth > 1024 {
 			panic(fmt.Errorf("recursive call limit reached 1024"))
 		}
 		op := vm.ctx.code[vm.ctx.pc]
 		vm.ctx.pc++
+		vm.captureState(uint64(vm.ctx.pc), op)
 		switch op {
 		case ops.Return:
 			break outer

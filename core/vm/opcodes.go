@@ -384,6 +384,10 @@ func (op OpCode) String() string {
 	return str
 }
 
+func (op OpCode) Byte() byte {
+	return byte(op)
+}
+
 var stringToOp = map[string]OpCode{
 	"STOP":           STOP,
 	"ADD":            ADD,

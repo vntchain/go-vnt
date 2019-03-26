@@ -841,7 +841,6 @@ func makePush(size uint64, pushByteSize int) executionFunc {
 		}
 		integer := evm.interpreter.intPool.get()
 		stack.push(integer.SetBytes(common.RightPadBytes(contract.Code[startMin:endMin], pushByteSize)))
-		//log.Debug("intructions", "makepush startmin", startMin, "endmin", endMin, "integer", integer, "pushByteSize", pushByteSize)
 		*pc += size
 		return nil, nil
 	}

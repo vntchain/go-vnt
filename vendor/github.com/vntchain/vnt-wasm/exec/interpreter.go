@@ -3,7 +3,6 @@ package exec
 import (
 	"fmt"
 	"math"
-	"reflect"
 	"strings"
 
 	"github.com/vntchain/vnt-wasm/disasm"
@@ -19,16 +18,15 @@ type Interpreter struct {
 	Mutable          *bool
 }
 
-func NewInterpreter(module *wasm.Module, compiled []vnt.Compiled, initMem func(m *vnt.WavmMemory, module *wasm.Module) error, captureState reflect.Value) (*Interpreter, error) {
+func NewInterpreter(module *wasm.Module, compiled []vnt.Compiled, initMem func(m *vnt.WavmMemory, module *wasm.Module) error, captureState func(pc uint64, op byte) error) (*Interpreter, error) {
 	var inter Interpreter
 	var vm VM
-
+	vm.captureState = captureState
+	fmt.Printf("vm.captureState %v\n", vm.captureState)
 	inter.Memory = vnt.NewWavmMemory()
 	inter.heapPointerIndex = -1
 	mut := false
 	inter.Mutable = &mut
-	vm.captureState = captureState
-
 	if module.Memory != nil && len(module.Memory.Entries) != 0 {
 		if len(module.Memory.Entries) > 1 {
 			return nil, ErrMultipleLinearMemories

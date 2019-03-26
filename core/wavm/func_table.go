@@ -407,19 +407,6 @@ func (ef *EnvFunctions) getFuncTable() map[string]wasm.Function {
 				Code: []byte{},
 			},
 		},
-		//OpNameRegister: {
-		//	IsHost: true,
-		//	FieldName: OpNameRegister),
-		//	Host: reflect.ValueOf(ef.Register),
-		//	OriFieldName: OpNameRegister,
-		//	Sig: &wasm.FunctionSig{
-		//		ParamTypes:  []wasm.ValueType{wasm.ValueTypeI32, wasm.ValueTypeI32},
-		//		ReturnTypes: []wasm.ValueType{},
-		//	},
-		//	Body: &wasm.FunctionBody{
-		//		Code: []byte{},
-		//	},
-		//},
 		OpNameAddressFrom: {
 			Host: reflect.ValueOf(ef.AddressFrom),
 			Sig: &wasm.FunctionSig{
