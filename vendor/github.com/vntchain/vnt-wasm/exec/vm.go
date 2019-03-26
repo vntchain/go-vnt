@@ -333,7 +333,10 @@ outer:
 		}
 		op := vm.ctx.code[vm.ctx.pc]
 		vm.ctx.pc++
-		vm.captureState(uint64(vm.ctx.pc), op)
+		if vm.debug == true && vm.captureState != nil {
+			vm.captureState(uint64(vm.ctx.pc), op)
+		}
+
 		switch op {
 		case ops.Return:
 			break outer
