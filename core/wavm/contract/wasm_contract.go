@@ -55,7 +55,8 @@ type WASMContract struct {
 
 	Args []byte
 
-	DelegateCall bool
+	DelegateCall   bool
+	CurrentUsedGas uint64
 }
 
 // NewWASMContract returns a new contract environment for the execution of EVM.
@@ -104,6 +105,7 @@ func (c *WASMContract) Caller() common.Address {
 
 // UseGas attempts the use gas and subtracts it and returns true on success
 func (c *WASMContract) UseGas(gas uint64) (ok bool) {
+	c.CurrentUsedGas = gas
 	if c.Gas < gas {
 		return false
 	}

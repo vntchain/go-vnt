@@ -38,6 +38,7 @@ import (
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/vm/election"
+	"github.com/vntchain/go-vnt/core/wavm"
 	"github.com/vntchain/go-vnt/core/wavm/utils"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/log"
@@ -797,7 +798,7 @@ type DebugLogRes struct {
 }
 
 // formatLogs formats EVM returned structured logs for json output
-func FormatLogs(logs []vm.StructLog, debugLog []vm.DebugLog) ([]StructLogRes, []DebugLogRes) {
+func FormatLogs(logs []wavm.StructLog, debugLog []wavm.DebugLog) ([]StructLogRes, []DebugLogRes) {
 	formatted := make([]StructLogRes, len(logs))
 
 	for index, trace := range logs {

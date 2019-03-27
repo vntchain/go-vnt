@@ -708,6 +708,7 @@ func (ef *EnvFunctions) PrintAddress(proc *exec.WavmProcess, remarkIdx uint64, s
 	if !ef.ctx.Wavm.wavmConfig.Debug {
 		return
 	}
+	ef.ctx.GasCounter.GasCostZero()
 	addrValue := proc.ReadAt(strIdx)
 	msg := fmt.Sprint(ef.getPrintRemark(proc, remarkIdx), common.BytesToAddress(addrValue).String())
 	ef.printLine(msg)
@@ -718,6 +719,7 @@ func (ef *EnvFunctions) PrintStr(proc *exec.WavmProcess, remarkIdx uint64, strId
 	if !ef.ctx.Wavm.wavmConfig.Debug {
 		return
 	}
+	ef.ctx.GasCounter.GasCostZero()
 	strValue := proc.ReadAt(strIdx)
 	msg := fmt.Sprint(ef.getPrintRemark(proc, remarkIdx), string(strValue))
 	ef.printLine(msg)
@@ -728,6 +730,7 @@ func (ef *EnvFunctions) PrintQStr(proc *exec.WavmProcess, remarkIdx uint64, strI
 	if !ef.ctx.Wavm.wavmConfig.Debug {
 		return
 	}
+	ef.ctx.GasCounter.GasCostZero()
 	size := endianess.Uint32(proc.GetData()[strIdx : strIdx+4])
 	offset := endianess.Uint32(proc.GetData()[strIdx+4 : strIdx+8])
 	strValue := proc.GetData()[offset : offset+size]
@@ -745,6 +748,7 @@ func (ef *EnvFunctions) PrintUint64T(proc *exec.WavmProcess, remarkIdx uint64, i
 	if !ef.ctx.Wavm.wavmConfig.Debug {
 		return
 	}
+	ef.ctx.GasCounter.GasCostZero()
 	msg := fmt.Sprint(ef.getPrintRemark(proc, remarkIdx), intValue)
 	ef.printLine(msg)
 }
@@ -754,6 +758,7 @@ func (ef *EnvFunctions) PrintUint32T(proc *exec.WavmProcess, remarkIdx uint64, i
 	if !ef.ctx.Wavm.wavmConfig.Debug {
 		return
 	}
+	ef.ctx.GasCounter.GasCostZero()
 	msg := fmt.Sprint(ef.getPrintRemark(proc, remarkIdx), uint32(intValue))
 	ef.printLine(msg)
 }
@@ -763,6 +768,7 @@ func (ef *EnvFunctions) PrintInt64T(proc *exec.WavmProcess, remarkIdx uint64, in
 	if !ef.ctx.Wavm.wavmConfig.Debug {
 		return
 	}
+	ef.ctx.GasCounter.GasCostZero()
 	msg := fmt.Sprint(ef.getPrintRemark(proc, remarkIdx), int64(intValue))
 	ef.printLine(msg)
 }
@@ -772,6 +778,7 @@ func (ef *EnvFunctions) PrintInt32T(proc *exec.WavmProcess, remarkIdx uint64, in
 	if !ef.ctx.Wavm.wavmConfig.Debug {
 		return
 	}
+	ef.ctx.GasCounter.GasCostZero()
 	msg := fmt.Sprint(ef.getPrintRemark(proc, remarkIdx), int32(intValue))
 	ef.printLine(msg)
 }
@@ -781,6 +788,7 @@ func (ef *EnvFunctions) PrintUint256T(proc *exec.WavmProcess, remarkIdx uint64, 
 	if !ef.ctx.Wavm.wavmConfig.Debug {
 		return
 	}
+	ef.ctx.GasCounter.GasCostZero()
 	u256 := readU256FromMemory(proc, idx)
 	msg := fmt.Sprint(ef.getPrintRemark(proc, remarkIdx), u256.String())
 	ef.printLine(msg)

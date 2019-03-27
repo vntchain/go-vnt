@@ -133,9 +133,16 @@ func (wavm *Wavm) ResolveImports(name string) (*wasm.Module, error) {
 	return envModule.GetModule(), nil
 }
 
-func (wavm *Wavm) captureState(pc uint64, op byte) error {
+func (wavm *Wavm) captureOp(pc uint64, op byte) error {
 	if wavm.WavmConfig.Debug {
-		wavm.Tracer().CaptureState(wavm.ChainContext.Wavm, pc, OpCode(op), wavm.ChainContext.Contract.Gas, wavm.ChainContext.Contract.GasLimit-wavm.ChainContext.Contract.Gas, nil, nil, wavm.ChainContext.Contract, wavm.ChainContext.Wavm.depth, nil)
+		wavm.Tracer().CaptureState(wavm.ChainContext.Wavm, pc, OpCode{Op: op}, wavm.ChainContext.Contract.Gas, 0, nil, nil, wavm.ChainContext.Contract, wavm.ChainContext.Wavm.depth, nil)
+	}
+	return nil
+}
+
+func (wavm *Wavm) captureEnvFunction(pc uint64, funcName string) error {
+	if wavm.WavmConfig.Debug {
+		wavm.Tracer().CaptureState(wavm.ChainContext.Wavm, pc, OpCode{FuncName: funcName}, wavm.ChainContext.Contract.Gas, wavm.ChainContext.Contract.CurrentUsedGas, nil, nil, wavm.ChainContext.Contract, wavm.ChainContext.Wavm.depth, nil)
 	}
 	return nil
 }
@@ -213,13 +220,13 @@ func (wavm *Wavm) Apply(input []byte, compiled []vnt.Compiled, mutable Mutable) 
 		if r := recover(); r != nil {
 			log.Error("Got error during wasm execution.", "err", r)
 			res = nil
-			err = fmt.Errorf("Got error during wasm execution: %s", r)
+			err = fmt.Errorf("%s", r)
 		}
 	}()
 	wavm.MutableList = mutable
 
 	var vm *exec.Interpreter
-	vm, err = exec.NewInterpreter(wavm.Module, compiled, instantiateMemory, wavm.captureState, wavm.WavmConfig.Debug)
+	vm, err = exec.NewInterpreter(wavm.Module, compiled, instantiateMemory, wavm.captureOp, wavm.captureEnvFunction, wavm.WavmConfig.Debug)
 	if err != nil {
 		log.Error("Could not create VM: ", "error", err)
 		return nil, fmt.Errorf("Could not create VM: %s", err)
