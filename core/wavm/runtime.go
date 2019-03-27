@@ -147,6 +147,13 @@ func (wavm *Wavm) captureEnvFunction(pc uint64, funcName string) error {
 	return nil
 }
 
+func (wavm *Wavm) captrueFault(pc uint64, err error) error {
+	if wavm.WavmConfig.Debug {
+		wavm.Tracer().CaptureState(wavm.ChainContext.Wavm, pc, OpCode{FuncName: "error"}, wavm.ChainContext.Contract.Gas, wavm.ChainContext.Contract.CurrentUsedGas, nil, nil, wavm.ChainContext.Contract, wavm.ChainContext.Wavm.depth, err)
+	}
+	return nil
+}
+
 func (wavm *Wavm) Tracer() vm.Tracer {
 	return wavm.ChainContext.Wavm.wavmConfig.Tracer
 }
@@ -221,6 +228,9 @@ func (wavm *Wavm) Apply(input []byte, compiled []vnt.Compiled, mutable Mutable) 
 			log.Error("Got error during wasm execution.", "err", r)
 			res = nil
 			err = fmt.Errorf("%s", r)
+			if wavm.WavmConfig.Debug == true {
+				wavm.captrueFault(uint64(wavm.VM.Pc()), err)
+			}
 		}
 	}()
 	wavm.MutableList = mutable

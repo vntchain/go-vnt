@@ -148,6 +148,10 @@ func NewInterpreter(module *wasm.Module, compiled []vnt.Compiled, initMem func(m
 	return &inter, nil
 }
 
+func (inter *Interpreter) Pc() int64 {
+	return inter.ctx.pc
+}
+
 // ExecContractCode calls the function with the given index and arguments.
 // fnIndex should be a valid index into the function index space of
 // the VM's module.

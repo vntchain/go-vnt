@@ -27,7 +27,7 @@ type StructLog struct {
 	Stack      []*big.Int                  `json:"-"`
 	Storage    map[common.Hash]common.Hash `json:"-"`
 	Depth      int                         `json:"depth"`
-	Err        error                       `json:"-"`
+	Err        error                       `json:"error"`
 }
 
 type DebugLog struct {

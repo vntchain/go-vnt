@@ -787,7 +787,7 @@ type StructLogRes struct {
 	Gas     uint64             `json:"gas"`
 	GasCost uint64             `json:"gasCost"`
 	Depth   int                `json:"depth"`
-	Error   error              `json:"error,omitempty"`
+	Error   string             `json:"error,omitempty"`
 	Stack   *[]string          `json:"stack,omitempty"`
 	Memory  *[]string          `json:"memory,omitempty"`
 	Storage *map[string]string `json:"storage,omitempty"`
@@ -802,13 +802,17 @@ func FormatLogs(logs []wavm.StructLog, debugLog []wavm.DebugLog) ([]StructLogRes
 	formatted := make([]StructLogRes, len(logs))
 
 	for index, trace := range logs {
+		var errString string
+		if trace.Err != nil {
+			errString = trace.Err.Error()
+		}
 		formatted[index] = StructLogRes{
 			Pc:      trace.Pc,
 			Op:      trace.Op.String(),
 			Gas:     trace.Gas,
 			GasCost: trace.GasCost,
 			Depth:   trace.Depth,
-			Error:   trace.Err,
+			Error:   errString,
 		}
 		if trace.Stack != nil {
 			stack := make([]string, len(trace.Stack))
