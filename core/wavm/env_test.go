@@ -151,7 +151,7 @@ func getVM(codeFile string, abiPath string) (*exec.Interpreter, EnvFunctions) {
 		GasCounter:  gasCounter,
 		GasLimit:    10000000,
 		Wavm: &WAVM{
-			wavmConfig: Config{Debug: true, Tracer: NewWasmLogger()},
+			wavmConfig: Config{Debug: true, Tracer: NewWasmLogger(nil)},
 			Wavm:       &Wavm{},
 		},
 	}
@@ -176,7 +176,7 @@ func getVM(codeFile string, abiPath string) (*exec.Interpreter, EnvFunctions) {
 	//compiled, err := CompileModule(m, cc)
 	//compiled := make([]vnt.Compiled, 0)
 
-	vm, err := exec.NewInterpreter(m, nil, instantiateMemory, cc.Wavm.Wavm.captureState)
+	vm, err := exec.NewInterpreter(m, nil, instantiateMemory, cc.Wavm.Wavm.captureOp, cc.Wavm.Wavm.captureEnvFunction, false)
 	if err != nil {
 		log.Crit("failed to create vm: ", "error", err)
 	}
