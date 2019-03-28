@@ -220,13 +220,12 @@ func main() {
 // blocking mode, waiting for it to be shut down.
 func gvnt(ctx *cli.Context) error {
 	node := makeFullNode(ctx)
-	// go startVNTNode(node) //yhx
+	// go startVNTNode(node) 
 	startNode(ctx, node)
 	node.Wait()
 	return nil
 }
 
-// yhx
 /* func startVNTNode(stack *node.Node) {
 	findnode := stack.Config().P2P.FindNode
 	bootnode := stack.Config().P2P.VNTBootnode
@@ -284,7 +283,6 @@ func gvnt(ctx *cli.Context) error {
 	select {}
 } */
 
-// yhx
 /* func findNode(ctx context.Context, findnode string, vdht *dht.IpfsDHT) {
 	_, findnodeID, err := vntp2p.GetAddr(findnode)
 	if err != nil {
@@ -300,7 +298,6 @@ func gvnt(ctx *cli.Context) error {
 	log.Info("findNode()", "find peerid SUCCESS with info", targetPeerInfo)
 } */
 
-// yhx
 /* func sayHelloToBootnode(ctx context.Context, host p2phost.Host, nodeID peer.ID) {
 	s, err := host.NewStream(ctx, nodeID, vntp2p.PID)
 	if err != nil {

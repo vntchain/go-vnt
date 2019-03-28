@@ -106,7 +106,7 @@ func NewApp(gitCommit, usage string) *cli.App {
 // are the same for all commands.
 
 var (
-	// yhx Temp settings
+	//Temp settings
 	FindNodeFlag = cli.StringFlag{
 		Name:  "findnode",
 		Usage: "Specific a nodeURL to findnode",
@@ -495,13 +495,11 @@ func setNodeUserIdent(ctx *cli.Context, cfg *node.Config) {
 	}
 }
 
-// yhx
 func setFindNode(ctx *cli.Context, cfg *vntp2p.Config) {
 	// nodeURL := ctx.GlobalString(FindNodeFlag.Name)
 	// cfg.FindNode = nodeURL
 }
 
-// yhx
 func setVNTBootnode(ctx *cli.Context, cfg *vntp2p.Config) {
 
 	if ctx.GlobalString(VNTBootnodeFlag.Name) == "" {
@@ -539,7 +537,7 @@ func setBootstrapNodes(ctx *cli.Context, cfg *vntp2p.Config) {
 		return // already set, don't apply defaults.
 	}
 
-	log.Debug("[yhx-info] setBootstrapNodes()", "urls", urls, "and url length", len(urls))
+	log.Debug("[info] setBootstrapNodes()", "urls", urls, "and url length", len(urls))
 
 	cfg.BootstrapNodes = make([]*vntp2p.Node, 0, len(urls))
 	for _, url := range urls {
@@ -741,8 +739,8 @@ func SetP2PConfig(ctx *cli.Context, cfg *vntp2p.Config) {
 	setNodeKey(ctx, cfg)
 	setNAT(ctx, cfg)
 	setListenAddress(ctx, cfg)
-	setFindNode(ctx, cfg)    // yhx
-	setVNTBootnode(ctx, cfg) // yhx
+	setFindNode(ctx, cfg)    
+	setVNTBootnode(ctx, cfg) 
 	setBootstrapNodes(ctx, cfg)
 	// setBootstrapNodesV5(ctx, cfg)
 

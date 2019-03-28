@@ -203,7 +203,7 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 		go func() {
 			p.wg.Add(1)
 			err := proto.Run(p, m)
-			log.Info("yhx-test", "run protocol error log", err)
+			log.Info("p2p-test", "run protocol error log", err)
 			if !p.closed {
 				p.err <- err
 			}
@@ -216,9 +216,9 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 
 	p.closed = true
 	p.rw.Close()
-	//log.Info("yhx-test remote peer request close, but we need to wait for other protocol", "peerid", p.RemoteID())
+	//log.Info("p2p-test remote peer request close, but we need to wait for other protocol", "peerid", p.RemoteID())
 	//p.wg.Wait()
-	log.Info("vnt-test wait complete!", "peerid", p.RemoteID())
+	log.Info("p2p-test wait complete!", "peerid", p.RemoteID())
 
 	return remoteRequested, err
 }
