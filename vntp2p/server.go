@@ -485,7 +485,7 @@ func (server *Server) NodeInfo() *NodeInfo {
 
 	info := &NodeInfo{
 		ID:         node.Id.ToString(),
-		VNTNode:    node.Addr.String() + "/ipfs/" + node.Id.ToString(),
+		VNTNode:    node.String(),
 		Name:       server.Name,
 		IP:         GetIPfromAddr(node.Addr),
 		ListenAddr: server.ListenAddr,
