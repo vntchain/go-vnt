@@ -222,7 +222,9 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
 
 	c := newElectionContext(ctx)
 	methodName := "None"
-
+	if len(input) < 4 {
+		return nil, nil
+	}
 	// input的组成见abi.Pack函数
 	methodId := input[:4]
 	methodArgs := input[4:]
