@@ -30,6 +30,7 @@ import (
 
 	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/common"
+	mat "github.com/vntchain/go-vnt/common/math"
 	"github.com/vntchain/go-vnt/core/types"
 	errormsg "github.com/vntchain/go-vnt/core/wavm/errors"
 	"github.com/vntchain/go-vnt/core/wavm/storage"
@@ -392,22 +393,24 @@ func (ef *EnvFunctions) getEvent(funcName string) interface{} {
 			case abi.AddressTy, abi.StringTy:
 				value = proc.ReadAt(param)
 			case abi.UintTy, abi.IntTy:
-				if input.Type.Size == 32 {
-					value = make([]byte, 4)
-					binary.BigEndian.PutUint32(value, uint32(param))
-				} else if input.Type.Size == 64 {
-					value = make([]byte, 8)
-					binary.BigEndian.PutUint64(value, uint64(param))
-				} else if input.Type.Size == 256 {
+				if input.Type.Kind == reflect.Ptr {
 					mem := proc.ReadAt(param)
-					value = abi.U256(utils.GetU256(mem))
+					bigint := utils.GetU256(mem)
+					value = abi.U256(bigint)
+				} else if paramType == abi.UintTy {
+					value = abi.U256(new(big.Int).SetUint64(param))
 				} else {
-					err := fmt.Errorf(errUnsupportType, input.Type.String())
-					panic(err)
+					if input.Type.Size == 32 {
+						value = abi.U256(big.NewInt(int64(int32(param))))
+					} else {
+						value = abi.U256(big.NewInt(int64(param)))
+					}
 				}
 			case abi.BoolTy:
-				value = make([]byte, 4)
-				binary.BigEndian.PutUint32(value, uint32(param))
+				if param == 1 {
+					value = mat.PaddedBigBytes(common.Big1, 32)
+				}
+				value = mat.PaddedBigBytes(common.Big0, 32)
 			}
 
 			if indexed {

@@ -450,7 +450,12 @@ func (wavm *Wavm) ExecCodeWithFuncName(input []byte) ([]byte, error) {
 				} else if output == abi.UintTy {
 					return abi.U256(new(big.Int).SetUint64(res)), nil
 				} else {
-					return abi.U256(big.NewInt(int64(res))), nil
+					if outputs[0].Type.Size == 32 {
+						return abi.U256(big.NewInt(int64(int32(res)))), nil
+					} else {
+						return abi.U256(big.NewInt(int64(res))), nil
+					}
+
 				}
 			case abi.BoolTy:
 				if res == 1 {
