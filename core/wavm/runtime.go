@@ -455,10 +455,9 @@ func (wavm *Wavm) ExecCodeWithFuncName(input []byte) ([]byte, error) {
 					} else {
 						return abi.U256(big.NewInt(int64(res))), nil
 					}
-
 				}
 			case abi.BoolTy:
-				if res == 1 {
+				if res != 0 {
 					return mat.PaddedBigBytes(common.Big1, 32), nil
 				}
 				return mat.PaddedBigBytes(common.Big0, 32), nil
