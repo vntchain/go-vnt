@@ -414,6 +414,9 @@ func (ef *EnvFunctions) getEvent(funcName string) interface{} {
 			}
 
 			if indexed {
+				if paramType == abi.StringTy {
+					value = crypto.Keccak256(value)
+				}
 				topic := common.BytesToHash(value)
 				topics = append(topics, topic)
 			} else {
