@@ -24,6 +24,12 @@ import (
 	"github.com/vntchain/go-vnt/params"
 )
 
+type OPCode interface {
+	String() string
+	IsPush() bool
+	Byte() byte
+}
+
 type VM interface {
 	Cancel()
 	Create(caller ContractRef, code []byte, gas uint64, value *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error)

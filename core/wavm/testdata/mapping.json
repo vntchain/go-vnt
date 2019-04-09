@@ -744,6 +744,23 @@
                          }
                     },
                     {
+                         "function": "getMapWithMapWithoutPointer",
+                         "input": [
+                              {
+                                   "data": "key1",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "key2",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "",
+                              "type": "string"
+                         }
+                    },
+                    {
                          "function": "setMapWithMap1",
                          "input": [
                               {
@@ -777,7 +794,7 @@
                               }
                          ],
                          "wanted": {
-                              "data": "value11",
+                              "data": "",
                               "type": "string"
                          }
                     }

@@ -212,7 +212,7 @@ func (self *bzz) handle() error {
 	}
 
 	// make sure that the payload has been fully consumed
-	// yhx -- 按理说，新版的协议处理方式，不会有残留数据得不到处理
+	// 按理说，新版的协议处理方式，不会有残留数据得不到处理
 	// defer msg.Discard()
 
 	switch msg.Body.Type {

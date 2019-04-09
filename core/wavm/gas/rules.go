@@ -595,6 +595,10 @@ func (gas GasCounter) GasPow(exponent *big.Int) {
 	gas.Charge(constGasFunc(costgas))
 }
 
+func (gas GasCounter) GasCostZero() {
+	gas.Charge(constGasFunc(0))
+}
+
 func (gas GasCounter) GasReturnAddress() {
 	gas.AdjustedCharge(constGasFunc(WasmCostsStaticAddress))
 }

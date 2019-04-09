@@ -130,13 +130,6 @@ func (m *WavmMemory) Get(offset uint64) (cpy []byte) {
 	return
 }
 
-func (m *WavmMemory) NormalizeOffset(offset uint32) uint32 {
-	if int32(offset) < 0 {
-		offset = uint32(int32(m.MemSize()) + int32(offset))
-	}
-	return offset
-}
-
 // GetPtr returns the offset + size
 func (m *WavmMemory) GetPtr(offset uint64) []byte {
 	ptr := uint32(offset)

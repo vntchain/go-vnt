@@ -369,7 +369,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return errResp(ErrMsgTooLarge, "%v > %v", size, ProtocolMaxMsgSize)
 	}
 
-	// yhx -- 按理说，新版的协议处理方式，不会有残留数据得不到处理
+	//-- 按理说，新版的协议处理方式，不会有残留数据得不到处理
 	//defer msg.Discard()
 
 	var deliverMsg *Msg

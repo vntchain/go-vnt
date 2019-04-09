@@ -69,7 +69,7 @@ func pushBigInt(n *big.Int, ctx *duktape.Context) {
 
 // opWrapper provides a JavaScript wrapper around OpCode.
 type opWrapper struct {
-	op vm.OpCode
+	op vm.OPCode
 }
 
 // pushObject assembles a JSVM object wrapping a swappable opcode and pushes it
@@ -77,7 +77,7 @@ type opWrapper struct {
 func (ow *opWrapper) pushObject(vm *duktape.Context) {
 	obj := vm.PushObject()
 
-	vm.PushGoFunction(func(ctx *duktape.Context) int { ctx.PushInt(int(ow.op)); return 1 })
+	vm.PushGoFunction(func(ctx *duktape.Context) int { ctx.PushInt(int(ow.op.Byte())); return 1 })
 	vm.PutPropString(obj, "toNumber")
 
 	vm.PushGoFunction(func(ctx *duktape.Context) int { ctx.PushString(ow.op.String()); return 1 })
@@ -511,7 +511,7 @@ func (jst *Tracer) CaptureStart(from common.Address, to common.Address, create b
 }
 
 // CaptureState implements the Tracer interface to trace a single step of VM execution.
-func (jst *Tracer) CaptureState(env vm.VM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, depth int, err error) error {
+func (jst *Tracer) CaptureState(env vm.VM, pc uint64, op vm.OPCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract inter.Contract, depth int, err error) error {
 	if jst.err == nil {
 		// Initialize the context if it wasn't done yet
 		if !jst.inited {
@@ -526,7 +526,7 @@ func (jst *Tracer) CaptureState(env vm.VM, pc uint64, op vm.OpCode, gas, cost ui
 		jst.opWrapper.op = op
 		jst.stackWrapper.stack = stack
 		jst.memoryWrapper.memory = memory
-		jst.contractWrapper.contract = contract
+		jst.contractWrapper.contract = contract.(*vm.Contract)
 		jst.dbWrapper.db = env.GetStateDb()
 
 		*jst.pcValue = uint(pc)
@@ -553,7 +553,7 @@ func (jst *Tracer) CaptureLog(env vm.VM, msg string) error {
 
 // CaptureFault implements the Tracer interface to trace an execution fault
 // while running an opcode.
-func (jst *Tracer) CaptureFault(env vm.VM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, depth int, err error) error {
+func (jst *Tracer) CaptureFault(env vm.VM, pc uint64, op vm.OPCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract inter.Contract, depth int, err error) error {
 	if jst.err == nil {
 		// Apart from the error, everything matches the previous invocation
 		jst.errorValue = new(string)

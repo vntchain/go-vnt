@@ -246,7 +246,7 @@ func run(t *testing.T, jspath string) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	vmconfig := vm.Config{Debug: true, Tracer: vm.NewStructLogger(nil)}
+	vmconfig := vm.Config{Debug: true, Tracer: wavm.NewWasmLogger(&vm.LogConfig{Debug: true})}
 	envtest := new(ENVTest)
 	envtest.callCost = 0
 	envtest.createCost = 0
@@ -477,7 +477,6 @@ func verifyEvent(t *testing.T, ret []byte, wanted argument, abiobj abi.ABI, func
 	case "uint64":
 		want := parse.(uint64)
 		var got uint64
-		log.Debug("111", "funcName", funcName, "ret", ret)
 		unpackOutput(abiobj, &got, funcName, ret)
 		if got != want {
 			t.Fatalf("wavm result mismatch, got %d, want %d", got, want)

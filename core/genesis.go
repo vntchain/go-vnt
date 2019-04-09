@@ -317,7 +317,7 @@ func decodePrealloc(data string) GenesisAlloc {
 
 // DeveloperGenesisBlock returns the 'geth --dev' genesis block. Note, this must
 // be seeded with the
-// for console CI fix -- yhx
+// for console CI fix
 func DeveloperGenesisBlock(period uint64, faucet common.Address) *Genesis {
 	// Override the default period to the user requested one
 	config := *params.AllCliqueProtocolChanges

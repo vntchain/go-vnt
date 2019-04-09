@@ -42,7 +42,7 @@ type Protocol struct {
 // HandleStream handle all message which is from anywhere
 func (server *Server) HandleStream(s inet.Stream) {
 	for {
-		log.Info("yhx-test, stream data comming")
+		log.Info("p2p-test, stream data comming")
 		peer := server.GetPeerByRemoteID(s)
 		if peer == nil {
 			log.Info("HandleStream", "localPeerID", s.Conn().LocalPeer(), "remotePeerID", s.Conn().RemotePeer(), "this remote peer is nil, don't handle it")
@@ -72,7 +72,7 @@ func (server *Server) HandleStream(s inet.Stream) {
 			return
 		}
 		msgBody.ReceivedAt = time.Now()
-		//log.Info("yhx-test", "RECEIVED MESSAGE", msgBody)
+		//log.Info("p2p-test", "RECEIVED MESSAGE", msgBody)
 
 		var msgHeader MsgHeader
 		copy(msgHeader[:], msgHeaderByte)

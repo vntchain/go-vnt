@@ -121,7 +121,7 @@ type peerDrop struct {
 }
 
 func (server *Server) Start() error {
-	log.Info("yhx-test", "server.Protocols", server.Protocols)
+	log.Info("p2p-test", "server.Protocols", server.Protocols)
 	if server.running {
 		return errors.New("server already running")
 	}
@@ -256,10 +256,10 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 			}
 			go server.runPeer(p)
 			peers[p.RemoteID()] = p
-			log.Info("yhx-test", "peers", peers)
+			log.Info("p2p-test", "peers", peers)
 
 		case t := <-server.addstatic:
-			log.Info("cq-test", "addStaticPeers", t.Id)
+			log.Info("p2p-test", "addStaticPeers", t.Id)
 			tasker.addStatic(t)
 		case t := <-server.removestatic:
 			tasker.removeStatic(t)
@@ -368,7 +368,7 @@ func (server *Server) GetPeerByRemoteID(s inet.Stream) *Peer {
 	}
 
 	pid := s.Conn().RemotePeer()
-	log.Info("yhx-test", "GetPeerByRemoteID peerid", pid, "peer got", p)
+	log.Info("p2p-test", "GetPeerByRemoteID peerid", pid, "peer got", p)
 
 	return p
 }
@@ -406,7 +406,7 @@ func (server *Server) maxDialedConns() int {
 }
 
 func (server *Server) SetupStream(ctx context.Context, target peer.ID, pid string) error {
-	// log.Info("yhx-test", "SetupStream target", target, "pid", pid)
+	// log.Info("p2p-test", "SetupStream target", target, "pid", pid)
 	s, err := server.host.NewStream(ctx, target, protocol.ID(pid))
 	if err != nil {
 		// fmt.Println("SetupStream NewStream Error: ", err)

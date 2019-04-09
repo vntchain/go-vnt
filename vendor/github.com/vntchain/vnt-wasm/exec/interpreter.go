@@ -3,7 +3,6 @@ package exec
 import (
 	"fmt"
 	"math"
-	"reflect"
 	"strings"
 
 	"github.com/vntchain/vnt-wasm/disasm"
@@ -19,16 +18,16 @@ type Interpreter struct {
 	Mutable          *bool
 }
 
-func NewInterpreter(module *wasm.Module, compiled []vnt.Compiled, initMem func(m *vnt.WavmMemory, module *wasm.Module) error, captureState reflect.Value) (*Interpreter, error) {
+func NewInterpreter(module *wasm.Module, compiled []vnt.Compiled, initMem func(m *vnt.WavmMemory, module *wasm.Module) error, captureOp func(pc uint64, op byte) error, captureEnvFunction func(pc uint64, name string) error, debug bool) (*Interpreter, error) {
 	var inter Interpreter
 	var vm VM
-
+	vm.captureOp = captureOp
+	vm.captureEnvFunction = captureEnvFunction
+	vm.debug = debug
 	inter.Memory = vnt.NewWavmMemory()
 	inter.heapPointerIndex = -1
 	mut := false
 	inter.Mutable = &mut
-	vm.captureState = captureState
-
 	if module.Memory != nil && len(module.Memory.Entries) != 0 {
 		if len(module.Memory.Entries) > 1 {
 			return nil, ErrMultipleLinearMemories
@@ -147,6 +146,10 @@ func NewInterpreter(module *wasm.Module, compiled []vnt.Compiled, initMem func(m
 
 	inter.VM = &vm
 	return &inter, nil
+}
+
+func (inter *Interpreter) Pc() int64 {
+	return inter.ctx.pc
 }
 
 // ExecContractCode calls the function with the given index and arguments.
