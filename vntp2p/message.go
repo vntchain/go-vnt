@@ -107,7 +107,7 @@ type msgHandler func() error
 // Send is used to send message payload with specific messge type
 func Send(w MsgWriter, protocolID string, msgType MessageType, data interface{}) error {
 	// 还是要使用rlp进行序列化，因为类型多变，rlp已经有完整的支持
-	log.Info("test", "send message", data)
+	log.Info("yhx-test", "send message type", msgType)
 	size, r, err := rlp.EncodeToReader(data)
 	if err != nil {
 		log.Error("Send()", "rlp encode error", err)
