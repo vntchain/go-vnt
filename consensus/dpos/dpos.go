@@ -107,8 +107,15 @@ type Dpos struct {
 	signFn         SignerFn       // Signer function to authorize hashes with
 	lock           sync.RWMutex   // Protects the signer fields
 	updateInterval *big.Int       // Duration of update witnesses list
+	lastBounty     lastBountyInfo // 上次发放激励的信息
 
 	sendBftPeerUpdateFn func(urls []string)
+}
+
+type lastBountyInfo struct {
+	bountyHeight *big.Int // 上次发送激励的高度
+	updateHeight *big.Int // 更新当前数据的高度
+	sync.RWMutex          // 存在并发访问，加锁保护
 }
 
 // sigHash returns the hash which is used as input for the proof-of-authority
@@ -173,6 +180,11 @@ func New(config *params.DposConfig, db vntdb.Database) *Dpos {
 		db:             db,
 		signatures:     signatures,
 		updateInterval: nil,
+
+		lastBounty: lastBountyInfo{
+			bountyHeight: big.NewInt(0),
+			updateHeight: big.NewInt(0),
+		},
 	}
 
 	d.bft = newBftManager(d)
@@ -490,6 +502,7 @@ func (d *Dpos) grantingReward(chain consensus.ChainReader, header *types.Header,
 
 			// the amount of bounty granted must not greater than the left bounty
 			actualBonus := math.BigMin(allBonus, restBounty)
+			log.Debug("Vote bounty", "each bounty(wei)", actualBonus.String())
 			if bonus := d.calcVoteBounty(candis, actualBonus); bonus != nil {
 				if err = election.AddCandidatesBounty(state, bonus); err != nil {
 					return err
@@ -843,8 +856,12 @@ func (d *Dpos) voteBonusPreWork(chain consensus.ChainReader, header *types.Heade
 
 	// Calc all vote bonus
 	// the last block number of calculate vote reward is the last block number of updating witness list
-	lastCalcBountyBlkNr := d.lastBountyBlkNr(bc)
+	lastCalcBountyBlkNr := d.lastBountyBlkNr(header, bc)
+	log.Debug("Bounus", "lastCalcBountyBlkNr", lastCalcBountyBlkNr.String())
 	allBonus := big.NewInt(0).Sub(header.Number, lastCalcBountyBlkNr)
+	if allBonus.Sign() <= 0 {
+		return make(election.CandidateList, 0), big.NewInt(0), nil
+	}
 	allBonus.Mul(allBonus, curHeightBonus(header.Number, VortexCandidatesBonus))
 
 	// Get all witnesses candidates
@@ -855,16 +872,39 @@ func (d *Dpos) voteBonusPreWork(chain consensus.ChainReader, header *types.Heade
 
 // lastBountyBlkNr returns the block number of last update witness list. Returns
 // the current block number if not find. This prevents excessive incentives.
-func (d *Dpos) lastBountyBlkNr(bc *core.BlockChain) *big.Int {
-	header := bc.CurrentHeader()
-	curHeader := header
-	for d.updatedWitnessCheckByTime(header) == false {
-		if header = bc.GetHeaderByHash(header.ParentHash); header == nil {
-			return new(big.Int).Set(curHeader.Number)
+// 见证人列表长时间未更新时，可能查找耗时，所以设置缓存数据，
+// 同过度的下次查找将不再耗时。
+// 不同高度的话，必然已经进行了下一轮见证人列表更新，以链上数据
+// 为准，所以进行查找，然后记录数据。
+func (d *Dpos) lastBountyBlkNr(header *types.Header, bc *core.BlockChain) (bh *big.Int) {
+	// 数据老旧时，尝试更新数据
+	d.lastBounty.RLock()
+	outdated := d.lastBounty.updateHeight.Cmp(header.Number) < 0
+	d.lastBounty.RUnlock()
+	if outdated {
+		h := bc.CurrentHeader()
+		for !d.updatedWitnessCheckByTime(h) && h != nil {
+			h = bc.GetHeaderByHash(h.ParentHash)
 		}
+		if h != nil {
+			bh = new(big.Int).Set(h.Number)
+		} else {
+			bh = new(big.Int).Set(header.Number)
+		}
+
+		d.lastBounty.Lock()
+		d.lastBounty.bountyHeight.Set(bh)
+		d.lastBounty.updateHeight.Set(header.Number)
+		d.lastBounty.Unlock()
+		return
 	}
 
-	return new(big.Int).Set(header.Number)
+	// 本高度已查找过，使用已查得数据
+	d.lastBounty.RLock()
+	bh = big.NewInt(0).Set(d.lastBounty.bountyHeight)
+	d.lastBounty.RUnlock()
+
+	return bh
 }
 
 // updatedWitnessCheckByTime using time to check whether this block updated
