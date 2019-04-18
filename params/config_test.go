@@ -31,10 +31,15 @@ func TestCheckCompatible(t *testing.T) {
 	tests := []test{
 		{stored: TestChainConfig, new: TestChainConfig, head: 0, wantErr: nil},
 		{
-			stored:  TestChainConfig,
-			new:     &ChainConfig{HubbleBlock: big.NewInt(4)},
-			head:    3,
-			wantErr: nil,
+			stored: TestChainConfig,
+			new:    &ChainConfig{ChainID: big.NewInt(1), HubbleBlock: big.NewInt(4)},
+			head:   4,
+			wantErr: &ConfigCompatError{
+				What:         "Hubble fork block",
+				StoredConfig: big.NewInt(0),
+				NewConfig:    big.NewInt(4),
+				RewindTo:     0,
+			},
 		},
 	}
 

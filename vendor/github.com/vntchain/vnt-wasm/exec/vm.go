@@ -70,8 +70,10 @@ type VM struct {
 	// or encountering an invalid instruction, e.g. `unreachable`.
 	RecoverPanic bool
 
-	abort bool // Flag for host functions to terminate execution
-
+	abort              bool // Flag for host functions to terminate execution
+	debug              bool
+	captureOp          func(pc uint64, op byte) error
+	captureEnvFunction func(pc uint64, name string) error
 	recursiveCallDepth int
 }
 
@@ -332,6 +334,9 @@ outer:
 		}
 		op := vm.ctx.code[vm.ctx.pc]
 		vm.ctx.pc++
+		if vm.debug == true && vm.captureOp != nil {
+			vm.captureOp(uint64(vm.ctx.pc), op)
+		}
 		switch op {
 		case ops.Return:
 			break outer

@@ -22,7 +22,6 @@ import (
 	"github.com/vntchain/go-vnt/core/vm/interface"
 
 	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/log"
 )
 
 type WasmCode struct {
@@ -56,7 +55,8 @@ type WASMContract struct {
 
 	Args []byte
 
-	DelegateCall bool
+	DelegateCall   bool
+	CurrentUsedGas uint64
 }
 
 // NewWASMContract returns a new contract environment for the execution of EVM.
@@ -69,8 +69,6 @@ func NewWASMContract(caller WASMContractRef, object WASMContractRef, value *big.
 	c.GasLimit = gas
 	// ensures a value is set
 	c.value = value
-
-	log.Debug("NewWASMContract", "gas", gas)
 
 	return c
 }
@@ -107,13 +105,11 @@ func (c *WASMContract) Caller() common.Address {
 
 // UseGas attempts the use gas and subtracts it and returns true on success
 func (c *WASMContract) UseGas(gas uint64) (ok bool) {
-	log.Debug("wasm_contract", "************", "************", "pre gas", c.Gas, "************", "************")
-	log.Debug("wasm_contract", "************", "************", "use gas", gas, "************", "************")
+	c.CurrentUsedGas = gas
 	if c.Gas < gas {
 		return false
 	}
 	c.Gas -= gas
-	log.Debug("wasm_contract", "************", "************", "current gas", c.Gas, "************", "************")
 	return true
 }
 

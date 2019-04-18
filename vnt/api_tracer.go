@@ -33,6 +33,7 @@ import (
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
+	"github.com/vntchain/go-vnt/core/wavm"
 	"github.com/vntchain/go-vnt/internal/vntapi"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/rlp"
@@ -585,10 +586,10 @@ func (api *PrivateDebugAPI) traceTx(ctx context.Context, message core.Message, v
 		defer cancel()
 
 	case config == nil:
-		tracer = vm.NewStructLogger(nil)
+		tracer = wavm.NewWasmLogger(nil)
 
 	default:
-		tracer = vm.NewStructLogger(config.LogConfig)
+		tracer = wavm.NewWasmLogger(config.LogConfig)
 	}
 	// Run the transaction with tracing enabled.
 	vmenv := core.GetVM(message, vmctx, statedb, api.config, vm.Config{Debug: true, Tracer: tracer})
@@ -600,12 +601,14 @@ func (api *PrivateDebugAPI) traceTx(ctx context.Context, message core.Message, v
 	}
 	// Depending on the tracer type, format and return the output
 	switch tracer := tracer.(type) {
-	case *vm.StructLogger:
+	case *wavm.WasmLogger:
+		slogs, dlogs := vntapi.FormatLogs(tracer.StructLogs(), tracer.DebugLogs())
 		return &vntapi.ExecutionResult{
 			Gas:         gas,
 			Failed:      failed,
 			ReturnValue: fmt.Sprintf("%x", ret),
-			StructLogs:  vntapi.FormatLogs(tracer.StructLogs()),
+			StructLogs:  slogs,
+			DebugLogs:   dlogs,
 		}, nil
 
 	case *tracers.Tracer:

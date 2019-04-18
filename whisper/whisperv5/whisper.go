@@ -555,7 +555,7 @@ func (w *Whisper) runMessageLoop(p *Peer, rw vntp2p.MsgReadWriter) error {
 			// For forward compatibility, just ignore.
 		}
 
-		// yhx -- 按理说，新版的协议处理方式，不会有残留数据得不到处理
+		// -- 按理说，新版的协议处理方式，不会有残留数据得不到处理
 		//packet.Discard()
 	}
 }

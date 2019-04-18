@@ -7,6 +7,7 @@ package exec
 import (
 	"fmt"
 	"reflect"
+	"runtime"
 
 	"github.com/vntchain/vnt-wasm/vnt"
 )
@@ -34,7 +35,11 @@ func (fn contractFunction) call(vm *VM, index int64) {
 		raw := vm.popUint64()
 		args[i] = reflect.ValueOf(raw)
 	}
+	fnName := runtime.FuncForPC(fn.val.Pointer()).Name()
 	rtrns := fn.val.Call(args)
+	if vm.debug == true && vm.captureEnvFunction != nil {
+		vm.captureEnvFunction(uint64(vm.ctx.pc), fnName)
+	}
 	if rtrns == nil {
 		return
 	}

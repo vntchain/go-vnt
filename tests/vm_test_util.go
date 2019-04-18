@@ -30,8 +30,8 @@ import (
 	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/crypto"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/params"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 // VMTest checks EVM execution without block or transaction context.
@@ -147,7 +147,6 @@ func (t *VMTest) newEVM(statedb *state.StateDB, vmconfig vm.Config) *vm.EVM {
 		Difficulty:  t.json.Env.Difficulty,
 		GasPrice:    t.json.Exec.GasPrice,
 	}
-	fmt.Printf("gas limit %d\n", context.GasLimit)
 	vmconfig.NoRecursion = true
 	return vm.NewEVM(context, statedb, params.MainnetChainConfig, vmconfig)
 }

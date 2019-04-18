@@ -107,7 +107,7 @@ type msgHandler func() error
 // Send is used to send message payload with specific messge type
 func Send(w MsgWriter, protocolID string, msgType MessageType, data interface{}) error {
 	// 还是要使用rlp进行序列化，因为类型多变，rlp已经有完整的支持
-	log.Info("yhx-test", "send message", data)
+	log.Info("yhx-test", "send message type", msgType)
 	size, r, err := rlp.EncodeToReader(data)
 	if err != nil {
 		log.Error("Send()", "rlp encode error", err)
@@ -186,7 +186,7 @@ func (rw *VNTMessenger) WriteMsg(msg Msg) (err error) {
 		return err
 	}
 	m := append(msgHeaderByte, msgBodyByte...)
-	//log.Info("yhx-test", "MESSAGE", string(m))
+	//log.Info("p2p-test", "MESSAGE", string(m))
 
 	_, err = rw.w.Write(m)
 	if err != nil {
@@ -205,7 +205,7 @@ func (rw *VNTMessenger) WriteMsg(msg Msg) (err error) {
 func (rw *VNTMessenger) ReadMsg() (Msg, error) {
 	select {
 	case msg := <-rw.in:
-		log.Info("yhx-test", "incoming message", msg)
+		log.Info("p2p-test", "incoming message", msg)
 		return msg, nil
 	case err := <-rw.err:
 		return Msg{}, err

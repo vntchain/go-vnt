@@ -21,7 +21,7 @@ matrix:
     - stage: Build & Test on linux go1.11.x
       if: branch = master
       os: linux
-      dist: trusty
+      dist: xenial
       sudo: required
       go: 1.11.x
       before_install:

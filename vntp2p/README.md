@@ -8,7 +8,7 @@
 
 
 ```go
-log.Info("[yhx-info] setBootstrapNodes()", "urls", urls, "and tests", tests, "and url length", len(urls))
+log.Info("[info] setBootstrapNodes()", "urls", urls, "and tests", tests, "and url length", len(urls))
 ```
 
 * `libp2p` database tips：

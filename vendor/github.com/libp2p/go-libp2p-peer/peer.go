@@ -31,12 +31,12 @@ var log = logging.Logger("peer")
 // ID is a libp2p peer identity.
 type ID string
 
-// MarshalJSON implement marshal for ID -- yhx
+// MarshalJSON implement marshal for ID
 func (id *ID) MarshalJSON() ([]byte, error) {
 	return json.Marshal(id.Pretty())
 }
 
-// UnmarshalJSON implement unmarshal for ID -- yhx
+// UnmarshalJSON implement unmarshal for ID
 func (id *ID) UnmarshalJSON(b []byte) error {
 	var data string
 	err := json.Unmarshal(b, &data)

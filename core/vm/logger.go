@@ -27,6 +27,7 @@ import (
 	"github.com/vntchain/go-vnt/common/hexutil"
 	"github.com/vntchain/go-vnt/common/math"
 	"github.com/vntchain/go-vnt/core/types"
+	"github.com/vntchain/go-vnt/core/vm/interface"
 )
 
 type Storage map[common.Hash]common.Hash
@@ -40,7 +41,7 @@ func (s Storage) Copy() Storage {
 	return cpy
 }
 
-// LogConfig are the configuration options for structured logger the EVM
+// LogConfig are the configuration options for structured logger the VM
 type LogConfig struct {
 	DisableMemory  bool // disable memory capture
 	DisableStack   bool // disable stack capture
@@ -51,11 +52,11 @@ type LogConfig struct {
 
 //go:generate gencodec -type StructLog -field-override structLogMarshaling -out gen_structlog.go
 
-// StructLog is emitted to the EVM each cycle and lists information about the current internal state
+// StructLog is emitted to the VM each cycle and lists information about the current internal state
 // prior to the execution of the statement.
 type StructLog struct {
 	Pc         uint64                      `json:"pc"`
-	Op         OpCode                      `json:"op"`
+	Op         OPCode                      `json:"op"`
 	Gas        uint64                      `json:"gas"`
 	GasCost    uint64                      `json:"gasCost"`
 	Memory     []byte                      `json:"memory"`
@@ -64,6 +65,10 @@ type StructLog struct {
 	Storage    map[common.Hash]common.Hash `json:"-"`
 	Depth      int                         `json:"depth"`
 	Err        error                       `json:"-"`
+}
+
+type DebugLog struct {
+	PrintMsg string `json:"printMsg"`
 }
 
 // overrides for gencodec
@@ -87,19 +92,20 @@ func (s *StructLog) ErrorString() string {
 	return ""
 }
 
-// Tracer is used to collect execution traces from an EVM transaction
+// Tracer is used to collect execution traces from an VM transaction
 // execution. CaptureState is called for each step of the VM with the
 // current VM state.
 // Note that reference types are actual VM data structures; make copies
 // if you need to retain them beyond the current call.
 type Tracer interface {
 	CaptureStart(from common.Address, to common.Address, call bool, input []byte, gas uint64, value *big.Int) error
-	CaptureState(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *Memory, stack *Stack, contract *Contract, depth int, err error) error
-	CaptureFault(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *Memory, stack *Stack, contract *Contract, depth int, err error) error
+	CaptureState(env VM, pc uint64, op OPCode, gas, cost uint64, memory *Memory, stack *Stack, contract inter.Contract, depth int, err error) error
+	CaptureLog(env VM, msg string) error
+	CaptureFault(env VM, pc uint64, op OPCode, gas, cost uint64, memory *Memory, stack *Stack, contract inter.Contract, depth int, err error) error
 	CaptureEnd(output []byte, gasUsed uint64, t time.Duration, err error) error
 }
 
-// StructLogger is an EVM state logger and implements Tracer.
+// StructLogger is an VM state logger and implements Tracer.
 //
 // StructLogger can capture state based on the given Log configuration and also keeps
 // a track record of modified storage which is used in reporting snapshots of the
@@ -108,6 +114,7 @@ type StructLogger struct {
 	cfg LogConfig
 
 	logs          []StructLog
+	debugLogs     []DebugLog
 	changedValues map[common.Address]Storage
 	output        []byte
 	err           error
@@ -131,7 +138,7 @@ func (l *StructLogger) CaptureStart(from common.Address, to common.Address, crea
 // CaptureState logs a new structured log message and pushes it out to the environment
 //
 // CaptureState also tracks SSTORE ops to track dirty values.
-func (l *StructLogger) CaptureState(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *Memory, stack *Stack, contract *Contract, depth int, err error) error {
+func (l *StructLogger) CaptureState(env VM, pc uint64, op OPCode, gas, cost uint64, memory *Memory, stack *Stack, contract inter.Contract, depth int, err error) error {
 	// check if already accumulated the specified number of logs
 	if l.cfg.Limit != 0 && l.cfg.Limit <= len(l.logs) {
 		return ErrTraceLimitReached
@@ -171,14 +178,21 @@ func (l *StructLogger) CaptureState(env *EVM, pc uint64, op OpCode, gas, cost ui
 	if !l.cfg.DisableStorage {
 		storage = l.changedValues[contract.Address()].Copy()
 	}
-	// create a new snaptshot of the EVM.
+	// create a new snaptshot of the VM.
 	log := StructLog{pc, op, gas, cost, mem, memory.Len(), stck, storage, depth, err}
 
 	l.logs = append(l.logs, log)
 	return nil
 }
 
-func (l *StructLogger) CaptureFault(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *Memory, stack *Stack, contract *Contract, depth int, err error) error {
+func (l *StructLogger) CaptureFault(env VM, pc uint64, op OPCode, gas, cost uint64, memory *Memory, stack *Stack, contract inter.Contract, depth int, err error) error {
+	return nil
+}
+
+func (l *StructLogger) CaptureLog(env VM, msg string) error {
+	log := DebugLog{msg}
+
+	l.debugLogs = append(l.debugLogs, log)
 	return nil
 }
 
@@ -196,6 +210,9 @@ func (l *StructLogger) CaptureEnd(output []byte, gasUsed uint64, t time.Duration
 
 // StructLogs returns the captured log entries.
 func (l *StructLogger) StructLogs() []StructLog { return l.logs }
+
+// DebugLogs returns the captured debug log entries.
+func (l *StructLogger) DebugLogs() []DebugLog { return l.debugLogs }
 
 // Error returns the VM error captured by the trace.
 func (l *StructLogger) Error() error { return l.err }

@@ -188,7 +188,7 @@ func (n *Node) Start() error {
 			return err
 		}
 		kind := reflect.TypeOf(service)
-		log.Info("yhx-test", "services kind", kind)
+		log.Info("test", "services kind", kind)
 		if _, exists := services[kind]; exists {
 			return &DuplicateServiceError{Kind: kind}
 		}
@@ -543,7 +543,7 @@ func (n *Node) DataDir() string {
 	return n.config.DataDir
 }
 
-// Config() by yhx, to expose node.config
+// Config to expose node.config
 func (n *Node) Config() *Config {
 	return n.config
 }

@@ -1,4 +1,7 @@
+
 ## Hubble Network
+
+[![API Reference](https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/68747470733a2f2f676f646f632e6f72672f6769746875622e636f6d2f676f6c616e672f6764646f3f7374617475732e737667)](https://godoc.org/github.com/vntchain/go-vnt) [![Build Status](https://www.travis-ci.org/vntchain/go-vnt.svg?branch=master)](https://www.travis-ci.org/vntchain/go-vnt)
 
 VNT Chain的公链——Hubble Network是下一代商业级智能价值传递的基础设施，致力于解决当前公链高能耗、低效率，难以支撑大规模商业应用的问题。它借鉴了以太坊架构，融合DPOS与BFT技术以获取更高的性能和安全性，服务于规模化商业应用，实现价值的无摩擦转移。基于VNT Chain的公有链，用户可建立和发布下一代分布式智能应用，如游戏、金融资产交易、知识产权交易、电子签约、社交等。
 
