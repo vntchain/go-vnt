@@ -19,18 +19,13 @@ package vntp2p
 import (
 	"crypto/ecdsa"
 	"encoding/hex"
-	// "errors"
 	"fmt"
-	// "github.com/vntchain/go-vnt/common"
-	// "github.com/vntchain/go-vnt/crypto"
-	peer "github.com/libp2p/go-libp2p-peer"
-	// "math/big"
 	"net"
 	"strconv"
 	"strings"
 
+	peer "github.com/libp2p/go-libp2p-peer"
 	ma "github.com/multiformats/go-multiaddr"
-	// "time"
 )
 
 // 包内都用peerID,对外方法使用NodeID
@@ -55,7 +50,7 @@ type Node struct {
 }
 
 func (n *Node) String() string {
-	return ""
+	return n.Addr.String() + "/ipfs/" + n.Id.ToString()
 }
 
 func NewNode(id peer.ID, ip net.IP, udpPort, tcpPort uint16) *Node {
@@ -91,6 +86,27 @@ func MustParseNode(rawurl string) *Node {
 		panic("invalid node URL: " + err.Error())
 	}
 	return n
+}
+
+// for toml unmarshal
+func (n *Node) UnmarshalText(data []byte) error {
+	var err error
+	var nd *Node
+
+	nd, err = ParseNode(string(data))
+	n.Addr = nd.Addr
+	n.Id = nd.Id
+
+	return err
+}
+
+// for toml marshal
+func (n *Node) MarshalText() ([]byte, error) {
+	url := n.String()
+	ret := make([]byte, len(url))
+	copy(ret, url)
+
+	return ret, nil
 }
 
 /* func PubkeyID(pub *ecdsa.PublicKey) NodeID {

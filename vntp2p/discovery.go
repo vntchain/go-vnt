@@ -19,7 +19,6 @@ package vntp2p
 import (
 	"context"
 	"crypto/rand"
-	"fmt"
 	"sync"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	peer "github.com/libp2p/go-libp2p-peer"
 	routing "github.com/libp2p/go-libp2p-routing"
+	"github.com/vntchain/go-vnt/log"
 )
 
 const (
@@ -117,17 +117,13 @@ func (vdht *VNTDht) lookup(ctx context.Context, targetid peer.ID) []peer.ID {
 	cctx, cancel := context.WithTimeout(ctx, searchTimeOut)
 	defer cancel()
 
-	var merr util.MultiErr
-
 	runQuery := func(ctxs context.Context, id peer.ID) {
 		p, err := vdht.table.FindPeer(ctxs, id)
 		if err == routing.ErrNotFound {
 		} else if err != nil {
-			merr = append(merr, err)
+			log.Debug("lookup peer occurs error", "error", err)
 		} else {
-			err := fmt.Errorf("Bootstrap peer error: Actually FOUND peer. (%s, %s)", id, p)
-			fmt.Println("Warning ", err)
-			merr = append(merr, err)
+			log.Debug("lookup peer find peer", "id", id.ToString(), "peer", p.ID.ToString())
 		}
 	}
 

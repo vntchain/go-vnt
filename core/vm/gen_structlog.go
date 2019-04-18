@@ -16,7 +16,7 @@ var _ = (*structLogMarshaling)(nil)
 func (s StructLog) MarshalJSON() ([]byte, error) {
 	type StructLog struct {
 		Pc          uint64                      `json:"pc"`
-		Op          OpCode                      `json:"op"`
+		Op          OPCode                      `json:"op"`
 		Gas         math.HexOrDecimal64         `json:"gas"`
 		GasCost     math.HexOrDecimal64         `json:"gasCost"`
 		Memory      hexutil.Bytes               `json:"memory"`

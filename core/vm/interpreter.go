@@ -39,17 +39,6 @@ type Config struct {
 	// may be left uninitialised and will be set to the default
 	// table.
 	JumpTable [256]operation
-
-	//wasm vm config
-	MaxMemoryPages           int
-	MaxTableSize             int
-	MaxValueSlots            int
-	MaxCallStackDepth        int
-	DefaultMemoryPages       int
-	DefaultTableSize         int
-	GasLimit                 uint64
-	DisableFloatingPoint     bool
-	ReturnOnGasLimitExceeded bool
 }
 
 // Interpreter is used to run VNT based contracts and will utilise the
