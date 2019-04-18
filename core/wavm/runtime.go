@@ -101,7 +101,7 @@ func (e MismatchMutableFunctionError) Error() string {
 	if e.current == 1 {
 		currentStr = "mutable"
 	}
-	return fmt.Sprintf("Mismatch mutable type , parent function type : %s , current function type : %s", parentStr, currentStr)
+	return fmt.Sprintf("Mismatch mutable type, parent function type : %s, current function type : %s", parentStr, currentStr)
 }
 
 type Wavm struct {
@@ -113,6 +113,7 @@ type Wavm struct {
 	IsCreated       bool
 	currentFuncName string
 	MutableList     Mutable
+	tempGasLeft     uint64
 }
 
 // type InstanceContext struct {
@@ -140,16 +141,22 @@ func (wavm *Wavm) captureOp(pc uint64, op byte) error {
 	return nil
 }
 
-func (wavm *Wavm) captureEnvFunction(pc uint64, funcName string) error {
+func (wavm *Wavm) captureEnvFunctionStart(pc uint64, funcName string) error {
+	wavm.tempGasLeft = wavm.ChainContext.Contract.Gas
+	return nil
+}
+
+func (wavm *Wavm) captureEnvFunctionEnd(pc uint64, funcName string) error {
 	if wavm.WavmConfig.Debug {
-		wavm.Tracer().CaptureState(wavm.ChainContext.Wavm, pc, OpCode{FuncName: funcName}, wavm.ChainContext.Contract.Gas, wavm.ChainContext.Contract.CurrentUsedGas, nil, nil, wavm.ChainContext.Contract, wavm.ChainContext.Wavm.depth, nil)
+		gas := wavm.tempGasLeft - wavm.ChainContext.Contract.Gas
+		wavm.Tracer().CaptureState(wavm.ChainContext.Wavm, pc, OpCode{FuncName: funcName}, wavm.ChainContext.Contract.Gas, gas, nil, nil, wavm.ChainContext.Contract, wavm.ChainContext.Wavm.depth, nil)
 	}
 	return nil
 }
 
 func (wavm *Wavm) captrueFault(pc uint64, err error) error {
 	if wavm.WavmConfig.Debug {
-		wavm.Tracer().CaptureState(wavm.ChainContext.Wavm, pc, OpCode{FuncName: "error"}, wavm.ChainContext.Contract.Gas, wavm.ChainContext.Contract.CurrentUsedGas, nil, nil, wavm.ChainContext.Contract, wavm.ChainContext.Wavm.depth, err)
+		wavm.Tracer().CaptureState(wavm.ChainContext.Wavm, pc, OpCode{FuncName: "error"}, wavm.ChainContext.Contract.Gas, 0, nil, nil, wavm.ChainContext.Contract, wavm.ChainContext.Wavm.depth, err)
 	}
 	return nil
 }
@@ -236,7 +243,7 @@ func (wavm *Wavm) Apply(input []byte, compiled []vnt.Compiled, mutable Mutable) 
 	wavm.MutableList = mutable
 
 	var vm *exec.Interpreter
-	vm, err = exec.NewInterpreter(wavm.Module, compiled, instantiateMemory, wavm.captureOp, wavm.captureEnvFunction, wavm.WavmConfig.Debug)
+	vm, err = exec.NewInterpreter(wavm.Module, compiled, instantiateMemory, wavm.captureOp, wavm.captureEnvFunctionStart, wavm.captureEnvFunctionEnd, wavm.WavmConfig.Debug)
 	if err != nil {
 		log.Error("Could not create VM: ", "error", err)
 		return nil, fmt.Errorf("Could not create VM: %s", err)

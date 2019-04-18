@@ -18,11 +18,12 @@ type Interpreter struct {
 	Mutable          *bool
 }
 
-func NewInterpreter(module *wasm.Module, compiled []vnt.Compiled, initMem func(m *vnt.WavmMemory, module *wasm.Module) error, captureOp func(pc uint64, op byte) error, captureEnvFunction func(pc uint64, name string) error, debug bool) (*Interpreter, error) {
+func NewInterpreter(module *wasm.Module, compiled []vnt.Compiled, initMem func(m *vnt.WavmMemory, module *wasm.Module) error, captureOp func(pc uint64, op byte) error, captureEnvFunctionStart func(pc uint64, name string) error, captureEnvFunctionEnd func(pc uint64, name string) error, debug bool) (*Interpreter, error) {
 	var inter Interpreter
 	var vm VM
 	vm.captureOp = captureOp
-	vm.captureEnvFunction = captureEnvFunction
+	vm.captureEnvFunctionStart = captureEnvFunctionStart
+	vm.captureEnvFunctionEnd = captureEnvFunctionEnd
 	vm.debug = debug
 	inter.Memory = vnt.NewWavmMemory()
 	inter.heapPointerIndex = -1
