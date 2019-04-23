@@ -844,9 +844,8 @@ func TestStartAndStopProxy(t *testing.T) {
 	}
 
 	// 设置代理
-	voter := common.BytesToAddress([]byte{100})
-	if err := c.setProxy(voter, proxy); err != nil {
-		t.Errorf("set proxy, addr: %s, error: %s", voter.String(), err)
+	if err := c.setProxy(addr1, proxy); err != nil {
+		t.Errorf("set proxy, addr: %s, error: %s", addr1.String(), err)
 	}
 	if _, err := checkValid(t, c); err != nil {
 		t.Error(err)
