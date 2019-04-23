@@ -114,7 +114,7 @@ func (b *BftManager) handleBftMsg(msg types.ConsensusMsg) error {
 	// save to msg pool, if you are witness and producing after sync,
 	// you will fast deal with these msg.
 	if atomic.LoadUint32(&b.producing) == 0 {
-		b.mp.addMsg(msg)
+		_ = b.mp.addMsg(msg)
 		log.Debug("HandleBftMsg: return for not producing")
 		return nil
 	}
@@ -265,7 +265,9 @@ func (b *BftManager) startCommit(prePreMsg *types.PreprepareMsg) error {
 	if err != nil {
 		return err
 	}
-	b.roundMp.addMsg(commitMsg)
+	if err := b.roundMp.addMsg(commitMsg); err != nil {
+		return err
+	}
 
 	// The one of first changing step, send the msg
 	if ok := atomic.CompareAndSwapUint32(&b.step, prepared, committing); ok {

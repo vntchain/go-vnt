@@ -20,8 +20,10 @@ import (
 	"math/big"
 
 	"fmt"
+
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/crypto/sha3"
+	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/rlp"
 )
 
@@ -77,10 +79,13 @@ func (msg *PreprepareMsg) GetRound() uint32 {
 func (msg *PreprepareMsg) Hash() (hash common.Hash) {
 	hasher := sha3.NewKeccak256()
 
-	rlp.Encode(hasher, []interface{}{
+	if err := rlp.Encode(hasher, []interface{}{
 		msg.Round,
 		msg.Block.Hash(),
-	})
+	}); err != nil {
+		log.Error("Calc PreprepareMsg hash", "error", err)
+		return common.Hash{}
+	}
 
 	hasher.Sum(hash[:0])
 	return
@@ -110,13 +115,16 @@ func (msg *PrepareMsg) Hash() (hash common.Hash) {
 	hasher := sha3.NewKeccak256()
 
 	// 加入消息类型是为了区别Prepare消息和commit消息
-	rlp.Encode(hasher, []interface{}{
+	if err := rlp.Encode(hasher, []interface{}{
 		BftPrepareMessage,
 		msg.Round,
 		msg.PrepareAddr,
 		msg.BlockNumber,
 		msg.BlockHash,
-	})
+	}); err != nil {
+		log.Error("Calc PrepareMsg hash", "error", err)
+		return common.Hash{}
+	}
 
 	hasher.Sum(hash[:0])
 	return
@@ -145,13 +153,16 @@ func (msg *CommitMsg) GetRound() uint32 {
 func (msg *CommitMsg) Hash() (hash common.Hash) {
 	hasher := sha3.NewKeccak256()
 
-	rlp.Encode(hasher, []interface{}{
+	if err := rlp.Encode(hasher, []interface{}{
 		BftCommitMessage,
 		msg.Round,
 		msg.Commiter,
 		msg.BlockNumber,
 		msg.BlockHash,
-	})
+	}); err != nil {
+		log.Error("Calc CommitMsg hash", "error", err)
+		return common.Hash{}
+	}
 
 	hasher.Sum(hash[:0])
 	return
