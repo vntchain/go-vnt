@@ -583,7 +583,9 @@ func (ec electionContext) setProxy(address common.Address, proxy common.Address)
 			addOp := func(count *big.Int) {
 				count.Add(count, voteCount)
 			}
-			ec.opCandidates(&proxyVoter, addOp)
+			if err := ec.opCandidates(&proxyVoter, addOp); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -618,7 +620,9 @@ func (ec electionContext) cancelProxy(address common.Address) error {
 				subOp := func(count *big.Int) {
 					count.Sub(count, voteCount)
 				}
-				ec.opCandidates(&proxyVoter, subOp)
+				if err := ec.opCandidates(&proxyVoter, subOp); err != nil {
+					return err
+				}
 			}
 			break
 		}
