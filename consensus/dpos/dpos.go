@@ -512,10 +512,7 @@ func (d *Dpos) grantingReward(chain consensus.ChainReader, header *types.Header,
 			actualBonus := math.BigMin(allBonus, restBounty)
 			log.Debug("Vote bounty", "each bounty(wei)", actualBonus.String())
 			if bonus := d.calcVoteBounty(candis, actualBonus); bonus != nil {
-				if err = election.AddCandidatesBounty(state, bonus); err != nil {
-					return err
-				}
-				election.GrantBounty(state, actualBonus)
+				return election.AddCandidatesBounty(state, bonus, actualBonus)
 			}
 		}
 	}

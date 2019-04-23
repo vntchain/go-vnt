@@ -886,11 +886,17 @@ func GetStake(stateDB inter.StateDB, addr common.Address) *Stake {
 	return &s
 }
 
-func AddCandidatesBounty(stateDB inter.StateDB, bonus map[common.Address]*big.Int) error {
+// AddCandidatesBounty sends votes bounty to candidates.
+func AddCandidatesBounty(stateDB inter.StateDB, bonus map[common.Address]*big.Int, allBonus *big.Int) error {
 	for addr, bu := range bonus {
 		if err := addCandidateBounty(stateDB, addr, bu); err != nil {
 			return err
 		}
+	}
+
+	// 减少剩余激励Token数量
+	if _, err := GrantBounty(stateDB, allBonus); err != nil {
+		return err
 	}
 	return nil
 }
