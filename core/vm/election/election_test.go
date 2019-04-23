@@ -111,11 +111,12 @@ func newcontext() inter.ChainContext {
 	return &c
 }
 
-func getAllVoter(db inter.StateDB) []*Voter {
+func getAllVoter(t *testing.T, db inter.StateDB) []*Voter {
 	var result []*Voter
 	voters := make(map[common.Hash]common.Hash)
 	addrs := make(map[common.Address]struct{})
 
+	// 根据voter前缀，在db中获取所有的voter地址
 	db.ForEachStorage(contractAddr, func(key common.Hash, value common.Hash) bool {
 		if key[0] == VOTERPREFIX {
 			voters[key] = value
@@ -131,22 +132,26 @@ func getAllVoter(db inter.StateDB) []*Voter {
 		return voters[key]
 	}
 
+	// 根据已获得的voter地址获取所有的voter结构体
 	for addr := range addrs {
 		var voter Voter
-		convertToStruct(VOTERPREFIX, addr, &voter, getFn)
+		if err := convertToStruct(VOTERPREFIX, addr, &voter, getFn); err != nil {
+			t.Errorf("addr: %s, error: %s", addr.String(), err)
+		}
 		result = append(result, &voter)
 
 	}
 	return result
 }
 
-func checkValid(c electionContext) (bool, error) {
+// 计算所有投出的票数，跟候选人所拥有的票数是否想相等
+func checkValid(t *testing.T, c electionContext) (bool, error) {
 	// 保存原先context的时间
 	currentTime := c.context.GetTime()
 
 	proxyVote := make(map[common.Address]*big.Int)
 	voteCount := make(map[common.Address]*big.Int)
-	voters := getAllVoter(c.context.GetStateDb())
+	voters := getAllVoter(t, c.context.GetStateDb())
 	// 循环一遍voter，做一遍初步的检查
 	for _, voter := range voters {
 		// 如果proxy不为空
@@ -392,7 +397,9 @@ func TestVoteWithoutEnoughTimeGap(t *testing.T) {
 		Owner:     addr,
 		TimeStamp: big.NewInt(1531328500),
 	}
-	c.setVoter(voter)
+	if err := c.setVoter(voter); err != nil {
+		t.Errorf("addr: %s, error: %s", voter.Owner, err)
+	}
 
 	// 抵押
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(1e18))
@@ -434,7 +441,7 @@ func TestVoteCandidatesFistTime(t *testing.T) {
 		t.Error(err)
 	}
 
-	if _, err := checkValid(c); err != nil {
+	if _, err := checkValid(t, c); err != nil {
 		t.Error(err)
 	}
 }
@@ -465,7 +472,9 @@ func TestCancelVoteWithProxy(t *testing.T) {
 		Proxy:     common.BytesToAddress([]byte{10}),
 		TimeStamp: big.NewInt(1531328510),
 	}
-	c.setVoter(voter)
+	if err := c.setVoter(voter); err != nil {
+		t.Errorf("addr: %s, error: %s", voter.Owner, err)
+	}
 
 	err := c.cancelVote(addr)
 	if err.Error() != fmt.Sprintf("must cancel proxy first, proxy: %x", voter.Proxy) {
@@ -482,11 +491,15 @@ func TestCancelVote(t *testing.T) {
 
 	// 抵押1
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
-	c.stake(addr, big.NewInt(10))
+	if err := c.stake(addr, big.NewInt(10)); err != nil {
+		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
+	}
 
 	// 抵押2
-	c.context.GetStateDb().AddBalance(addr1, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
-	c.stake(addr, big.NewInt(100))
+	c.context.GetStateDb().AddBalance(addr1, big.NewInt(0).Mul(big.NewInt(100), big.NewInt(1e18)))
+	if err := c.stake(addr1, big.NewInt(100)); err != nil {
+		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
+	}
 
 	// 设置候选人
 	for i := 0; i < len(candidates); i++ {
@@ -501,7 +514,7 @@ func TestCancelVote(t *testing.T) {
 	// 投票1
 	c.voteWitnesses(addr, candidates)
 	voteCount := c.calculateVoteCount(big.NewInt(10))
-	if _, err := checkValid(c); err != nil {
+	if _, err := checkValid(t, c); err != nil {
 		t.Error(err)
 	}
 
@@ -512,14 +525,14 @@ func TestCancelVote(t *testing.T) {
 	totalVoteCount.Add(totalVoteCount, voteCount1)
 
 	// 验证2
-	if _, err := checkValid(c); err != nil {
+	if _, err := checkValid(t, c); err != nil {
 		t.Error(err)
 	}
 
 	// 取消投票
 	c.cancelVote(addr)
 
-	if _, err := checkValid(c); err != nil {
+	if _, err := checkValid(t, c); err != nil {
 		t.Error(err)
 	}
 }
@@ -581,7 +594,9 @@ func TestProxyWithoutEnoughTimeGap(t *testing.T) {
 		Owner:     addr,
 		TimeStamp: big.NewInt(1531328500),
 	}
-	c.setVoter(voter)
+	if err := c.setVoter(voter); err != nil {
+		t.Errorf("addr: %s, error: %s", voter.Owner, err)
+	}
 
 	// 抵押
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(1e18))
@@ -620,7 +635,7 @@ func TestSetProxy(t *testing.T) {
 	context := newcontext()
 	c := newElectionContext(context)
 
-	err := setProxy(c)
+	err := setProxy(t, c)
 	if err != nil {
 		t.Error(err)
 	}
@@ -650,7 +665,9 @@ func TestCancelProxyNoProxy(t *testing.T) {
 		Owner:     addr,
 		TimeStamp: big.NewInt(1531328500),
 	}
-	c.setVoter(voter)
+	if err := c.setVoter(voter); err != nil {
+		t.Errorf("addr: %s, error: %s", voter.Owner, err)
+	}
 
 	err := c.cancelProxy(addr)
 	if err.Error() != "not set proxy" {
@@ -665,7 +682,7 @@ func TestCancelProxy(t *testing.T) {
 	c := newElectionContext(context)
 
 	addr := common.BytesToAddress([]byte{111})
-	err := setProxy(c)
+	err := setProxy(t, c)
 	if err != nil {
 		t.Error(err)
 	}
@@ -684,7 +701,7 @@ func TestCancelProxy(t *testing.T) {
 		}
 	}
 
-	if _, err := checkValid(c); err != nil {
+	if _, err := checkValid(t, c); err != nil {
 		t.Error(err)
 	}
 }
@@ -694,7 +711,7 @@ func TestCancelProxy(t *testing.T) {
 func TestStartProxyWithIsProxy(t *testing.T) {
 	context := newcontext()
 	c := newElectionContext(context)
-	err := setProxy(c)
+	err := setProxy(t, c)
 	if err != nil {
 		t.Error(err)
 	}
@@ -710,7 +727,7 @@ func TestStartProxyWithIsProxy(t *testing.T) {
 func TestStartProxyWithSetProxy(t *testing.T) {
 	context := newcontext()
 	c := newElectionContext(context)
-	err := setProxy(c)
+	err := setProxy(t, c)
 	if err != nil {
 		t.Error(err)
 	}
@@ -741,11 +758,11 @@ func TestStopProxyNotProxy(t *testing.T) {
 
 	voter := newVoter()
 	voter.Owner = common.BytesToAddress([]byte{111})
-	err := c.setVoter(voter)
-	if err != nil {
-		t.Error(err)
+	if err := c.setVoter(voter); err != nil {
+		t.Errorf("addr: %s, error: %s", voter.Owner, err)
 	}
-	err = c.stopProxy(common.BytesToAddress([]byte{111}))
+
+	err := c.stopProxy(common.BytesToAddress([]byte{111}))
 	if err.Error() != "stopProxy address is not proxy" {
 		t.Error(err)
 	}
@@ -772,7 +789,7 @@ func TestStartAndStopProxy(t *testing.T) {
 	}
 
 	// addr 设置 proxy为代理
-	err := setProxy(c)
+	err := setProxy(t, c)
 	if err != nil {
 		t.Error(err)
 	}
@@ -782,7 +799,7 @@ func TestStartAndStopProxy(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if _, err := checkValid(c); err != nil {
+	if _, err := checkValid(t, c); err != nil {
 		t.Error(err)
 	}
 
@@ -792,13 +809,13 @@ func TestStartAndStopProxy(t *testing.T) {
 		ctx.SetTime(big.NewInt(1531795552))
 	}
 	c.voteWitnesses(proxy, candidates)
-	if _, err := checkValid(c); err != nil {
+	if _, err := checkValid(t, c); err != nil {
 		t.Error(err)
 	}
 
 	// 取消addr交给proxy的代理
 	c.cancelProxy(addr)
-	if _, err := checkValid(c); err != nil {
+	if _, err := checkValid(t, c); err != nil {
 		t.Error(err)
 	}
 
@@ -809,7 +826,7 @@ func TestStartAndStopProxy(t *testing.T) {
 	c.stake(addr1, big.NewInt(30))
 	// 设置代理
 	c.setProxy(common.BytesToAddress([]byte{100}), proxy)
-	if _, err := checkValid(c); err != nil {
+	if _, err := checkValid(t, c); err != nil {
 		t.Error(err)
 	}
 }
@@ -829,7 +846,7 @@ func TestStopAndSetProxy(t *testing.T) {
 	proxy := common.BytesToAddress([]byte{10})
 
 	// addr 设置 proxy为代理
-	err := setProxy(c)
+	err := setProxy(t, c)
 	if err != nil {
 		t.Error(err)
 	}
@@ -902,7 +919,7 @@ func TestStopAndSetProxy(t *testing.T) {
 	}
 }
 
-func setProxy(c electionContext) error {
+func setProxy(t *testing.T, c electionContext) error {
 	addr := common.BytesToAddress([]byte{111})
 	proxy := common.BytesToAddress([]byte{10})
 	// 账户addr抵押
@@ -938,7 +955,7 @@ func setProxy(c electionContext) error {
 		return err
 	}
 
-	if _, err := checkValid(c); err != nil {
+	if _, err := checkValid(t, c); err != nil {
 		return err
 	}
 	return nil
@@ -1213,7 +1230,7 @@ func TestCalculateVote(t *testing.T) {
 var operates []string            // 有哪些操作
 var alreadySet map[byte]struct{} // alreadySet用来标记节点是否已经扩展过
 
-func dfsState(c electionContext, address common.Address, checkFn func(byte, string, byte) error) error {
+func dfsState(t *testing.T, c electionContext, address common.Address, checkFn func(byte, string, byte) error) error {
 	// 进入时保存当前数据库状态，退出时恢复
 	snap := c.context.GetStateDb().Snapshot()
 	defer c.context.GetStateDb().RevertToSnapshot(snap)
@@ -1222,7 +1239,7 @@ func dfsState(c electionContext, address common.Address, checkFn func(byte, stri
 		snap1 := c.context.GetStateDb().Snapshot()
 		err := operateOnState(c, op, address)
 		if err == nil {
-			if _, err = checkValid(c); err != nil {
+			if _, err = checkValid(t, c); err != nil {
 				return err
 			}
 			nextState := checkState(c, address)
@@ -1233,7 +1250,7 @@ func dfsState(c electionContext, address common.Address, checkFn func(byte, stri
 			// 如果是新的状态加入到队列中
 			if _, ok := alreadySet[nextState]; !ok {
 				alreadySet[nextState] = struct{}{}
-				err = dfsState(c, address, checkFn)
+				err = dfsState(t, c, address, checkFn)
 				if err != nil {
 					return err
 				}
@@ -1288,7 +1305,7 @@ func TestVoteAndProxyState1(t *testing.T) {
 		return nil
 	}
 
-	if err := dfsState(c, addr, checkFn); err != nil {
+	if err := dfsState(t, c, addr, checkFn); err != nil {
 		t.Error(err)
 	}
 }
@@ -1397,7 +1414,7 @@ func TestVoteAndProxyState2(t *testing.T) {
 	alreadySet = make(map[byte]struct{})
 
 	alreadySet[4] = struct{}{}
-	if err := dfsState(c, proxy, checkFn); err != nil {
+	if err := dfsState(t, c, proxy, checkFn); err != nil {
 		t.Error(err)
 	}
 }
