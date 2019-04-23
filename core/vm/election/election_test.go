@@ -353,7 +353,11 @@ func TestVoteTooManyCandidates(t *testing.T) {
 		candidates = append(candidates, candidate)
 		website := "www.testnet.info" + strconv.Itoa(i)
 		name := "testinfo" + strconv.Itoa(i)
-		c.registerWitness(candidate, url, []byte(website), []byte(name))
+		p2pUrl := []byte(string(url)[:13] + strconv.Itoa(i) + string(url)[14:])
+		// t.Logf("url: %s", string(p2pUrl))
+		if err := c.registerWitness(candidate, p2pUrl, []byte(website), []byte(name)); err != nil {
+			t.Errorf("register failed, addr: %s, error: %s", candidate.String(), err)
+		}
 	}
 	err := c.voteWitnesses(addr, candidates)
 	if err.Error() != fmt.Sprintf("you voted too many candidates: the limit is %d, you voted %d", VoteLimit, len(candidates)) {
@@ -392,7 +396,9 @@ func TestVoteWithoutEnoughTimeGap(t *testing.T) {
 
 	// 抵押
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(1e18))
-	c.stake(addr, big.NewInt(1))
+	if err := c.stake(addr, big.NewInt(1)); err != nil {
+		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
+	}
 	// 投票
 	err := c.voteWitnesses(addr, candidates)
 	if err.Error() != fmt.Sprintf("it's less than 24h after your last vote or setProxy, lastTime: %v, now: %v", voter.TimeStamp, c.context.GetTime()) {
@@ -408,13 +414,18 @@ func TestVoteCandidatesFistTime(t *testing.T) {
 
 	addr := common.BytesToAddress([]byte{111})
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
-	c.stake(addr, big.NewInt(10))
+	if err := c.stake(addr, big.NewInt(10)); err != nil {
+		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
+	}
 
 	// 候选人注册
 	for i := 0; i < len(candidates); i++ {
 		website := "www.testnet.info" + strconv.Itoa(i)
 		name := "testinfo" + strconv.Itoa(i)
-		c.registerWitness(candidates[i], url, []byte(website), []byte(name))
+		p2pUrl := []byte(string(url)[:13] + strconv.Itoa(i) + string(url)[14:])
+		if err := c.registerWitness(candidates[i], p2pUrl, []byte(website), []byte(name)); err != nil {
+			t.Errorf("register failed, addr: %s, error: %s", candidates[i].String(), err)
+		}
 	}
 
 	// 投票
@@ -481,7 +492,10 @@ func TestCancelVote(t *testing.T) {
 	for i := 0; i < len(candidates); i++ {
 		website := "www.testnet.info" + strconv.Itoa(i)
 		name := "testinfo" + strconv.Itoa(i)
-		c.registerWitness(candidates[i], url, []byte(website), []byte(name))
+		p2pUrl := []byte(string(url)[:13] + strconv.Itoa(i) + string(url)[14:])
+		if err := c.registerWitness(candidates[i], p2pUrl, []byte(website), []byte(name)); err != nil {
+			t.Errorf("register failed, addr: %s, error: %s", candidates[i].String(), err)
+		}
 	}
 
 	// 投票1
@@ -571,7 +585,9 @@ func TestProxyWithoutEnoughTimeGap(t *testing.T) {
 
 	// 抵押
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(1e18))
-	c.stake(addr, big.NewInt(1))
+	if err := c.stake(addr, big.NewInt(1)); err != nil {
+		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
+	}
 	// 设置代理
 	err := c.setProxy(addr, proxy)
 	if err.Error() != fmt.Sprintf("it's less than 24h after your last vote or setProxy, lastTime: %v, now: %v", voter.TimeStamp, c.context.GetTime()) {
@@ -589,7 +605,10 @@ func TestProxyIsNotProxy(t *testing.T) {
 
 	// 抵押
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(1e18))
-	c.stake(addr, big.NewInt(1))
+	if err := c.stake(addr, big.NewInt(1)); err != nil {
+		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
+	}
+
 	// 设置代理
 	err := c.setProxy(addr, proxy)
 	if err.Error() != fmt.Sprintf("%x is not a proxy", proxy) {
@@ -748,7 +767,9 @@ func TestStartAndStopProxy(t *testing.T) {
 	addr1 := common.BytesToAddress([]byte{50})
 	proxy := common.BytesToAddress([]byte{10})
 	c.context.GetStateDb().AddBalance(addr1, big.NewInt(0).Mul(big.NewInt(20), big.NewInt(1e18)))
-	c.stake(addr1, big.NewInt(20))
+	if err := c.stake(addr1, big.NewInt(20)); err != nil {
+		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
+	}
 
 	// addr 设置 proxy为代理
 	err := setProxy(c)
@@ -907,7 +928,7 @@ func setProxy(c electionContext) error {
 	// 设置候选人，借用candiInfos的website、name、url信息
 	for i := 0; i < len(candidates); i++ {
 		if err := c.registerWitness(candidates[i], candiInfos[i].url, candiInfos[i].website, candiInfos[i].name); err != nil {
-			return fmt.Errorf("setProxy case: %d, err: %s", i, err)
+			return fmt.Errorf("registerWitness addr: %s, error: %s", candidates[i].String(), err)
 		}
 	}
 
@@ -1122,7 +1143,9 @@ func TestStake(t *testing.T) {
 func TestExtractBounty(t *testing.T) {
 	context := newcontext()
 	ec := newElectionContext(context)
-	ec.setCandidate(candidate)
+	if err := ec.setCandidate(candidate); err != nil {
+		t.Errorf("candiates: %s, error: %s", candidate.Owner, err)
+	}
 	if err := ec.extractOwnBounty(candidate.Owner); err != nil {
 		t.Error(err)
 	}
@@ -1254,7 +1277,7 @@ func TestVoteAndProxyState1(t *testing.T) {
 	// 抵押一类的初始操作
 	context := newcontext()
 	c := newElectionContext(context)
-	initForStateTest(c)
+	initForStateTest(t, c)
 
 	alreadySet = make(map[byte]struct{})
 	alreadySet[0] = struct{}{}
@@ -1369,7 +1392,7 @@ func TestVoteAndProxyState2(t *testing.T) {
 	// 抵押一类的初始操作
 	context := newcontext()
 	c := newElectionContext(context)
-	initForStateTest(c)
+	initForStateTest(t, c)
 
 	alreadySet = make(map[byte]struct{})
 
@@ -1379,7 +1402,7 @@ func TestVoteAndProxyState2(t *testing.T) {
 	}
 }
 
-func initForStateTest(c electionContext) {
+func initForStateTest(t *testing.T, c electionContext) {
 	addr := common.BytesToAddress([]byte{111})
 	proxy := common.BytesToAddress([]byte{10})
 	proxy1 := common.BytesToAddress([]byte{50})
@@ -1404,7 +1427,10 @@ func initForStateTest(c electionContext) {
 	for i, candi := range candidates {
 		website := "www.testnet.info" + strconv.Itoa(i)
 		name := "testinfo" + strconv.Itoa(i)
-		c.registerWitness(candi, url, []byte(website), []byte(name))
+		p2pUrl := []byte(string(url)[:13] + strconv.Itoa(i) + string(url)[14:])
+		if err := c.registerWitness(candi, p2pUrl, []byte(website), []byte(name)); err != nil {
+			t.Errorf("register failed, addr: %s, error: %s", candi.String(), err)
+		}
 	}
 }
 
