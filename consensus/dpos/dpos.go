@@ -77,9 +77,6 @@ var (
 	// the previous block's timestamp + the minimum block period.
 	errInvalidTimestamp = errors.New("invalid timestamp")
 
-	// errUnauthorized is returned if a header is signed by a non-authorized entity.
-	errUnauthorized = errors.New("unauthorized")
-
 	// witness should be same with the parent
 	errWitnesses = errors.New("witnesses is different from parent")
 
