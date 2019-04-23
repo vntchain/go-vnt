@@ -564,8 +564,7 @@ func (ec electionContext) setProxy(address common.Address, proxy common.Address)
 		voteCount.Add(voteCount, voter.ProxyVoteCount)
 	}
 
-	var proxyVoter Voter
-	proxyVoter = ec.getVoter(proxy)
+	proxyVoter := ec.getVoter(proxy)
 	if !proxyVoter.IsProxy {
 		return fmt.Errorf("%x is not a proxy", proxy)
 	}
@@ -604,9 +603,8 @@ func (ec electionContext) cancelProxy(address common.Address) error {
 		voteCount.Add(voteCount, voter.ProxyVoteCount)
 	}
 
-	var proxyVoter Voter
 	for {
-		proxyVoter = ec.getVoter(proxy)
+		proxyVoter := ec.getVoter(proxy)
 		// 减少其代理的票
 		proxyVoter.ProxyVoteCount.Sub(proxyVoter.ProxyVoteCount, voteCount)
 		err := ec.setVoter(proxyVoter)

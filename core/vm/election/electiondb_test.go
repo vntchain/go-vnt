@@ -218,12 +218,12 @@ func TestConvertToStruct(t *testing.T) {
 
 func TestSetToDB(t *testing.T) {
 	db := vntdb.NewMemDatabase()
-	stateDB, err := state.New(common.Hash{}, state.NewDatabase(db))
+	stateDB, _ := state.New(common.Hash{}, state.NewDatabase(db))
 
 	ctx := testContext{StateDB: stateDB}
 	c := newElectionContext(&ctx)
 
-	err = c.setVoter(voter)
+	err := c.setVoter(voter)
 	if err != nil {
 		t.Error(err)
 	}
@@ -552,7 +552,7 @@ func TestAddCandidateBounty(t *testing.T) {
 	}
 
 	bounty := big.NewInt(0).Mul(big.NewInt(100), big.NewInt(1e18))
-	addCandidateBounty(c.context.GetStateDb(), candidate.Owner, bounty)
+	_ = addCandidateBounty(c.context.GetStateDb(), candidate.Owner, bounty)
 	candidate1 := c.getCandidate(candidate.Owner)
 	candidate1.TotalBounty.Sub(candidate1.TotalBounty, bounty)
 
