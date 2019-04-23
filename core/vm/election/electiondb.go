@@ -417,9 +417,5 @@ func setRestBounty(stateDB inter.StateDB, restBounty Bounty) error {
 	setFn := func(key common.Hash, value common.Hash) {
 		stateDB.SetState(contractAddr, key, value)
 	}
-	err := convertToKV(BOUNTYPREFIX, restBounty, setFn)
-	if err != nil {
-		return err
-	}
-	return nil
+	return convertToKV(BOUNTYPREFIX, restBounty, setFn)
 }

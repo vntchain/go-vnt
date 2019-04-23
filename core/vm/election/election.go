@@ -211,7 +211,10 @@ func (e *Election) RequiredGas(input []byte) uint64 {
 func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
 	nonce := ctx.GetStateDb().GetNonce(contractAddr)
 	if nonce == 0 {
-		setRestBounty(ctx.GetStateDb(), Bounty{restTotalBounty})
+		if err := setRestBounty(ctx.GetStateDb(), Bounty{restTotalBounty}); err != nil {
+			// initializing failed leads to exit
+			log.Crit("Initialize bounty failed", "error", err)
+		}
 	}
 	ctx.GetStateDb().SetNonce(contractAddr, nonce+1)
 
@@ -917,7 +920,9 @@ func GrantBounty(stateDB inter.StateDB, grantAmount *big.Int) (*big.Int, error) 
 func QueryRestVNTBounty(stateDB inter.StateDB) *big.Int {
 	if !stateDB.Exist(contractAddr) {
 		stateDB.SetNonce(contractAddr, 1)
-		setRestBounty(stateDB, Bounty{restTotalBounty})
+		if err := setRestBounty(stateDB, Bounty{restTotalBounty}); err != nil {
+			log.Crit("Initialize bounty failed in query", "error", err)
+		}
 		return restTotalBounty
 	}
 	bounty := getRestBounty(stateDB)
