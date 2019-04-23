@@ -357,12 +357,12 @@ func (d *Dpos) verifySeal(chain consensus.ChainReader, header *types.Header, par
 		return err
 	}
 
-	if bytes.Compare(signer.Bytes(), header.Coinbase.Bytes()) != 0 {
+	if signer != header.Coinbase {
 		return errInvalidCoinBase
 	}
 
 	// 确认轮次对不对，是不是该这个节点出块
-	if d.inTurn(header, signer, chain, parents) == false {
+	if !d.inTurn(header, signer, chain, parents) {
 		return errOutTurn
 	}
 	return nil
@@ -377,18 +377,18 @@ func (d *Dpos) VerifyWitnesses(header *types.Header, db *state.StateDB, parent *
 
 	// Check header.Extra
 	if needSetUpdateTime(updated, header.Number.Uint64()) {
-		if d.updatedWitnessCheckByTime(header) == false {
+		if !d.updatedWitnessCheckByTime(header) {
 			return fmt.Errorf("header.Extra is mismatch with header.Time when update")
 		}
 	} else {
-		if bytes.Compare(header.Extra, parent.Extra) != 0 {
+		if !bytes.Equal(header.Extra, parent.Extra) {
 			return fmt.Errorf("header.Extra is mismatch with parent.Time when NOT update")
 		}
 	}
 
 	// Check the witnesses list
 	for i := 0; i < len(localWitnesses); i++ {
-		if bytes.Compare(localWitnesses[i].Bytes(), header.Witnesses[i].Bytes()) != 0 {
+		if localWitnesses[i] != header.Witnesses[i] {
 			return fmt.Errorf("witnesses is not match")
 		}
 	}
@@ -444,7 +444,7 @@ func (d *Dpos) Prepare(chain consensus.ChainReader, header *types.Header) error 
 
 	// Make sure self is the current block producer before produce
 	witness := header.Coinbase
-	if d.inTurn(header, witness, chain, nil) == false {
+	if !d.inTurn(header, witness, chain, nil) {
 		log.Debug("Prepare failed", "err", errOutTurn)
 		return fmt.Errorf("node is out of turn")
 	}
@@ -608,12 +608,12 @@ func (d *Dpos) inTurn(header *types.Header, witness common.Address, chain consen
 	)
 
 	getHeaderFromParents := func(hash common.Hash, num uint64) *types.Header {
-		if parents == nil || len(parents) == 0 {
+		if len(parents) == 0 {
 			return nil
 		}
 
 		for i := len(parents) - 1; i >= 0; i-- {
-			if bytes.Compare(parents[i].Hash().Bytes(), hash.Bytes()) == 0 && parents[i].Number.Uint64() == num {
+			if parents[i].Hash() == hash && parents[i].Number.Uint64() == num {
 				return parents[i]
 			}
 		}
@@ -652,7 +652,7 @@ func (d *Dpos) previousWitness(manager *Manager, chain consensus.ChainReader, ha
 	var header *types.Header
 
 	find := false
-	for find == false {
+	for !find {
 		if number == 0 {
 			return witness, produceTime, errNoPreviousWitness
 		}
@@ -668,7 +668,7 @@ func (d *Dpos) previousWitness(manager *Manager, chain consensus.ChainReader, ha
 		// check is witness still valid
 		witness = header.Coinbase
 		find = manager.has(witness)
-		if find == true {
+		if find {
 			break
 		}
 
@@ -736,7 +736,7 @@ func (d *Dpos) getWitnesses(header *types.Header, db *state.StateDB, parent *typ
 
 	// Using parent's witnesses, when update failed or No need update
 	updated := need
-	if witnesses == nil || len(witnesses) == 0 {
+	if len(witnesses) == 0 {
 		witnesses = parent.Witnesses
 		updated = false
 	}
@@ -760,10 +760,7 @@ func (d *Dpos) GetWitnessesFromStateDB(stateDB *state.StateDB) ([]common.Address
 func (d *Dpos) needUpdateWitnesses(t *big.Int, lastUpdateTime *big.Int) bool {
 	log.Debug("needUpdateWitnesses", "last", lastUpdateTime.String(), "current", t.String())
 	dur := new(big.Int).Sub(t, lastUpdateTime)
-	if dur.Cmp(d.updateInterval) >= 0 {
-		return true
-	}
-	return false
+	return dur.Cmp(d.updateInterval) >= 0
 }
 
 // setUpdateInterval only called when start up
@@ -816,7 +813,7 @@ func (d *Dpos) calcVoteBounty(candis election.CandidateList, allBonus *big.Int) 
 	totalVotes := big.NewInt(0)
 	activeCnt := 0
 	for _, can := range candis {
-		if can.Active == false {
+		if !can.Active {
 			continue
 		}
 		totalVotes.Add(totalVotes, can.VoteCount)
@@ -830,7 +827,7 @@ func (d *Dpos) calcVoteBounty(candis election.CandidateList, allBonus *big.Int) 
 	// Calc each candidates' bonus
 	bonus := make(map[common.Address]*big.Int, activeCnt)
 	for _, can := range candis {
-		if can.Active == false {
+		if !can.Active {
 			continue
 		}
 
@@ -923,10 +920,7 @@ func (d *Dpos) updatedWitnessCheckByTime(header *types.Header) bool {
 	var upTime updateTime
 	copy(upTime[:], header.Extra[:updateTimeLen])
 	uTime := upTime.bigInt()
-	if uTime.Cmp(header.Time) == 0 {
-		return true
-	}
-	return false
+	return uTime.Cmp(header.Time) == 0
 }
 
 // curHeightBonus return the VNT bonus at blkNr block number.

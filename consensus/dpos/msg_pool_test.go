@@ -17,10 +17,11 @@
 package dpos
 
 import (
-	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/core/types"
 	"math/big"
 	"testing"
+
+	"github.com/vntchain/go-vnt/common"
+	"github.com/vntchain/go-vnt/core/types"
 )
 
 func TestMsgPool_GetOrNewRoundMsgPool(t *testing.T) {
@@ -155,7 +156,7 @@ func TestMsgPool_AddMsgAndMajoritySuccess(t *testing.T) {
 	}
 
 	// clean messages of previous height
-	mp.cleanMsgOfHeight(h)
+	_ = mp.cleanMsgOfHeight(h)
 
 	// below should failed
 	if rmp, err := mp.getRoundMsgPool(h, r); rmp != nil || err == nil {
