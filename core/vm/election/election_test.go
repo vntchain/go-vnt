@@ -861,10 +861,15 @@ func TestStopAndSetProxy(t *testing.T) {
 		StakeCount: big.NewInt(20),
 	}
 	c.setStake(stake)
+	if err := c.setStake(stake); err != nil {
+		t.Errorf("stake, addr: %s, error: %s", stake.Owner.String(), err)
+	}
 
 	// addr1 投票
 	// addr1 开始代理
-	c.startProxy(addr1)
+	if err := c.startProxy(addr1); err != nil {
+		t.Errorf("start proxy, addr: %s, error: %s", addr1.String(), err)
+	}
 	err = c.voteWitnesses(addr1, candidates)
 	voteCount2 := c.calculateVoteCount(big.NewInt(20))
 	totalVoteCount := big.NewInt(0)
@@ -908,7 +913,9 @@ func TestStopAndSetProxy(t *testing.T) {
 	}
 
 	// addr 取消 proxy代理
-	c.cancelProxy(addr)
+	if err := c.cancelProxy(addr); err != nil {
+		t.Errorf("cancel proxy, addr: %s, error: %s", addr.String(), err)
+	}
 	totalVoteCount.Sub(totalVoteCount, voteCount)
 
 	for i := 0; i < len(candidates); i++ {
@@ -924,11 +931,15 @@ func setProxy(t *testing.T, c electionContext) error {
 	proxy := common.BytesToAddress([]byte{10})
 	// 账户addr抵押
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
-	c.stake(addr, big.NewInt(10))
+	if err := c.stake(addr, big.NewInt(10)); err != nil {
+		t.Errorf("stake, addr: %s, error: %s", addr.String(), err)
+	}
 
 	// 账户proxy抵押
 	c.context.GetStateDb().AddBalance(proxy, big.NewInt(0).Mul(big.NewInt(100), big.NewInt(1e18)))
-	c.stake(proxy, big.NewInt(100))
+	if err := c.stake(proxy, big.NewInt(100)); err != nil {
+		t.Errorf("stake, addr: %s, error: %s", proxy.String(), err)
+	}
 
 	// 账户proxy注册成为代理
 	err := c.startProxy(proxy)
@@ -1428,18 +1439,32 @@ func initForStateTest(t *testing.T, c electionContext) {
 	}
 
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
-	c.stake(addr, big.NewInt(10))
+	if err := c.stake(addr, big.NewInt(10)); err != nil {
+		t.Errorf("stake error, addr: %s, error: %s", addr.String(), err)
+	}
 	c.context.GetStateDb().AddBalance(proxy, big.NewInt(0).Mul(big.NewInt(100), big.NewInt(1e18)))
-	c.stake(proxy, big.NewInt(100))
+	if err := c.stake(proxy, big.NewInt(100)); err != nil {
+		t.Errorf("stake error, addr: %s, error: %s", proxy.String(), err)
+	}
 	c.context.GetStateDb().AddBalance(proxy1, big.NewInt(0).Mul(big.NewInt(1000), big.NewInt(1e18)))
-	c.stake(proxy1, big.NewInt(1000))
-	c.startProxy(proxy)
-	c.startProxy(proxy1)
+	if err := c.stake(proxy1, big.NewInt(1000)); err != nil {
+		t.Errorf("stake error, addr: %s, error: %s", proxy1.String(), err)
+	}
+	if err := c.startProxy(proxy); err != nil {
+		t.Errorf("start proxy, addr: %s, error: %s", proxy.String(), err)
+	}
+	if err := c.startProxy(proxy1); err != nil {
+		t.Errorf("start proxy, addr: %s, error: %s", proxy1.String(), err)
+	}
 	c.voteWitnesses(proxy1, candidates)
 
 	// 下面只是为了把addr塞进数据库
-	c.startProxy(addr)
-	c.stopProxy(addr)
+	if err := c.startProxy(addr); err != nil {
+		t.Errorf("start proxy, addr: %s, error: %s", addr.String(), err)
+	}
+	if err := c.stopProxy(addr); err != nil {
+		t.Errorf("start proxy, addr: %s, error: %s", addr.String(), err)
+	}
 
 	for i, candi := range candidates {
 		website := "www.testnet.info" + strconv.Itoa(i)
