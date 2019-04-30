@@ -120,6 +120,12 @@ type peerDrop struct {
 	requested bool // true if signaled by the peer
 }
 
+// close server.quit to broadcast the server shutdown
+func (server *Server) Close() {
+	log.Info("P2P server is being closed...")
+	close(server.quit)
+}
+
 func (server *Server) Start() error {
 	log.Info("p2p-test", "server.Protocols", server.Protocols)
 	if server.running {
@@ -249,7 +255,7 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 			if _, ok := peers[remoteID]; ok { // this peer already exists
 				break
 			}
-			p := newPeer(t)
+			p := newPeer(t, server)
 
 			if server.EnableMsgEvents {
 				p.events = &server.peerFeed
@@ -293,15 +299,15 @@ func (server *Server) AddPeer(ctx context.Context, node *Node) {
 	server.table.Update(ctx, node.Id)
 
 	select {
-	case server.addstatic <- node:
 	case <-server.quit:
+	case server.addstatic <- node:
 	}
 }
 
 func (server *Server) RemovePeer(node *Node) {
 	select {
-	case server.removestatic <- node:
 	case <-server.quit:
+	case server.removestatic <- node:
 	}
 }
 
@@ -357,6 +363,7 @@ func (server *Server) GetPeerByRemoteID(s inet.Stream) *Peer {
 	}
 
 	select {
+	case <-server.quit:
 	case server.peerOp <- func(peers map[peer.ID]*Peer) {
 		remoteID := s.Conn().RemotePeer()
 		if val, ok := peers[remoteID]; ok {
@@ -364,7 +371,6 @@ func (server *Server) GetPeerByRemoteID(s inet.Stream) *Peer {
 		}
 	}:
 		<-server.peerOpDone
-	case <-server.quit:
 	}
 
 	pid := s.Conn().RemotePeer()
@@ -376,13 +382,13 @@ func (server *Server) GetPeerByRemoteID(s inet.Stream) *Peer {
 func (server *Server) Peers() []*Peer {
 	var ps []*Peer
 	select {
+	case <-server.quit:
 	case server.peerOp <- func(peers map[peer.ID]*Peer) {
 		for _, p := range peers {
 			ps = append(ps, p)
 		}
 	}:
 		<-server.peerOpDone
-	case <-server.quit:
 	}
 	return ps
 }
@@ -390,9 +396,9 @@ func (server *Server) Peers() []*Peer {
 func (server *Server) PeerCount() int {
 	var count int
 	select {
+	case <-server.quit:
 	case server.peerOp <- func(ps map[peer.ID]*Peer) { count = len(ps) }:
 		<-server.peerOpDone
-	case <-server.quit:
 	}
 	return count
 }
@@ -460,9 +466,9 @@ func (server *Server) runPeer(p *Peer) {
 
 func (server *Server) dispatch(s *Stream, stage chan<- *Stream) error {
 	select {
-	case stage <- s:
 	case <-server.quit:
 		return errServerStopped
+	case stage <- s:
 	}
 	return nil
 }

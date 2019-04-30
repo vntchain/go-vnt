@@ -86,11 +86,12 @@ type Peer struct {
 	err       chan error
 	closed    bool
 	messenger map[string]*VNTMessenger // protocolName - vntMessenger
+	server	  *Server
 	wg        sync.WaitGroup
 	// need to add wg
 }
 
-func newPeer(conn *Stream) *Peer {
+func newPeer(conn *Stream, server *Server) *Peer {
 	m := make(map[string]*VNTMessenger)
 	for i := range conn.Protocols {
 		proto := conn.Protocols[i]
@@ -109,6 +110,7 @@ func newPeer(conn *Stream) *Peer {
 		err:       make(chan error),
 		closed:    false,
 		messenger: m,
+		server:	   server,
 	}
 	for _, msger := range p.messenger {
 		msger.peerPointer = p
