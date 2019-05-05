@@ -40,18 +40,29 @@ type Protocol struct {
 }
 
 // HandleStream handle all message which is from anywhere
+// 主、被动连接都走的流程
 func (server *Server) HandleStream(s inet.Stream) {
+	// 发生错误时才会退出
+	defer func() {
+		log.Info("HandleStream reset stream before exit")
+		s.Reset()
+	}()
+
+	// peer信息只获取1次即可
+	log.Info("p2p-test, stream data comming")
+	peer := server.GetPeerByRemoteID(s)
+	if peer == nil {
+		log.Info("HandleStream", "localPeerID", s.Conn().LocalPeer(), "remotePeerID", s.Conn().RemotePeer(), "this remote peer is nil, don't handle it")
+		return
+	}
+
+	// stream未关闭则连接正常可持续读取消息
 	for {
-		log.Info("p2p-test, stream data comming")
-		peer := server.GetPeerByRemoteID(s)
-		if peer == nil {
-			log.Info("HandleStream", "localPeerID", s.Conn().LocalPeer(), "remotePeerID", s.Conn().RemotePeer(), "this remote peer is nil, don't handle it")
-			return
-		}
+		// 读取消息
 		msgHeaderByte := make([]byte, MessageHeaderLength)
 		_, err := io.ReadFull(s, msgHeaderByte)
 		if err != nil {
-			//log.Error("handleStream", "read error", err)
+			log.Error("handleStream", "read header error", err)
 			notifyError(peer.messenger, err)
 			return
 		}
@@ -72,8 +83,8 @@ func (server *Server) HandleStream(s inet.Stream) {
 			return
 		}
 		msgBody.ReceivedAt = time.Now()
-		//log.Info("p2p-test", "RECEIVED MESSAGE", msgBody)
 
+		// 传递给messenger
 		var msgHeader MsgHeader
 		copy(msgHeader[:], msgHeaderByte)
 
@@ -81,23 +92,17 @@ func (server *Server) HandleStream(s inet.Stream) {
 			Header: msgHeader,
 			Body:   *msgBody,
 		}
-
 		if messenger, ok := peer.messenger[msgBody.ProtocolID]; ok { // this node support protocolID
 			messenger.in <- msg
 		} else {
 			log.Warn("handleStream", "receive Unknown Message", msg)
 		}
-
-		//handler, err := msgBody.handleForMsgType()
-		//if err != nil {
-		//	log.Error("handleStream", "handleForMsgType error", err)
-		//	return
-		//}
-		//handler()
 	}
 }
 
 func notifyError(messengers map[string]*VNTMessenger, err error) {
+	log.Error("notifyError enter")
+	defer log.Error("notifyError exit")
 	for _, m := range messengers {
 		m.err <- err
 	}
