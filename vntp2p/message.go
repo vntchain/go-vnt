@@ -209,6 +209,9 @@ func (rw *VNTMessenger) ReadMsg() (Msg, error) {
 		return msg, nil
 	case err := <-rw.err:
 		return Msg{}, err
+	case <- rw.peerPointer.server.quit:
+		log.Info("P2P server is being closed, no longer read message...")
+		return Msg{}, errServerStopped
 	}
 }
 
