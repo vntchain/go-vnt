@@ -279,12 +279,9 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 
 		case pd := <-server.delpeer:
 			// A peer disconnected.
-
 			pid := pd.RemoteID()
 			log.Info("Removing p2p peer", "peer", pid.ToString())
-			if p, ok := peers[pid]; ok {
-				log.Info("Reset peer stream", "peer", pid.ToString())
-				p.Reset()
+			if _, ok := peers[pid]; ok {
 				delete(peers, pid)
 			}
 		}
