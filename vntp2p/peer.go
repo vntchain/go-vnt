@@ -22,9 +22,8 @@ import (
 	"bufio"
 	"crypto/ecdsa"
 	"encoding/json"
-	"sync"
-
 	"net"
+	"sync"
 
 	inet "github.com/libp2p/go-libp2p-net"
 	libp2p "github.com/libp2p/go-libp2p-peer"
@@ -86,7 +85,7 @@ type Peer struct {
 	err       chan error
 	closed    bool
 	messenger map[string]*VNTMessenger // protocolName - vntMessenger
-	server	  *Server
+	server    *Server
 	wg        sync.WaitGroup
 	// need to add wg
 }
@@ -110,7 +109,7 @@ func newPeer(conn *Stream, server *Server) *Peer {
 		err:       make(chan error),
 		closed:    false,
 		messenger: m,
-		server:	   server,
+		server:    server,
 	}
 	for _, msger := range p.messenger {
 		msger.peerPointer = p
@@ -216,26 +215,32 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 		go func() {
 			p.wg.Add(1)
 			err := proto.Run(p, m)
-			log.Info("p2p-test", "run protocol error log", err)
-			if !p.closed {
-				p.err <- err
-			}
+			log.Debug("p2p-test", "run protocol error log", err)
+
+			p.sendError(err)
 			p.wg.Done()
 		}()
 	}
 
 	err = <-p.err
 	remoteRequested = true
-
 	p.closed = true
-
 	p.Reset()
 
-	//log.Info("p2p-test remote peer request close, but we need to wait for other protocol", "peerid", p.RemoteID())
-	//p.wg.Wait()
-	log.Info("p2p-test wait complete!", "peerid", p.RemoteID())
+	log.Debug("p2p-test remote peer request close, but we need to wait for other protocol", "peerid", p.RemoteID())
+	p.wg.Wait()
+	log.Debug("p2p-test wait complete!", "peerid", p.RemoteID())
 
 	return remoteRequested, err
+}
+
+// sendError 为Peer的协议开了多个goroutine，可能多个协议都返回错误，
+// 退出只接收一次错误就可以，所以采用非阻塞发送错误
+func (p *Peer) sendError(err error) {
+	select {
+	case p.err <- err:
+	default:
+	}
 }
 
 type Stream struct {
