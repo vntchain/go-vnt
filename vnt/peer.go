@@ -26,6 +26,7 @@ import (
 	libp2p "github.com/libp2p/go-libp2p-peer"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/types"
+	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/rlp"
 	"github.com/vntchain/go-vnt/vntp2p"
 	set "gopkg.in/fatih/set.v0"
@@ -327,22 +328,30 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 func (p *peer) Handshake(network uint64, td *big.Int, head common.Hash, genesis common.Hash) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
-	var status statusData // safe to read after two values have been received from errc
 
 	go func() {
-		p.Log().Info("test vnt protocol handshake", "going to send handshake msg to", p.id, "msg with ProtocolVersion", uint32(p.version))
-		errc <- vntp2p.Send(p.rw, ProtocolName, StatusMsg, &statusData{
+		log.Info("vnt protocol handshake", "going to send handshake msg to", p.id, "msg with ProtocolVersion", uint32(p.version))
+		err := vntp2p.Send(p.rw, ProtocolName, StatusMsg, &statusData{
 			ProtocolVersion: uint32(p.version),
 			NetworkId:       network,
 			TD:              td,
 			CurrentBlock:    head,
 			GenesisBlock:    genesis,
 		})
+		if err != nil {
+			log.Debug("Handshake send failed", "error", err.Error())
+			errc <- err
+		}
 	}()
+
+	var status statusData // safe to read after two values have been received from errc
 	go func() {
-		errc <- p.readStatus(network, &status, genesis)
-		p.Log().Info("test vnt protocol handshake", "encounter error", errc)
+		if err := p.readStatus(network, &status, genesis); err != nil {
+			p.Log().Info("Handshake read failed", "error", err.Error())
+			errc <- err
+		}
 	}()
+
 	timeout := time.NewTimer(handshakeTimeout)
 	defer timeout.Stop()
 	for i := 0; i < 2; i++ {
