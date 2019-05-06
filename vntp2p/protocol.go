@@ -92,8 +92,14 @@ func (server *Server) HandleStream(s inet.Stream) {
 			Header: msgHeader,
 			Body:   *msgBody,
 		}
-		if messenger, ok := peer.messenger[msgBody.ProtocolID]; ok { // this node support protocolID
-			messenger.in <- msg
+		if msger, ok := peer.messenger[msgBody.ProtocolID]; ok { // this node support protocolID
+			// 非阻塞向上层协议传递消息，如果2s还未被读取，认为上层协议有故障
+			select {
+			case msger.in <- msg:
+				break
+			case <-time.NewTimer(time.Second * 2).C:
+				break
+			}
 		} else {
 			log.Warn("handleStream", "receive Unknown Message", msg)
 		}
