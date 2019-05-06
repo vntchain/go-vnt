@@ -44,15 +44,15 @@ type Protocol struct {
 func (server *Server) HandleStream(s inet.Stream) {
 	// 发生错误时才会退出
 	defer func() {
-		log.Info("HandleStream reset stream before exit")
+		log.Debug("HandleStream reset stream before exit")
 		s.Reset()
 	}()
 
 	// peer信息只获取1次即可
-	log.Info("p2p-test, stream data comming")
+	log.Debug("p2p-test, stream data comming")
 	peer := server.GetPeerByRemoteID(s)
 	if peer == nil {
-		log.Info("HandleStream", "localPeerID", s.Conn().LocalPeer(), "remotePeerID", s.Conn().RemotePeer(), "this remote peer is nil, don't handle it")
+		log.Debug("HandleStream", "localPeerID", s.Conn().LocalPeer(), "remotePeerID", s.Conn().RemotePeer(), "this remote peer is nil, don't handle it")
 		return
 	}
 
@@ -62,7 +62,7 @@ func (server *Server) HandleStream(s inet.Stream) {
 		msgHeaderByte := make([]byte, MessageHeaderLength)
 		_, err := io.ReadFull(s, msgHeaderByte)
 		if err != nil {
-			log.Error("handleStream", "read header error", err)
+			log.Error("handleStream", "read header error", err, "peer", peer.RemoteID().ToString())
 			notifyError(peer.messenger, err)
 			return
 		}
@@ -71,14 +71,14 @@ func (server *Server) HandleStream(s inet.Stream) {
 		msgBodyByte := make([]byte, bodySize)
 		_, err = io.ReadFull(s, msgBodyByte)
 		if err != nil {
-			log.Error("handleStream", "read msgBody error", err)
+			log.Error("handleStream", "read msgBody error", err, "peer", peer.RemoteID().ToString())
 			notifyError(peer.messenger, err)
 			return
 		}
 		msgBody := &MsgBody{Payload: &rlp.EncReader{}}
 		err = json.Unmarshal(msgBodyByte, msgBody)
 		if err != nil {
-			log.Error("handleSteam", "unmarshal msgBody error", err)
+			log.Error("handleSteam", "unmarshal msgBody error", err, "peer", peer.RemoteID().ToString())
 			notifyError(peer.messenger, err)
 			return
 		}
@@ -101,8 +101,8 @@ func (server *Server) HandleStream(s inet.Stream) {
 }
 
 func notifyError(messengers map[string]*VNTMessenger, err error) {
-	log.Error("notifyError enter")
-	defer log.Error("notifyError exit")
+	log.Trace("notifyError enter")
+	defer log.Trace("notifyError exit")
 	for _, m := range messengers {
 		m.err <- err
 	}
