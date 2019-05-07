@@ -42,19 +42,20 @@ type Protocol struct {
 // HandleStream handle all message which is from anywhere
 // 主、被动连接都走的流程
 func (server *Server) HandleStream(s inet.Stream) {
-	// 发生错误时才会退出
-	defer func() {
-		log.Debug("HandleStream reset stream before exit")
-		s.Reset()
-	}()
-
 	// peer信息只获取1次即可
 	log.Debug("p2p-test, stream data comming")
 	peer := server.GetPeerByRemoteID(s)
 	if peer == nil {
 		log.Debug("HandleStream", "localPeerID", s.Conn().LocalPeer(), "remotePeerID", s.Conn().RemotePeer(), "this remote peer is nil, don't handle it")
+		s.Reset()
 		return
 	}
+
+	// 发生错误时才会退出
+	defer func() {
+		log.Debug("HandleStream reset stream before exit")
+		peer.Reset()
+	}()
 
 	// stream未关闭则连接正常可持续读取消息
 	for {
@@ -62,7 +63,7 @@ func (server *Server) HandleStream(s inet.Stream) {
 		msgHeaderByte := make([]byte, MessageHeaderLength)
 		_, err := io.ReadFull(s, msgHeaderByte)
 		if err != nil {
-			log.Error("handleStream", "read header error", err, "peer", peer.RemoteID().ToString())
+			log.Error("HandleStream", "read msg header error", err, "peer", peer.RemoteID().ToString())
 			notifyError(peer.messenger, err)
 			return
 		}
@@ -71,14 +72,14 @@ func (server *Server) HandleStream(s inet.Stream) {
 		msgBodyByte := make([]byte, bodySize)
 		_, err = io.ReadFull(s, msgBodyByte)
 		if err != nil {
-			log.Error("handleStream", "read msgBody error", err, "peer", peer.RemoteID().ToString())
+			log.Error("HandleStream", "read msg Body error", err, "peer", peer.RemoteID().ToString())
 			notifyError(peer.messenger, err)
 			return
 		}
 		msgBody := &MsgBody{Payload: &rlp.EncReader{}}
 		err = json.Unmarshal(msgBodyByte, msgBody)
 		if err != nil {
-			log.Error("handleSteam", "unmarshal msgBody error", err, "peer", peer.RemoteID().ToString())
+			log.Error("HandleStream", "unmarshal msg Body error", err, "peer", peer.RemoteID().ToString())
 			notifyError(peer.messenger, err)
 			return
 		}
@@ -101,7 +102,7 @@ func (server *Server) HandleStream(s inet.Stream) {
 				break
 			}
 		} else {
-			log.Warn("handleStream", "receive Unknown Message", msg)
+			log.Warn("HandleStream", "receive unknown message", msg)
 		}
 	}
 }

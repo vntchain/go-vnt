@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"net"
 	"sync"
+	"sync/atomic"
 
 	inet "github.com/libp2p/go-libp2p-net"
 	libp2p "github.com/libp2p/go-libp2p-peer"
@@ -79,11 +80,11 @@ type PeerInfo struct {
 }
 
 type Peer struct {
-	rw        inet.Stream
+	rw        inet.Stream // libp2p stream
+	reseted   int32       // Whether stream reseted
 	log       log.Logger
 	events    *event.Feed
 	err       chan error
-	closed    bool
 	messenger map[string]*VNTMessenger // protocolName - vntMessenger
 	server    *Server
 	wg        sync.WaitGroup
@@ -107,7 +108,7 @@ func newPeer(conn *Stream, server *Server) *Peer {
 		rw:        conn.Conn,
 		log:       log.New(),
 		err:       make(chan error),
-		closed:    false,
+		reseted:   0,
 		messenger: m,
 		server:    server,
 	}
@@ -185,7 +186,12 @@ func (p *Peer) Disconnect(reason DiscReason) {
 }
 
 // Reset Close both direction. Use this to tell the remote side to hang up and go away.
+// But only reset once.
 func (p *Peer) Reset() {
+	if !atomic.CompareAndSwapInt32(&p.reseted, 0, 1) {
+		return
+	}
+
 	if err := p.rw.Reset(); err != nil {
 		log.Debug("Reset peer connection", "peer", p.RemoteID().ToString(), "error", err.Error())
 	} else {
@@ -215,7 +221,7 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 		go func() {
 			p.wg.Add(1)
 			err := proto.Run(p, m)
-			log.Debug("p2p-test", "run protocol error log", err)
+			log.Debug("Run protocol error", "protocol", proto.Name, "error", err)
 
 			p.sendError(err)
 			p.wg.Done()
@@ -224,12 +230,11 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 
 	err = <-p.err
 	remoteRequested = true
-	p.closed = true
 	p.Reset()
 
-	log.Debug("p2p-test remote peer request close, but we need to wait for other protocol", "peerid", p.RemoteID())
+	log.Debug("P2P remote peer request close, but we need to wait for other protocol", "peer", p.RemoteID())
 	p.wg.Wait()
-	log.Debug("p2p-test wait complete!", "peerid", p.RemoteID())
+	log.Debug("P2P wait complete!", "peer", p.RemoteID())
 
 	return remoteRequested, err
 }

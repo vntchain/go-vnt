@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"sync/atomic"
 	"time"
 
 	inet "github.com/libp2p/go-libp2p-net"
@@ -182,20 +183,19 @@ func (rw *VNTMessenger) WriteMsg(msg Msg) (err error) {
 	msgHeaderByte := msg.Header[:]
 	msgBodyByte, err := json.Marshal(msg.Body)
 	if err != nil {
-		log.Error("WriteMsg()", "marshal msgbody error", err)
+		log.Error("Write message", "marshal msgbody error", err)
 		return err
 	}
 	m := append(msgHeaderByte, msgBodyByte...)
-	//log.Info("p2p-test", "MESSAGE", string(m))
 
 	_, err = rw.w.Write(m)
 	if err != nil {
-		log.Error("WriteMsg()", "write msg error", err)
-		if !rw.peerPointer.closed {
-			log.Info("WriteMsg()", "underlay will close this connection which remotePID", rw.peerPointer.RemoteID())
+		log.Error("Write message", "write msg error", err)
+		if atomic.LoadInt32(&rw.peerPointer.reseted) == 0 {
+			log.Info("Write message", "underlay will close this connection which remotePID", rw.peerPointer.RemoteID())
 			rw.peerPointer.sendError(err)
 		}
-		log.Trace("WriteMsg() exit", "peer", rw.peerPointer.RemoteID())
+		log.Trace("Write message exit", "peer", rw.peerPointer.RemoteID())
 		return err
 	}
 	return nil
