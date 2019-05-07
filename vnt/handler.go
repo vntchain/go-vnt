@@ -842,29 +842,9 @@ func (pm *ProtocolManager) NodeInfo() *NodeInfo {
 
 func (pm *ProtocolManager) resetBftPeerLoop() {
 	log.Debug("resetBftPeerLoop start")
+	defer log.Debug("resetBftPeerLoop exit")
 
-	var (
-		urls []string
-		ok   bool
-	)
-
-	ticker := time.NewTicker(time.Minute)
-	exit := false
-	for exit == false {
-		select {
-		case urls, ok = <-pm.urlsCh:
-			if !ok {
-				exit = true
-			} else {
-				log.Debug("resetBftPeerLoop, new urls")
-				pm.resetBftPeer(urls)
-			}
-
-		case <-ticker.C:
-			// log.Debug("resetBftPeerLoop, time to reset bft peer")
-			// pm.resetBftPeer(urls)
-		}
+	for urls := range pm.urlsCh {
+		pm.resetBftPeer(urls)
 	}
-
-	log.Debug("resetBftPeerLoop exit")
 }
