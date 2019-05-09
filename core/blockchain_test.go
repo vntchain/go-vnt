@@ -350,7 +350,99 @@ func testReorgFakeChainFillMissTimeAndLong(t *testing.T, full bool) {
 	testReorg(t, mainChain, fakeChain, 4, full, true)
 }
 
-// first: 第一条链，是主链的时间戳偏移，在当前生成的区块上进一步做时间戳偏移
+// Case 1.1 two blocks in the same height for bad network
+// first:  A -> B, 代表本地链
+// second: A -> -> C, 代表远端链
+// first is still main chain
+func TestReorgSameHeightFirstIsEarlyHeader(t *testing.T) {
+	testReorgSameHeightFirstIsEarly(t, false)
+}
+func TestReorgSameHeightFirstIsEarlyBlock(t *testing.T) {
+	testReorgSameHeightFirstIsEarly(t, true)
+}
+func testReorgSameHeightFirstIsEarly(t *testing.T, full bool) {
+	first := []int64{0, 0}
+	second := []int64{0, 2}
+	testReorg(t, first, second, 2, full, true)
+}
+
+// Case 1.2 two blocks in the same height for bad network
+// 与Case 1.1相反的过程，但都应当选择`A -> B`
+// first:  A -> -> C
+// second: A -> B
+func TestReorgSameHeightSecondIsEarlyHeader(t *testing.T) {
+	testReorgSameHeightSecondIsEarly(t, false)
+}
+func TestReorgSameHeightSecondIsEarlyBlock(t *testing.T) {
+	testReorgSameHeightSecondIsEarly(t, true)
+}
+func testReorgSameHeightSecondIsEarly(t *testing.T, full bool) {
+	first := []int64{0, 2}
+	second := []int64{0, 0}
+	testReorg(t, first, second, 2, full, false)
+}
+
+// Case 2.1
+// first:  A -> B
+// second: A ->  -> C -> D
+func TestReorgFirstIsEarlyButShortHeader(t *testing.T) {
+	testReorgFirstIsEarlyButShort(t, false)
+}
+func TestReorgFirstIsEarlyButShortBlock(t *testing.T) {
+	testReorgFirstIsEarlyButShort(t, true)
+}
+func testReorgFirstIsEarlyButShort(t *testing.T, full bool) {
+	first := []int64{0, 0}
+	second := []int64{0, 2, 0}
+	testReorg(t, first, second, 3, full, false)
+}
+
+// Case 2.2
+// first:  A ->  -> C -> D
+// second: A -> B
+func TestReorgSecondIsEarlyButShortHeader(t *testing.T) {
+	testReorgSecondIsEarlyButShort(t, false)
+}
+func TestReorgSecondIsEarlyButShortBlock(t *testing.T) {
+	testReorgSecondIsEarlyButShort(t, true)
+}
+func testReorgSecondIsEarlyButShort(t *testing.T, full bool) {
+	first := []int64{0, 0}
+	second := []int64{0, 2, 0}
+	testReorg(t, first, second, 3, full, false)
+}
+
+// Case 3.1
+// first:  A -> B ->  -> D
+// second: A ->  -> C
+func TestReorgFirstIsEarlyAndLongHeader(t *testing.T) {
+	testReorgFirstIsEarlyAndLong(t, false)
+}
+func TestReorgFirstIsEarlyAndLongBlock(t *testing.T) {
+	testReorgFirstIsEarlyAndLong(t, true)
+}
+func testReorgFirstIsEarlyAndLong(t *testing.T, full bool) {
+	first := []int64{0, 0, 2}
+	second := []int64{0, 2}
+	testReorg(t, first, second, 3, full, true)
+}
+
+// Case 3.2
+// first:  A ->  -> C
+// second: A -> B ->  -> D
+func TestReorgSecondIsEarlyAndLongHeader(t *testing.T) {
+	testReorgSecondIsEarlyAndLong(t, false)
+}
+func TestReorgSecondIsEarlyAndLongBlock(t *testing.T) {
+	testReorgSecondIsEarlyAndLong(t, true)
+}
+func testReorgSecondIsEarlyAndLong(t *testing.T, full bool) {
+	first := []int64{0, 2}
+	second := []int64{0, 0, 2}
+	testReorg(t, first, second, 3, full, false)
+}
+
+// first: 第一条链，是当前主链的时间戳偏移，在当前生成的区块上进一步做时间戳偏移
 // second: 第二条链，分叉链、攻击链的时间戳偏移
 // td: reorg后成为主链的区块的总高度
 // full: 是否是header chain测试
@@ -384,12 +476,12 @@ func testReorg(t *testing.T, first, second []int64, td int64, full bool, firstIs
 
 // testReorgBlock block chain的reorg测试
 func testReorgBlock(t *testing.T, blockchain *BlockChain, firstBlocks, secondBlocks types.Blocks, td int64, firstIsMain bool) {
-	// 插入的区块链，都必须成功
+	// 插入的区块链，first必须成功，second允许存在first存在同高度的不同区块时允许失败
 	if _, err := blockchain.InsertChain(firstBlocks); err != nil {
 		t.Fatalf("failed to insert first chain: %v", err)
 	}
 	if _, err := blockchain.InsertChain(secondBlocks); err != nil {
-		t.Fatalf("failed to insert second chain: %v", err)
+		t.Logf("failed to insert second chain: %v", err)
 	}
 
 	// 检查链是否是连接正确的
