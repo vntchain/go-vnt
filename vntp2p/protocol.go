@@ -97,9 +97,9 @@ func (server *Server) HandleStream(s inet.Stream) {
 			// 非阻塞向上层协议传递消息，如果2s还未被读取，认为上层协议有故障
 			select {
 			case msger.in <- msg:
-				break
+				log.Trace("HandleStream send message to messager success")
 			case <-time.NewTimer(time.Second * 2).C:
-				break
+				log.Trace("HandleStream send message to messager timeout")
 			}
 		} else {
 			log.Warn("HandleStream", "receive unknown message", msg)
