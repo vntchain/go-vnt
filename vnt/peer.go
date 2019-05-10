@@ -328,33 +328,23 @@ func (p *peer) RequestReceipts(hashes []common.Hash) error {
 func (p *peer) Handshake(network uint64, td *big.Int, head common.Hash, genesis common.Hash) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
+	var status statusData // safe to read after two values have been received from errc
 
 	go func() {
 		log.Info("vnt protocol handshake", "going to send handshake msg to", p.id, "ProtocolVersion", uint32(p.version))
-		err := vntp2p.Send(p.rw, ProtocolName, StatusMsg, &statusData{
+		errc <- vntp2p.Send(p.rw, ProtocolName, StatusMsg, &statusData{
 			ProtocolVersion: uint32(p.version),
 			NetworkId:       network,
 			TD:              td,
 			CurrentBlock:    head,
 			GenesisBlock:    genesis,
 		})
-		if err != nil {
-			log.Debug("Handshake send failed", "error", err.Error())
-		}
-
-		errc <- err
 	}()
 
-	var status statusData // safe to read after two values have been received from errc
 	go func() {
-		err := p.readStatus(network, &status, genesis)
-		if err != nil {
-			p.Log().Info("Handshake read failed", "error", err.Error())
-		}
-		errc <- err
+		errc <- p.readStatus(network, &status, genesis)
 	}()
 
-	// 状态发送和读取成功时for循环正常退出而不会超时
 	timeout := time.NewTimer(handshakeTimeout)
 	defer timeout.Stop()
 	for i := 0; i < 2; i++ {
