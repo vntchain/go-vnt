@@ -40,18 +40,30 @@ type Protocol struct {
 }
 
 // HandleStream handle all message which is from anywhere
+// 主、被动连接都走的流程
 func (server *Server) HandleStream(s inet.Stream) {
+	// peer信息只获取1次即可
+	log.Debug("p2p-test, stream data comming")
+	peer := server.GetPeerByRemoteID(s)
+	if peer == nil {
+		log.Debug("HandleStream", "localPeerID", s.Conn().LocalPeer(), "remotePeerID", s.Conn().RemotePeer(), "this remote peer is nil, don't handle it")
+		s.Reset()
+		return
+	}
+
+	// 发生错误时才会退出
+	defer func() {
+		log.Debug("HandleStream reset stream before exit")
+		peer.Reset()
+	}()
+
+	// stream未关闭则连接正常可持续读取消息
 	for {
-		log.Info("p2p-test, stream data comming")
-		peer := server.GetPeerByRemoteID(s)
-		if peer == nil {
-			log.Info("HandleStream", "localPeerID", s.Conn().LocalPeer(), "remotePeerID", s.Conn().RemotePeer(), "this remote peer is nil, don't handle it")
-			return
-		}
+		// 读取消息
 		msgHeaderByte := make([]byte, MessageHeaderLength)
 		_, err := io.ReadFull(s, msgHeaderByte)
 		if err != nil {
-			//log.Error("handleStream", "read error", err)
+			log.Error("HandleStream", "read msg header error", err, "peer", peer.RemoteID().ToString())
 			notifyError(peer.messenger, err)
 			return
 		}
@@ -60,20 +72,20 @@ func (server *Server) HandleStream(s inet.Stream) {
 		msgBodyByte := make([]byte, bodySize)
 		_, err = io.ReadFull(s, msgBodyByte)
 		if err != nil {
-			log.Error("handleStream", "read msgBody error", err)
+			log.Error("HandleStream", "read msg Body error", err, "peer", peer.RemoteID().ToString())
 			notifyError(peer.messenger, err)
 			return
 		}
 		msgBody := &MsgBody{Payload: &rlp.EncReader{}}
 		err = json.Unmarshal(msgBodyByte, msgBody)
 		if err != nil {
-			log.Error("handleSteam", "unmarshal msgBody error", err)
+			log.Error("HandleStream", "unmarshal msg Body error", err, "peer", peer.RemoteID().ToString())
 			notifyError(peer.messenger, err)
 			return
 		}
 		msgBody.ReceivedAt = time.Now()
-		//log.Info("p2p-test", "RECEIVED MESSAGE", msgBody)
 
+		// 传递给messenger
 		var msgHeader MsgHeader
 		copy(msgHeader[:], msgHeaderByte)
 
@@ -81,23 +93,23 @@ func (server *Server) HandleStream(s inet.Stream) {
 			Header: msgHeader,
 			Body:   *msgBody,
 		}
-
-		if messenger, ok := peer.messenger[msgBody.ProtocolID]; ok { // this node support protocolID
-			messenger.in <- msg
+		if msger, ok := peer.messenger[msgBody.ProtocolID]; ok { // this node support protocolID
+			// 非阻塞向上层协议传递消息，如果2s还未被读取，认为上层协议有故障
+			select {
+			case msger.in <- msg:
+				log.Trace("HandleStream send message to messager success")
+			case <-time.NewTimer(time.Second * 2).C:
+				log.Trace("HandleStream send message to messager timeout")
+			}
 		} else {
-			log.Warn("handleStream", "receive Unknown Message", msg)
+			log.Warn("HandleStream", "receive unknown message", msg)
 		}
-
-		//handler, err := msgBody.handleForMsgType()
-		//if err != nil {
-		//	log.Error("handleStream", "handleForMsgType error", err)
-		//	return
-		//}
-		//handler()
 	}
 }
 
 func notifyError(messengers map[string]*VNTMessenger, err error) {
+	log.Trace("notifyError enter")
+	defer log.Trace("notifyError exit")
 	for _, m := range messengers {
 		m.err <- err
 	}

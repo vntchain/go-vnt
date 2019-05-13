@@ -203,8 +203,11 @@ func (t *dialTask) checkTarget() bool {
 	return true
 }
 
-func (t *dialTask) dial(ctx context.Context, server *Server, target peer.ID, pid string) error {
-	return server.SetupStream(ctx, target, pid)
+func (t *dialTask) dial(ctx context.Context, server *Server, target peer.ID, pid string) (err error) {
+	if err = server.SetupStream(ctx, target, pid); err != nil {
+		log.Trace("Dial failed", "error", err)
+	}
+	return
 }
 
 func (t *lookupTask) Do(ctx context.Context, server *Server) {

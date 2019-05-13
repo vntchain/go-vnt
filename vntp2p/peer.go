@@ -22,9 +22,9 @@ import (
 	"bufio"
 	"crypto/ecdsa"
 	"encoding/json"
-	"sync"
-
 	"net"
+	"sync"
+	"sync/atomic"
 
 	inet "github.com/libp2p/go-libp2p-net"
 	libp2p "github.com/libp2p/go-libp2p-peer"
@@ -80,13 +80,13 @@ type PeerInfo struct {
 }
 
 type Peer struct {
-	rw        inet.Stream
+	rw        inet.Stream // libp2p stream
+	reseted   int32       // Whether stream reseted
 	log       log.Logger
 	events    *event.Feed
 	err       chan error
-	closed    bool
 	messenger map[string]*VNTMessenger // protocolName - vntMessenger
-	server	  *Server
+	server    *Server
 	wg        sync.WaitGroup
 	// need to add wg
 }
@@ -98,7 +98,7 @@ func newPeer(conn *Stream, server *Server) *Peer {
 		vntMessenger := &VNTMessenger{
 			protocol: proto,
 			in:       make(chan Msg),
-			err:      make(chan error),
+			err:      make(chan error, 100),
 			w:        conn.Conn,
 		}
 		m[proto.Name] = vntMessenger
@@ -108,9 +108,9 @@ func newPeer(conn *Stream, server *Server) *Peer {
 		rw:        conn.Conn,
 		log:       log.New(),
 		err:       make(chan error),
-		closed:    false,
+		reseted:   0,
 		messenger: m,
-		server:	   server,
+		server:    server,
 	}
 	for _, msger := range p.messenger {
 		msger.peerPointer = p
@@ -179,8 +179,24 @@ func parseMultiaddr(maddr ma.Multiaddr) net.Addr {
 
 func (p *Peer) Disconnect(reason DiscReason) {
 	// test for it
-	p.rw.Conn().Close()
+	// p.rw.Conn().Close()
 	// p.rw.Close()
+
+	p.Reset()
+}
+
+// Reset Close both direction. Use this to tell the remote side to hang up and go away.
+// But only reset once.
+func (p *Peer) Reset() {
+	if !atomic.CompareAndSwapInt32(&p.reseted, 0, 1) {
+		return
+	}
+
+	if err := p.rw.Reset(); err != nil {
+		log.Debug("Reset peer connection", "peer", p.RemoteID().ToString(), "error", err.Error())
+	} else {
+		log.Debug("Reset peer connection success", "peer", p.RemoteID().ToString())
+	}
 }
 
 func (p *Peer) Info() *PeerInfo {
@@ -205,24 +221,31 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 		go func() {
 			p.wg.Add(1)
 			err := proto.Run(p, m)
-			log.Info("p2p-test", "run protocol error log", err)
-			if !p.closed {
-				p.err <- err
-			}
+			log.Debug("Run protocol error", "protocol", proto.Name, "error", err)
+
+			p.sendError(err)
 			p.wg.Done()
 		}()
 	}
 
 	err = <-p.err
 	remoteRequested = true
+	p.Reset()
 
-	p.closed = true
-	p.rw.Close()
-	//log.Info("p2p-test remote peer request close, but we need to wait for other protocol", "peerid", p.RemoteID())
-	//p.wg.Wait()
-	log.Info("p2p-test wait complete!", "peerid", p.RemoteID())
+	log.Debug("P2P remote peer request close, but we need to wait for other protocol", "peer", p.RemoteID())
+	p.wg.Wait()
+	log.Debug("P2P wait complete!", "peer", p.RemoteID())
 
 	return remoteRequested, err
+}
+
+// sendError 为Peer的协议开了多个goroutine，可能多个协议都返回错误，
+// 退出只接收一次错误就可以，所以采用非阻塞发送错误
+func (p *Peer) sendError(err error) {
+	select {
+	case p.err <- err:
+	default:
+	}
 }
 
 type Stream struct {

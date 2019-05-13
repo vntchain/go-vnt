@@ -651,7 +651,7 @@ func (whisper *Whisper) runMessageLoop(p *Peer, rw vntp2p.MsgReadWriter) error {
 		// fetch the next packet
 		packet, err := rw.ReadMsg()
 		if err != nil {
-			log.Warn("message loop", "peer", p.peer.RemoteID(), "err", err)
+			log.Warn("Whisper6 message loop", "peer", p.peer.RemoteID(), "err", err)
 			return err
 		}
 		if packet.GetBodySize() > whisper.MaxMessageSize() {
