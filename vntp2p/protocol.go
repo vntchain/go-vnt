@@ -43,7 +43,7 @@ type Protocol struct {
 // 主、被动连接都走的流程
 func (server *Server) HandleStream(s inet.Stream) {
 	// peer信息只获取1次即可
-	log.Debug("p2p-test, stream data comming")
+	log.Debug("Stream data coming...")
 	peer := server.GetPeerByRemoteID(s)
 	if peer == nil {
 		log.Debug("HandleStream", "localPeerID", s.Conn().LocalPeer(), "remotePeerID", s.Conn().RemotePeer(), "this remote peer is nil, don't handle it")
