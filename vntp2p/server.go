@@ -154,14 +154,13 @@ func (server *Server) Start() error {
 	}
 
 	listenPort := server.Config.ListenAddr[1:]
-	log.Info("startVNTNode()", "listenPort", listenPort)
 	ctx, cancel := context.WithCancel(context.Background())
 	server.cancel = cancel
 
 	d := server.NodeDatabase
 	vdht, host, err := ConstructDHT(ctx, MakePort(listenPort), nil, d, server.Config.NetRestrict, server.Config.NAT)
 	if err != nil {
-		log.Error("constructDHT failed", "error", err)
+		log.Error("ConstructDHT failed", "error", err)
 		return err
 	}
 
@@ -247,7 +246,7 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 
 		case t := <-server.addpeer:
 			remoteID := t.Conn.Conn().RemotePeer()
-			log.Debug("adding peer", "peer id", remoteID)
+			log.Debug("Adding peer", "peer id", remoteID)
 			if _, ok := peers[remoteID]; ok { // this peer already exists
 				break
 			}
@@ -258,12 +257,12 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 			}
 			go server.runPeer(p)
 			peers[p.RemoteID()] = p
-			log.Debug("added peer", "peers", peers)
+			log.Debug("Added peer", "peers", peers)
 
 		case t := <-server.addstatic:
-			log.Debug("adding static", "peer id", t.Id)
+			log.Debug("Adding static", "peer id", t.Id)
 			tasker.addStatic(t)
-			log.Debug("added static", "peer id", t.Id)
+			log.Debug("Added static", "peer id", t.Id)
 		case t := <-server.removestatic:
 			tasker.removeStatic(t)
 			if p, ok := peers[t.Id]; ok {
