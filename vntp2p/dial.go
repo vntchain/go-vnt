@@ -40,7 +40,7 @@ type taskstate struct {
 	table       DhtTable
 	bootnodes   []peer.ID
 	static      map[peer.ID]*dialTask
-	dailmap     map[peer.ID]dialFlag
+	dialmap     map[peer.ID]dialFlag
 }
 
 type task interface {
@@ -60,46 +60,46 @@ type waitExpireTask struct {
 	time.Duration
 }
 
-func (t *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
+func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 	var newtasks []task
 
 	addDial := func(flag dialFlag, n peer.ID) bool {
-		if err := t.checkDial(n, peers); err != nil {
-			// fmt.Println("dail skip")
+		if err := s.checkDial(n, peers); err != nil {
+			// fmt.Println("dial skip")
 			return false
 		}
-		t.dailmap[n] = flag
+		s.dialmap[n] = flag
 		// fmt.Println("begin to Add: ", n)
 		newtasks = append(newtasks, &dialTask{target: n, pid: PID})
 		return true
 	}
 
-	needdail := t.maxDynDials
-	// dail
+	needdial := s.maxDynDials
+	// dial
 
-	for _, flag := range t.dailmap {
+	for _, flag := range s.dialmap {
 		if flag&dynDialedDail != 0 {
-			needdail--
+			needdial--
 		}
 	}
 
-	// newtasks = append(newtasks, &dailTask{})
-	for id, task := range t.static {
-		err := t.checkDial(id, peers)
+	// newtasks = append(newtasks, &dialTask{})
+	for id, task := range s.static {
+		err := s.checkDial(id, peers)
 		switch err {
 		case errNotWhitelisted, errSelf:
 			log.Warn("Removing static dial candidate", "id", id, "err", err)
-			delete(t.static, id)
+			delete(s.static, id)
 		case nil:
-			t.dailmap[id] = task.flag
+			s.dialmap[id] = task.flag
 			newtasks = append(newtasks, task)
 		}
 	}
 
-	for _, bootnode := range t.bootnodes {
+	for _, bootnode := range s.bootnodes {
 		// fmt.Println("bootnode: ", bootnode)
-		// for k, _ := range t.dailmap {
-		// 	fmt.Println("dailmap: ", k)
+		// for k, _ := range s.dialmap {
+		// 	fms.Println("dialmap: ", k)
 		// }
 
 		// for k, _ := range peers {
@@ -107,17 +107,17 @@ func (t *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 		// }
 
 		if addDial(staticDialedDail, bootnode) {
-			needdail--
+			needdial--
 		}
 	}
 
-	randomDail := needdail / 2
+	randomDail := needdial / 2
 
 	if randomDail > 0 {
-		randompeerlist := t.table.RandomPeer()
+		randompeerlist := s.table.RandomPeer()
 		for i := 0; i < randomDail && i < len(randompeerlist); i++ {
 			if addDial(dynDialedDail, randompeerlist[i]) {
-				needdail--
+				needdial--
 			}
 		}
 
@@ -136,7 +136,7 @@ func (t *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 }
 
 func (s *taskstate) checkDial(n peer.ID, peers map[peer.ID]*Peer) error {
-	_, dialing := s.dailmap[n]
+	_, dialing := s.dialmap[n]
 	switch {
 	case dialing:
 		return errAlreadyDialing
@@ -156,7 +156,7 @@ func (s *taskstate) taskDone(t task) {
 		// s.hist.add(t.dest.ID, now.Add(dialHistoryExpiration))
 		// log.Debug("taskDone", "dialTask", t.target)
 		// fmt.Println("taskDone dialTask", t.target)
-		delete(s.dailmap, t.target)
+		delete(s.dialmap, t.target)
 	case *lookupTask:
 		log.Debug("taskDone", "lookupTask")
 	}
@@ -167,11 +167,11 @@ func (s *taskstate) addStatic(n *Node) {
 	log.Debug("p2p-test", "staticPeer", n.Id)
 }
 
-func newTaskState(maxdail int, bootnodes []peer.ID, dht DhtTable) *taskstate {
+func newTaskState(maxdial int, bootnodes []peer.ID, dht DhtTable) *taskstate {
 	s := &taskstate{
-		maxDynDials: maxdail,
+		maxDynDials: maxdial,
 		bootnodes:   make([]peer.ID, len(bootnodes)),
-		dailmap:     make(map[peer.ID]dialFlag),
+		dialmap:     make(map[peer.ID]dialFlag),
 		static:      make(map[peer.ID]*dialTask),
 		table:       dht,
 	}
