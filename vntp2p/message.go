@@ -164,17 +164,17 @@ func (msg *Msg) GetBodySize() uint32 {
 	return bodySize
 }
 
-// VNTMessenger vnt chain message readwriter
-type VNTMessenger struct {
+// VNTMsger vnt chain message readwriter
+type VNTMsger struct {
 	protocol    Protocol
 	in          chan Msg
 	err         chan error
 	w           inet.Stream
-	peerPointer *Peer
+	peer *Peer
 }
 
 // WriteMsg implement MsgReadWriter interface
-func (rw *VNTMessenger) WriteMsg(msg Msg) (err error) {
+func (rw *VNTMsger) WriteMsg(msg Msg) (err error) {
 	//if uint64(msg.Body.Type) >= rw.Length {
 	//	return newPeerError(errInvalidMsgCode, "not handled")
 	//}
@@ -191,25 +191,25 @@ func (rw *VNTMessenger) WriteMsg(msg Msg) (err error) {
 	_, err = rw.w.Write(m)
 	if err != nil {
 		log.Error("Write message", "write msg error", err)
-		if atomic.LoadInt32(&rw.peerPointer.reseted) == 0 {
-			log.Info("Write message", "underlay will close this connection which remotePID", rw.peerPointer.RemoteID())
-			rw.peerPointer.sendError(err)
+		if atomic.LoadInt32(&rw.peer.reseted) == 0 {
+			log.Info("Write message", "underlay will close this connection which remotePID", rw.peer.RemoteID())
+			rw.peer.sendError(err)
 		}
-		log.Trace("Write message exit", "peer", rw.peerPointer.RemoteID())
+		log.Trace("Write message exit", "peer", rw.peer.RemoteID())
 		return err
 	}
 	return nil
 }
 
 // ReadMsg implement MsgReadWriter interface
-func (rw *VNTMessenger) ReadMsg() (Msg, error) {
+func (rw *VNTMsger) ReadMsg() (Msg, error) {
 	select {
 	case msg := <-rw.in:
 		log.Info("p2p-test", "incoming message", msg)
 		return msg, nil
 	case err := <-rw.err:
 		return Msg{}, err
-	case <-rw.peerPointer.server.quit:
+	case <-rw.peer.server.quit:
 		log.Info("P2P server is being closed, no longer read message...")
 		return Msg{}, errServerStopped
 	}

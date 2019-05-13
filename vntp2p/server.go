@@ -178,9 +178,9 @@ func (server *Server) Start() error {
 
 	bootnodes := server.LoadConfig(ctx)
 
-	maxdails := server.maxDialedConns()
+	maxdials := server.maxDialedConns()
 
-	taskState := newTaskState(maxdails, bootnodes, server.table)
+	taskState := newTaskState(maxdials, bootnodes, server.table)
 
 	server.loopWG.Add(1)
 	go server.run(ctx, taskState)
@@ -424,7 +424,7 @@ func (server *Server) SetupStream(ctx context.Context, target peer.ID, pid strin
 	// handle response message
 	go server.HandleStream(s)
 	/* rw := bufio.NewReadWriter(bufio.NewReader(s), bufio.NewWriter(s))
-	vntMessenger := &VNTMessenger{
+	vntMessenger := &VNTMsger{
 		protocol: Protocol{},
 		in:       make(chan Msg),
 		w:        rw,

@@ -85,17 +85,17 @@ type Peer struct {
 	log       log.Logger
 	events    *event.Feed
 	err       chan error
-	messenger map[string]*VNTMessenger // protocolName - vntMessenger
+	msgers    map[string]*VNTMsger // protocolName - vntMessenger
 	server    *Server
 	wg        sync.WaitGroup
 	// need to add wg
 }
 
 func newPeer(conn *Stream, server *Server) *Peer {
-	m := make(map[string]*VNTMessenger)
+	m := make(map[string]*VNTMsger)
 	for i := range conn.Protocols {
 		proto := conn.Protocols[i]
-		vntMessenger := &VNTMessenger{
+		vntMessenger := &VNTMsger{
 			protocol: proto,
 			in:       make(chan Msg),
 			err:      make(chan error, 100),
@@ -109,11 +109,11 @@ func newPeer(conn *Stream, server *Server) *Peer {
 		log:       log.New(),
 		err:       make(chan error),
 		reseted:   0,
-		messenger: m,
+		msgers:    m,
 		server:    server,
 	}
-	for _, msger := range p.messenger {
-		msger.peerPointer = p
+	for _, msger := range p.msgers {
+		msger.peer = p
 	}
 
 	return p
@@ -215,7 +215,7 @@ func (p *Peer) Info() *PeerInfo {
 }
 
 func (p *Peer) run() (remoteRequested bool, err error) {
-	for _, msger := range p.messenger {
+	for _, msger := range p.msgers {
 		proto := msger.protocol
 		m := msger
 		go func() {

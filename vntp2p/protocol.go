@@ -64,7 +64,7 @@ func (server *Server) HandleStream(s inet.Stream) {
 		_, err := io.ReadFull(s, msgHeaderByte)
 		if err != nil {
 			log.Error("HandleStream", "read msg header error", err, "peer", peer.RemoteID().ToString())
-			notifyError(peer.messenger, err)
+			notifyError(peer.msgers, err)
 			return
 		}
 		bodySize := binary.LittleEndian.Uint32(msgHeaderByte)
@@ -73,19 +73,19 @@ func (server *Server) HandleStream(s inet.Stream) {
 		_, err = io.ReadFull(s, msgBodyByte)
 		if err != nil {
 			log.Error("HandleStream", "read msg Body error", err, "peer", peer.RemoteID().ToString())
-			notifyError(peer.messenger, err)
+			notifyError(peer.msgers, err)
 			return
 		}
 		msgBody := &MsgBody{Payload: &rlp.EncReader{}}
 		err = json.Unmarshal(msgBodyByte, msgBody)
 		if err != nil {
 			log.Error("HandleStream", "unmarshal msg Body error", err, "peer", peer.RemoteID().ToString())
-			notifyError(peer.messenger, err)
+			notifyError(peer.msgers, err)
 			return
 		}
 		msgBody.ReceivedAt = time.Now()
 
-		// 传递给messenger
+		// 传递给msger
 		var msgHeader MsgHeader
 		copy(msgHeader[:], msgHeaderByte)
 
@@ -93,7 +93,7 @@ func (server *Server) HandleStream(s inet.Stream) {
 			Header: msgHeader,
 			Body:   *msgBody,
 		}
-		if msger, ok := peer.messenger[msgBody.ProtocolID]; ok { // this node support protocolID
+		if msger, ok := peer.msgers[msgBody.ProtocolID]; ok { // this node support protocolID
 			// 非阻塞向上层协议传递消息，如果2s还未被读取，认为上层协议有故障
 			select {
 			case msger.in <- msg:
@@ -107,10 +107,10 @@ func (server *Server) HandleStream(s inet.Stream) {
 	}
 }
 
-func notifyError(messengers map[string]*VNTMessenger, err error) {
+func notifyError(msgers map[string]*VNTMsger, err error) {
 	log.Trace("notifyError enter")
 	defer log.Trace("notifyError exit")
-	for _, m := range messengers {
+	for _, m := range msgers {
 		m.err <- err
 	}
 }
