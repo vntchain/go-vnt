@@ -175,11 +175,6 @@ type VNTMsger struct {
 
 // WriteMsg implement MsgReadWriter interface
 func (rw *VNTMsger) WriteMsg(msg Msg) (err error) {
-	//if uint64(msg.Body.Type) >= rw.Length {
-	//	return newPeerError(errInvalidMsgCode, "not handled")
-	//}
-	// 暂时先不管主动关闭需要告知对方的情况，目前聚焦于发送消息这件基本工作
-
 	msgHeaderByte := msg.Header[:]
 	msgBodyByte, err := json.Marshal(msg.Body)
 	if err != nil {
@@ -205,7 +200,6 @@ func (rw *VNTMsger) WriteMsg(msg Msg) (err error) {
 func (rw *VNTMsger) ReadMsg() (Msg, error) {
 	select {
 	case msg := <-rw.in:
-		log.Info("p2p-test", "incoming message", msg)
 		return msg, nil
 	case err := <-rw.err:
 		return Msg{}, err

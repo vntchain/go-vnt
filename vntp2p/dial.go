@@ -20,19 +20,15 @@ import (
 	"context"
 
 	"errors"
-	"fmt"
 	"time"
 
-	peer "github.com/libp2p/go-libp2p-peer"
+	"github.com/libp2p/go-libp2p-peer"
 	"github.com/vntchain/go-vnt/log"
 )
 
 var (
-	errSelf             = errors.New("is self")
 	errAlreadyDialing   = errors.New("already dialing")
 	errAlreadyConnected = errors.New("already connected")
-	errRecentlyDialed   = errors.New("recently dialed")
-	errNotWhitelisted   = errors.New("not contained in netrestrict whitelist")
 )
 
 type taskstate struct {
@@ -85,12 +81,7 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 
 	// newtasks = append(newtasks, &dialTask{})
 	for id, task := range s.static {
-		err := s.checkDial(id, peers)
-		switch err {
-		case errNotWhitelisted, errSelf:
-			log.Warn("Removing static dial candidate", "id", id, "err", err)
-			delete(s.static, id)
-		case nil:
+		if err := s.checkDial(id, peers); err == nil {
 			s.dialmap[id] = task.flag
 			newtasks = append(newtasks, task)
 		}
@@ -153,9 +144,6 @@ func (s *taskstate) removeStatic(n *Node) {
 func (s *taskstate) taskDone(t task) {
 	switch t := t.(type) {
 	case *dialTask:
-		// s.hist.add(t.dest.ID, now.Add(dialHistoryExpiration))
-		// log.Debug("taskDone", "dialTask", t.target)
-		// fmt.Println("taskDone dialTask", t.target)
 		delete(s.dialmap, t.target)
 	case *lookupTask:
 		log.Debug("taskDone", "lookupTask")
@@ -164,7 +152,6 @@ func (s *taskstate) taskDone(t task) {
 
 func (s *taskstate) addStatic(n *Node) {
 	s.static[n.Id] = &dialTask{flag: staticDialedDail, target: n.Id, pid: PID}
-	log.Debug("p2p-test", "staticPeer", n.Id)
 }
 
 func newTaskState(maxdial int, bootnodes []peer.ID, dht DhtTable) *taskstate {
@@ -190,9 +177,7 @@ func (t *dialTask) Do(ctx context.Context, server *Server) {
 		return
 	}
 
-	// 直接连接
-	// fmt.Println("it's time to dial")
-	// log.Info("p2p-test", "DailTaskTarget", t.target)
+	log.Debug("Dial task", "target", t.target)
 	t.dial(ctx, server, t.target, t.pid)
 }
 
@@ -211,9 +196,7 @@ func (t *dialTask) dial(ctx context.Context, server *Server, target peer.ID, pid
 }
 
 func (t *lookupTask) Do(ctx context.Context, server *Server) {
-	fmt.Println("begin lookup")
 	time.Sleep(1 * time.Second)
-	fmt.Println("end lookup")
 }
 
 func (t *waitExpireTask) Do(ctx context.Context, server *Server) {

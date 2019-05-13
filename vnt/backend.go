@@ -371,7 +371,6 @@ func (s *VNT) Protocols() []vntp2p.Protocol {
 // VNT protocol implementation.
 func (s *VNT) Start(srvr *vntp2p.Server) error {
 	// Start the bloom bits servicing goroutines
-	log.Info("p2p-test", "start", srvr)
 	s.startBloomHandlers()
 
 	// Start the RPC service
