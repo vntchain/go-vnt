@@ -126,7 +126,7 @@ func (server *Server) Close() {
 }
 
 func (server *Server) Start() error {
-	log.Trace("P2P Server starting...", "protocols", server.Protocols)
+	log.Trace("P2P server starting...", "protocols", server.Protocols)
 	if server.running {
 		return errors.New("server already running")
 	}
