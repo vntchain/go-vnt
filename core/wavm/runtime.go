@@ -236,7 +236,11 @@ func (wavm *Wavm) Apply(input []byte, compiled []vnt.Compiled, mutable Mutable) 
 			res = nil
 			err = fmt.Errorf("%s", r)
 			if wavm.WavmConfig.Debug == true {
-				wavm.captrueFault(uint64(wavm.VM.Pc()), err)
+				if wavm.VM == nil {
+					wavm.captrueFault(uint64(0), err)
+				} else {
+					wavm.captrueFault(uint64(wavm.VM.Pc()), err)
+				}
 			}
 		}
 	}()
@@ -249,6 +253,7 @@ func (wavm *Wavm) Apply(input []byte, compiled []vnt.Compiled, mutable Mutable) 
 		if len(wavm.Module.Memory.Entries) != 0 {
 			memSize = uint64(wavm.Module.Memory.Entries[0].Limits.Initial)
 		}
+		memSize = 10000
 		wavm.ChainContext.GasCounter.GasInitialMemory(memSize)
 	}
 
