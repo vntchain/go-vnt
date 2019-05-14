@@ -323,8 +323,7 @@ func testBrokenChain(t *testing.T, full bool) {
 	}
 }
 
-// Tests that reorganising a long difficult chain after a short easy one
-// overwrites the canonical numbers and links in the database.
+// 正常产块情况，在当前主链后产生新区块，当前新区块应当成为头区块
 // Header chain测试
 func TestReorgLongHeaders(t *testing.T) { testReorgLong(t, false) }
 
@@ -332,9 +331,10 @@ func TestReorgLongHeaders(t *testing.T) { testReorgLong(t, false) }
 func TestReorgLongBlocks(t *testing.T) { testReorgLong(t, true) }
 
 func testReorgLong(t *testing.T, full bool) {
-	testReorg(t, []int64{0, 0, 0}, []int64{0, 0, 0, 0}, 4, full, false)
+	testReorg(t, []int64{0, 0, 0}, []int64{0, 0, 0, 0}, 4, full, true, false)
 }
 
+// 测试攻击链的场景，填充过去某个时间点缺失的区块，创造更长的链
 // Test some block producers make up fake chain by filling skipped blocks.
 // first : A ->  -> B -> C
 // second: A -> B' -> C' -> D'
@@ -346,10 +346,11 @@ func TestReorgFakeChainFillMissTimeAndLongBlocks(t *testing.T) {
 }
 func testReorgFakeChainFillMissTimeAndLong(t *testing.T, full bool) {
 	mainChain := []int64{0, 2, 0, 0}
-	fakeChain := []int64{0, 0, 0, 0, 0}
-	testReorg(t, mainChain, fakeChain, 4, full, true)
+	fakeChain := []int64{0, 0, 0, 0, 0} // LIB之前的区块插入失败
+	testReorg(t, mainChain, fakeChain, 4, full, false, true)
 }
 
+// 临时分叉情况，网络突然中断，然后下一轮结束前恢复
 // Case 1.1 two blocks in the same height for bad network
 // first:  A -> B, 代表本地链
 // second: A -> -> C, 代表远端链
@@ -363,9 +364,10 @@ func TestReorgSameHeightFirstIsEarlyBlock(t *testing.T) {
 func testReorgSameHeightFirstIsEarly(t *testing.T, full bool) {
 	first := []int64{0, 0}
 	second := []int64{0, 2}
-	testReorg(t, first, second, 2, full, true)
+	testReorg(t, first, second, 2, full, true, true)
 }
 
+// 临时分叉情况，网络突然中断，然后下一轮结束前恢复
 // Case 1.2 two blocks in the same height for bad network
 // 与Case 1.1相反的过程，但都应当选择`A -> B`
 // first:  A -> -> C
@@ -379,9 +381,10 @@ func TestReorgSameHeightSecondIsEarlyBlock(t *testing.T) {
 func testReorgSameHeightSecondIsEarly(t *testing.T, full bool) {
 	first := []int64{0, 2}
 	second := []int64{0, 0}
-	testReorg(t, first, second, 2, full, false)
+	testReorg(t, first, second, 2, full, true, false)
 }
 
+// 临时分叉情况，网络在第N轮突然中断，然后在N+2轮结束恢复
 // Case 2.1
 // first:  A -> B
 // second: A ->  -> C -> D
@@ -394,9 +397,10 @@ func TestReorgFirstIsEarlyButShortBlock(t *testing.T) {
 func testReorgFirstIsEarlyButShort(t *testing.T, full bool) {
 	first := []int64{0, 0}
 	second := []int64{0, 2, 0}
-	testReorg(t, first, second, 3, full, false)
+	testReorg(t, first, second, 3, full, true, false)
 }
 
+// 临时分叉情况，网络在第N轮突然中断，然后在N+2轮结束恢复
 // Case 2.2
 // first:  A ->  -> C -> D
 // second: A -> B
@@ -407,11 +411,13 @@ func TestReorgSecondIsEarlyButShortBlock(t *testing.T) {
 	testReorgSecondIsEarlyButShort(t, true)
 }
 func testReorgSecondIsEarlyButShort(t *testing.T, full bool) {
-	first := []int64{0, 0}
-	second := []int64{0, 2, 0}
-	testReorg(t, first, second, 3, full, false)
+	first := []int64{0, 2, 0}
+	second := []int64{0, 0}
+	testReorg(t, first, second, 3, full, false, true)
 }
 
+// 临时分叉情况，络在第N轮突然中断，然后在N+1轮结束恢复，然后在N+2轮产生了新区块，
+// 在N+1轮产生区块的少数节点，如果没再case 1.1切回到first，在first生成新区块后切回first
 // Case 3.1
 // first:  A -> B ->  -> D
 // second: A ->  -> C
@@ -424,9 +430,11 @@ func TestReorgFirstIsEarlyAndLongBlock(t *testing.T) {
 func testReorgFirstIsEarlyAndLong(t *testing.T, full bool) {
 	first := []int64{0, 0, 2}
 	second := []int64{0, 2}
-	testReorg(t, first, second, 3, full, true)
+	testReorg(t, first, second, 3, full, false, true)
 }
 
+// 临时分叉情况，络在第N轮突然中断，然后在N+1轮结束恢复，然后在N+2轮产生了新区块，
+// 在N+1轮产生区块的少数节点，如果没再case 1.1切回到first，在first生成新区块后切回first
 // Case 3.2
 // first:  A ->  -> C
 // second: A -> B ->  -> D
@@ -439,7 +447,7 @@ func TestReorgSecondIsEarlyAndLongBlock(t *testing.T) {
 func testReorgSecondIsEarlyAndLong(t *testing.T, full bool) {
 	first := []int64{0, 2}
 	second := []int64{0, 0, 2}
-	testReorg(t, first, second, 3, full, false)
+	testReorg(t, first, second, 3, full, true, false)
 }
 
 // first: 第一条链，是当前主链的时间戳偏移，在当前生成的区块上进一步做时间戳偏移
@@ -447,7 +455,7 @@ func testReorgSecondIsEarlyAndLong(t *testing.T, full bool) {
 // td: reorg后成为主链的区块的总高度
 // full: 是否是header chain测试
 // firstIsMain: reorg后，第一条链是主链
-func testReorg(t *testing.T, first, second []int64, td int64, full bool, firstIsMain bool) {
+func testReorg(t *testing.T, first, second []int64, td int64, full, secondInsertSuccess, firstIsMain bool) {
 	// Create a pristine chain and database
 	db, blockchain, err := newCanonical(mock.NewMock(), 0, full)
 	if err != nil {
@@ -471,17 +479,27 @@ func testReorg(t *testing.T, first, second []int64, td int64, full bool, firstIs
 	if !full {
 		testFun = testReorgHeader
 	}
-	testFun(t, blockchain, firstBlocks, secondBlocks, td, firstIsMain)
+	testFun(t, blockchain, firstBlocks, secondBlocks, td, secondInsertSuccess, firstIsMain)
 }
 
 // testReorgBlock block chain的reorg测试
-func testReorgBlock(t *testing.T, blockchain *BlockChain, firstBlocks, secondBlocks types.Blocks, td int64, firstIsMain bool) {
-	// 插入的区块链，first必须成功，second允许存在first存在同高度的不同区块时允许失败
+func testReorgBlock(t *testing.T, blockchain *BlockChain, firstBlocks, secondBlocks types.Blocks, td int64, secondInsertSuccess, firstIsMain bool) {
+	// 插入的区块链，first代表当前主链，必须成功
 	if _, err := blockchain.InsertChain(firstBlocks); err != nil {
 		t.Fatalf("failed to insert first chain: %v", err)
 	}
-	if _, err := blockchain.InsertChain(secondBlocks); err != nil {
-		t.Logf("failed to insert second chain: %v", err)
+	// second是攻击链或临时分叉，按要求执行，可能成功，可能失败
+	{
+		_, err := blockchain.InsertChain(secondBlocks)
+		if secondInsertSuccess {
+			if err != nil {
+				t.Logf("failed to insert second chain: %v", err)
+			}
+		} else {
+			if err == nil {
+				t.Logf("insert second chain successed, want failed")
+			}
+		}
 	}
 
 	// 检查链是否是连接正确的
@@ -536,7 +554,7 @@ func testReorgBlock(t *testing.T, blockchain *BlockChain, firstBlocks, secondBlo
 }
 
 // testReorgBlock header chain的reorg测试
-func testReorgHeader(t *testing.T, blockchain *BlockChain, firstBlocks, secondBlocks types.Blocks, td int64, firstIsMain bool) {
+func testReorgHeader(t *testing.T, blockchain *BlockChain, firstBlocks, secondBlocks types.Blocks, td int64, secondInsertSuccess, firstIsMain bool) {
 	firstHeaders := make([]*types.Header, len(firstBlocks))
 	for i, block := range firstBlocks {
 		firstHeaders[i] = block.Header()
@@ -545,11 +563,23 @@ func testReorgHeader(t *testing.T, blockchain *BlockChain, firstBlocks, secondBl
 	for i, block := range secondBlocks {
 		secondHeaders[i] = block.Header()
 	}
+
+	// first是主链的header chain，必须成功
 	if _, err := blockchain.InsertHeaderChain(firstHeaders, 1); err != nil {
 		t.Fatalf("failed to insert first header chain: %v", err)
 	}
-	if _, err := blockchain.InsertHeaderChain(secondHeaders, 1); err != nil {
-		t.Fatalf("failed to insert second header chain: %v", err)
+	// second是攻击链或临时分叉的header chain，按要求觉得成功与否
+	{
+		_, err := blockchain.InsertHeaderChain(secondHeaders, 1)
+		if secondInsertSuccess {
+			if err != nil {
+				t.Fatalf("failed to insert second header chain: %v", err)
+			}
+		} else {
+			if err == nil {
+				t.Fatalf("insert second header chain successed, want failed")
+			}
+		}
 	}
 
 	// Check that the chain is valid number and link wise
