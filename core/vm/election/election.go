@@ -211,7 +211,10 @@ func (e *Election) RequiredGas(input []byte) uint64 {
 func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
 	nonce := ctx.GetStateDb().GetNonce(contractAddr)
 	if nonce == 0 {
-		setRestBounty(ctx.GetStateDb(), Bounty{restTotalBounty})
+		if err := setRestBounty(ctx.GetStateDb(), Bounty{restTotalBounty}); err != nil {
+			// initializing failed leads to exit
+			log.Crit("Initialize bounty failed", "error", err)
+		}
 	}
 	ctx.GetStateDb().SetNonce(contractAddr, nonce+1)
 
@@ -561,8 +564,7 @@ func (ec electionContext) setProxy(address common.Address, proxy common.Address)
 		voteCount.Add(voteCount, voter.ProxyVoteCount)
 	}
 
-	var proxyVoter Voter
-	proxyVoter = ec.getVoter(proxy)
+	proxyVoter := ec.getVoter(proxy)
 	if !proxyVoter.IsProxy {
 		return fmt.Errorf("%x is not a proxy", proxy)
 	}
@@ -581,7 +583,9 @@ func (ec electionContext) setProxy(address common.Address, proxy common.Address)
 			addOp := func(count *big.Int) {
 				count.Add(count, voteCount)
 			}
-			ec.opCandidates(&proxyVoter, addOp)
+			if err := ec.opCandidates(&proxyVoter, addOp); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -601,9 +605,8 @@ func (ec electionContext) cancelProxy(address common.Address) error {
 		voteCount.Add(voteCount, voter.ProxyVoteCount)
 	}
 
-	var proxyVoter Voter
 	for {
-		proxyVoter = ec.getVoter(proxy)
+		proxyVoter := ec.getVoter(proxy)
 		// 减少其代理的票
 		proxyVoter.ProxyVoteCount.Sub(proxyVoter.ProxyVoteCount, voteCount)
 		err := ec.setVoter(proxyVoter)
@@ -617,7 +620,9 @@ func (ec electionContext) cancelProxy(address common.Address) error {
 				subOp := func(count *big.Int) {
 					count.Sub(count, voteCount)
 				}
-				ec.opCandidates(&proxyVoter, subOp)
+				if err := ec.opCandidates(&proxyVoter, subOp); err != nil {
+					return err
+				}
 			}
 			break
 		}
@@ -886,11 +891,17 @@ func GetStake(stateDB inter.StateDB, addr common.Address) *Stake {
 	return &s
 }
 
-func AddCandidatesBounty(stateDB inter.StateDB, bonus map[common.Address]*big.Int) error {
+// AddCandidatesBounty sends votes bounty to candidates.
+func AddCandidatesBounty(stateDB inter.StateDB, bonus map[common.Address]*big.Int, allBonus *big.Int) error {
 	for addr, bu := range bonus {
 		if err := addCandidateBounty(stateDB, addr, bu); err != nil {
 			return err
 		}
+	}
+
+	// 减少剩余激励Token数量
+	if _, err := GrantBounty(stateDB, allBonus); err != nil {
+		return err
 	}
 	return nil
 }
@@ -911,7 +922,9 @@ func GrantBounty(stateDB inter.StateDB, grantAmount *big.Int) (*big.Int, error) 
 func QueryRestVNTBounty(stateDB inter.StateDB) *big.Int {
 	if !stateDB.Exist(contractAddr) {
 		stateDB.SetNonce(contractAddr, 1)
-		setRestBounty(stateDB, Bounty{restTotalBounty})
+		if err := setRestBounty(stateDB, Bounty{restTotalBounty}); err != nil {
+			log.Crit("Initialize bounty failed in query", "error", err)
+		}
 		return restTotalBounty
 	}
 	bounty := getRestBounty(stateDB)

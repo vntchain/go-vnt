@@ -218,12 +218,12 @@ func TestConvertToStruct(t *testing.T) {
 
 func TestSetToDB(t *testing.T) {
 	db := vntdb.NewMemDatabase()
-	stateDB, err := state.New(common.Hash{}, state.NewDatabase(db))
+	stateDB, _ := state.New(common.Hash{}, state.NewDatabase(db))
 
 	ctx := testContext{StateDB: stateDB}
 	c := newElectionContext(&ctx)
 
-	err = c.setVoter(voter)
+	err := c.setVoter(voter)
 	if err != nil {
 		t.Error(err)
 	}
@@ -293,7 +293,9 @@ func TestGetAllCandidate(t *testing.T) {
 	for i := 0; i < 255; i++ {
 		candidate1 := candidate
 		candidate1.Owner[0] = byte(i)
-		c.setCandidate(candidate1)
+		if err := c.setCandidate(candidate1); err != nil {
+			t.Errorf("candiates: %s, error: %s", candidate1.Owner, err)
+		}
 	}
 
 	candidates := getAllCandidate(stateDB)
@@ -343,7 +345,9 @@ func TestGetFirstXCandidates_1(t *testing.T) {
 		candidate1 := candidate
 		candidate1.Owner[0] = byte(tests[i].addrPre)
 		candidate1.VoteCount = big.NewInt(tests[i].votes)
-		c.setCandidate(candidate1)
+		if err := c.setCandidate(candidate1); err != nil {
+			t.Errorf("candiates: %s, error: %s", candidate1.Owner, err)
+		}
 	}
 
 	witsAddr, _ := GetFirstNCandidates(stateDB, witNum)
@@ -402,7 +406,9 @@ func TestGetFirstXCandidates_2(t *testing.T) {
 		candidate1 := candidate
 		candidate1.Owner[0] = byte(tests[i].addrPre)
 		candidate1.VoteCount = big.NewInt(tests[i].votes)
-		c.setCandidate(candidate1)
+		if err := c.setCandidate(candidate1); err != nil {
+			t.Errorf("candiates: %s, error: %s", candidate1.Owner, err)
+		}
 	}
 
 	witsAddr, _ := GetFirstNCandidates(stateDB, witNum)
@@ -461,7 +467,9 @@ func TestGetFirstXCandidates_3(t *testing.T) {
 		candidate1.Owner[0] = byte(tests[i].addrPre)
 		candidate1.VoteCount = big.NewInt(tests[i].votes)
 		candidate1.Active = tests[i].active
-		c.setCandidate(candidate1)
+		if err := c.setCandidate(candidate1); err != nil {
+			t.Errorf("candiates: %s, error: %s", candidate1.Owner, err)
+		}
 	}
 
 	witsAddr, _ := GetFirstNCandidates(stateDB, witNum)
@@ -521,7 +529,9 @@ func TestGetFirstXCandidates_4(t *testing.T) {
 		candidate1.Owner[0] = byte(tests[i].addrPre)
 		candidate1.VoteCount = big.NewInt(tests[i].votes)
 		candidate1.Active = true
-		c.setCandidate(candidate1)
+		if err := c.setCandidate(candidate1); err != nil {
+			t.Errorf("candiates: %s, error: %s", candidate1.Owner, err)
+		}
 	}
 
 	witsAddr, _ := GetFirstNCandidates(stateDB, witNum)
@@ -552,7 +562,7 @@ func TestAddCandidateBounty(t *testing.T) {
 	}
 
 	bounty := big.NewInt(0).Mul(big.NewInt(100), big.NewInt(1e18))
-	addCandidateBounty(c.context.GetStateDb(), candidate.Owner, bounty)
+	_ = addCandidateBounty(c.context.GetStateDb(), candidate.Owner, bounty)
 	candidate1 := c.getCandidate(candidate.Owner)
 	candidate1.TotalBounty.Sub(candidate1.TotalBounty, bounty)
 
