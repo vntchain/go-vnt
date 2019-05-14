@@ -242,14 +242,7 @@ func (wavm *Wavm) Apply(input []byte, compiled []vnt.Compiled, mutable Mutable) 
 	}()
 	wavm.MutableList = mutable
 
-	var vm *exec.Interpreter
-	vm, err = exec.NewInterpreter(wavm.Module, compiled, instantiateMemory, wavm.captureOp, wavm.captureEnvFunctionStart, wavm.captureEnvFunctionEnd, wavm.WavmConfig.Debug)
-	if err != nil {
-		log.Error("Could not create VM: ", "error", err)
-		return nil, fmt.Errorf("Could not create VM: %s", err)
-	}
-
-	//initialize the gas cost for initial memory when create contract
+	//initialize the gas cost for initial memory when create contract before create Interpreter
 	//todo memory grow内存消耗
 	if wavm.ChainContext.IsCreated == true {
 		memSize := uint64(1)
@@ -257,6 +250,13 @@ func (wavm *Wavm) Apply(input []byte, compiled []vnt.Compiled, mutable Mutable) 
 			memSize = uint64(wavm.Module.Memory.Entries[0].Limits.Initial)
 		}
 		wavm.ChainContext.GasCounter.GasInitialMemory(memSize)
+	}
+
+	var vm *exec.Interpreter
+	vm, err = exec.NewInterpreter(wavm.Module, compiled, instantiateMemory, wavm.captureOp, wavm.captureEnvFunctionStart, wavm.captureEnvFunctionEnd, wavm.WavmConfig.Debug)
+	if err != nil {
+		log.Error("Could not create VM: ", "error", err)
+		return nil, fmt.Errorf("Could not create VM: %s", err)
 	}
 
 	wavm.VM = vm
