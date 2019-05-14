@@ -1069,6 +1069,17 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 		// Wait for the block's verification to complete
 		bstart := time.Now()
 
+		// Block before last irreversible block can not be inserted
+		// chainmu is required. current block would not change before
+		// this block write finish.
+		cur := bc.CurrentBlock()
+		if block.NumberU64() < cur.NumberU64() {
+			return i, events, coalescedLogs, ErrBlockBeforeLIB
+		}
+		if block.NumberU64() == cur.NumberU64() && block.ParentHash() != cur.ParentHash() {
+			return i, events, coalescedLogs, ErrForkBlockParentIsNotLIB
+		}
+
 		err := <-results
 		if err == nil {
 			err = bc.Validator().ValidateBody(block)
@@ -1209,6 +1220,12 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 		events = append(events, ChainHeadEvent{lastCanon})
 	}
 	return 0, events, coalescedLogs, nil
+}
+
+// lastIrreversibleBlk returns the last irreversible block.
+// Last irreversible block is the parent block of current block.
+func (bc *BlockChain) lastIrreversibleBlk() *types.Block {
+	return bc.GetBlockByHash(bc.CurrentBlock().ParentHash())
 }
 
 // insertStats tracks and reports on block insertion.
