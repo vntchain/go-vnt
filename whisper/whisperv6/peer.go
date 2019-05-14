@@ -22,11 +22,11 @@ import (
 	"sync"
 	"time"
 
+	libp2p "github.com/libp2p/go-libp2p-peer"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/rlp"
 	"github.com/vntchain/go-vnt/vntp2p"
-	libp2p "github.com/libp2p/go-libp2p-peer"
 	set "gopkg.in/fatih/set.v0"
 )
 
@@ -66,13 +66,13 @@ func newPeer(host *Whisper, remote *vntp2p.Peer, rw vntp2p.MsgReadWriter) *Peer 
 // into the network.
 func (peer *Peer) start() {
 	go peer.update()
-	log.Trace("start", "peer", peer.ID())
+	log.Trace("Whisper6 peer start", "peer", peer.ID())
 }
 
 // stop terminates the peer updater, stopping message forwarding to it.
 func (peer *Peer) stop() {
 	close(peer.quit)
-	log.Trace("stop", "peer", peer.ID())
+	log.Trace("Whisper6 peer stop", "peer", peer.ID())
 }
 
 // handshake sends the protocol initiation status message to the remote peer and

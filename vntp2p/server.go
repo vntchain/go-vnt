@@ -36,7 +36,6 @@ import (
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
 	// kb "github.com/libp2p/go-libp2p-kbucket"
-	// "time"
 )
 
 const (
@@ -127,16 +126,13 @@ func (server *Server) Close() {
 }
 
 func (server *Server) Start() error {
-	log.Info("p2p-test", "server.Protocols", server.Protocols)
+	log.Trace("P2P server starting...", "protocols", server.Protocols)
 	if server.running {
 		return errors.New("server already running")
 	}
 
 	server.lock.Lock()
 	defer server.lock.Unlock()
-
-	log.Info("server is Starting!")
-	// init
 
 	server.addpeer = make(chan *Stream)
 	server.delpeer = make(chan peerDrop)
@@ -158,14 +154,13 @@ func (server *Server) Start() error {
 	}
 
 	listenPort := server.Config.ListenAddr[1:]
-	log.Info("startVNTNode()", "listenPort", listenPort)
 	ctx, cancel := context.WithCancel(context.Background())
 	server.cancel = cancel
 
 	d := server.NodeDatabase
 	vdht, host, err := ConstructDHT(ctx, MakePort(listenPort), nil, d, server.Config.NetRestrict, server.Config.NAT)
 	if err != nil {
-		log.Error("startVNTNode()", "constructDHT error", err)
+		log.Error("ConstructDHT failed", "error", err)
 		return err
 	}
 
@@ -173,15 +168,14 @@ func (server *Server) Start() error {
 	// it can not hear response
 	host.SetStreamHandler(PID, server.HandleStream)
 
-	log.Info("startVNTNode()", "own nodeID", host.ID())
 	server.table = NewDHTTable(vdht, host.ID())
 	server.host = host
 
 	bootnodes := server.LoadConfig(ctx)
 
-	maxdails := server.maxDialedConns()
+	maxdials := server.maxDialedConns()
 
-	taskState := newTaskState(maxdails, bootnodes, server.table)
+	taskState := newTaskState(maxdials, bootnodes, server.table)
 
 	server.loopWG.Add(1)
 	go server.run(ctx, taskState)
@@ -252,6 +246,7 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 
 		case t := <-server.addpeer:
 			remoteID := t.Conn.Conn().RemotePeer()
+			log.Debug("Adding peer", "peer id", remoteID)
 			if _, ok := peers[remoteID]; ok { // this peer already exists
 				break
 			}
@@ -262,11 +257,12 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 			}
 			go server.runPeer(p)
 			peers[p.RemoteID()] = p
-			log.Info("p2p-test", "peers", peers)
+			log.Debug("Added peer", "peers", peers)
 
 		case t := <-server.addstatic:
-			log.Info("p2p-test", "addStaticPeers", t.Id)
+			log.Debug("Adding static", "peer id", t.Id)
 			tasker.addStatic(t)
+			log.Debug("Added static", "peer id", t.Id)
 		case t := <-server.removestatic:
 			tasker.removeStatic(t)
 			if p, ok := peers[t.Id]; ok {
@@ -280,9 +276,11 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 
 		case pd := <-server.delpeer:
 			// A peer disconnected.
-
-			log.Info("Removing p2p peer", "peers", pd.RemoteID())
-			delete(peers, pd.RemoteID())
+			pid := pd.RemoteID()
+			log.Info("Removing p2p peer", "peer", pid.ToString(), "error", pd.err)
+			if _, ok := peers[pid]; ok {
+				delete(peers, pid)
+			}
 		}
 	}
 }
@@ -374,7 +372,7 @@ func (server *Server) GetPeerByRemoteID(s inet.Stream) *Peer {
 	}
 
 	pid := s.Conn().RemotePeer()
-	log.Info("p2p-test", "GetPeerByRemoteID peerid", pid, "peer got", p)
+	log.Debug("Got peer by remote id", "peerid", pid, "peer got", p)
 
 	return p
 }
@@ -411,8 +409,8 @@ func (server *Server) maxDialedConns() int {
 	return server.MaxPeers / r
 }
 
+// SetupStream 主动发起连接
 func (server *Server) SetupStream(ctx context.Context, target peer.ID, pid string) error {
-	// log.Info("p2p-test", "SetupStream target", target, "pid", pid)
 	s, err := server.host.NewStream(ctx, target, protocol.ID(pid))
 	if err != nil {
 		// fmt.Println("SetupStream NewStream Error: ", err)
@@ -422,7 +420,7 @@ func (server *Server) SetupStream(ctx context.Context, target peer.ID, pid strin
 	// handle response message
 	go server.HandleStream(s)
 	/* rw := bufio.NewReadWriter(bufio.NewReader(s), bufio.NewWriter(s))
-	vntMessenger := &VNTMessenger{
+	vntMessenger := &VNTMsger{
 		protocol: Protocol{},
 		in:       make(chan Msg),
 		w:        rw,
