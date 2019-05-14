@@ -48,7 +48,10 @@ import (
 var (
 	blockInsertTimer = metrics.NewRegisteredTimer("chain/inserts", nil)
 
-	ErrNoGenesis = errors.New("Genesis not found in chain")
+	ErrNoGenesis        = errors.New("Genesis not found in chain")
+	ErrBlockIsNil       = errors.New("block is nil")
+	ErrParentIsNil      = errors.New("parent is nil")
+	ErrNotVoteForkBlock = errors.New("not vote for block on other forked chain")
 )
 
 const (
@@ -1586,9 +1589,17 @@ func (bc *BlockChain) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscript
 	return bc.scope.Track(bc.logsFeed.Subscribe(ch))
 }
 
-func (bc *BlockChain) VerifyBlock(block *types.Block) (types.Receipts, []*types.Log, uint64, error) {
+// VerifyBlockForBft only verify block behind the local canonical chain.
+func (bc *BlockChain) VerifyBlockForBft(block *types.Block) (types.Receipts, []*types.Log, uint64, error) {
 	if block == nil {
-		return nil, nil, 0, fmt.Errorf("block is empty")
+		return nil, nil, 0, ErrBlockIsNil
+	}
+
+	// Parent should be head block
+	headBlock := bc.CurrentBlock()
+	parentHash := block.ParentHash()
+	if headBlock.Hash() != parentHash {
+		return nil, nil, 0, ErrNotVoteForkBlock
 	}
 
 	err := bc.engine.VerifyHeader(bc, block.Header(), true)
@@ -1607,9 +1618,9 @@ func (bc *BlockChain) VerifyBlock(block *types.Block) (types.Receipts, []*types.
 		return nil, nil, 0, err
 	}
 
-	parent := bc.GetBlock(block.ParentHash(), block.NumberU64()-1)
+	parent := bc.GetBlock(parentHash, block.NumberU64()-1)
 	if parent == nil {
-		return nil, nil, 0, fmt.Errorf("parent is nil")
+		return nil, nil, 0, ErrParentIsNil
 	}
 	stateDb, err := state.New(parent.Root(), bc.stateCache)
 	if err != nil {
@@ -1642,7 +1653,7 @@ func (bc *BlockChain) WriteBlock(block *types.Block) error {
 	bstart := time.Now()
 	parent := bc.GetBlock(block.ParentHash(), block.NumberU64()-1)
 	if parent == nil {
-		return fmt.Errorf("parent is nil")
+		return ErrParentIsNil
 	}
 	stateDb, err := bc.StateAt(parent.Root())
 	if err != nil {
