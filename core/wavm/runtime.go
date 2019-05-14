@@ -253,7 +253,6 @@ func (wavm *Wavm) Apply(input []byte, compiled []vnt.Compiled, mutable Mutable) 
 		if len(wavm.Module.Memory.Entries) != 0 {
 			memSize = uint64(wavm.Module.Memory.Entries[0].Limits.Initial)
 		}
-		memSize = 10000
 		wavm.ChainContext.GasCounter.GasInitialMemory(memSize)
 	}
 
