@@ -1032,7 +1032,6 @@ func TestChainTxReorgs(t *testing.T) {
 }
 
 func TestLogReorgs(t *testing.T) {
-
 	var (
 		key1, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 		addr1   = crypto.PubkeyToAddress(key1.PublicKey)
@@ -1049,16 +1048,14 @@ func TestLogReorgs(t *testing.T) {
 
 	rmLogsCh := make(chan RemovedLogsEvent)
 	blockchain.SubscribeRemovedLogsEvent(rmLogsCh)
-	chain, _ := GenerateChain(params.TestChainConfig, genesis, mock.NewMock(), db, 2, func(i int, gen *BlockGen) {
-		if i == 1 {
+	chain, _ := GenerateChain(params.TestChainConfig, genesis, mock.NewMock(), db, 3, func(i int, gen *BlockGen) {
+		if i == 3 {
 			tx, err := types.SignTx(types.NewContractCreation(gen.TxNonce(addr1), new(big.Int), 1000000, new(big.Int), code), signer, key1)
 			if err != nil {
 				t.Fatalf("failed to create tx: %v", err)
 			}
 			gen.AddTx(tx)
-		}
-		if i == 0 {
-			gen.OffsetTime(4)
+			gen.OffsetTime(2)
 		}
 	})
 	if _, err := blockchain.InsertChain(chain); err != nil {
@@ -1292,80 +1289,6 @@ func TestEIP161AccountRemoval(t *testing.T) {
 	}
 	if st, _ := blockchain.State(); st.Exist(theAddr) {
 		t.Error("account should not exist")
-	}
-}
-
-// Tests that doing large reorgs works even if the state associated with the
-// forking point is not available any more.
-func TestLargeReorgTrieGC(t *testing.T) {
-	// Generate the original common chain segment and the two competing forks
-	engine := mock.NewMock()
-
-	db := vntdb.NewMemDatabase()
-	genesis := new(Genesis).MustCommit(db)
-
-	// let competitor replace original
-	shared, _ := GenerateChain(params.TestChainConfig, genesis, engine, db, 64, func(i int, b *BlockGen) {
-		b.SetCoinbase(common.Address{1})
-	})
-	original, _ := GenerateChain(params.TestChainConfig, shared[len(shared)-1], engine, db, 2*triesInMemory, func(i int, b *BlockGen) {
-		b.SetCoinbase(common.Address{2})
-		if i == 0 {
-			b.OffsetTime(10)
-		}
-	})
-	competitor, _ := GenerateChain(params.TestChainConfig, shared[len(shared)-1], engine, db, 2*triesInMemory+1, func(i int, b *BlockGen) {
-		b.SetCoinbase(common.Address{3})
-		if i == 0 {
-			b.OffsetTime(2)
-		}
-	})
-
-	// Import the shared chain and the original canonical one
-	diskdb := vntdb.NewMemDatabase()
-	new(Genesis).MustCommit(diskdb)
-
-	chain, err := NewBlockChain(diskdb, nil, params.TestChainConfig, engine, vm.Config{})
-	if err != nil {
-		t.Fatalf("failed to create tester chain: %v", err)
-	}
-	if _, err := chain.InsertChain(shared); err != nil {
-		t.Fatalf("failed to insert shared chain: %v", err)
-	}
-	if _, err := chain.InsertChain(original); err != nil {
-		t.Fatalf("failed to insert shared chain: %v", err)
-	}
-	// Ensure that the state associated with the forking point is pruned away
-	if node, _ := chain.stateCache.TrieDB().Node(shared[len(shared)-1].Root()); node != nil {
-		t.Fatalf("common-but-old ancestor still cache")
-	}
-	// Import the competitor chain without exceeding the canonical's TD and ensure
-	// we have not processed any of the blocks (protection against malicious blocks)
-	if n, err := chain.InsertChain(competitor[:len(competitor)-2]); err != nil {
-		t.Fatalf("failed to insert competitor chain, the %d-th block: %v", n, err)
-	}
-	for i, block := range competitor[:len(competitor)-2] {
-		if node, _ := chain.stateCache.TrieDB().Node(block.Root()); node != nil {
-			t.Fatalf("competitor %d: low TD chain became processed", i)
-		}
-	}
-	// Import the head of the competitor chain, triggering the reorg and ensure we
-	// successfully reprocess all the stashed away blocks.
-	if _, err := chain.InsertChain(competitor[len(competitor)-2:]); err != nil {
-		t.Fatalf("failed to finalize competitor chain: %v", err)
-	}
-	for i, block := range competitor[:len(competitor)-triesInMemory] {
-		if node, _ := chain.stateCache.TrieDB().Node(block.Root()); node != nil {
-			t.Fatalf("competitor %d: competing chain state missing", i)
-		}
-	}
-
-	// competitor is canonical, using the height of competitor to check
-	// state cache of original
-	for i, block := range original[:len(competitor)-triesInMemory] {
-		if node, _ := chain.stateCache.TrieDB().Node(block.Root()); node != nil {
-			t.Fatalf("competitor %d: competing chain state missing", i)
-		}
 	}
 }
 
