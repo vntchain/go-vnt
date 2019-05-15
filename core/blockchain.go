@@ -1319,6 +1319,7 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 		}
 	)
 
+	lastIrreversibleBlk := bc.lastIrreversibleBlk()
 	// first reduce whoever is higher bound
 	if oldBlock.NumberU64() > newBlock.NumberU64() {
 		// reduce old chain
@@ -1360,6 +1361,12 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 			return fmt.Errorf("Invalid new chain")
 		}
 	}
+
+	// Ensure blocks before last irreversible block can not be reorg
+	if oldChain[len(oldChain)-1].NumberU64() <= lastIrreversibleBlk.NumberU64() {
+		return fmt.Errorf("Invalid reorganization to rollback the irreversible blocks")
+	}
+
 	// Ensure the user sees large reorgs
 	if len(oldChain) > 0 && len(newChain) > 0 {
 		logFn := log.Debug
