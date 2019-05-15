@@ -945,6 +945,10 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 	}
 	rawdb.WriteReceipts(batch, block.Hash(), block.NumberU64(), receipts)
 
+	// Choose the longest after LIB.
+	// If same length choose the early produced block.
+	// But block still can write to db, because it is after lib.
+	// reorg is true means this block will be head block after this block inserted.
 	reorg := externTd.Cmp(localTd) > 0
 	currentBlock = bc.CurrentBlock()
 	if !reorg && externTd.Cmp(localTd) == 0 {
@@ -954,17 +958,19 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 
 		// two blocks choose by timestamp
 		ret := block.Time().Cmp(currentBlock.Time())
-		if ret > 0 {
-			log.Info("Two blocks have same difficulty", "block1",
-				currentBlock.Hash(), "time1", currentBlock.Time().String(), "block2", block.Hash(), "time2", block.Time().String())
-			return NonStatTy, fmt.Errorf("two blocks have same height and different tiemstamp, but this block is later")
-		} else if ret == 0 {
-			log.Info("Two blocks have same difficulty and same timestamp", "block1",
-				currentBlock.Hash(), "time1", currentBlock.Time().String(), "block2", block.Hash(), "time2", block.Time().String())
+		if ret < 0 {
+			reorg = true
+			log.Info("Two blocks have same difficulty this block is early", "new head block", block.Hash(),
+				"time", block.Time().String(), "old head block", currentBlock.Hash(), "time", currentBlock.Time().String())
+		} else if ret > 0 {
+			reorg = false
+			log.Info("Two blocks have same difficulty this block is later", "head block",
+				currentBlock.Hash(), "time", currentBlock.Time().String(), "this block", block.Hash(), "time", block.Time().String())
+		} else {
+			log.Info("Two blocks have same difficulty and same timestamp", "head block",
+				currentBlock.Hash(), "time", currentBlock.Time().String(), "bad block", block.Hash(), "time", block.Time().String())
 			return NonStatTy, fmt.Errorf("two blocks have same height and same tiemstamp")
 		}
-
-		reorg = true
 	}
 	if reorg {
 		// Reorganise the chain if the parent is not the head block
@@ -1068,6 +1074,11 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 		}
 		// Wait for the block's verification to complete
 		bstart := time.Now()
+
+		// Skip blocks already in the chain
+		if b := bc.GetBlockByHash(block.Hash()); b != nil {
+			continue
+		}
 
 		// Block before last irreversible block can not be inserted
 		// chainmu is required. current block would not change before

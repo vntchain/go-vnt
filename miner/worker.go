@@ -335,6 +335,7 @@ func (self *worker) update() {
 	}
 }
 
+// TODO vnt this is never used for Seal never return block
 func (self *worker) wait() {
 	for {
 		for result := range self.recv {
