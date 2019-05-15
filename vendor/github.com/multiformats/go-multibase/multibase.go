@@ -6,13 +6,14 @@ import (
 	"fmt"
 
 	b58 "github.com/mr-tron/base58/base58"
-	b32 "github.com/whyrusleeping/base32"
+	b32 "github.com/multiformats/go-base32"
 )
 
 // Encoding identifies the type of base-encoding that a multibase is carrying.
 type Encoding int
 
-// These are the supported encodings
+// These are the encodings specified in the standard, not are all
+// supported yet
 const (
 	Identity          = 0x00
 	Base1             = '1'
@@ -37,6 +38,50 @@ const (
 	Base64urlPad      = 'U'
 )
 
+// Encodings is a map of the supported encoding, unsupported encoding
+// specified in standard are left out
+var Encodings = map[string]Encoding{
+	"identity":          0x00,
+	"base2":             '0',
+	"base16":            'f',
+	"base16upper":       'F',
+	"base32":            'b',
+	"base32upper":       'B',
+	"base32pad":         'c',
+	"base32padupper":    'C',
+	"base32hex":         'v',
+	"base32hexupper":    'V',
+	"base32hexpad":      't',
+	"base32hexpadupper": 'T',
+	"base58flickr":      'Z',
+	"base58btc":         'z',
+	"base64":            'm',
+	"base64url":         'u',
+	"base64pad":         'M',
+	"base64urlpad":      'U',
+}
+
+var EncodingToStr = map[Encoding]string{
+	0x00: "identity",
+	'0':  "base2",
+	'f':  "base16",
+	'F':  "base16upper",
+	'b':  "base32",
+	'B':  "base32upper",
+	'c':  "base32pad",
+	'C':  "base32padupper",
+	'v':  "base32hex",
+	'V':  "base32hexupper",
+	't':  "base32hexpad",
+	'T':  "base32hexpadupper",
+	'Z':  "base58flickr",
+	'z':  "base58btc",
+	'm':  "base64",
+	'u':  "base64url",
+	'M':  "base64pad",
+	'U':  "base64urlpad",
+}
+
 // ErrUnsupportedEncoding is returned when the selected encoding is not known or
 // implemented.
 var ErrUnsupportedEncoding = fmt.Errorf("selected encoding not supported")
@@ -49,6 +94,8 @@ func Encode(base Encoding, data []byte) (string, error) {
 	case Identity:
 		// 0x00 inside a string is OK in golang and causes no problems with the length calculation.
 		return string(Identity) + string(data), nil
+	case Base2:
+		return string(Base2) + binaryEncodeToString(data), nil
 	case Base16:
 		return string(Base16) + hex.EncodeToString(data), nil
 	case Base16Upper:
@@ -98,6 +145,9 @@ func Decode(data string) (Encoding, []byte, error) {
 	switch enc {
 	case Identity:
 		return Identity, []byte(data[1:]), nil
+	case Base2:
+		bytes, err := decodeBinaryString(data[1:])
+		return enc, bytes, err
 	case Base16, Base16Upper:
 		bytes, err := hex.DecodeString(data[1:])
 		return enc, bytes, err

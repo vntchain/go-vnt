@@ -3,20 +3,16 @@ package secio
 import (
 	"bytes"
 	"context"
-	"crypto/ecdsa"
 	"crypto/rand"
 	"errors"
 	"fmt"
 	"net"
 	"time"
 
-	"github.com/vntchain/go-vnt/crypto"
-	"github.com/vntchain/go-vnt/rlp"
-
 	proto "github.com/gogo/protobuf/proto"
 	logging "github.com/ipfs/go-log"
 	cs "github.com/libp2p/go-conn-security"
-	// ci "github.com/libp2p/go-libp2p-crypto"
+	ci "github.com/libp2p/go-libp2p-crypto"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pb "github.com/libp2p/go-libp2p-secio/pb"
 	msgio "github.com/libp2p/go-msgio"
@@ -57,7 +53,7 @@ type secureSession struct {
 	insecure  net.Conn
 	insecureM msgio.ReadWriter
 
-	localKey   *ecdsa.PrivateKey
+	localKey   ci.PrivKey
 	localPeer  peer.ID
 	remotePeer peer.ID
 
@@ -77,7 +73,7 @@ func (s *secureSession) Loggable() map[string]interface{} {
 	return m
 }
 
-func newSecureSession(ctx context.Context, local peer.ID, key *ecdsa.PrivateKey, insecure net.Conn, remotePeer peer.ID) (*secureSession, error) {
+func newSecureSession(ctx context.Context, local peer.ID, key ci.PrivKey, insecure net.Conn, remotePeer peer.ID) (*secureSession, error) {
 	s := &secureSession{localPeer: local, localKey: key}
 
 	switch {
@@ -150,16 +146,18 @@ func (s *secureSession) runHandshakeSync() error {
 		return err
 	}
 
-	s.local.permanentPubKey = &s.localKey.PublicKey
-
-	myPubKeyBytes := crypto.CompressPubkey(s.local.permanentPubKey)
+	s.local.permanentPubKey = s.localKey.GetPublic()
+	myPubKeyBytes, err := s.local.permanentPubKey.Bytes()
+	if err != nil {
+		return err
+	}
 
 	proposeOut := new(pb.Propose)
 	proposeOut.Rand = nonceOut
 	proposeOut.Pubkey = myPubKeyBytes
-	proposeOut.Exchanges = &SupportedExchanges
-	proposeOut.Ciphers = &SupportedCiphers
-	proposeOut.Hashes = &SupportedHashes
+	proposeOut.Exchanges = SupportedExchanges
+	proposeOut.Ciphers = SupportedCiphers
+	proposeOut.Hashes = SupportedHashes
 
 	// log.Debugf("1.0 Propose: nonce:%s exchanges:%s ciphers:%s hashes:%s",
 	// 	nonceOut, SupportedExchanges, SupportedCiphers, SupportedHashes)
@@ -190,7 +188,7 @@ func (s *secureSession) runHandshakeSync() error {
 	// step 1.1 Identify -- get identity from their key
 
 	// get remote identity
-	s.remote.permanentPubKey, err = crypto.DecompressPubkey(proposeIn.GetPubkey())
+	s.remote.permanentPubKey, err = ci.UnmarshalPublicKey(proposeIn.GetPubkey())
 	if err != nil {
 		return err
 	}
@@ -213,7 +211,7 @@ func (s *secureSession) runHandshakeSync() error {
 		return ErrWrongPeer
 	}
 
-	// fmt.Printf("1.1 Identify: %s Remote Peer Identified as %s\n", s.localPeer, s.remotePeer)
+	log.Debugf("1.1 Identify: %s Remote Peer Identified as %s", s.localPeer, s.remotePeer)
 
 	// =============================================================================
 	// step 1.2 Selection -- select/agree on best encryption parameters
@@ -254,8 +252,8 @@ func (s *secureSession) runHandshakeSync() error {
 	// step 2. Exchange -- exchange (signed) ephemeral keys. verify signatures.
 
 	// Generate EphemeralPubKey
-	var genSharedKey crypto.GenSharedKey
-	s.local.ephemeralPubKey, genSharedKey, err = crypto.GenerateEKeyPair(s.local.curveT)
+	var genSharedKey ci.GenSharedKey
+	s.local.ephemeralPubKey, genSharedKey, err = ci.GenerateEKeyPair(s.local.curveT)
 	if err != nil {
 		return err
 	}
@@ -270,12 +268,7 @@ func (s *secureSession) runHandshakeSync() error {
 	// log.Debugf("2.0 exchange: %v", selectionOutBytes)
 	exchangeOut := new(pb.Exchange)
 	exchangeOut.Epubkey = s.local.ephemeralPubKey
-
-	// FIXME:
-	// 此处需要引入rlp的hash
-	rlpoutdata, _ := rlp.EncodeToBytes(selectionOutBytes)
-
-	exchangeOut.Signature, err = crypto.Sign(crypto.Keccak256(rlpoutdata), s.localKey)
+	exchangeOut.Signature, err = s.localKey.Sign(selectionOutBytes)
 	if err != nil {
 		return err
 	}
@@ -313,17 +306,11 @@ func (s *secureSession) runHandshakeSync() error {
 	// log.Debugf("2.0.1 exchange recv: %v", selectionInBytes)
 
 	// u.POut("Remote Peer Identified as %s\n", s.remote)
-	pkbyte := crypto.CompressPubkey(s.remote.permanentPubKey)
-
-	// sigOK, err := s.remote.permanentPubKey.Verify(selectionInBytes, exchangeIn.GetSignature())
-
-	rlpindata, _ := rlp.EncodeToBytes(selectionInBytes)
-
-	sigOK := crypto.VerifySignature(pkbyte, crypto.Keccak256(rlpindata), exchangeIn.GetSignature()[:len(exchangeIn.GetSignature())-1])
-	// if err != nil {
-	// log.Error("2.1 Verify: failed: %s", err)
-	// 	return err
-	// }
+	sigOK, err := s.remote.permanentPubKey.Verify(selectionInBytes, exchangeIn.GetSignature())
+	if err != nil {
+		// log.Error("2.1 Verify: failed: %s", err)
+		return err
+	}
 
 	if !sigOK {
 		// log.Error("2.1 Verify: failed: %s", ErrBadSig)
@@ -341,7 +328,7 @@ func (s *secureSession) runHandshakeSync() error {
 	}
 
 	// generate two sets of keys (stretching)
-	k1, k2 := crypto.KeyStretcher(s.local.cipherT, s.local.hashT, s.sharedSecret)
+	k1, k2 := ci.KeyStretcher(s.local.cipherT, s.local.hashT, s.sharedSecret)
 
 	// use random nonces to decide order.
 	switch {

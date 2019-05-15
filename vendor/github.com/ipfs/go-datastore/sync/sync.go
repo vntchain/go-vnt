@@ -1,7 +1,6 @@
 package sync
 
 import (
-	"io"
 	"sync"
 
 	ds "github.com/ipfs/go-datastore"
@@ -16,8 +15,8 @@ type MutexDatastore struct {
 	child ds.Datastore
 }
 
-// MutexWrap constructs a datastore with a coarse lock around
-// the entire datastore, for every single operation
+// MutexWrap constructs a datastore with a coarse lock around the entire
+// datastore, for every single operation.
 func MutexWrap(d ds.Datastore) *MutexDatastore {
 	return &MutexDatastore{child: d}
 }
@@ -27,18 +26,15 @@ func (d *MutexDatastore) Children() []ds.Datastore {
 	return []ds.Datastore{d.child}
 }
 
-// IsThreadSafe implements ThreadSafeDatastore
-func (d *MutexDatastore) IsThreadSafe() {}
-
 // Put implements Datastore.Put
-func (d *MutexDatastore) Put(key ds.Key, value interface{}) (err error) {
+func (d *MutexDatastore) Put(key ds.Key, value []byte) (err error) {
 	d.Lock()
 	defer d.Unlock()
 	return d.child.Put(key, value)
 }
 
 // Get implements Datastore.Get
-func (d *MutexDatastore) Get(key ds.Key) (value interface{}, err error) {
+func (d *MutexDatastore) Get(key ds.Key) (value []byte, err error) {
 	d.RLock()
 	defer d.RUnlock()
 	return d.child.Get(key)
@@ -49,6 +45,13 @@ func (d *MutexDatastore) Has(key ds.Key) (exists bool, err error) {
 	d.RLock()
 	defer d.RUnlock()
 	return d.child.Has(key)
+}
+
+// GetSize implements Datastore.GetSize
+func (d *MutexDatastore) GetSize(key ds.Key) (size int, err error) {
+	d.RLock()
+	defer d.RUnlock()
+	return d.child.GetSize(key)
 }
 
 // Delete implements Datastore.Delete
@@ -86,10 +89,7 @@ func (d *MutexDatastore) Batch() (ds.Batch, error) {
 func (d *MutexDatastore) Close() error {
 	d.RWMutex.Lock()
 	defer d.RWMutex.Unlock()
-	if c, ok := d.child.(io.Closer); ok {
-		return c.Close()
-	}
-	return nil
+	return d.child.Close()
 }
 
 // DiskUsage implements the PersistentDatastore interface.
@@ -104,7 +104,7 @@ type syncBatch struct {
 	mds   *MutexDatastore
 }
 
-func (b *syncBatch) Put(key ds.Key, val interface{}) error {
+func (b *syncBatch) Put(key ds.Key, val []byte) error {
 	b.mds.Lock()
 	defer b.mds.Unlock()
 	return b.batch.Put(key, val)

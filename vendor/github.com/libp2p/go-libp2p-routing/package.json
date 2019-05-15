@@ -9,27 +9,27 @@
   "gxDependencies": [
     {
       "author": "whyrusleeping",
-      "hash": "Qme1knMqwt1hKZbc1BmQFmnm9f36nyQGwXxPGVpVJ9rMK5",
+      "hash": "QmTW4SdgBWq9GjsBsHeUx8WuGxzhgzAf88UMH2w62PC8yK",
       "name": "go-libp2p-crypto",
-      "version": "1.6.2"
+      "version": "2.0.7"
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmZhsmorLpD9kmQ4ynbAu4vbKv2goMUnXazwGA4gnWHDjB",
+      "hash": "QmaCTz9RkrU13bm9kMB54f7atgqM4qkjDZpRwRoJiWXEqs",
       "name": "go-libp2p-peerstore",
-      "version": "1.4.20"
+      "version": "2.0.19"
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmapdYm1b22Frv3k17fqrBYTFRxwiaVJkB299Mfn33edeB",
+      "hash": "QmTbxNB1NwDesLmKTscr4udL2tVP7MaxvXnD1D9yX7g3PN",
       "name": "go-cid",
-      "version": "0.7.21"
+      "version": "0.9.3"
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmVf8hTAsLLFtn4WPCRNdnaF2Eag2qTBS6uR8AiHPZARXy",
+      "hash": "QmYVXrKrKHDC9FobgmcmshCDyWwdrfwfanNQN4oxJ9Fk3h",
       "name": "go-libp2p-peer",
-      "version": "2.3.4"
+      "version": "3.1.2"
     }
   ],
   "gxVersion": "0.4.0",
@@ -37,6 +37,6 @@
   "license": "MIT",
   "name": "go-libp2p-routing",
   "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
-  "version": "2.4.2"
+  "version": "2.7.13"
 }
 

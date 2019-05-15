@@ -6,10 +6,8 @@ import (
 	"net"
 	"time"
 
-	"crypto/ecdsa"
-
 	cs "github.com/libp2p/go-conn-security"
-	// ci "github.com/libp2p/go-libp2p-crypto"
+	ci "github.com/libp2p/go-libp2p-crypto"
 	peer "github.com/libp2p/go-libp2p-peer"
 )
 
@@ -19,10 +17,10 @@ const ID = "/secio/1.0.0"
 // SessionGenerator constructs secure communication sessions for a peer.
 type Transport struct {
 	LocalID    peer.ID
-	PrivateKey *ecdsa.PrivateKey
+	PrivateKey ci.PrivKey
 }
 
-func New(sk *ecdsa.PrivateKey) (*Transport, error) {
+func New(sk ci.PrivKey) (*Transport, error) {
 	id, err := peer.IDFromPrivateKey(sk)
 	if err != nil {
 		return nil, err
@@ -68,7 +66,7 @@ func (s *secureSession) LocalPeer() peer.ID {
 }
 
 // LocalPrivateKey retrieves the local peer's PrivateKey
-func (s *secureSession) LocalPrivateKey() *ecdsa.PrivateKey {
+func (s *secureSession) LocalPrivateKey() ci.PrivKey {
 	return s.localKey
 }
 
@@ -78,6 +76,6 @@ func (s *secureSession) RemotePeer() peer.ID {
 }
 
 // RemotePublicKey retrieves the remote public key.
-func (s *secureSession) RemotePublicKey() *ecdsa.PublicKey {
+func (s *secureSession) RemotePublicKey() ci.PubKey {
 	return s.remote.permanentPubKey
 }

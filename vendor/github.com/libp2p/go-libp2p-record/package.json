@@ -8,36 +8,36 @@
   },
   "gxDependencies": [
     {
-      "hash": "Qmbi1CTJsbnBZjCEgc2otwu8cUFPsGpzWXG7edVCLZ7Gvk",
+      "hash": "QmbkT7eMTyXfpeyB3ZMxxcxg7XH8t6uXp49jqzz4HB7BGF",
       "name": "go-log",
-      "version": "1.5.2"
+      "version": "1.5.9"
     },
     {
       "author": "whyrusleeping",
-      "hash": "Qme1knMqwt1hKZbc1BmQFmnm9f36nyQGwXxPGVpVJ9rMK5",
+      "hash": "QmTW4SdgBWq9GjsBsHeUx8WuGxzhgzAf88UMH2w62PC8yK",
       "name": "go-libp2p-crypto",
-      "version": "1.6.2"
+      "version": "2.0.7"
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmVf8hTAsLLFtn4WPCRNdnaF2Eag2qTBS6uR8AiHPZARXy",
+      "hash": "QmYVXrKrKHDC9FobgmcmshCDyWwdrfwfanNQN4oxJ9Fk3h",
       "name": "go-libp2p-peer",
-      "version": "2.3.4"
+      "version": "3.1.2"
     },
     {
-      "hash": "QmPnFwZ2JXKnXgMw8CdBPxn7FWh6LLdjUjxV1fKHuJnkr8",
+      "hash": "QmerPMzPk1mJVowm8KgmoknWa4yCYvvugMPsgWmDNUvDLW",
       "name": "go-multihash",
-      "version": "1.0.8"
+      "version": "1.0.9"
     },
     {
-      "hash": "QmPdKqUcHGFdeSpvjVoaTRPPstGif9GBZb5Q56RVw9o69A",
+      "hash": "QmNohiVssaPw3KVLZik59DBVGTSm2dGvYT9eoXt5DQ36Yz",
       "name": "go-ipfs-util",
-      "version": "1.2.8"
+      "version": "1.2.9"
     },
     {
-      "hash": "QmZ4Qi3GaRbjcx28Sme5eMH7RQjGkt8wHxt2a65oLaeFEV",
+      "hash": "QmddjPSGZb3ieihSseFeCfVRpZzcqczPNsD2DvarSwnjJB",
       "name": "gogo-protobuf",
-      "version": "0.0.0"
+      "version": "1.2.1"
     }
   ],
   "gxVersion": "0.4.0",
@@ -45,6 +45,6 @@
   "license": "MIT",
   "name": "go-libp2p-record",
   "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
-  "version": "4.1.2"
+  "version": "4.1.15"
 }
 

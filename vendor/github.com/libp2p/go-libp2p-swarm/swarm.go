@@ -21,10 +21,11 @@ import (
 	mafilter "github.com/whyrusleeping/multiaddr-filter"
 )
 
-// DialTimeout is the maximum duration a Dial is allowed to take.
+// DialTimeoutLocal is the maximum duration a Dial to local network address
+// is allowed to take.
 // This includes the time between dialing the raw network connection,
 // protocol selection as well the handshake, if applicable.
-var DialTimeout = 60 * time.Second
+var DialTimeoutLocal = 5 * time.Second
 
 var log = logging.Logger("swarm2")
 
@@ -120,8 +121,8 @@ func (s *Swarm) teardown() error {
 	s.conns.m = nil
 	s.conns.Unlock()
 
-	// Lots of go routines but we might as well do this in parallel. We want
-	// to shut down as fast as possible.
+	// Lots of goroutines but we might as well do this in parallel. We want to shut down as fast as
+	// possible.
 
 	for l := range listeners {
 		go func(l transport.Listener) {
@@ -147,8 +148,8 @@ func (s *Swarm) teardown() error {
 	return nil
 }
 
-// AddAddrFilter adds a multiaddr filter to the set of filters the swarm will
-// use to determine which addresses not to dial to.
+// AddAddrFilter adds a multiaddr filter to the set of filters the swarm will use to determine which
+// addresses not to dial to.
 func (s *Swarm) AddAddrFilter(f string) error {
 	m, err := mafilter.NewMask(f)
 	if err != nil {
@@ -164,11 +165,10 @@ func (s *Swarm) Process() goprocess.Process {
 	return s.proc
 }
 
-func (s *Swarm) addConn(tc transport.Conn) (*Conn, error) {
+func (s *Swarm) addConn(tc transport.Conn, dir inet.Direction) (*Conn, error) {
 	// The underlying transport (or the dialer) *should* filter it's own
 	// connections but we should double check anyways.
 	raddr := tc.RemoteMultiaddr()
-
 	if s.Filters.AddrBlocked(raddr) {
 		tc.Close()
 		return nil, ErrAddrFiltered
@@ -194,9 +194,11 @@ func (s *Swarm) addConn(tc transport.Conn) (*Conn, error) {
 	}
 
 	// Wrap and register the connection.
+	stat := inet.Stat{Direction: dir}
 	c := &Conn{
 		conn:  tc,
 		swarm: s,
+		stat:  stat,
 	}
 	c.streams.m = make(map[*Stream]struct{})
 	s.conns.m[p] = append(s.conns.m[p], c)
@@ -293,6 +295,10 @@ func (s *Swarm) NewStream(ctx context.Context, p peer.ID) (inet.Stream, error) {
 	for {
 		c := s.bestConnToPeer(p)
 		if c == nil {
+			if nodial, _ := inet.GetNoDial(ctx); nodial {
+				return nil, inet.ErrNoConn
+			}
+
 			if dials >= DialAttempts {
 				return nil, errors.New("max dial attempts exceeded")
 			}

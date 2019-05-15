@@ -74,14 +74,16 @@ func (s *Swarm) AddListenAddr(a ma.Multiaddr) error {
 		for {
 			c, err := list.Accept()
 			if err != nil {
-				log.Warningf("swarm listener accept error: %s", err)
+				if s.ctx.Err() == nil {
+					log.Errorf("swarm listener accept error: %s", err)
+				}
 				return
 			}
 			log.Debugf("swarm listener accepted connection: %s", c)
 			s.refs.Add(1)
 			go func() {
 				defer s.refs.Done()
-				_, err := s.addConn(c)
+				_, err := s.addConn(c, inet.DirInbound)
 				if err != nil {
 					// Probably just means that the swarm has been closed.
 					log.Warningf("add conn failed: ", err)

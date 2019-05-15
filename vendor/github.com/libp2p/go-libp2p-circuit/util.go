@@ -9,10 +9,10 @@ import (
 
 	ggio "github.com/gogo/protobuf/io"
 	proto "github.com/gogo/protobuf/proto"
+	pool "github.com/libp2p/go-buffer-pool"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
-	mh "github.com/multiformats/go-multihash"
 )
 
 func peerToPeerInfo(p *pb.CircuitRelay_Peer) (pstore.PeerInfo, error) {
@@ -20,7 +20,7 @@ func peerToPeerInfo(p *pb.CircuitRelay_Peer) (pstore.PeerInfo, error) {
 		return pstore.PeerInfo{}, errors.New("nil peer")
 	}
 
-	h, err := mh.Cast(p.Id)
+	id, err := peer.IDFromBytes(p.Id)
 	if err != nil {
 		return pstore.PeerInfo{}, err
 	}
@@ -33,7 +33,7 @@ func peerToPeerInfo(p *pb.CircuitRelay_Peer) (pstore.PeerInfo, error) {
 		}
 	}
 
-	return pstore.PeerInfo{ID: peer.ID(h), Addrs: addrs}, nil
+	return pstore.PeerInfo{ID: id, Addrs: addrs}, nil
 }
 
 func peerInfoToPeer(pi pstore.PeerInfo) *pb.CircuitRelay_Peer {
@@ -65,7 +65,14 @@ type delimitedReader struct {
 // - messages are small (max 4k) and the length fits in a couple of bytes,
 //   so overall we have at most three reads per message.
 func newDelimitedReader(r io.Reader, maxSize int) *delimitedReader {
-	return &delimitedReader{r: r, buf: make([]byte, maxSize)}
+	return &delimitedReader{r: r, buf: pool.Get(maxSize)}
+}
+
+func (d *delimitedReader) Close() {
+	if d.buf != nil {
+		pool.Put(d.buf)
+		d.buf = nil
+	}
 }
 
 func (d *delimitedReader) ReadByte() (byte, error) {

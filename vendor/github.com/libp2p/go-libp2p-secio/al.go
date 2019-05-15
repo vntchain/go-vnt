@@ -12,10 +12,7 @@ import (
 	"crypto/sha512"
 	"hash"
 
-	"crypto/ecdsa"
-
-	"github.com/vntchain/go-vnt/crypto"
-	// ci "github.com/libp2p/go-libp2p-crypto"
+	ci "github.com/libp2p/go-libp2p-crypto"
 	sha256 "github.com/minio/sha256-simd"
 	bfish "golang.org/x/crypto/blowfish"
 )
@@ -44,9 +41,9 @@ type HMAC struct {
 // encParams represent encryption parameters
 type encParams struct {
 	// keys
-	permanentPubKey *ecdsa.PublicKey
+	permanentPubKey ci.PubKey
 	ephemeralPubKey []byte
-	keys            crypto.StretchedKeys
+	keys            ci.StretchedKeys
 
 	// selections
 	curveT  string

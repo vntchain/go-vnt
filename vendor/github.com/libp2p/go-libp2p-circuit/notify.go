@@ -13,7 +13,7 @@ var _ inet.Notifiee = (*RelayNotifiee)(nil)
 
 type RelayNotifiee Relay
 
-func (r *Relay) Notifiee() inet.Notifiee {
+func (r *Relay) notifiee() inet.Notifiee {
 	return (*RelayNotifiee)(r)
 }
 
@@ -36,7 +36,6 @@ func (n *RelayNotifiee) Connected(s inet.Network, c inet.Conn) {
 		defer cancel()
 
 		canhop, err := n.Relay().CanHop(ctx, id)
-
 		if err != nil {
 			log.Debugf("Error testing relay hop: %s", err.Error())
 			return

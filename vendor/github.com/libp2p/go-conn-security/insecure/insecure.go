@@ -6,8 +6,7 @@ import (
 
 	security "github.com/libp2p/go-conn-security"
 
-	"crypto/ecdsa"
-	// ci "github.com/libp2p/go-libp2p-crypto"
+	ci "github.com/libp2p/go-libp2p-crypto"
 	peer "github.com/libp2p/go-libp2p-peer"
 )
 
@@ -34,7 +33,7 @@ func (t *Transport) LocalPeer() peer.ID {
 }
 
 // LocalPrivateKey returns nil. This transport is not secure.
-func (t *Transport) LocalPrivateKey() *ecdsa.PrivateKey {
+func (t *Transport) LocalPrivateKey() ci.PrivKey {
 	return nil
 }
 
@@ -74,12 +73,12 @@ func (ic *Conn) RemotePeer() peer.ID {
 }
 
 // RemotePublicKey returns nil. This connection is not secure
-func (ic *Conn) RemotePublicKey() *ecdsa.PublicKey {
+func (ic *Conn) RemotePublicKey() ci.PubKey {
 	return nil
 }
 
 // LocalPrivateKey returns nil. This connection is not secure.
-func (ic *Conn) LocalPrivateKey() *ecdsa.PrivateKey {
+func (ic *Conn) LocalPrivateKey() ci.PrivKey {
 	return nil
 }
 

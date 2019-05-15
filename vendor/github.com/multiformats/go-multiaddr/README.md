@@ -4,6 +4,7 @@
 [![](https://img.shields.io/badge/project-multiformats-blue.svg?style=flat-square)](https://github.com/multiformats/multiformats)
 [![](https://img.shields.io/badge/freenode-%23ipfs-blue.svg?style=flat-square)](https://webchat.freenode.net/?channels=%23ipfs)
 [![](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
+[![GoDoc](https://godoc.org/github.com/multiformats/go-multiaddr?status.svg)](https://godoc.org/github.com/multiformats/go-multiaddr)
 [![Travis CI](https://img.shields.io/travis/multiformats/go-multiaddr.svg?style=flat-square&branch=master)](https://travis-ci.org/multiformats/go-multiaddr)
 [![codecov.io](https://img.shields.io/codecov/c/github/multiformats/go-multiaddr.svg?style=flat-square&branch=master)](https://codecov.io/github/multiformats/go-multiaddr?branch=master)
 
@@ -73,9 +74,19 @@ m1.Protocols()
 #### En/decapsulate
 
 ```go
-m.Encapsulate(ma.NewMultiaddr("/sctp/5678"))
+import ma "github.com/multiformats/go-multiaddr"
+
+m, err := ma.NewMultiaddr("/ip4/127.0.0.1/udp/1234")
+// <Multiaddr /ip4/127.0.0.1/udp/1234>
+
+sctpMA, err := ma.NewMultiaddr("/sctp/5678")
+
+m.Encapsulate(sctpMA)
 // <Multiaddr /ip4/127.0.0.1/udp/1234/sctp/5678>
-m.Decapsulate(ma.NewMultiaddr("/udp")) // up to + inc last occurrence of subaddr
+
+udpMA, err := ma.NewMultiaddr("/udp/1234")
+
+m.Decapsulate(udpMA) // up to + inc last occurrence of subaddr
 // <Multiaddr /ip4/127.0.0.1>
 ```
 
@@ -92,10 +103,6 @@ printerOverProxy := proxy.Encapsulate(printer)
 proxyAgain := printerOverProxy.Decapsulate(printer)
 // /ip4/10.20.30.40/tcp/443
 ```
-
-## Maintainers
-
-Captain: [@whyrusleeping](https://github.com/whyrusleeping).
 
 ## Contribute
 

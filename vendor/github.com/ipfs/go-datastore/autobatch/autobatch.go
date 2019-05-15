@@ -13,8 +13,13 @@ type Datastore struct {
 	child ds.Batching
 
 	// TODO: discuss making ds.Batch implement the full ds.Datastore interface
-	buffer           map[ds.Key]interface{}
+	buffer           map[ds.Key]op
 	maxBufferEntries int
+}
+
+type op struct {
+	delete bool
+	value  []byte
 }
 
 // NewAutoBatching returns a new datastore that automatically
@@ -23,31 +28,36 @@ type Datastore struct {
 func NewAutoBatching(d ds.Batching, size int) *Datastore {
 	return &Datastore{
 		child:            d,
-		buffer:           make(map[ds.Key]interface{}),
+		buffer:           make(map[ds.Key]op, size),
 		maxBufferEntries: size,
 	}
 }
 
 // Delete deletes a key/value
 func (d *Datastore) Delete(k ds.Key) error {
-	delete(d.buffer, k)
-
-	return d.child.Delete(k)
+	d.buffer[k] = op{delete: true}
+	if len(d.buffer) > d.maxBufferEntries {
+		return d.Flush()
+	}
+	return nil
 }
 
 // Get retrieves a value given a key.
-func (d *Datastore) Get(k ds.Key) (interface{}, error) {
-	val, ok := d.buffer[k]
+func (d *Datastore) Get(k ds.Key) ([]byte, error) {
+	o, ok := d.buffer[k]
 	if ok {
-		return val, nil
+		if o.delete {
+			return nil, ds.ErrNotFound
+		}
+		return o.value, nil
 	}
 
 	return d.child.Get(k)
 }
 
 // Put stores a key/value.
-func (d *Datastore) Put(k ds.Key, val interface{}) error {
-	d.buffer[k] = val
+func (d *Datastore) Put(k ds.Key, val []byte) error {
+	d.buffer[k] = op{value: val}
 	if len(d.buffer) > d.maxBufferEntries {
 		return d.Flush()
 	}
@@ -61,26 +71,48 @@ func (d *Datastore) Flush() error {
 		return err
 	}
 
-	for k, v := range d.buffer {
-		err := b.Put(k, v)
+	for k, o := range d.buffer {
+		var err error
+		if o.delete {
+			err = b.Delete(k)
+			if err == ds.ErrNotFound {
+				// Ignore these, let delete be idempotent.
+				err = nil
+			}
+		} else {
+			err = b.Put(k, o.value)
+		}
 		if err != nil {
 			return err
 		}
 	}
 	// clear out buffer
-	d.buffer = make(map[ds.Key]interface{})
+	d.buffer = make(map[ds.Key]op, d.maxBufferEntries)
 
 	return b.Commit()
 }
 
 // Has checks if a key is stored.
 func (d *Datastore) Has(k ds.Key) (bool, error) {
-	_, ok := d.buffer[k]
+	o, ok := d.buffer[k]
 	if ok {
-		return true, nil
+		return !o.delete, nil
 	}
 
 	return d.child.Has(k)
+}
+
+// GetSize implements Datastore.GetSize
+func (d *Datastore) GetSize(k ds.Key) (int, error) {
+	o, ok := d.buffer[k]
+	if ok {
+		if o.delete {
+			return -1, ds.ErrNotFound
+		}
+		return len(o.value), nil
+	}
+
+	return d.child.GetSize(k)
 }
 
 // Query performs a query
@@ -96,4 +128,16 @@ func (d *Datastore) Query(q dsq.Query) (dsq.Results, error) {
 // DiskUsage implements the PersistentDatastore interface.
 func (d *Datastore) DiskUsage() (uint64, error) {
 	return ds.DiskUsage(d.child)
+}
+
+func (d *Datastore) Close() error {
+	err1 := d.Flush()
+	err2 := d.child.Close()
+	if err1 != nil {
+		return err1
+	}
+	if err2 != nil {
+		return err2
+	}
+	return nil
 }

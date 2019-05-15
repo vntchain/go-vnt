@@ -8,33 +8,39 @@
   },
   "gxDependencies": [
     {
-      "hash": "Qmbi1CTJsbnBZjCEgc2otwu8cUFPsGpzWXG7edVCLZ7Gvk",
+      "hash": "QmbkT7eMTyXfpeyB3ZMxxcxg7XH8t6uXp49jqzz4HB7BGF",
       "name": "go-log",
-      "version": "1.5.2"
+      "version": "1.5.9"
     },
     {
       "author": "multiformats",
-      "hash": "QmUxSEGbv2nmYNnfXi7839wwQqTN3kwQeUxe8dTjZWZs7J",
+      "hash": "QmTZBfrPJmjWsCvHEtX5FE6KimVJhsJg5sBbqEFYf4UZtL",
       "name": "go-multiaddr",
-      "version": "1.2.7"
+      "version": "1.4.1"
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmXdgNhVEgjLxjUoMs5ViQL7pboAt3Y7V7eGHRiE4qrmTE",
+      "hash": "QmY3ArotKMKaL7YGfbQfyDrib6RVraLqZYWXZvVgZktBxp",
       "name": "go-libp2p-net",
-      "version": "3.0.2"
+      "version": "3.0.30"
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmY9JXR3FupnYAYJWK9aMr9bCpqWKcToQ1tz8DVGTrHpHw",
+      "hash": "QmVtV1y2e8W4eQgzsP6qfSpCCZ6zWYE4m6NzJjB7iswwrT",
       "name": "go-stream-muxer",
-      "version": "3.0.0"
+      "version": "3.1.0"
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmVf8hTAsLLFtn4WPCRNdnaF2Eag2qTBS6uR8AiHPZARXy",
+      "hash": "QmYVXrKrKHDC9FobgmcmshCDyWwdrfwfanNQN4oxJ9Fk3h",
       "name": "go-libp2p-peer",
-      "version": "2.3.4"
+      "version": "3.1.2"
+    },
+    {
+      "author": "jbenet",
+      "hash": "Qmf7HqcW7LtCi1W8y2bdx2eJpze74jkbKqpByxgXikdbLF",
+      "name": "go-detect-race",
+      "version": "1.0.1"
     }
   ],
   "gxVersion": "0.4.0",
@@ -42,6 +48,6 @@
   "license": "MIT",
   "name": "go-libp2p-transport",
   "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
-  "version": "3.0.2"
+  "version": "3.0.27"
 }
 

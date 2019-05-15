@@ -2,17 +2,14 @@ package identify
 
 import (
 	"context"
-	"strings"
 	"sync"
-
-	"github.com/vntchain/go-vnt/crypto"
+	"time"
 
 	pb "github.com/libp2p/go-libp2p/p2p/protocol/identify/pb"
 
-	semver "github.com/coreos/go-semver/semver"
 	ggio "github.com/gogo/protobuf/io"
 	logging "github.com/ipfs/go-log"
-	// ic "github.com/libp2p/go-libp2p-crypto"
+	ic "github.com/libp2p/go-libp2p-crypto"
 	host "github.com/libp2p/go-libp2p-host"
 	lgbl "github.com/libp2p/go-libp2p-loggables"
 	inet "github.com/libp2p/go-libp2p-net"
@@ -26,6 +23,9 @@ var log = logging.Logger("net/identify")
 
 // ID is the protocol.ID of the Identify Service.
 const ID = "/ipfs/id/1.0.0"
+
+// IDPush is the protocol.ID of the Identify push protocol
+const IDPush = "/ipfs/id/push/1.0.0"
 
 // LibP2PVersion holds the current protocol version for a client running this code
 // TODO(jbenet): fix the versioning mess.
@@ -53,17 +53,19 @@ type IDService struct {
 
 	// our own observed addresses.
 	// TODO: instead of expiring, remove these when we disconnect
-	observedAddrs ObservedAddrSet
+	observedAddrs *ObservedAddrSet
 }
 
 // NewIDService constructs a new *IDService and activates it by
 // attaching its stream handler to the given host.Host.
-func NewIDService(h host.Host) *IDService {
+func NewIDService(ctx context.Context, h host.Host) *IDService {
 	s := &IDService{
-		Host:   h,
-		currid: make(map[inet.Conn]chan struct{}),
+		Host:          h,
+		currid:        make(map[inet.Conn]chan struct{}),
+		observedAddrs: NewObservedAddrSet(ctx),
 	}
 	h.SetStreamHandler(ID, s.requestHandler)
+	h.SetStreamHandler(IDPush, s.pushHandler)
 	h.Network().Notify((*netNotifiee)(s))
 	return s
 }
@@ -71,6 +73,10 @@ func NewIDService(h host.Host) *IDService {
 // OwnObservedAddrs returns the addresses peers have reported we've dialed from
 func (ids *IDService) OwnObservedAddrs() []ma.Multiaddr {
 	return ids.observedAddrs.Addrs()
+}
+
+func (ids *IDService) ObservedAddrsFor(local ma.Multiaddr) []ma.Multiaddr {
+	return ids.observedAddrs.AddrsFor(local)
 }
 
 func (ids *IDService) IdentifyConn(c inet.Conn) {
@@ -85,7 +91,12 @@ func (ids *IDService) IdentifyConn(c inet.Conn) {
 	ids.currid[c] = ch
 	ids.currmu.Unlock()
 
-	defer close(ch)
+	defer func() {
+		close(ch)
+		ids.currmu.Lock()
+		delete(ids.currid, c)
+		ids.currmu.Unlock()
+	}()
 
 	s, err := c.NewStream()
 	if err != nil {
@@ -94,27 +105,17 @@ func (ids *IDService) IdentifyConn(c inet.Conn) {
 		c.Close()
 		return
 	}
-	defer inet.FullClose(s)
 
 	s.SetProtocol(ID)
 
 	// ok give the response to our handler.
 	if err := msmux.SelectProtoOrFail(ID, s); err != nil {
 		log.Event(context.TODO(), "IdentifyOpenFailed", c.RemotePeer(), logging.Metadata{"error": err})
+		s.Reset()
 		return
 	}
 
 	ids.responseHandler(s)
-
-	ids.currmu.Lock()
-	_, found := ids.currid[c]
-	delete(ids.currid, c)
-	ids.currmu.Unlock()
-
-	if !found {
-		log.Errorf("IdentifyConn failed to find channel (programmer error) for %s", c)
-		return
-	}
 }
 
 func (ids *IDService) requestHandler(s inet.Stream) {
@@ -137,12 +138,34 @@ func (ids *IDService) responseHandler(s inet.Stream) {
 	mes := pb.Identify{}
 	if err := r.ReadMsg(&mes); err != nil {
 		log.Warning("error reading identify message: ", err)
+		s.Reset()
 		return
 	}
 	ids.consumeMessage(&mes, c)
-
 	log.Debugf("%s received message from %s %s", ID,
 		c.RemotePeer(), c.RemoteMultiaddr())
+
+	go inet.FullClose(s)
+}
+
+func (ids *IDService) pushHandler(s inet.Stream) {
+	ids.responseHandler(s)
+}
+
+func (ids *IDService) Push() {
+	for _, p := range ids.Host.Network().Peers() {
+		go func(p peer.ID) {
+			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			defer cancel()
+			s, err := ids.Host.NewStream(ctx, p, IDPush)
+			if err != nil {
+				log.Debugf("error opening push stream: %s", err.Error())
+				return
+			}
+
+			ids.requestHandler(s)
+		}(p)
+	}
 }
 
 func (ids *IDService) populateMessage(mes *pb.Identify, c inet.Conn) {
@@ -168,11 +191,23 @@ func (ids *IDService) populateMessage(mes *pb.Identify, c inet.Conn) {
 
 	// set our public key
 	ownKey := ids.Host.Peerstore().PubKey(ids.Host.ID())
+
+	// check if we even have a public key.
 	if ownKey == nil {
-		log.Errorf("did not have own public key in Peerstore")
+		// public key is nil. We are either using insecure transport or something erratic happened.
+		// check if we're even operating in "secure mode"
+		if ids.Host.Peerstore().PrivKey(ids.Host.ID()) != nil {
+			// private key is present. But NO public key. Something bad happened.
+			log.Errorf("did not have own public key in Peerstore")
+		}
+		// if neither of the key is present it is safe to assume that we are using an insecure transport.
 	} else {
-		kb := crypto.CompressPubkey(ownKey)
-		mes.PublicKey = kb
+		// public key is present. Safe to proceed.
+		if kb, err := ownKey.Bytes(); err != nil {
+			log.Errorf("failed to convert key to bytes")
+		} else {
+			mes.PublicKey = kb
+		}
 	}
 
 	// set protocol versions
@@ -204,11 +239,13 @@ func (ids *IDService) consumeMessage(mes *pb.Identify, c inet.Conn) {
 		lmaddrs = append(lmaddrs, maddr)
 	}
 
-	// if the address reported by the connection roughly matches their annoucned
-	// listener addresses, its likely to be an external NAT address
-	if HasConsistentTransport(c.RemoteMultiaddr(), lmaddrs) {
-		lmaddrs = append(lmaddrs, c.RemoteMultiaddr())
-	}
+	// NOTE: Do not add `c.RemoteMultiaddr()` to the peerstore if the remote
+	// peer doesn't tell us to do so. Otherwise, we'll advertise it.
+	//
+	// This can cause an "addr-splosion" issue where the network will slowly
+	// gossip and collect observed but unadvertised addresses. Given a NAT
+	// that picks random source ports, this can cause DHT nodes to collect
+	// many undialable addresses for other peers.
 
 	// Extend the TTLs on the known (probably) good addresses.
 	// Taking the lock ensures that we don't concurrently process a disconnect.
@@ -227,15 +264,6 @@ func (ids *IDService) consumeMessage(mes *pb.Identify, c inet.Conn) {
 	pv := mes.GetProtocolVersion()
 	av := mes.GetAgentVersion()
 
-	// version check. if we shouldn't talk, bail.
-	// TODO: at this point, we've already exchanged information.
-	// move this into a first handshake before the connection can open streams.
-	if !protocolVersionsAreCompatible(pv, LibP2PVersion) {
-		logProtocolMismatchDisconnect(c, pv, av)
-		c.Close()
-		return
-	}
-
 	ids.Host.Peerstore().Put(p, "ProtocolVersion", pv)
 	ids.Host.Peerstore().Put(p, "AgentVersion", av)
 
@@ -252,9 +280,9 @@ func (ids *IDService) consumeReceivedPubKey(c inet.Conn, kb []byte) {
 		return
 	}
 
-	newKey, err := crypto.DecompressPubkey(kb)
+	newKey, err := ic.UnmarshalPublicKey(kb)
 	if err != nil {
-		log.Errorf("%s cannot unmarshal key from remote peer: %s", lp, rp)
+		log.Warningf("%s cannot unmarshal key from remote peer: %s, %s", lp, rp, err)
 		return
 	}
 
@@ -293,8 +321,7 @@ func (ids *IDService) consumeReceivedPubKey(c inet.Conn, kb []byte) {
 	}
 
 	// ok, we have a local key, we should verify they match.
-
-	if crypto.KeyEqual(currKey, newKey) {
+	if currKey.Equals(newKey) {
 		return // ok great. we're done.
 	}
 
@@ -389,14 +416,20 @@ func (ids *IDService) consumeObservedAddress(observed []byte, c inet.Conn) {
 	}
 
 	log.Debugf("identify identifying observed multiaddr: %s %s", c.LocalMultiaddr(), ifaceaddrs)
-	if !addrInAddrs(c.LocalMultiaddr(), ifaceaddrs) {
+	if !addrInAddrs(c.LocalMultiaddr(), ifaceaddrs) && !addrInAddrs(c.LocalMultiaddr(), ids.Host.Network().ListenAddresses()) {
 		// not in our list
+		return
+	}
+
+	if !HasConsistentTransport(maddr, ids.Host.Addrs()) {
+		log.Debugf("ignoring observed multiaddr that doesn't match the transports of any addresses we're announcing", c.RemoteMultiaddr())
 		return
 	}
 
 	// ok! we have the observed version of one of our ListenAddresses!
 	log.Debugf("added own observed listen addr: %s --> %s", c.LocalMultiaddr(), maddr)
-	ids.observedAddrs.Add(maddr, c.RemoteMultiaddr())
+	ids.observedAddrs.Add(maddr, c.LocalMultiaddr(), c.RemoteMultiaddr(),
+		c.Stat().Direction)
 }
 
 func addrInAddrs(a ma.Multiaddr, as []ma.Multiaddr) bool {
@@ -406,31 +439,6 @@ func addrInAddrs(a ma.Multiaddr, as []ma.Multiaddr) bool {
 		}
 	}
 	return false
-}
-
-// protocolVersionsAreCompatible checks that the two implementations
-// can talk to each other. It will use semver, but for now while
-// we're in tight development, we will return false for minor version
-// changes too.
-func protocolVersionsAreCompatible(v1, v2 string) bool {
-	if strings.HasPrefix(v1, "ipfs/") {
-		v1 = v1[5:]
-	}
-	if strings.HasPrefix(v2, "ipfs/") {
-		v2 = v2[5:]
-	}
-
-	v1s, err := semver.NewVersion(v1)
-	if err != nil {
-		return false
-	}
-
-	v2s, err := semver.NewVersion(v2)
-	if err != nil {
-		return false
-	}
-
-	return v1s.Major == v2s.Major && v1s.Minor == v2s.Minor
 }
 
 // netNotifiee defines methods to be used with the IpfsDHT

@@ -5,21 +5,19 @@ import (
 	"context"
 	"errors"
 
-	"github.com/vntchain/go-vnt/crypto"
 	ropts "github.com/libp2p/go-libp2p-routing/options"
 
 	cid "github.com/ipfs/go-cid"
-	// ci "github.com/libp2p/go-libp2p-crypto"
-	"crypto/ecdsa"
+	ci "github.com/libp2p/go-libp2p-crypto"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 )
 
-// ErrNotFound is returned when a search fails to find anything
+// ErrNotFound is returned when the router fails to find the requested record.
 var ErrNotFound = errors.New("routing: not found")
 
-// ErrNotSupported is returned when a search or put fails because the key type
-// isn't supported.
+// ErrNotSupported is returned when the router doesn't support the given record
+// type/operation.
 var ErrNotSupported = errors.New("routing: operation or key not supported")
 
 // ContentRouting is a value provider layer of indirection. It is used to find
@@ -28,10 +26,10 @@ type ContentRouting interface {
 	// Provide adds the given cid to the content routing system. If 'true' is
 	// passed, it also announces it, otherwise it is just kept in the local
 	// accounting of which objects are being provided.
-	Provide(context.Context, *cid.Cid, bool) error
+	Provide(context.Context, cid.Cid, bool) error
 
 	// Search for peers who are able to provide a given key
-	FindProvidersAsync(context.Context, *cid.Cid, int) <-chan pstore.PeerInfo
+	FindProvidersAsync(context.Context, cid.Cid, int) <-chan pstore.PeerInfo
 }
 
 // PeerRouting is a way to find information about certain peers.
@@ -53,26 +51,29 @@ type ValueStore interface {
 	// GetValue searches for the value corresponding to given Key.
 	GetValue(context.Context, string, ...ropts.Option) ([]byte, error)
 
-	// TODO
 	// SearchValue searches for better and better values from this value
-	// store corresponding to the given Key. Implementations may halt the
-	// search after a period of time or may continue searching indefinitely.
+	// store corresponding to the given Key. By default implementations must
+	// stop the search after a good value is found. A 'good' value is a value
+	// that would be returned from GetValue.
 	//
 	// Useful when you want a result *now* but still want to hear about
 	// better/newer results.
-	//SearchValue(context.Context, string, ...ropts.Option) (<-chan []byte, error)
+	//
+	// Implementations of this methods won't return ErrNotFound. When a value
+	// couldn't be found, the channel will get closed without passing any results
+	SearchValue(context.Context, string, ...ropts.Option) (<-chan []byte, error)
 }
 
-// IpfsRouting is the combination of different routing types that ipfs
-// uses. It can be satisfied by a single item (such as a DHT) or multiple
-// different pieces that are more optimized to each task.
+// IpfsRouting is the combination of different routing types that IPFS uses.
+// It can be satisfied by a single item (such as a DHT) or multiple different
+// pieces that are more optimized to each task.
 type IpfsRouting interface {
 	ContentRouting
 	PeerRouting
 	ValueStore
 
 	// Bootstrap allows callers to hint to the routing system to get into a
-	// Boostrapped state
+	// Boostrapped state and remain there. It is not a synchronous call.
 	Bootstrap(context.Context) error
 
 	// TODO expose io.Closer or plain-old Close error
@@ -84,7 +85,7 @@ type IpfsRouting interface {
 // TODO(steb): Consider removing, see #22.
 type PubKeyFetcher interface {
 	// GetPublicKey returns the public key for the given peer.
-	GetPublicKey(context.Context, peer.ID) (*ecdsa.PublicKey, error)
+	GetPublicKey(context.Context, peer.ID) (ci.PubKey, error)
 }
 
 // KeyForPublicKey returns the key used to retrieve public keys
@@ -98,14 +99,14 @@ func KeyForPublicKey(id peer.ID) string {
 //
 // If the ValueStore is also a PubKeyFetcher, this method will call GetPublicKey
 // (which may be better optimized) instead of GetValue.
-func GetPublicKey(r ValueStore, ctx context.Context, p peer.ID) (*ecdsa.PublicKey, error) {
-	k, err := p.ExtractPublicKey()
-	if err != nil {
-		// An error means that the peer ID is invalid.
-		return nil, err
-	}
-	if k != nil {
+func GetPublicKey(r ValueStore, ctx context.Context, p peer.ID) (ci.PubKey, error) {
+	switch k, err := p.ExtractPublicKey(); err {
+	case peer.ErrNoPublicKey:
+		// check the datastore
+	case nil:
 		return k, nil
+	default:
+		return nil, err
 	}
 
 	if dht, ok := r.(PubKeyFetcher); ok {
@@ -119,7 +120,5 @@ func GetPublicKey(r ValueStore, ctx context.Context, p peer.ID) (*ecdsa.PublicKe
 	}
 
 	// get PublicKey from node.Data
-	// return ci.UnmarshalPublicKey(pkval)
-	return crypto.DecompressPubkey(pkval)
-
+	return ci.UnmarshalPublicKey(pkval)
 }

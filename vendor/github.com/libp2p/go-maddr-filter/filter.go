@@ -30,15 +30,12 @@ func (f *Filters) AddrBlocked(a ma.Multiaddr) bool {
 	if len(maddr) == 0 {
 		return false
 	}
-
 	netaddr, err := manet.ToNetAddr(maddr[0])
 	if err != nil {
-		// if we cant parse it, its probably not blocked
+		// if we can't parse it, it's probably not blocked
 		return false
 	}
-
 	netip := net.ParseIP(netaddr.String())
-
 	if netip == nil {
 		return false
 	}

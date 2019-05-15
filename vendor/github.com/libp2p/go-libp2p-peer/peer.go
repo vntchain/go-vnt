@@ -1,60 +1,47 @@
-// package peer implements an object used to represent peers in the ipfs network.
+// Package peer implements an object used to represent peers in the ipfs network.
 package peer
 
 import (
 	"encoding/hex"
-	"encoding/json"
+	"errors"
 	"fmt"
-	"strings"
 
-	"crypto/ecdsa"
-
-	"github.com/vntchain/go-vnt/crypto"
-
-	logging "github.com/ipfs/go-log" // ID represents the identity of a peer.
-	// ic "github.com/libp2p/go-libp2p-crypto"
+	ic "github.com/libp2p/go-libp2p-crypto"
 	b58 "github.com/mr-tron/base58/base58"
 	mh "github.com/multiformats/go-multihash"
 )
 
-// MaxInlineKeyLength is the maximum length a key can be for it to be inlined in
-// the peer ID.
-//
-// * When `len(pubKey.Bytes()) <= MaxInlineKeyLength`, the peer ID is the
-//   identity multihash hash of the public key.
-// * When `len(pubKey.Bytes()) > MaxInlineKeyLength`, the peer ID is the
-//   sha2-256 multihash of the public key.
-const MaxInlineKeyLength = 42
+var (
+	// ErrEmptyPeerID is an error for empty peer ID.
+	ErrEmptyPeerID = errors.New("empty peer ID")
+	// ErrNoPublicKey is an error for peer IDs that don't embed public keys
+	ErrNoPublicKey = errors.New("public key is not embedded in peer ID")
+)
 
-var log = logging.Logger("peer")
+// AdvancedEnableInlining enables automatically inlining keys shorter than
+// 42 bytes into the peer ID (using the "identity" multihash function).
+//
+// WARNING: This flag will likely be set to false in the future and eventually
+// be removed in favor of using a hash function specified by the key itself.
+// See: https://github.com/libp2p/specs/issues/138
+//
+// DO NOT change this flag unless you know what you're doing.
+//
+// This currently defaults to true for backwards compatibility but will likely
+// be set to false by default when an upgrade path is determined.
+var AdvancedEnableInlining = true
+
+const maxInlineKeyLength = 42
 
 // ID is a libp2p peer identity.
 type ID string
-
-// MarshalJSON implement marshal for ID
-func (id *ID) MarshalJSON() ([]byte, error) {
-	return json.Marshal(id.Pretty())
-}
-
-// UnmarshalJSON implement unmarshal for ID
-func (id *ID) UnmarshalJSON(b []byte) error {
-	var data string
-	err := json.Unmarshal(b, &data)
-	if err != nil {
-		return err
-	}
-	*id, err = IDB58Decode(data)
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 // Pretty returns a b58-encoded string of the ID
 func (id ID) Pretty() string {
 	return IDB58Encode(id)
 }
 
+// Loggable returns a pretty peerID string in loggable JSON format
 func (id ID) Loggable() map[string]interface{} {
 	return map[string]interface{}{
 		"peerID": id.Pretty(),
@@ -69,43 +56,19 @@ func (id ID) Loggable() map[string]interface{} {
 // codebase is known to be correct.
 func (id ID) String() string {
 	pid := id.Pretty()
-
-	//All sha256 nodes start with Qm
-	//We can skip the Qm to make the peer.ID more useful
-	if strings.HasPrefix(pid, "Qm") {
-		pid = pid[2:]
+	if len(pid) <= 10 {
+		return fmt.Sprintf("<peer.ID %s>", pid)
 	}
-
-	maxRunes := 64
-	if len(pid) < maxRunes {
-		maxRunes = len(pid)
-	}
-	return fmt.Sprintf("<peer.ID %s>", pid[:maxRunes])
-}
-
-func (id ID) ToString() string {
-	pid := id.Pretty()
-
-	//All sha256 nodes start with Qm
-	//We can skip the Qm to make the peer.ID more useful
-	if strings.HasPrefix(pid, "Qm") {
-		pid = pid[2:]
-	}
-
-	maxRunes := 64
-	if len(pid) < maxRunes {
-		maxRunes = len(pid)
-	}
-	return fmt.Sprintf("%s", pid[:maxRunes])
+	return fmt.Sprintf("<peer.ID %s*%s>", pid[:2], pid[len(pid)-6:])
 }
 
 // MatchesPrivateKey tests whether this ID was derived from sk
-func (id ID) MatchesPrivateKey(pk *ecdsa.PrivateKey) bool {
-	return id.MatchesPublicKey(&pk.PublicKey)
+func (id ID) MatchesPrivateKey(sk ic.PrivKey) bool {
+	return id.MatchesPublicKey(sk.GetPublic())
 }
 
 // MatchesPublicKey tests whether this ID was derived from pk
-func (id ID) MatchesPublicKey(pk *ecdsa.PublicKey) bool {
+func (id ID) MatchesPublicKey(pk ic.PubKey) bool {
 	oid, err := IDFromPublicKey(pk)
 	if err != nil {
 		return false
@@ -115,20 +78,30 @@ func (id ID) MatchesPublicKey(pk *ecdsa.PublicKey) bool {
 
 // ExtractPublicKey attempts to extract the public key from an ID
 //
-// This method returns nil, nil if the peer ID looks valid but it can't extract
+// This method returns ErrNoPublicKey if the peer ID looks valid but it can't extract
 // the public key.
-// 从ID中解压出公钥
-func (id ID) ExtractPublicKey() (*ecdsa.PublicKey, error) {
-
+func (id ID) ExtractPublicKey() (ic.PubKey, error) {
 	decoded, err := mh.Decode([]byte(id))
 	if err != nil {
 		return nil, err
 	}
 	if decoded.Code != mh.ID {
-		return nil, nil
+		return nil, ErrNoPublicKey
+	}
+	pk, err := ic.UnmarshalPublicKey(decoded.Digest)
+	if err != nil {
+		return nil, err
+	}
+	return pk, nil
+}
+
+// Validate check if ID is empty or not
+func (id ID) Validate() error {
+	if id == ID("") {
+		return ErrEmptyPeerID
 	}
 
-	return crypto.DecompressPubkey(decoded.Digest)
+	return nil
 }
 
 // IDFromString cast a string to ID type, and validate
@@ -178,12 +151,13 @@ func IDHexEncode(id ID) string {
 }
 
 // IDFromPublicKey returns the Peer ID corresponding to pk
-// 从公钥中得到对应的ID
-func IDFromPublicKey(pk *ecdsa.PublicKey) (ID, error) {
-	b := crypto.CompressPubkey(pk)
-
+func IDFromPublicKey(pk ic.PubKey) (ID, error) {
+	b, err := pk.Bytes()
+	if err != nil {
+		return "", err
+	}
 	var alg uint64 = mh.SHA2_256
-	if len(b) <= MaxInlineKeyLength {
+	if AdvancedEnableInlining && len(b) <= maxInlineKeyLength {
 		alg = mh.ID
 	}
 	hash, _ := mh.Sum(b, alg, -1)
@@ -191,8 +165,8 @@ func IDFromPublicKey(pk *ecdsa.PublicKey) (ID, error) {
 }
 
 // IDFromPrivateKey returns the Peer ID corresponding to sk
-func IDFromPrivateKey(sk *ecdsa.PrivateKey) (ID, error) {
-	return IDFromPublicKey(&sk.PublicKey)
+func IDFromPrivateKey(sk ic.PrivKey) (ID, error) {
+	return IDFromPublicKey(sk.GetPublic())
 }
 
 // IDSlice for sorting peers

@@ -1,20 +1,15 @@
-// package query implement a query manager to drive concurrent workers
-// to query the DHT. A query is setup with a target key, a queryFunc tasked
-// to communicate with a peer, and a set of initial peers. As the query
-// progress, queryFunc can return closer peers that will be used to navigate
-// closer to the target key in the DHT until an answer is reached.
 package dht
 
 import (
 	"context"
-	// "fmt"
+	"errors"
 	"sync"
 
-	u "github.com/ipfs/go-ipfs-util"
 	logging "github.com/ipfs/go-log"
 	todoctr "github.com/ipfs/go-todocounter"
 	process "github.com/jbenet/goprocess"
 	ctxproc "github.com/jbenet/goprocess/context"
+	kb "github.com/libp2p/go-libp2p-kbucket"
 	inet "github.com/libp2p/go-libp2p-net"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pset "github.com/libp2p/go-libp2p-peer/peerset"
@@ -23,6 +18,9 @@ import (
 	routing "github.com/libp2p/go-libp2p-routing"
 	notif "github.com/libp2p/go-libp2p-routing/notifications"
 )
+
+// ErrNoPeersQueried is returned when we failed to connect to any peers.
+var ErrNoPeersQueried = errors.New("failed to query any peers")
 
 var maxQueryConcurrency = AlphaValue
 
@@ -34,11 +32,9 @@ type dhtQuery struct {
 }
 
 type dhtQueryResult struct {
-	value         []byte             // GetValue
-	peer          *pstore.PeerInfo   // FindPeer
-	providerPeers []pstore.PeerInfo  // GetProviders
-	closerPeers   []*pstore.PeerInfo // *
-	success       bool
+	peer        *pstore.PeerInfo   // FindPeer
+	closerPeers []*pstore.PeerInfo // *
+	success     bool
 
 	finalSet   *pset.PeerSet
 	queriedSet *pset.PeerSet
@@ -63,6 +59,11 @@ type queryFunc func(context.Context, peer.ID) (*dhtQueryResult, error)
 
 // Run runs the query at hand. pass in a list of peers to use first.
 func (q *dhtQuery) Run(ctx context.Context, peers []peer.ID) (*dhtQueryResult, error) {
+	if len(peers) == 0 {
+		logger.Warning("Running query with no peers!")
+		return nil, kb.ErrLookupFailure
+	}
+
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -71,6 +72,7 @@ func (q *dhtQuery) Run(ctx context.Context, peers []peer.ID) (*dhtQueryResult, e
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
 	runner := newQueryRunner(q)
 	return runner.Run(ctx, peers)
 }
@@ -79,11 +81,11 @@ type dhtQueryRunner struct {
 	query          *dhtQuery        // query to run
 	peersSeen      *pset.PeerSet    // all peers queried. prevent querying same peer 2x
 	peersQueried   *pset.PeerSet    // peers successfully connected to and queried
+	peersDialed    *dialQueue       // peers we have dialed to
 	peersToQuery   *queue.ChanQueue // peers remaining to be queried
 	peersRemaining todoctr.Counter  // peersToQuery + currently processing
 
 	result *dhtQueryResult // query result
-	errs   u.MultiErr      // result errors. maybe should be a map[peer.ID]error
 
 	rateLimit chan struct{} // processing semaphore
 	log       logging.EventLogger
@@ -97,25 +99,33 @@ type dhtQueryRunner struct {
 func newQueryRunner(q *dhtQuery) *dhtQueryRunner {
 	proc := process.WithParent(process.Background())
 	ctx := ctxproc.OnClosingContext(proc)
-	return &dhtQueryRunner{
+	peersToQuery := queue.NewChanQueue(ctx, queue.NewXORDistancePQ(string(q.key)))
+	r := &dhtQueryRunner{
 		query:          q,
-		peersToQuery:   queue.NewChanQueue(ctx, queue.NewXORDistancePQ(string(q.key))),
 		peersRemaining: todoctr.NewSyncCounter(),
 		peersSeen:      pset.New(),
 		peersQueried:   pset.New(),
 		rateLimit:      make(chan struct{}, q.concurrency),
+		peersToQuery:   peersToQuery,
 		proc:           proc,
 	}
+	dq, err := newDialQueue(&dqParams{
+		ctx:    ctx,
+		target: q.key,
+		in:     peersToQuery,
+		dialFn: r.dialPeer,
+		config: dqDefaultConfig(),
+	})
+	if err != nil {
+		panic(err)
+	}
+	r.peersDialed = dq
+	return r
 }
 
 func (r *dhtQueryRunner) Run(ctx context.Context, peers []peer.ID) (*dhtQueryResult, error) {
-	r.log = log
+	r.log = logger
 	r.runCtx = ctx
-
-	if len(peers) == 0 {
-		log.Warning("Running query with no peers!")
-		return nil, nil
-	}
 
 	// setup concurrency rate limiting
 	for i := 0; i < r.query.concurrency; i++ {
@@ -126,15 +136,19 @@ func (r *dhtQueryRunner) Run(ctx context.Context, peers []peer.ID) (*dhtQueryRes
 	for _, p := range peers {
 		r.addPeerToQuery(p)
 	}
+
+	// start the dial queue only after we've added the initial set of peers.
+	// this is to avoid race conditions that could cause the peersRemaining todoctr
+	// to be done too early if the initial dial fails before others make it into the queue.
+	r.peersDialed.Start()
+
 	// go do this thing.
 	// do it as a child proc to make sure Run exits
 	// ONLY AFTER spawn workers has exited.
 	r.proc.Go(r.spawnWorkers)
 
-	// so workers are working.
-
 	// wait until they're done.
-	err := routing.ErrNotFound
+	var err error
 
 	// now, if the context finishes, close the proc.
 	// we have to do it here because the logic before is setup, which
@@ -144,22 +158,18 @@ func (r *dhtQueryRunner) Run(ctx context.Context, peers []peer.ID) (*dhtQueryRes
 	select {
 	case <-r.peersRemaining.Done():
 		r.proc.Close()
-		r.RLock()
-		defer r.RUnlock()
-
-		err = routing.ErrNotFound
-
-		// if every query to every peer failed, something must be very wrong.
-		if len(r.errs) > 0 && len(r.errs) == r.peersSeen.Size() {
-			log.Debugf("query errs: %s", r.errs)
-			err = r.errs[0]
+		if r.peersQueried.Size() == 0 {
+			err = ErrNoPeersQueried
+		} else {
+			err = routing.ErrNotFound
 		}
 
 	case <-r.proc.Closed():
-		r.RLock()
-		defer r.RUnlock()
-		err = context.DeadlineExceeded
+		err = r.runCtx.Err()
 	}
+
+	r.RLock()
+	defer r.RUnlock()
 
 	if r.result != nil && r.result.success {
 		return r.result, nil
@@ -196,7 +206,6 @@ func (r *dhtQueryRunner) addPeerToQuery(next peer.ID) {
 
 func (r *dhtQueryRunner) spawnWorkers(proc process.Process) {
 	for {
-
 		select {
 		case <-r.peersRemaining.Done():
 			return
@@ -205,12 +214,13 @@ func (r *dhtQueryRunner) spawnWorkers(proc process.Process) {
 			return
 
 		case <-r.rateLimit:
+			ch := r.peersDialed.Consume()
 			select {
-			case p, more := <-r.peersToQuery.DeqChan:
-				if !more {
-					return // channel closed.
+			case p, ok := <-ch:
+				if !ok {
+					// this signals context cancellation.
+					return
 				}
-
 				// do it as a child func to make sure Run exits
 				// ONLY AFTER spawn workers has exited.
 				proc.Go(func(proc process.Process) {
@@ -223,6 +233,35 @@ func (r *dhtQueryRunner) spawnWorkers(proc process.Process) {
 			}
 		}
 	}
+}
+
+func (r *dhtQueryRunner) dialPeer(ctx context.Context, p peer.ID) error {
+	// short-circuit if we're already connected.
+	if r.query.dht.host.Network().Connectedness(p) == inet.Connected {
+		return nil
+	}
+
+	logger.Debug("not connected. dialing.")
+	notif.PublishQueryEvent(r.runCtx, &notif.QueryEvent{
+		Type: notif.DialingPeer,
+		ID:   p,
+	})
+
+	pi := pstore.PeerInfo{ID: p}
+	if err := r.query.dht.host.Connect(ctx, pi); err != nil {
+		logger.Debugf("error connecting: %s", err)
+		notif.PublishQueryEvent(r.runCtx, &notif.QueryEvent{
+			Type:  notif.QueryError,
+			Extra: err.Error(),
+			ID:    p,
+		})
+
+		// This peer is dropping out of the race.
+		r.peersRemaining.Decrement(1)
+		return err
+	}
+	logger.Debugf("connected. dial success.")
+	return nil
 }
 
 func (r *dhtQueryRunner) queryPeer(proc process.Process, p peer.ID) {
@@ -238,75 +277,38 @@ func (r *dhtQueryRunner) queryPeer(proc process.Process, p peer.ID) {
 		r.rateLimit <- struct{}{}
 	}()
 
-	// make sure we're connected to the peer.
-	// FIXME abstract away into the network layer
-	// Note: Failure to connect in this block will cause the function to
-	// short circuit.
-	if r.query.dht.host.Network().Connectedness(p) == inet.NotConnected {
-		log.Debug("not connected. dialing.")
-
-		notif.PublishQueryEvent(r.runCtx, &notif.QueryEvent{
-			Type: notif.DialingPeer,
-			ID:   p,
-		})
-		// while we dial, we do not take up a rate limit. this is to allow
-		// forward progress during potentially very high latency dials.
-		r.rateLimit <- struct{}{}
-
-		pi := pstore.PeerInfo{ID: p}
-
-		if err := r.query.dht.host.Connect(ctx, pi); err != nil {
-			log.Debugf("Error connecting: %s", err)
-
-			notif.PublishQueryEvent(r.runCtx, &notif.QueryEvent{
-				Type:  notif.QueryError,
-				Extra: err.Error(),
-				ID:    p,
-			})
-
-			r.Lock()
-			r.errs = append(r.errs, err)
-			r.Unlock()
-			<-r.rateLimit // need to grab it again, as we deferred.
-			return
-		}
-		<-r.rateLimit // need to grab it again, as we deferred.
-		log.Debugf("connected. dial success.")
-	}
-
 	// finally, run the query against this peer
 	res, err := r.query.qfunc(ctx, p)
 
 	r.peersQueried.Add(p)
 
 	if err != nil {
-		log.Debugf("ERROR worker for: %v %v", p, err)
-		r.Lock()
-		r.errs = append(r.errs, err)
-		r.Unlock()
-
+		logger.Debugf("ERROR worker for: %v %v", p, err)
 	} else if res.success {
-		log.Debugf("SUCCESS worker for: %v %s", p, res)
+		logger.Debugf("SUCCESS worker for: %v %s", p, res)
 		r.Lock()
 		r.result = res
 		r.Unlock()
+		if res.peer != nil {
+			r.query.dht.peerstore.AddAddrs(res.peer.ID, res.peer.Addrs, pstore.TempAddrTTL)
+		}
 		go r.proc.Close() // signal to everyone that we're done.
 		// must be async, as we're one of the children, and Close blocks.
 
 	} else if len(res.closerPeers) > 0 {
-		log.Debugf("PEERS CLOSER -- worker for: %v (%d closer peers)", p, len(res.closerPeers))
+		logger.Debugf("PEERS CLOSER -- worker for: %v (%d closer peers)", p, len(res.closerPeers))
 		for _, next := range res.closerPeers {
 			if next.ID == r.query.dht.self { // don't add self.
-				log.Debugf("PEERS CLOSER -- worker for: %v found self", p)
+				logger.Debugf("PEERS CLOSER -- worker for: %v found self", p)
 				continue
 			}
 
 			// add their addresses to the dialer's peerstore
 			r.query.dht.peerstore.AddAddrs(next.ID, next.Addrs, pstore.TempAddrTTL)
 			r.addPeerToQuery(next.ID)
-			log.Debugf("PEERS CLOSER -- worker for: %v added %v (%v)", p, next.ID, next.Addrs)
+			logger.Debugf("PEERS CLOSER -- worker for: %v added %v (%v)", p, next.ID, next.Addrs)
 		}
 	} else {
-		log.Debugf("QUERY worker for: %v - not found, and no closer peers.", p)
+		logger.Debugf("QUERY worker for: %v - not found, and no closer peers.", p)
 	}
 }

@@ -2,11 +2,11 @@ package net
 
 import (
 	"context"
+	"errors"
 	"io"
 
-	"crypto/ecdsa"
 	"github.com/jbenet/goprocess"
-	// ic "github.com/libp2p/go-libp2p-crypto"
+	ic "github.com/libp2p/go-libp2p-crypto"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	protocol "github.com/libp2p/go-libp2p-protocol"
@@ -30,8 +30,29 @@ type Stream interface {
 	Protocol() protocol.ID
 	SetProtocol(protocol.ID)
 
+	// Stat returns metadata pertaining to this stream.
+	Stat() Stat
+
 	// Conn returns the connection this stream is part of.
 	Conn() Conn
+}
+
+// Direction represents which peer in a stream initiated a connection.
+type Direction int
+
+const (
+	// DirUnknown is the default direction.
+	DirUnknown Direction = iota
+	// DirInbound is for when the remote peer initiated a connection.
+	DirInbound
+	// DirOutbound is for when the local peer initiated a connection.
+	DirOutbound
+)
+
+// Stat stores metadata pertaining to a given Stream/Conn.
+type Stat struct {
+	Direction Direction
+	Extra     map[interface{}]interface{}
 }
 
 // StreamHandler is the type of function used to listen for
@@ -45,13 +66,13 @@ type ConnSecurity interface {
 	LocalPeer() peer.ID
 
 	// LocalPrivateKey returns our private key
-	LocalPrivateKey() *ecdsa.PrivateKey
+	LocalPrivateKey() ic.PrivKey
 
 	// RemotePeer returns the peer ID of the remote peer.
 	RemotePeer() peer.ID
 
 	// RemotePublicKey returns the public key of the remote peer.
-	RemotePublicKey() *ecdsa.PublicKey
+	RemotePublicKey() ic.PubKey
 }
 
 // ConnMultiaddrs is an interface mixin for connection types that provide multiaddr
@@ -81,6 +102,9 @@ type Conn interface {
 
 	// GetStreams returns all open streams over this conn.
 	GetStreams() []Stream
+
+	// Stat stores metadata pertaining to this conn.
+	Stat() Stat
 }
 
 // ConnHandler is the type of function used to listen for
@@ -121,6 +145,13 @@ type Network interface {
 	// Process returns the network's Process
 	Process() goprocess.Process
 }
+
+// There are no addresses associated with a peer when they were needed.
+var ErrNoRemoteAddrs = errors.New("no remote addresses")
+
+// ErrNoConn is returned when attempting to open a stream to a peer with the NoDial
+// option and no usable connection is available.
+var ErrNoConn = errors.New("no usable connection to peer")
 
 // Dialer represents a service that can dial out to peers
 // (this is usually just a Network, but other services may not need the whole
@@ -181,7 +212,7 @@ const (
 // notifications from a Network.
 type Notifiee interface {
 	Listen(Network, ma.Multiaddr)      // called when network starts listening on an addr
-	ListenClose(Network, ma.Multiaddr) // called when network starts listening on an addr
+	ListenClose(Network, ma.Multiaddr) // called when network stops listening on an addr
 	Connected(Network, Conn)           // called when a connection opened
 	Disconnected(Network, Conn)        // called when a connection closed
 	OpenedStream(Network, Stream)      // called when a stream opened

@@ -2,6 +2,7 @@
 package kbucket
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"sync"
@@ -13,6 +14,9 @@ import (
 )
 
 var log = logging.Logger("table")
+
+var ErrPeerRejectedHighLatency = errors.New("peer rejected; latency too high")
+var ErrPeerRejectedNoCapacity = errors.New("peer rejected; insufficient capacity")
 
 // RoutingTable defines the routing table.
 type RoutingTable struct {
@@ -54,10 +58,9 @@ func NewRoutingTable(bucketsize int, localID ID, latency time.Duration, m pstore
 }
 
 // Update adds or moves the given peer to the front of its respective bucket
-// If a peer gets removed from a bucket, it is returned
-func (rt *RoutingTable) Update(p peer.ID) {
+func (rt *RoutingTable) Update(p peer.ID) (evicted peer.ID, err error) {
 	peerID := ConvertPeerID(p)
-	cpl := commonPrefixLen(peerID, rt.local)
+	cpl := CommonPrefixLen(peerID, rt.local)
 
 	rt.tabLock.Lock()
 	defer rt.tabLock.Unlock()
@@ -72,37 +75,40 @@ func (rt *RoutingTable) Update(p peer.ID) {
 		// This signifies that it it "more active" and the less active nodes
 		// Will as a result tend towards the back of the list
 		bucket.MoveToFront(p)
-		return
+		return "", nil
 	}
 
 	if rt.metrics.LatencyEWMA(p) > rt.maxLatency {
 		// Connection doesnt meet requirements, skip!
-		return
+		return "", ErrPeerRejectedHighLatency
 	}
 
-	// New peer, add to bucket
-	bucket.PushFront(p)
-	rt.PeerAdded(p)
+	// We have enough space in the bucket (whether spawned or grouped).
+	if bucket.Len() < rt.bucketsize {
+		bucket.PushFront(p)
+		rt.PeerAdded(p)
+		return "", nil
+	}
 
-	// Are we past the max bucket size?
-	if bucket.Len() > rt.bucketsize {
-		// If this bucket is the rightmost bucket, and its full
-		// we need to split it and create a new bucket
-		if bucketID == len(rt.Buckets)-1 {
-			rt.PeerRemoved(rt.nextBucket())
-			return
-		} else {
-			// If the bucket cant split kick out least active node
-			rt.PeerRemoved(bucket.PopBack())
-			return
+	if bucketID == len(rt.Buckets)-1 {
+		// if the bucket is too large and this is the last bucket (i.e. wildcard), unfold it.
+		rt.nextBucket()
+		// the structure of the table has changed, so let's recheck if the peer now has a dedicated bucket.
+		bucketID = cpl
+		if bucketID >= len(rt.Buckets) {
+			bucketID = len(rt.Buckets) - 1
 		}
+		bucket = rt.Buckets[bucketID]
+		if bucket.Len() >= rt.bucketsize {
+			// if after all the unfolding, we're unable to find room for this peer, scrap it.
+			return "", ErrPeerRejectedNoCapacity
+		}
+		bucket.PushFront(p)
+		rt.PeerAdded(p)
+		return "", nil
 	}
-	//fmt.Printf("update后当前 DHT: \n")
-	//bus := rt.Buckets
-	//for i := range bus {
-	//	fmt.Printf("%v\n", bus[i].Peers())
-	//}
 
+	return "", ErrPeerRejectedNoCapacity
 }
 
 // Remove deletes a peer from the routing table. This is to be used
@@ -111,7 +117,7 @@ func (rt *RoutingTable) Remove(p peer.ID) {
 	rt.tabLock.Lock()
 	defer rt.tabLock.Unlock()
 	peerID := ConvertPeerID(p)
-	cpl := commonPrefixLen(peerID, rt.local)
+	cpl := CommonPrefixLen(peerID, rt.local)
 
 	bucketID := cpl
 	if bucketID >= len(rt.Buckets) {
@@ -119,29 +125,24 @@ func (rt *RoutingTable) Remove(p peer.ID) {
 	}
 
 	bucket := rt.Buckets[bucketID]
-	bucket.Remove(p)
-	rt.PeerRemoved(p)
-
-	fmt.Printf("remove后当前 DHT: \n")
-	bus := rt.Buckets
-	for i := range bus {
-		fmt.Printf("%v\n", bus[i].Peers())
+	if bucket.Remove(p) {
+		rt.PeerRemoved(p)
 	}
 }
 
-func (rt *RoutingTable) nextBucket() peer.ID {
+func (rt *RoutingTable) nextBucket() {
+	// This is the last bucket, which allegedly is a mixed bag containing peers not belonging in dedicated (unfolded) buckets.
+	// _allegedly_ is used here to denote that *all* peers in the last bucket might feasibly belong to another bucket.
+	// This could happen if e.g. we've unfolded 4 buckets, and all peers in folded bucket 5 really belong in bucket 8.
 	bucket := rt.Buckets[len(rt.Buckets)-1]
 	newBucket := bucket.Split(len(rt.Buckets)-1, rt.local)
 	rt.Buckets = append(rt.Buckets, newBucket)
-	if newBucket.Len() > rt.bucketsize {
-		return rt.nextBucket()
-	}
 
-	// If all elements were on left side of split...
-	if bucket.Len() > rt.bucketsize {
-		return bucket.PopBack()
+	// The newly formed bucket still contains too many peers. We probably just unfolded a empty bucket.
+	if newBucket.Len() >= rt.bucketsize {
+		// Keep unfolding the table until the last bucket is not overflowing.
+		rt.nextBucket()
 	}
-	return ""
 }
 
 // Find a specific peer by ID or return nil
@@ -166,7 +167,7 @@ func (rt *RoutingTable) NearestPeer(id ID) peer.ID {
 
 // NearestPeers returns a list of the 'count' closest peers to the given ID
 func (rt *RoutingTable) NearestPeers(id ID, count int) []peer.ID {
-	cpl := commonPrefixLen(id, rt.local)
+	cpl := CommonPrefixLen(id, rt.local)
 
 	rt.tabLock.RLock()
 
@@ -247,17 +248,4 @@ func (rt *RoutingTable) Print() {
 		b.lk.RUnlock()
 	}
 	rt.tabLock.RUnlock()
-}
-
-// GetKBuckets return k-bucket data as array -- by hx
-func (rt *RoutingTable) GetKBuckets() []peer.ID {
-	var m []peer.ID
-
-	for i := range rt.Buckets {
-		for e := rt.Buckets[i].list.Front(); e != nil; e = e.Next() {
-			m = append(m, e.Value.(peer.ID))
-		}
-	}
-
-	return m
 }

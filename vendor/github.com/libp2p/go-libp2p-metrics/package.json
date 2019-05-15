@@ -9,9 +9,9 @@
   "gxDependencies": [
     {
       "author": "whyrusleeping",
-      "hash": "QmVf8hTAsLLFtn4WPCRNdnaF2Eag2qTBS6uR8AiHPZARXy",
+      "hash": "QmYVXrKrKHDC9FobgmcmshCDyWwdrfwfanNQN4oxJ9Fk3h",
       "name": "go-libp2p-peer",
-      "version": "2.3.4"
+      "version": "3.1.2"
     },
     {
       "author": "whyrusleeping",
@@ -31,6 +31,6 @@
   "license": "",
   "name": "go-libp2p-metrics",
   "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
-  "version": "2.1.2"
+  "version": "2.1.14"
 }
 

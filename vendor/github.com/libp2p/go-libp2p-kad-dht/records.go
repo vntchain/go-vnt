@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"crypto/ecdsa"
-	"github.com/vntchain/go-vnt/crypto"
-	// ci "github.com/libp2p/go-libp2p-crypto"
+	ci "github.com/libp2p/go-libp2p-crypto"
 	peer "github.com/libp2p/go-libp2p-peer"
 	routing "github.com/libp2p/go-libp2p-routing"
 )
@@ -21,12 +19,12 @@ import (
 const MaxRecordAge = time.Hour * 36
 
 type pubkrs struct {
-	pubk *ecdsa.PublicKey
+	pubk ci.PubKey
 	err  error
 }
 
-func (dht *IpfsDHT) GetPublicKey(ctx context.Context, p peer.ID) (*ecdsa.PublicKey, error) {
-	log.Debugf("getPublicKey for: %s", p)
+func (dht *IpfsDHT) GetPublicKey(ctx context.Context, p peer.ID) (ci.PubKey, error) {
+	logger.Debugf("getPublicKey for: %s", p)
 
 	// Check locally. Will also try to extract the public key from the peer
 	// ID itself if possible (if inlined).
@@ -65,7 +63,7 @@ func (dht *IpfsDHT) GetPublicKey(ctx context.Context, p peer.ID) (*ecdsa.PublicK
 			// Found the public key
 			err := dht.peerstore.AddPubKey(p, r.pubk)
 			if err != nil {
-				log.Warningf("Failed to add public key to peerstore for %v", p)
+				logger.Warningf("Failed to add public key to peerstore for %v", p)
 			}
 			return r.pubk, nil
 		}
@@ -76,7 +74,7 @@ func (dht *IpfsDHT) GetPublicKey(ctx context.Context, p peer.ID) (*ecdsa.PublicK
 	return nil, err
 }
 
-func (dht *IpfsDHT) getPublicKeyFromDHT(ctx context.Context, p peer.ID) (*ecdsa.PublicKey, error) {
+func (dht *IpfsDHT) getPublicKeyFromDHT(ctx context.Context, p peer.ID) (ci.PubKey, error) {
 	// Only retrieve one value, because the public key is immutable
 	// so there's no need to retrieve multiple versions
 	pkkey := routing.KeyForPublicKey(p)
@@ -85,24 +83,19 @@ func (dht *IpfsDHT) getPublicKeyFromDHT(ctx context.Context, p peer.ID) (*ecdsa.
 		return nil, err
 	}
 
-	// pubk, err := ci.UnmarshalPublicKey(val)
-	// if err != nil {
-	// 	log.Errorf("Could not unmarshall public key retrieved from DHT for %v", p)
-	// 	return nil, err
-	// }
-	pubk, err := crypto.DecompressPubkey(val)
+	pubk, err := ci.UnmarshalPublicKey(val)
 	if err != nil {
-		log.Errorf("Could not unmarshall public key retrieved from DHT for %v", p)
+		logger.Errorf("Could not unmarshall public key retrieved from DHT for %v", p)
 		return nil, err
 	}
 
 	// Note: No need to check that public key hash matches peer ID
 	// because this is done by GetValues()
-	log.Debugf("Got public key for %s from DHT", p)
+	logger.Debugf("Got public key for %s from DHT", p)
 	return pubk, nil
 }
 
-func (dht *IpfsDHT) getPublicKeyFromNode(ctx context.Context, p peer.ID) (*ecdsa.PublicKey, error) {
+func (dht *IpfsDHT) getPublicKeyFromNode(ctx context.Context, p peer.ID) (ci.PubKey, error) {
 	// check locally, just in case...
 	pk := dht.peerstore.PubKey(p)
 	if pk != nil {
@@ -122,22 +115,22 @@ func (dht *IpfsDHT) getPublicKeyFromNode(ctx context.Context, p peer.ID) (*ecdsa
 		return nil, fmt.Errorf("node %v not responding with its public key", p)
 	}
 
-	pubk, err := crypto.DecompressPubkey(record.GetValue())
+	pubk, err := ci.UnmarshalPublicKey(record.GetValue())
 	if err != nil {
-		log.Errorf("Could not unmarshall public key for %v", p)
+		logger.Errorf("Could not unmarshall public key for %v", p)
 		return nil, err
 	}
 
 	// Make sure the public key matches the peer ID
 	id, err := peer.IDFromPublicKey(pubk)
 	if err != nil {
-		log.Errorf("Could not extract peer id from public key for %v", p)
+		logger.Errorf("Could not extract peer id from public key for %v", p)
 		return nil, err
 	}
 	if id != p {
 		return nil, fmt.Errorf("public key %v does not match peer %v", id, p)
 	}
 
-	log.Debugf("Got public key from node %v itself", p)
+	logger.Debugf("Got public key from node %v itself", p)
 	return pubk, nil
 }

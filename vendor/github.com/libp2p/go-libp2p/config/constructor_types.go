@@ -1,11 +1,11 @@
 package config
 
 import (
-	"crypto/ecdsa"
 	"fmt"
-	security "github.com/libp2p/go-conn-security"
 	"reflect"
-	// crypto "github.com/libp2p/go-libp2p-crypto"
+
+	security "github.com/libp2p/go-conn-security"
+	crypto "github.com/libp2p/go-libp2p-crypto"
 	host "github.com/libp2p/go-libp2p-host"
 	pnet "github.com/libp2p/go-libp2p-interface-pnet"
 	inet "github.com/libp2p/go-libp2p-net"
@@ -25,8 +25,8 @@ var (
 	muxType       = reflect.TypeOf((*mux.Transport)(nil)).Elem()
 	securityType  = reflect.TypeOf((*security.Transport)(nil)).Elem()
 	protectorType = reflect.TypeOf((*pnet.Protector)(nil)).Elem()
-	privKeyType   = reflect.TypeOf((**ecdsa.PrivateKey)(nil)).Elem()
-	pubKeyType    = reflect.TypeOf((**ecdsa.PublicKey)(nil)).Elem()
+	privKeyType   = reflect.TypeOf((*crypto.PrivKey)(nil)).Elem()
+	pubKeyType    = reflect.TypeOf((*crypto.PubKey)(nil)).Elem()
 	pstoreType    = reflect.TypeOf((*pstore.Peerstore)(nil)).Elem()
 
 	// concrete types
