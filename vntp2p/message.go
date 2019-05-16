@@ -89,22 +89,6 @@ func (gmm *GoodMorningMsg) HandleMessage() error {
 	return nil
 }
 
-type msgHandler func() error
-
-/*func (mb *MsgBody) handleForMsgType() (msgHandler, error) {
-	switch mb.Type {
-	case GoodMorning:
-		gmm := &GoodMorningMsg{}
-		err := json.Unmarshal(mb.Payload, gmm)
-		if err != nil {
-			return nil, err
-		}
-		return gmm.HandleMessage, nil
-	default:
-		return nil, errors.New("invalid message type")
-	}
-}*/
-
 // Send is used to send message payload with specific messge type
 func Send(w MsgWriter, protocolID string, msgType MessageType, data interface{}) error {
 	// 还是要使用rlp进行序列化，因为类型多变，rlp已经有完整的支持
@@ -166,11 +150,11 @@ func (msg *Msg) GetBodySize() uint32 {
 
 // VNTMsger vnt chain message readwriter
 type VNTMsger struct {
-	protocol    Protocol
-	in          chan Msg
-	err         chan error
-	w           inet.Stream
-	peer *Peer
+	protocol Protocol
+	in       chan Msg
+	err      chan error
+	w        inet.Stream
+	peer     *Peer
 }
 
 // WriteMsg implement MsgReadWriter interface

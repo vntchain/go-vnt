@@ -47,7 +47,7 @@ func (server *Server) HandleStream(s inet.Stream) {
 	peer := server.GetPeerByRemoteID(s)
 	if peer == nil {
 		log.Debug("HandleStream", "localPeerID", s.Conn().LocalPeer(), "remotePeerID", s.Conn().RemotePeer(), "this remote peer is nil, don't handle it")
-		s.Reset()
+		_ = s.Reset()
 		return
 	}
 
@@ -108,8 +108,6 @@ func (server *Server) HandleStream(s inet.Stream) {
 }
 
 func notifyError(msgers map[string]*VNTMsger, err error) {
-	log.Trace("notifyError enter")
-	defer log.Trace("notifyError exit")
 	for _, m := range msgers {
 		m.err <- err
 	}
