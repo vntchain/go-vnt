@@ -22,7 +22,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/libp2p/go-libp2p-peer"
+	peer "github.com/libp2p/go-libp2p-peer"
 	"github.com/vntchain/go-vnt/log"
 )
 
@@ -194,15 +194,12 @@ func (t *dialTask) Do(ctx context.Context, server *Server) {
 		return
 	}
 
-	log.Debug("Dial task", "target", t.target)
-	t.dial(ctx, server, t.target, t.pid)
+	log.Trace("Dial task", "target", t.target)
+	_ = t.dial(ctx, server, t.target, t.pid)
 }
 
 func (t *dialTask) checkTarget() bool {
-	if t.target == "" {
-		return false
-	}
-	return true
+	return t.target != ""
 }
 
 func (t *dialTask) dial(ctx context.Context, server *Server, target peer.ID, pid string) (err error) {

@@ -47,7 +47,7 @@ func (server *Server) HandleStream(s inet.Stream) {
 	peer := server.GetPeerByRemoteID(s)
 	if peer == nil {
 		log.Debug("HandleStream", "localPeerID", s.Conn().LocalPeer(), "remotePeerID", s.Conn().RemotePeer(), "this remote peer is nil, don't handle it")
-		s.Reset()
+		_ = s.Reset()
 		return
 	}
 
