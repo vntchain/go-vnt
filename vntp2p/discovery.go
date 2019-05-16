@@ -18,7 +18,7 @@ package vntp2p
 
 import (
 	"context"
-	"crypto/rand"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -123,7 +123,7 @@ func (vdht *VNTDht) lookup(ctx context.Context, targetid peer.ID) []peer.ID {
 		} else if err != nil {
 			log.Debug("lookup peer occurs error", "error", err)
 		} else {
-			log.Debug("lookup peer find peer", "id", id.ToString(), "peer", p.ID.ToString())
+			log.Debug("lookup peer find peer", "id", ToString(id), "peer", ToString(p.ID))
 		}
 	}
 
@@ -157,6 +157,20 @@ func (vdht *VNTDht) doRefresh(ctx context.Context, done chan struct{}) {
 	}
 }
 
+
+func GetRandomPeers(dht *dht.IpfsDHT) []peer.ID {
+	a := GetKBuckets(dht.RoutingTable())
+	rr := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	in := rr.Perm(len(a))
+
+	for i, _ := range in {
+		a[i], a[in[i]] = a[in[i]], a[i]
+	}
+
+	return a
+}
+
 func (vdht *VNTDht) RandomPeer() []peer.ID {
-	return vdht.table.GetRandomPeers()
+	return GetRandomPeers(vdht.table)
 }

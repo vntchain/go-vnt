@@ -32,9 +32,15 @@ import (
 	manet "github.com/multiformats/go-multiaddr-net"
 	"github.com/vntchain/go-vnt/event"
 	"github.com/vntchain/go-vnt/log"
+	"github.com/vntchain/go-vnt/crypto"
+	mh "github.com/multiformats/go-multihash"
+	"strings"
+	"fmt"
 )
 
 type PeerEventType string
+
+var maxInlineKeyLength = 42
 
 const (
 	// PeerEventTypeAdd is the type of event emitted when a peer is added
@@ -129,6 +135,10 @@ func (p *Peer) RemoteID() libp2p.ID {
 	return p.rw.Conn().RemotePeer()
 }
 
+func (p *Peer) PeerId() string {
+	return ToString(p.RemoteID())
+}
+
 func (p *Peer) Log() log.Logger {
 	return p.log
 }
@@ -193,9 +203,9 @@ func (p *Peer) Reset() {
 	}
 
 	if err := p.rw.Reset(); err != nil {
-		log.Debug("Reset peer connection", "peer", p.RemoteID().ToString(), "error", err.Error())
+		log.Debug("Reset peer connection", "peer", p.PeerId(), "error", err.Error())
 	} else {
-		log.Debug("Reset peer connection success", "peer", p.RemoteID().ToString())
+		log.Debug("Reset peer connection success", "peer", p.PeerId())
 	}
 }
 
@@ -261,6 +271,17 @@ func WritePackage(rw *bufio.ReadWriter, code uint64, data []byte) ([]byte, error
 	return json.Marshal(msg)
 }
 
+func IDFromPublicKey(pk *ecdsa.PublicKey) (libp2p.ID, error) {
+	b := crypto.CompressPubkey(pk)
+
+	var alg uint64 = mh.SHA2_256
+	if len(b) <= maxInlineKeyLength {
+		alg = mh.ID
+	}
+	hash, _ := mh.Sum(b, alg, -1)
+	return libp2p.ID(hash), nil
+}
+
 func PubkeyID(pub *ecdsa.PublicKey) libp2p.ID {
 	// var id NodeID
 	// pbytes := elliptic.Marshal(pub.Curve, pub.X, pub.Y)
@@ -269,9 +290,25 @@ func PubkeyID(pub *ecdsa.PublicKey) libp2p.ID {
 	// }
 	// copy(id[:], pbytes[1:])
 	// return id
-	id, err := libp2p.IDFromPublicKey(pub)
+	id, err := IDFromPublicKey(pub)
 	if err != nil {
 		panic("wrong publick key")
 	}
 	return id
+}
+
+func ToString(id libp2p.ID) string {
+	pid := id.Pretty()
+
+	//All sha256 nodes start with Qm
+	//We can skip the Qm to make the peer.ID more useful
+	if strings.HasPrefix(pid, "Qm") {
+		pid = pid[2:]
+	}
+
+	maxRunes := 64
+	if len(pid) < maxRunes {
+		maxRunes = len(pid)
+	}
+	return fmt.Sprintf("%s", pid[:maxRunes])
 }

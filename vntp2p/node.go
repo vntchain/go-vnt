@@ -17,7 +17,6 @@
 package vntp2p
 
 import (
-	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
 	"net"
@@ -26,6 +25,9 @@ import (
 
 	peer "github.com/libp2p/go-libp2p-peer"
 	ma "github.com/multiformats/go-multiaddr"
+	"crypto/ecdsa"
+	mh "github.com/multiformats/go-multihash"
+	"github.com/vntchain/go-vnt/crypto"
 )
 
 // 包内都用peerID,对外方法使用NodeID
@@ -50,20 +52,25 @@ type Node struct {
 }
 
 func (n *Node) String() string {
-	return n.Addr.String() + "/ipfs/" + n.Id.ToString()
+	return n.Addr.String() + "/ipfs/" + n.PeerId()
+}
+
+func (n *Node) PeerId() string {
+	return ToString(n.Id)
 }
 
 func NewNode(id peer.ID, ip net.IP, udpPort, tcpPort uint16) *Node {
 	peerid := id
 	target := ""
 	if ipv4 := ip.To4(); ipv4 != nil {
-		target += "/ip4/" + ip.String() + "/tcp/" + strconv.Itoa(int(tcpPort)) + "/ipfs/" + peerid.ToString()
+		target += "/ip4/" + ip.String() + "/tcp/" + strconv.Itoa(int(tcpPort)) + "/ipfs/" + ToString(peerid)
 	} else {
-		target += "/ip6/" + ip.String() + "/tcp/" + strconv.Itoa(int(tcpPort)) + "/ipfs/" + peerid.ToString()
+		target += "/ip6/" + ip.String() + "/tcp/" + strconv.Itoa(int(tcpPort)) + "/ipfs/" + ToString(peerid)
 	}
 
 	targetAddr, peerid, err := GetAddr(target)
 	if err != nil {
+		fmt.Println("#### NewNode: fail:", err)
 		return nil
 	}
 
@@ -134,10 +141,23 @@ func (n NodeID) PeerID() peer.ID {
 	return peer.ID(n.Bytes())
 }
 
+func ExtractPublicKey(id peer.ID) (*ecdsa.PublicKey, error) {
+
+	decoded, err := mh.Decode([]byte(id))
+	if err != nil {
+		return nil, err
+	}
+	if decoded.Code != mh.ID {
+		return nil, nil
+	}
+
+	return crypto.DecompressPubkey(decoded.Digest)
+}
+
 func (n NodeID) Pubkey() (*ecdsa.PublicKey, error) {
 	// 通过ID如何生成公钥
 
-	return n.PeerID().ExtractPublicKey()
+	return ExtractPublicKey(n.PeerID())
 }
 
 func (n NodeID) Bytes() []byte {

@@ -81,7 +81,7 @@ type peer struct {
 
 func newPeer(version int, network uint64, p *vntp2p.Peer, rw vntp2p.MsgReadWriter) *peer {
 	peerID := p.RemoteID()
-	pubKey, _ := peerID.ExtractPublicKey()
+	pubKey, _ := vntp2p.ExtractPublicKey(peerID)
 
 	return &peer{
 		Peer:        p,

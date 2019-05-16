@@ -223,7 +223,7 @@ func (pm *ProtocolManager) resetBftPeer(urls []string) {
 			log.Error("resetBftPeer invalid vnode:", "error", err)
 			continue
 		}
-		if node.Id.ToString() == selfID {
+		if node.PeerId() == selfID {
 			continue
 		}
 
@@ -756,12 +756,12 @@ func (pm *ProtocolManager) BroadcastBftMsg(bftMsg types.BftMsg) {
 	for _, p := range peers {
 		// using goroutine for each peer for peer may connection
 		go func(p *peer) {
-			log.Trace("BroadcastBftMsg", "to peer", p.id.ToString())
+			log.Trace("BroadcastBftMsg", "to peer", p.PeerId())
 			err := p.SendBftMsg(bftMsg)
 			if err != nil {
-				log.Error("BroadcastBftMsg error", "to peer", p.id.ToString(), "error", err)
+				log.Error("BroadcastBftMsg error", "to peer", p.PeerId(), "error", err)
 			} else {
-				log.Trace("BroadcastBftMsg success", "to peer", p.id.ToString())
+				log.Trace("BroadcastBftMsg success", "to peer", p.PeerId())
 			}
 		}(p)
 	}

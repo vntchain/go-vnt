@@ -147,6 +147,11 @@ func (p *peer) close() {
 	close(p.term)
 }
 
+// close signals the broadcast goroutine to terminate.
+func (p *peer) PeerId() string {
+	return vntp2p.ToString(p.id)
+}
+
 // Info gathers and returns a collection of metadata known about a peer.
 func (p *peer) Info() *PeerInfo {
 	hash, td := p.Head()

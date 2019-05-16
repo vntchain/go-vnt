@@ -31,7 +31,7 @@ import (
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/log"
 	p2p "github.com/vntchain/go-vnt/vntp2p"
-	// "log"/
+
 )
 
 func main() {
@@ -99,14 +99,14 @@ func main() {
 		log.Error(fmt.Sprintf("constructDHT a: %s", err))
 		return
 	}
-	pd := vdht.GetPersistentData()
+	pd := p2p.GetPersistentData(vdht)
 	pdByte, err := json.Marshal(pd)
 	if err != nil {
 		log.Error("persistDataPeriodly", "marshal error", err)
 		return
 	}
 	//log.Info("persistDataPeriodly TIME TO PERSIST DATA")
-	vdht.SaveData("/PersistentData", pdByte)
+	p2p.SaveData(ctx, vdht, "/PersistentData", pdByte)
 	hostAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", host.ID().Pretty()))
 	addr := host.Addrs()[0]
 	fullAddr := addr.Encapsulate(hostAddr)

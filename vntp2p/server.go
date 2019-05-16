@@ -277,7 +277,7 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 		case pd := <-server.delpeer:
 			// A peer disconnected.
 			pid := pd.RemoteID()
-			log.Info("Removing p2p peer", "peer", pid.ToString(), "error", pd.err)
+			log.Info("Removing p2p peer", "peer", ToString(pid), "error", pd.err)
 			if _, ok := peers[pid]; ok {
 				delete(peers, pid)
 			}
@@ -488,7 +488,7 @@ func (server *Server) NodeInfo() *NodeInfo {
 	node := server.Self()
 
 	info := &NodeInfo{
-		ID:         node.Id.ToString(),
+		ID:         node.PeerId(),
 		VNTNode:    node.String(),
 		Name:       server.Name,
 		IP:         GetIPfromAddr(node.Addr),

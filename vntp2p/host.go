@@ -18,7 +18,6 @@ package vntp2p
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"path/filepath"
 	"time"
@@ -30,28 +29,27 @@ import (
 	"crypto/ecdsa"
 
 	ds "github.com/ipfs/go-datastore"
-	libp2p "github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
-	"github.com/vntchain/go-vnt/crypto"
 	"github.com/whyrusleeping/base32"
 	// crypto "github.com/libp2p/go-libp2p-crypto"
 	p2phost "github.com/libp2p/go-libp2p-host"
-	dht "github.com/libp2p/go-libp2p-kad-dht"
-	dhtopts "github.com/libp2p/go-libp2p-kad-dht/opts"
+	"github.com/libp2p/go-libp2p-kad-dht"
+	"github.com/libp2p/go-libp2p-kad-dht/opts"
+	crypto2 "github.com/libp2p/go-libp2p-crypto"
 	// net "github.com/libp2p/go-libp2p-net"
-	peer "github.com/libp2p/go-libp2p-peer"
+	"github.com/libp2p/go-libp2p-peer"
+	bucket "github.com/libp2p/go-libp2p-kbucket"
 	ma "github.com/multiformats/go-multiaddr"
-	manet "github.com/multiformats/go-multiaddr-net"
+	"github.com/multiformats/go-multiaddr-net"
 	"github.com/vntchain/go-vnt/log"
+
+	recpb "github.com/libp2p/go-libp2p-record/pb"
 
 	// "github.com/vntchain/go-vnt/crypto"
 
 	"fmt"
-	// "strconv"
-	// "runtime/debug"
-	// "strings"
-	// "io"
-	// "io/ioutil"
+
 )
 
 const (
@@ -67,16 +65,77 @@ type blankValidator struct{}
 func (blankValidator) Validate(_ string, _ []byte) error        { return nil }
 func (blankValidator) Select(_ string, _ [][]byte) (int, error) { return 0, nil }
 
-func recoverPersistentData(vdb *LevelDB) *dht.PersistentData {
-	pd := &dht.PersistentData{}
+
+// PersistentData record network info
+type PersistentData struct {
+	PrivKey   []byte
+	PeerInfos []pstore.PeerInfo
+	KBuckets  []peer.ID
+}
+
+// GetKBuckets return k-bucket data as array -- by hx
+func GetKBuckets(rt *bucket.RoutingTable) []peer.ID {
+	var m []peer.ID
+
+	for i := range rt.Buckets {
+		m = append(m, rt.Buckets[i].Peers()...)
+	}
+
+	return m
+}
+
+
+// GetPersistentData to save network info periodly
+func GetPersistentData(dht *dht.IpfsDHT) *PersistentData {
+	pd := &PersistentData{}
+
+	// try to get privateKey from peerstore
+	privKey := dht.Host().Peerstore().PrivKey(dht.PeerID())
+	bDump, err := privKey.Raw()
+	if err != nil {
+		log.Error("Bad private key:", err)
+		return nil
+	}
+	//bDump := math.PaddedBigBytes(privKey.D, privKey.Params().BitSize/8)
+	//k := hex.EncodeToString(bDump)
+	pd.PrivKey = bDump
+
+	pd.PeerInfos = pstore.PeerInfos(dht.Host().Peerstore(), dht.Host().Peerstore().Peers())
+	pd.KBuckets = GetKBuckets(dht.RoutingTable())
+
+	return pd
+}
+
+// SaveData save PersistentData to local database
+func SaveData(ctx context.Context, dht *dht.IpfsDHT, key string, value []byte) {
+	//fmt.Printf("saveData -->, key = %s, value = %v\n", key, string(value))
+	//dht.datastore.Put(mkDsKey(key), value)
+	err := dht.PutValue(ctx, key, value)
+	if err != nil {
+		log.Error("Failed to save data", "error", err)
+	}
+}
+
+
+func recoverPersistentData(vdb *LevelDB) *PersistentData {
+	pd := &PersistentData{}
+	record := &recpb.Record{}
 	pdKey := ds.NewKey(base32.RawStdEncoding.EncodeToString([]byte("/PersistentData")))
 	pdValue, err := vdb.Get(pdKey)
+
 	if err != nil {
 		// don't need to care about err != nil
+		log.Error("recoverPersistentData", "unmarshal pd error", err)
 		return nil
 	}
 	//fmt.Printf("R- pdValue = %v\n", pdValue.([]byte))
-	err = json.Unmarshal(pdValue.([]byte), pd)
+	err = json.Unmarshal(pdValue, record)
+	if err != nil {
+		log.Error("recoverPersistentData", "unmarshal pd error", err)
+		return nil
+	}
+
+	err = json.Unmarshal(record.Value, pd)
 	if err != nil {
 		log.Error("recoverPersistentData", "unmarshal pd error", err)
 		return nil
@@ -87,7 +146,7 @@ func recoverPersistentData(vdb *LevelDB) *dht.PersistentData {
 // ConstructDHT create Kademlia DHT
 func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.PrivateKey, datadir string, restrictList []*net.IPNet, natm libp2p.Option) (*dht.IpfsDHT, p2phost.Host, error) {
 
-	var pd *dht.PersistentData
+	var pd *PersistentData
 	var vntp2pDB *LevelDB
 	var err error
 	// if datadir is empty, it means don't need persistentation
@@ -100,23 +159,40 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 		}
 		pd = recoverPersistentData(vntp2pDB)
 	}
-	if nodekey == nil && pd != nil {
-		// try to recover nodekey from database
-		k := string(pd.PrivKey)
-		bDump, err := hex.DecodeString(k)
-		if err != nil {
-			log.Error("ConstructDHT", "decode key error", err)
-			return nil, nil, err
-		}
-		privKey, err := crypto.ToECDSA(bDump)
-		if err != nil {
-			log.Error("ConstructDHT", "toECDSA error", err)
-			return nil, nil, err
-		}
-		nodekey = privKey
-	} // host private key recover finished
 
-	host, err := constructPeerHost(ctx, listenstring, nodekey, restrictList, natm)
+	var privKey crypto2.PrivKey
+	if nodekey != nil {
+		privKey, _, err = crypto2.ECDSAKeyPairFromKey(nodekey)
+		if err != nil {
+			log.Error("Bad private key:", err)
+			return nil, nil, err
+		}
+	} else if pd != nil {
+		k := pd.PrivKey
+		privKey, err = crypto2.UnmarshalECDSAPrivateKey(k)
+		if err != nil {
+			log.Error("Bad private key:", err)
+			return nil, nil, err
+		}
+	}
+
+	//if nodekey == nil && pd != nil {
+	//	// try to recover nodekey from database
+	//	k := string(pd.PrivKey)
+	//	bDump, err := hex.DecodeString(k)
+	//	if err != nil {
+	//		log.Error("ConstructDHT", "decode key error", err)
+	//		return nil, nil, err
+	//	}
+	//	privKey, err := crypto.ToECDSA(bDump)
+	//	if err != nil {
+	//		log.Error("ConstructDHT", "toECDSA error", err)
+	//		return nil, nil, err
+	//	}
+	//	nodekey = privKey
+	//} // host private key recover finished
+
+	host, err := constructPeerHost(ctx, listenstring, privKey, restrictList, natm)
 	if err != nil {
 		log.Error("ConstructDHT", "constructPeerHost error", err)
 		return nil, nil, err
@@ -150,24 +226,24 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 	}
 
 	if vntp2pDB != nil {
-		go loop(vdht)
+		go loop(ctx, vdht)
 	}
 
 	return vdht, host, err
 }
 
 // some loop handler for p2p itself can be put here
-func loop(vdht *dht.IpfsDHT) {
+func loop(ctx context.Context, vdht *dht.IpfsDHT) {
 	var persistData = time.NewTicker(persistDataInterval)
 	for {
 		<-persistData.C
-		go persistDataPeriodly(vdht)
+		go persistDataPeriodly(ctx, vdht)
 	}
 }
 
 // persist data unified entrance, both for bootnode and membernode
-func persistDataPeriodly(vdht *dht.IpfsDHT) {
-	pd := vdht.GetPersistentData()
+func persistDataPeriodly(ctx context.Context, vdht *dht.IpfsDHT) {
+	pd := GetPersistentData(vdht)
 	/* fmt.Printf("host privKey is: %v \n", string(pd.PrivKey))
 	fmt.Printf("peerInfos is: \n")
 	for i := range pd.PeerInfos {
@@ -183,10 +259,10 @@ func persistDataPeriodly(vdht *dht.IpfsDHT) {
 		return
 	}
 	//log.Info("persistDataPeriodly TIME TO PERSIST DATA")
-	vdht.SaveData("/PersistentData", pdByte)
+	SaveData(ctx, vdht, "/PersistentData", pdByte)
 }
 
-func recoverPeerInfosAndBuckets(ctx context.Context, pd *dht.PersistentData, host p2phost.Host, vdht *dht.IpfsDHT) {
+func recoverPeerInfosAndBuckets(ctx context.Context, pd *PersistentData, host p2phost.Host, vdht *dht.IpfsDHT) {
 
 	/* fmt.Printf("R- host privKey is: %v \n", string(pd.PrivKey))
 	fmt.Printf("R- peerInfos is: \n")
@@ -206,15 +282,19 @@ func recoverPeerInfosAndBuckets(ctx context.Context, pd *dht.PersistentData, hos
 	}
 }
 
-func constructPeerHost(ctx context.Context, listenstring string, nodekey *ecdsa.PrivateKey, restrictList []*net.IPNet, natm libp2p.Option) (p2phost.Host, error) {
+func constructPeerHost(ctx context.Context, listenstring string, nodekey crypto2.PrivKey, restrictList []*net.IPNet, natm libp2p.Option) (p2phost.Host, error) {
 	var options []libp2p.Option
 	if nodekey != nil {
+		//priv, _, err := crypto2.ECDSAKeyPairFromKey(nodekey)
+		//if err != nil {
+		//	return nil, err
+		//}
 		options = append(options, libp2p.ListenAddrStrings(listenstring), libp2p.Identity(nodekey))
 	} else {
 		options = append(options, libp2p.ListenAddrStrings(listenstring))
 	}
 
-	options = append(options, libp2p.FilterAddresses(restrictList))
+	options = append(options, libp2p.FilterAddresses(restrictList...))
 	if natm != nil {
 		options = append(options, natm)
 	}

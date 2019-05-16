@@ -57,13 +57,9 @@ func newDatastore(path string) (*LevelDB, error) {
 }
 
 // Put implement Put() of ds.Batching interface
-func (d *LevelDB) Put(key ds.Key, value interface{}) (err error) {
+func (d *LevelDB) Put(key ds.Key, value []byte) (err error) {
 	byteKey := []byte(key.String())
-	byteVal, ok := value.([]byte)
-	if !ok {
-		return ds.ErrInvalidType
-	}
-	err = d.db.Put(byteKey, byteVal, nil)
+	err = d.db.Put(byteKey, value, nil)
 	if err != nil {
 		fmt.Printf("leveldb put error = %s\n", err)
 		return err
@@ -72,7 +68,7 @@ func (d *LevelDB) Put(key ds.Key, value interface{}) (err error) {
 }
 
 // Get implement Get() of ds.Batching interface
-func (d *LevelDB) Get(key ds.Key) (value interface{}, err error) {
+func (d *LevelDB) Get(key ds.Key) (value []byte, err error) {
 	byteKey := []byte(key.String())
 	byteVal, err := d.db.Get(byteKey, nil)
 	if err == leveldb.ErrNotFound {
@@ -82,6 +78,13 @@ func (d *LevelDB) Get(key ds.Key) (value interface{}, err error) {
 		return nil, err
 	}
 	return byteVal, nil
+}
+
+func (d *LevelDB) GetSize(key ds.Key) (size int, err error) {
+	if value, err := d.Get(key); value != nil {
+		return len(value), err
+	}
+	return 0, err
 }
 
 // Has implement Has() of ds.Batching interface
@@ -116,6 +119,10 @@ func (d *LevelDB) Query(q query.Query) (query.Results, error) {
 	r := query.ResultsWithEntries(q, re)
 	r = query.NaiveQueryApply(q, r)
 	return r, nil
+}
+
+func (d *LevelDB) Commit() error {
+	return nil
 }
 
 // Close implement Close() of ds.Batching interface

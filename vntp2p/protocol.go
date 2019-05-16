@@ -63,7 +63,7 @@ func (server *Server) HandleStream(s inet.Stream) {
 		msgHeaderByte := make([]byte, MessageHeaderLength)
 		_, err := io.ReadFull(s, msgHeaderByte)
 		if err != nil {
-			log.Error("HandleStream", "read msg header error", err, "peer", peer.RemoteID().ToString())
+			log.Error("HandleStream", "read msg header error", err, "peer", peer.PeerId())
 			notifyError(peer.msgers, err)
 			return
 		}
@@ -72,14 +72,14 @@ func (server *Server) HandleStream(s inet.Stream) {
 		msgBodyByte := make([]byte, bodySize)
 		_, err = io.ReadFull(s, msgBodyByte)
 		if err != nil {
-			log.Error("HandleStream", "read msg Body error", err, "peer", peer.RemoteID().ToString())
+			log.Error("HandleStream", "read msg Body error", err, "peer", peer.PeerId())
 			notifyError(peer.msgers, err)
 			return
 		}
 		msgBody := &MsgBody{Payload: &rlp.EncReader{}}
 		err = json.Unmarshal(msgBodyByte, msgBody)
 		if err != nil {
-			log.Error("HandleStream", "unmarshal msg Body error", err, "peer", peer.RemoteID().ToString())
+			log.Error("HandleStream", "unmarshal msg Body error", err, "peer", peer.PeerId())
 			notifyError(peer.msgers, err)
 			return
 		}
