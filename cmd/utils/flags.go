@@ -739,8 +739,8 @@ func SetP2PConfig(ctx *cli.Context, cfg *vntp2p.Config) {
 	setNodeKey(ctx, cfg)
 	setNAT(ctx, cfg)
 	setListenAddress(ctx, cfg)
-	setFindNode(ctx, cfg)    
-	setVNTBootnode(ctx, cfg) 
+	setFindNode(ctx, cfg)
+	setVNTBootnode(ctx, cfg)
 	setBootstrapNodes(ctx, cfg)
 	// setBootstrapNodesV5(ctx, cfg)
 

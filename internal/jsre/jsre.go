@@ -26,14 +26,14 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/robertkrimen/otto"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/internal/jsre/deps"
-	"github.com/robertkrimen/otto"
 )
 
 var (
 	BigNumber_JS = deps.MustAsset("bignumber.js")
-	VNT_JS      = deps.MustAsset("vnt.js")
+	VNT_JS       = deps.MustAsset("vnt.js")
 )
 
 /*

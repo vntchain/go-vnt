@@ -25,8 +25,8 @@ import (
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/crypto"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/trie"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 func NewState(ctx context.Context, head *types.Header, odr OdrBackend) *state.StateDB {

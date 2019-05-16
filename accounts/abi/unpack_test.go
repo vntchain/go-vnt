@@ -26,8 +26,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vntchain/go-vnt/common"
 	"github.com/stretchr/testify/require"
+	"github.com/vntchain/go-vnt/common"
 )
 
 type unpackTest struct {
