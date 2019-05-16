@@ -23,10 +23,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pborman/uuid"
 	"github.com/vntchain/go-vnt/accounts/keystore"
 	"github.com/vntchain/go-vnt/cmd/utils"
 	"github.com/vntchain/go-vnt/crypto"
-	"github.com/pborman/uuid"
 	"gopkg.in/urfave/cli.v1"
 )
 

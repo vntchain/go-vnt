@@ -25,10 +25,10 @@ import (
 	"testing"
 	"time"
 
+	libp2p "github.com/libp2p/go-libp2p-peer"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/crypto"
 	whisper "github.com/vntchain/go-vnt/whisper/whisperv6"
-	libp2p "github.com/libp2p/go-libp2p-peer"
 )
 
 const powRequirement = 0.00001

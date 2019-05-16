@@ -36,7 +36,7 @@ var (
 func testNodeConfig() *Config {
 	return &Config{
 		Name: "test node",
-		P2P:  p2p.Config{PrivateKey: testNodeKey,ListenAddr:"0030304"},
+		P2P:  p2p.Config{PrivateKey: testNodeKey, ListenAddr: "0030304"},
 	}
 }
 
@@ -83,10 +83,10 @@ func TestNodeUsedDataDir(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	p2pCfg := p2p.Config{PrivateKey: testNodeKey,ListenAddr:"0030304"}
+	p2pCfg := p2p.Config{PrivateKey: testNodeKey, ListenAddr: "0030304"}
 
 	// Create a new node based on the data directory
-	original, err := New(&Config{DataDir: dir, P2P:p2pCfg})
+	original, err := New(&Config{DataDir: dir, P2P: p2pCfg})
 	if err != nil {
 		t.Fatalf("failed to create original protocol stack: %v", err)
 	}

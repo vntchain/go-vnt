@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/vntdb"
-	"github.com/vntchain/go-vnt/trie"
 	lru "github.com/hashicorp/golang-lru"
+	"github.com/vntchain/go-vnt/common"
+	"github.com/vntchain/go-vnt/trie"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 // Trie cache generation limit after which to evict trie nodes from memory.
