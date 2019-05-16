@@ -211,7 +211,7 @@ func (p *Peer) Reset() {
 
 func (p *Peer) Info() *PeerInfo {
 	info := &PeerInfo{
-		ID: p.RemoteID().String(),
+		ID: p.PeerId(),
 	}
 	info.Network.LocalAddress = p.rw.Conn().LocalMultiaddr().String()
 	info.Network.RemoteAddress = p.rw.Conn().RemoteMultiaddr().String()
