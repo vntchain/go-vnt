@@ -108,8 +108,6 @@ func (server *Server) HandleStream(s inet.Stream) {
 }
 
 func notifyError(msgers map[string]*VNTMsger, err error) {
-	log.Trace("notifyError enter")
-	defer log.Trace("notifyError exit")
 	for _, m := range msgers {
 		m.err <- err
 	}
