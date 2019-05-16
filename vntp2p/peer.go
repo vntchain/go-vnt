@@ -80,15 +80,14 @@ type PeerInfo struct {
 }
 
 type Peer struct {
-	rw        inet.Stream // libp2p stream
-	reseted   int32       // Whether stream reseted
-	log       log.Logger
-	events    *event.Feed
-	err       chan error
-	msgers    map[string]*VNTMsger // protocolName - vntMessenger
-	server    *Server
-	wg        sync.WaitGroup
-	// need to add wg
+	rw      inet.Stream // libp2p stream
+	reseted int32       // Whether stream reseted
+	log     log.Logger
+	events  *event.Feed
+	err     chan error
+	msgers  map[string]*VNTMsger // protocolName - vntMessenger
+	server  *Server
+	wg      sync.WaitGroup
 }
 
 func newPeer(conn *Stream, server *Server) *Peer {
@@ -105,12 +104,12 @@ func newPeer(conn *Stream, server *Server) *Peer {
 	}
 
 	p := &Peer{
-		rw:        conn.Conn,
-		log:       log.New(),
-		err:       make(chan error),
-		reseted:   0,
-		msgers:    m,
-		server:    server,
+		rw:      conn.Conn,
+		log:     log.New(),
+		err:     make(chan error),
+		reseted: 0,
+		msgers:  m,
+		server:  server,
 	}
 	for _, msger := range p.msgers {
 		msger.peer = p
@@ -218,8 +217,8 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 	for _, msger := range p.msgers {
 		proto := msger.protocol
 		m := msger
+		p.wg.Add(1)
 		go func() {
-			p.wg.Add(1)
 			err := proto.Run(p, m)
 			log.Debug("Run protocol error", "protocol", proto.Name, "error", err)
 
@@ -231,7 +230,6 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 	err = <-p.err
 	remoteRequested = true
 	p.Reset()
-
 	log.Debug("P2P remote peer request close, but we need to wait for other protocol", "peer", p.RemoteID())
 	p.wg.Wait()
 	log.Debug("P2P wait complete!", "peer", p.RemoteID())
