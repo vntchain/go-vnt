@@ -13,6 +13,7 @@ import (
 	pb "github.com/libp2p/go-libp2p-crypto/pb"
 
 	sha256 "github.com/minio/sha256-simd"
+	"github.com/vntchain/go-vnt/crypto"
 )
 
 // ECDSAPrivateKey is an implementation of an ECDSA private key
@@ -156,7 +157,9 @@ func (ePub *ECDSAPublicKey) Type() pb.KeyType {
 
 // Raw returns x509 bytes from a public key
 func (ePub ECDSAPublicKey) Raw() ([]byte, error) {
-	return x509.MarshalPKIXPublicKey(ePub.pub)
+	// added by vnt
+	return crypto.CompressPubkey(ePub.pub), nil
+	//return x509.MarshalPKIXPublicKey(ePub.pub)
 }
 
 // Equals compares to public keys

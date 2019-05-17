@@ -293,6 +293,7 @@ func MarshalPublicKey(k PubKey) ([]byte, error) {
 	pbmes.Type = k.Type()
 	data, err := k.Raw()
 	if err != nil {
+		fmt.Println("#### k.Raw(): ", "err", err)
 		return nil, err
 	}
 	pbmes.Data = data

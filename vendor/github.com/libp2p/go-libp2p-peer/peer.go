@@ -163,6 +163,7 @@ func IDHexEncode(id ID) string {
 func IDFromPublicKey(pk ic.PubKey) (ID, error) {
 	b, err := pk.Bytes()
 	if err != nil {
+		fmt.Println("#### pk.Bytes(): ", "err", err)
 		return "", err
 	}
 	var alg uint64 = mh.SHA2_256
