@@ -91,6 +91,7 @@ func (cfg *Config) NewNode(ctx context.Context) (host.Host, error) {
 	// Obtain Peer ID from public key
 	pid, err := peer.IDFromPublicKey(cfg.PeerKey.GetPublic())
 	if err != nil {
+		fmt.Println("#### IDFromPublicKey: ", "err", err)
 		return nil, err
 	}
 
@@ -100,9 +101,11 @@ func (cfg *Config) NewNode(ctx context.Context) (host.Host, error) {
 
 	if !cfg.Insecure {
 		if err := cfg.Peerstore.AddPrivKey(pid, cfg.PeerKey); err != nil {
+			fmt.Println("#### AddPrivKey: ", "err", err)
 			return nil, err
 		}
 		if err := cfg.Peerstore.AddPubKey(pid, cfg.PeerKey.GetPublic()); err != nil {
+			fmt.Println("#### AddPubKey: ", "err", err)
 			return nil, err
 		}
 	}
@@ -122,6 +125,7 @@ func (cfg *Config) NewNode(ctx context.Context) (host.Host, error) {
 
 	if err != nil {
 		swrm.Close()
+		fmt.Println("#### NewHost: ", "err", err)
 		return nil, err
 	}
 
@@ -145,6 +149,7 @@ func (cfg *Config) NewNode(ctx context.Context) (host.Host, error) {
 		upgrader.Secure, err = makeSecurityTransport(h, cfg.SecurityTransports)
 		if err != nil {
 			h.Close()
+			fmt.Println("#### makeSecurityTransport: ", "err", err)
 			return nil, err
 		}
 	}
