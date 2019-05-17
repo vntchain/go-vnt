@@ -39,6 +39,7 @@ type DhtTable interface {
 	Lookup(ctx context.Context, targetID NodeID) []*NodeID
 	Update(ctx context.Context, id peer.ID) error
 	RandomPeer() []peer.ID
+	GetDhtTable() *dht.IpfsDHT
 }
 
 type VNTDht struct {
@@ -178,4 +179,8 @@ func (vdht *VNTDht) doRefresh(ctx context.Context, done chan struct{}) {
 
 func (vdht *VNTDht) RandomPeer() []peer.ID {
 	return vdht.table.GetRandomPeers()
+}
+
+func (vdht *VNTDht) GetDhtTable() *dht.IpfsDHT {
+	return vdht.table
 }

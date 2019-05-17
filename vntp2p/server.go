@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
 	libp2p "github.com/libp2p/go-libp2p"
 	p2phost "github.com/libp2p/go-libp2p-host"
@@ -84,9 +85,10 @@ type Server struct {
 	host    p2phost.Host
 	running bool
 
-	peerFeed event.Feed
-	loopWG   sync.WaitGroup
-	cancel   context.CancelFunc
+	peerFeed   event.Feed
+	loopWG     sync.WaitGroup
+	cancel     context.CancelFunc
+	lastLookup time.Time
 
 	lock sync.Mutex
 

@@ -32,11 +32,13 @@ var (
 )
 
 type taskstate struct {
-	maxDynDials int
-	table       DhtTable
-	bootnodes   []peer.ID
-	static      map[peer.ID]*dialTask
-	dialmap     map[peer.ID]dialFlag
+	maxDynDials   int
+	table         DhtTable
+	bootnodes     []peer.ID
+	lookupNode    []peer.ID
+	lookupRunning bool
+	static        map[peer.ID]*dialTask
+	dialmap       map[peer.ID]dialFlag
 }
 
 type task interface {
@@ -50,6 +52,7 @@ type dialTask struct {
 }
 
 type lookupTask struct {
+	targets []peer.ID
 }
 
 type waitExpireTask struct {
@@ -61,11 +64,10 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 
 	addDial := func(flag dialFlag, n peer.ID) bool {
 		if err := s.checkDial(n, peers); err != nil {
-			// fmt.Println("dial skip")
+			log.Trace("Skip dial peer", "id", n, "err", err)
 			return false
 		}
 		s.dialmap[n] = flag
-		// fmt.Println("begin to Add: ", n)
 		newtasks = append(newtasks, &dialTask{target: n, pid: PID})
 		return true
 	}
@@ -111,10 +113,24 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 				needdial--
 			}
 		}
-
 	}
+
 	// lookup
-	// newtasks = append(newtasks, &lookupTask{})
+	// if still need to dial more peer, create dynamic dials from random
+	// lookup results
+	i := 0
+	for ; i < len(s.lookupNode) && needdial > 0; i++ {
+		if addDial(dynDialedDail, s.lookupNode[i]) {
+			needdial--
+		}
+	}
+
+	//update loopupNode, if need more, launch loopup task
+	s.lookupNode = s.lookupNode[:copy(s.lookupNode, s.lookupNode[i:])]
+	if len(s.lookupNode) < needdial && !s.lookupRunning {
+		s.lookupRunning = true
+		newtasks = append(newtasks, &lookupTask{})
+	}
 
 	// waitExpireTask
 	// newtasks = append(newtasks, &waitExpireTask{})
@@ -146,7 +162,8 @@ func (s *taskstate) taskDone(t task) {
 	case *dialTask:
 		delete(s.dialmap, t.target)
 	case *lookupTask:
-		log.Debug("taskDone", "lookupTask")
+		s.lookupRunning = false
+		s.lookupNode = append(s.lookupNode, t.targets...)
 	}
 }
 
@@ -196,7 +213,22 @@ func (t *dialTask) dial(ctx context.Context, server *Server, target peer.ID, pid
 }
 
 func (t *lookupTask) Do(ctx context.Context, server *Server) {
-	time.Sleep(1 * time.Second)
+	//give sometime for this lookup task
+	nextLoopup := server.lastLookup.Add(4 * time.Second)
+	if now := time.Now(); now.Before(nextLoopup) {
+		time.Sleep(nextLoopup.Sub(now))
+	}
+	server.lastLookup = time.Now()
+
+	target := randomID()
+	peers, err := server.table.GetDhtTable().GetClosestPeers(ctx, string(target))
+	if err != nil {
+		log.Trace("lookupTask failed", "error", err)
+	}
+
+	for p := range peers {
+		t.targets = append(t.targets, p)
+	}
 }
 
 func (t *waitExpireTask) Do(ctx context.Context, server *Server) {
