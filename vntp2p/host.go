@@ -50,6 +50,8 @@ import (
 
 	"fmt"
 
+	"encoding/hex"
+	"github.com/vntchain/go-vnt/crypto"
 )
 
 const (
@@ -93,7 +95,7 @@ func GetPersistentData(dht *dht.IpfsDHT) *PersistentData {
 	privKey := dht.Host().Peerstore().PrivKey(dht.PeerID())
 	bDump, err := privKey.Raw()
 	if err != nil {
-		log.Error("Bad private key:", err)
+		log.Error("Bad private key:", "err", err)
 		return nil
 	}
 	//bDump := math.PaddedBigBytes(privKey.D, privKey.Params().BitSize/8)
@@ -128,8 +130,7 @@ func recoverPersistentData(vdb *LevelDB) *PersistentData {
 		log.Error("recoverPersistentData", "failed to fetch data", err)
 		return nil
 	}
-	log.Info("recoverPersistentData: ", "pd value", pdValue)
-	//fmt.Printf("R- pdValue = %v\n", pdValue.([]byte))
+
 	err = json.Unmarshal(pdValue, record)
 	if err != nil {
 		// failed to marshal to a record, assume it's a raw pd data
@@ -164,18 +165,25 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 		pd = recoverPersistentData(vntp2pDB)
 	}
 
-	var privKey crypto2.PrivKey
+	var privKey crypto2.PrivKey = nil
+	if nodekey == nil && pd != nil {
+		k := string(pd.PrivKey)
+		bDump, err := hex.DecodeString(k)
+		if err != nil {
+			log.Error("ConstructDHT", "decode key error", err)
+			return nil, nil, err
+		}
+		nodekey, err = crypto.ToECDSA(bDump)
+		if err != nil {
+			log.Error("ConstructDHT", "toECDSA error", err)
+			return nil, nil, err
+		}
+	}
+
 	if nodekey != nil {
 		privKey, _, err = crypto2.ECDSAKeyPairFromKey(nodekey)
 		if err != nil {
-			log.Error("Bad private key:", err)
-			return nil, nil, err
-		}
-	} else if pd != nil {
-		k := pd.PrivKey
-		privKey, err = crypto2.UnmarshalECDSAPrivateKey(k)
-		if err != nil {
-			log.Error("Bad private key:", err)
+			log.Error("Bad private key:", "err", err)
 			return nil, nil, err
 		}
 	}
