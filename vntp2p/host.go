@@ -125,7 +125,7 @@ func recoverPersistentData(vdb *LevelDB) *PersistentData {
 
 	if err != nil {
 		// don't need to care about err != nil
-		log.Error("recoverPersistentData", "unmarshal pd error", err)
+		log.Error("recoverPersistentData", "failed to fetch data", err)
 		return nil
 	}
 	//fmt.Printf("R- pdValue = %v\n", pdValue.([]byte))
@@ -136,7 +136,7 @@ func recoverPersistentData(vdb *LevelDB) *PersistentData {
 		log.Warn("recoverPersistentData, will unmarshal to a PD instead")
 		// marshal it to pd directly
 		if err = json.Unmarshal(pdValue, pd); err != nil {
-			log.Error("recoverPersistentData", "unmarshal pd error", err)
+			log.Error("recoverPersistentData", "unmarshal pd error1", err)
 			return nil
 		}
 		return pd
@@ -144,7 +144,7 @@ func recoverPersistentData(vdb *LevelDB) *PersistentData {
 
 	err = json.Unmarshal(record.Value, pd)
 	if err != nil {
-		log.Error("recoverPersistentData", "unmarshal pd error", err)
+		log.Error("recoverPersistentData", "unmarshal pd error2", err)
 		return nil
 	}
 	return pd
