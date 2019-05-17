@@ -59,26 +59,7 @@ func (vdht *VNTDht) Start(ctx context.Context) error {
 	// init
 
 	// loop
-	//go vdht.loop(ctx)
-	var bootStrapConfig = dht.DefaultBootstrapConfig
-	bootStrapConfig.Period = time.Duration(refreshInterval)
-	bootStrapConfig.Timeout = time.Duration(searchTimeOut)
-	proc, err := vdht.table.BootstrapWithConfig(bootStrapConfig)
-	if err != nil {
-		log.Debug("Start refresh k-bucket error", "error", err)
-		return err
-	}
-
-	// wait till ctx or dht.Context exits.
-	// we have to do it this way to satisfy the Routing interface (contexts)
-	go func() {
-		defer proc.Close()
-		select {
-		case <-ctx.Done():
-		case <-vdht.table.Context().Done():
-		}
-	}()
-
+	go vdht.loop(ctx)
 	return nil
 }
 
@@ -97,23 +78,23 @@ func randomID() peer.ID {
 	return peer.ID(id)
 }
 
-//func (vdht *VNTDht) loop(ctx context.Context) {
-//	var (
-//		refresh     = time.NewTicker(refreshInterval)
-//		refreshDone = make(chan struct{})
-//	)
-//	go vdht.doRefresh(ctx, refreshDone)
-//	// loop:
-//	for {
-//		// 开始搜寻
-//
-//		select {
-//		case <-refresh.C:
-//			go vdht.doRefresh(ctx, refreshDone)
-//		}
-//		// 刷新K桶
-//	}
-//}
+func (vdht *VNTDht) loop(ctx context.Context) {
+	var (
+		refresh     = time.NewTicker(refreshInterval)
+		refreshDone = make(chan struct{})
+	)
+	go vdht.doRefresh(ctx, refreshDone)
+	// loop:
+	for {
+		// 开始搜寻
+
+		select {
+		case <-refresh.C:
+			go vdht.doRefresh(ctx, refreshDone)
+		}
+		// 刷新K桶
+	}
+}
 
 func (vdht *VNTDht) Lookup(ctx context.Context, targetID NodeID) []*NodeID {
 	// vdht.table.GetClosestPeers(vdht.Context, )
