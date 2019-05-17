@@ -158,7 +158,7 @@ func (server *Server) Start() error {
 	server.cancel = cancel
 
 	d := server.NodeDatabase
-	vdht, host, err := ConstructDHT(ctx, MakePort(listenPort), nil, d, server.Config.NetRestrict, server.Config.NAT)
+	vdht, host, _, err := ConstructDHT(ctx, MakePort(listenPort), nil, d, server.Config.NetRestrict, server.Config.NAT)
 	if err != nil {
 		log.Error("ConstructDHT failed", "error", err)
 		return err

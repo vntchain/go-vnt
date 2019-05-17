@@ -44,8 +44,6 @@ import (
 	"github.com/multiformats/go-multiaddr-net"
 	"github.com/vntchain/go-vnt/log"
 
-	recpb "github.com/libp2p/go-libp2p-record/pb"
-
 	// "github.com/vntchain/go-vnt/crypto"
 
 	"fmt"
@@ -109,10 +107,12 @@ func GetPersistentData(dht *dht.IpfsDHT) *PersistentData {
 }
 
 // SaveData save PersistentData to local database
-func SaveData(ctx context.Context, dht *dht.IpfsDHT, key string, value []byte) {
+func SaveData(ctx context.Context, dht *dht.IpfsDHT, vdb *LevelDB, key string, value []byte) {
 	//fmt.Printf("saveData -->, key = %s, value = %v\n", key, string(value))
 	//dht.datastore.Put(mkDsKey(key), value)
-	err := dht.PutValue(ctx, key, value)
+	dsKey := ds.NewKey(base32.RawStdEncoding.EncodeToString([]byte(key)))
+	err := vdb.Put(dsKey, value)
+	//err := dht.PutValue(ctx, key, value)
 	if err != nil {
 		log.Error("Failed to save data", "error", err)
 	}
@@ -121,35 +121,24 @@ func SaveData(ctx context.Context, dht *dht.IpfsDHT, key string, value []byte) {
 
 func recoverPersistentData(vdb *LevelDB) *PersistentData {
 	pd := &PersistentData{}
-	record := &recpb.Record{}
 	pdKey := ds.NewKey(base32.RawStdEncoding.EncodeToString([]byte("/PersistentData")))
+	fmt.Println("#### pdkey is: ", pdKey)
 	pdValue, err := vdb.Get(pdKey)
-
 	if err != nil {
 		// don't need to care about err != nil
-		log.Error("recoverPersistentData", "failed to fetch data", err)
 		return nil
 	}
-
-	err = json.Unmarshal(pdValue, record)
+	//fmt.Printf("R- pdValue = %v\n", pdValue.([]byte))
+	err = json.Unmarshal(pdValue, pd)
 	if err != nil {
-		// failed to marshal to a record, assume it's a raw pd data
-		log.Warn("recoverPersistentData", "unmarshal record error", err)
-		log.Warn("recoverPersistentData, will unmarshal to a PD instead")
-	} else if len(record.Key) > 0 {
-		log.Info("recoverPersistentData: ", "pd record key", string(record.Key), "pd record value", record.Value)
-		pdValue = record.Value
-	}
-
-	if err = json.Unmarshal(pdValue, pd); err != nil {
-		log.Error("recoverPersistentData", "unmarshal pd error2", err)
+		log.Error("recoverPersistentData", "unmarshal pd error", err)
 		return nil
 	}
 	return pd
 }
 
 // ConstructDHT create Kademlia DHT
-func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.PrivateKey, datadir string, restrictList []*net.IPNet, natm libp2p.Option) (*dht.IpfsDHT, p2phost.Host, error) {
+func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.PrivateKey, datadir string, restrictList []*net.IPNet, natm libp2p.Option) (*dht.IpfsDHT, p2phost.Host, *LevelDB, error) {
 
 	var pd *PersistentData
 	var vntp2pDB *LevelDB
@@ -160,7 +149,7 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 		vntp2pDB, err = GetDatastore(dbpath)
 		if err != nil {
 			log.Error("ConstructDHT", "getDatastore error", err, "dbpath", dbpath)
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		pd = recoverPersistentData(vntp2pDB)
 	}
@@ -171,12 +160,12 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 		bDump, err := hex.DecodeString(k)
 		if err != nil {
 			log.Error("ConstructDHT", "decode key error", err)
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		nodekey, err = crypto.ToECDSA(bDump)
 		if err != nil {
 			log.Error("ConstructDHT", "toECDSA error", err)
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 	}
 
@@ -184,7 +173,7 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 		privKey, _, err = crypto2.ECDSAKeyPairFromKey(nodekey)
 		if err != nil {
 			log.Error("Bad private key:", "err", err)
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 	}
 
@@ -207,7 +196,7 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 	host, err := constructPeerHost(ctx, listenstring, privKey, restrictList, natm)
 	if err != nil {
 		log.Error("ConstructDHT", "constructPeerHost error", err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	var vdht *dht.IpfsDHT
@@ -238,23 +227,23 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 	}
 
 	if vntp2pDB != nil {
-		go loop(ctx, vdht)
+		go loop(ctx, vdht, vntp2pDB)
 	}
 
-	return vdht, host, err
+	return vdht, host, vntp2pDB, err
 }
 
 // some loop handler for p2p itself can be put here
-func loop(ctx context.Context, vdht *dht.IpfsDHT) {
+func loop(ctx context.Context, vdht *dht.IpfsDHT, vdb *LevelDB) {
 	var persistData = time.NewTicker(persistDataInterval)
 	for {
 		<-persistData.C
-		go persistDataPeriodly(ctx, vdht)
+		go persistDataPeriodly(ctx, vdht, vdb)
 	}
 }
 
 // persist data unified entrance, both for bootnode and membernode
-func persistDataPeriodly(ctx context.Context, vdht *dht.IpfsDHT) {
+func persistDataPeriodly(ctx context.Context, vdht *dht.IpfsDHT, vdb *LevelDB) {
 	pd := GetPersistentData(vdht)
 	/* fmt.Printf("host privKey is: %v \n", string(pd.PrivKey))
 	fmt.Printf("peerInfos is: \n")
@@ -271,7 +260,7 @@ func persistDataPeriodly(ctx context.Context, vdht *dht.IpfsDHT) {
 		return
 	}
 	//log.Info("persistDataPeriodly TIME TO PERSIST DATA")
-	SaveData(ctx, vdht, "/PersistentData", pdByte)
+	SaveData(ctx, vdht, vdb, "/PersistentData", pdByte)
 }
 
 func recoverPeerInfosAndBuckets(ctx context.Context, pd *PersistentData, host p2phost.Host, vdht *dht.IpfsDHT) {

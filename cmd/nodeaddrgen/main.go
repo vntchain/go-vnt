@@ -94,7 +94,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	vdht, host, err := p2p.ConstructDHT(ctx, p2p.MakePort(*listenAddr), nodeKey, *dataDir, restrictList, natm)
+	vdht, host, vdb, err := p2p.ConstructDHT(ctx, p2p.MakePort(*listenAddr), nodeKey, *dataDir, restrictList, natm)
 	if err != nil {
 		log.Error(fmt.Sprintf("constructDHT a: %s", err))
 		return
@@ -106,7 +106,7 @@ func main() {
 		return
 	}
 	//log.Info("persistDataPeriodly TIME TO PERSIST DATA")
-	p2p.SaveData(ctx, vdht, "/PersistentData", pdByte)
+	p2p.SaveData(ctx, vdht, vdb, "/PersistentData", pdByte)
 	hostAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", host.ID().Pretty()))
 	addr := host.Addrs()[0]
 	fullAddr := addr.Encapsulate(hostAddr)
