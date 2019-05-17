@@ -295,6 +295,7 @@ func (s *Swarm) dial(ctx context.Context, p peer.ID) (*Conn, error) {
 	if len(peerAddrs) == 0 {
 		return nil, errors.New("no addresses")
 	}
+	fmt.Println("#### peerAddrs:", peerAddrs)
 	goodAddrs := s.filterKnownUndialables(peerAddrs)
 	if len(goodAddrs) == 0 {
 		return nil, errors.New("no good addresses")
