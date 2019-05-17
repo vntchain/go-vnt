@@ -128,6 +128,7 @@ func recoverPersistentData(vdb *LevelDB) *PersistentData {
 		log.Error("recoverPersistentData", "failed to fetch data", err)
 		return nil
 	}
+	log.Info("recoverPersistentData: ", "pd value", pdValue)
 	//fmt.Printf("R- pdValue = %v\n", pdValue.([]byte))
 	err = json.Unmarshal(pdValue, record)
 	if err != nil {
