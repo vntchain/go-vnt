@@ -9,6 +9,7 @@ import (
 	ic "github.com/libp2p/go-libp2p-crypto"
 	b58 "github.com/mr-tron/base58/base58"
 	mh "github.com/multiformats/go-multihash"
+	"strings"
 )
 
 var (
@@ -56,10 +57,18 @@ func (id ID) Loggable() map[string]interface{} {
 // codebase is known to be correct.
 func (id ID) String() string {
 	pid := id.Pretty()
-	if len(pid) <= 10 {
-		return fmt.Sprintf("<peer.ID %s>", pid)
+
+	//All sha256 nodes start with Qm
+	//We can skip the Qm to make the peer.ID more useful
+	if strings.HasPrefix(pid, "Qm") {
+		pid = pid[2:]
 	}
-	return fmt.Sprintf("<peer.ID %s*%s>", pid[:2], pid[len(pid)-6:])
+
+	maxRunes := 64
+	if len(pid) < maxRunes {
+		maxRunes = len(pid)
+	}
+	return fmt.Sprintf("<peer.ID %s>", pid[:maxRunes])
 }
 
 // MatchesPrivateKey tests whether this ID was derived from sk
