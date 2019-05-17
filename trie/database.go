@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/metrics"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 var (

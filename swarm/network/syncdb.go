@@ -20,10 +20,10 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/vntchain/go-vnt/log"
-	"github.com/vntchain/go-vnt/swarm/storage"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
+	"github.com/vntchain/go-vnt/log"
+	"github.com/vntchain/go-vnt/swarm/storage"
 )
 
 const counterKeyPrefix = 0x01

@@ -22,9 +22,9 @@ import (
 
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/crypto"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/rlp"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 // Prove constructs a merkle proof for key. The result contains all encoded nodes

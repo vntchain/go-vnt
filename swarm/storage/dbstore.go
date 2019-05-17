@@ -32,11 +32,11 @@ import (
 	"io/ioutil"
 	"sync"
 
+	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/metrics"
 	"github.com/vntchain/go-vnt/rlp"
-	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/iterator"
 )
 
 //metrics variables
