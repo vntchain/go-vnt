@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	logging "github.com/ipfs/go-log"
+	"fmt"
 )
 
 var log = logging.Logger("routing/record")
@@ -41,6 +42,7 @@ func (v NamespacedValidator) ValidatorByKey(key string) Validator {
 
 // Validate conforms to the Validator interface.
 func (v NamespacedValidator) Validate(key string, value []byte) error {
+	fmt.Println("#### Valide key: ", key)
 	vi := v.ValidatorByKey(key)
 	if vi == nil {
 		return ErrInvalidRecordType
