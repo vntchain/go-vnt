@@ -220,7 +220,7 @@ func main() {
 // blocking mode, waiting for it to be shut down.
 func gvnt(ctx *cli.Context) error {
 	node := makeFullNode(ctx)
-	// go startVNTNode(node) 
+	// go startVNTNode(node)
 	startNode(ctx, node)
 	node.Wait()
 	return nil

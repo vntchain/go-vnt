@@ -22,7 +22,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/libp2p/go-libp2p-peer"
+	peer "github.com/libp2p/go-libp2p-peer"
 	"github.com/vntchain/go-vnt/log"
 )
 
@@ -72,12 +72,12 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 		return true
 	}
 
-	needdial := s.maxDynDials
+	needDial := s.maxDynDials
 	// dial
 
 	for _, flag := range s.dialmap {
 		if flag&dynDialedDail != 0 {
-			needdial--
+			needDial--
 		}
 	}
 
@@ -100,17 +100,17 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 		// }
 
 		if addDial(staticDialedDail, bootnode) {
-			needdial--
+			needDial--
 		}
 	}
 
-	randomDail := needdial / 2
+	randomDial := needDial / 2
 
-	if randomDail > 0 {
+	if randomDial > 0 {
 		randompeerlist := s.table.RandomPeer()
-		for i := 0; i < randomDail && i < len(randompeerlist); i++ {
+		for i := 0; i < randomDial && i < len(randompeerlist); i++ {
 			if addDial(dynDialedDail, randompeerlist[i]) {
-				needdial--
+				needDial--
 			}
 		}
 	}
@@ -119,15 +119,15 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 	// if still need to dial more peer, create dynamic dials from random
 	// lookup results
 	i := 0
-	for ; i < len(s.lookupNode) && needdial > 0; i++ {
+	for ; i < len(s.lookupNode) && needDial > 0; i++ {
 		if addDial(dynDialedDail, s.lookupNode[i]) {
-			needdial--
+			needDial--
 		}
 	}
 
-	//update loopupNode, if need more, launch loopup task
+	// update lookupNode, if need more, launch lookup task
 	s.lookupNode = s.lookupNode[:copy(s.lookupNode, s.lookupNode[i:])]
-	if len(s.lookupNode) < needdial && !s.lookupRunning {
+	if len(s.lookupNode) < needDial && !s.lookupRunning {
 		s.lookupRunning = true
 		newtasks = append(newtasks, &lookupTask{})
 	}
@@ -194,15 +194,12 @@ func (t *dialTask) Do(ctx context.Context, server *Server) {
 		return
 	}
 
-	log.Debug("Dial task", "target", t.target)
-	t.dial(ctx, server, t.target, t.pid)
+	log.Trace("Dial task", "target", t.target)
+	_ = t.dial(ctx, server, t.target, t.pid)
 }
 
 func (t *dialTask) checkTarget() bool {
-	if t.target == "" {
-		return false
-	}
-	return true
+	return t.target != ""
 }
 
 func (t *dialTask) dial(ctx context.Context, server *Server, target peer.ID, pid string) (err error) {
@@ -213,13 +210,6 @@ func (t *dialTask) dial(ctx context.Context, server *Server, target peer.ID, pid
 }
 
 func (t *lookupTask) Do(ctx context.Context, server *Server) {
-	//give sometime for this lookup task
-	nextLoopup := server.lastLookup.Add(4 * time.Second)
-	if now := time.Now(); now.Before(nextLoopup) {
-		time.Sleep(nextLoopup.Sub(now))
-	}
-	server.lastLookup = time.Now()
-
 	target := randomID()
 	peers, err := server.table.GetDhtTable().GetClosestPeers(ctx, string(target))
 	if err != nil {

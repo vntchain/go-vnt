@@ -56,10 +56,6 @@ func NewDHTTable(dht *dht.IpfsDHT, id peer.ID) *VNTDht {
 }
 
 func (vdht *VNTDht) Start(ctx context.Context) error {
-	// init
-
-	// loop
-	//go vdht.loop(ctx)
 	var bootStrapConfig = dht.DefaultBootstrapConfig
 	bootStrapConfig.Period = time.Duration(refreshInterval)
 	bootStrapConfig.Timeout = time.Duration(searchTimeOut)
@@ -96,24 +92,6 @@ func randomID() peer.ID {
 	// copy(aid, id)
 	return peer.ID(id)
 }
-
-//func (vdht *VNTDht) loop(ctx context.Context) {
-//	var (
-//		refresh     = time.NewTicker(refreshInterval)
-//		refreshDone = make(chan struct{})
-//	)
-//	go vdht.doRefresh(ctx, refreshDone)
-//	// loop:
-//	for {
-//		// 开始搜寻
-//
-//		select {
-//		case <-refresh.C:
-//			go vdht.doRefresh(ctx, refreshDone)
-//		}
-//		// 刷新K桶
-//	}
-//}
 
 func (vdht *VNTDht) Lookup(ctx context.Context, targetID NodeID) []*NodeID {
 	// vdht.table.GetClosestPeers(vdht.Context, )

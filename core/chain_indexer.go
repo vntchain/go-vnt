@@ -26,9 +26,9 @@ import (
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/rawdb"
 	"github.com/vntchain/go-vnt/core/types"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/event"
 	"github.com/vntchain/go-vnt/log"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 // ChainIndexerBackend defines the methods needed to process chain segments in

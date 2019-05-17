@@ -55,7 +55,7 @@ func TestDifficulty(t *testing.T) {
 	})
 
 	dt.config("Byzantium", params.ChainConfig{
-	// ByzantiumBlock: big.NewInt(0),
+		// ByzantiumBlock: big.NewInt(0),
 	})
 
 	dt.config("MainNetwork", mainnetChainConfig)
