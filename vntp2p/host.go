@@ -142,6 +142,8 @@ func recoverPersistentData(vdb *LevelDB) *PersistentData {
 		return pd
 	}
 
+	log.Info("recoverPersistentData: ", "pd record key", string(record.Key), "pd record value", record.Value)
+
 	err = json.Unmarshal(record.Value, pd)
 	if err != nil {
 		log.Error("recoverPersistentData", "unmarshal pd error2", err)
