@@ -14,6 +14,7 @@ import (
 
 	sha256 "github.com/minio/sha256-simd"
 	"github.com/vntchain/go-vnt/crypto"
+	"github.com/vntchain/go-vnt/common/math"
 )
 
 // ECDSAPrivateKey is an implementation of an ECDSA private key
@@ -113,7 +114,9 @@ func (ePriv *ECDSAPrivateKey) Type() pb.KeyType {
 
 // Raw returns x509 bytes from a private key
 func (ePriv *ECDSAPrivateKey) Raw() ([]byte, error) {
-	return x509.MarshalECPrivateKey(ePriv.priv)
+	// added by vnt
+	return math.PaddedBigBytes(ePriv.priv.D, ePriv.priv.Params().BitSize/8), nil
+	//return x509.MarshalECPrivateKey(ePriv.priv)
 }
 
 // Equals compares to private keys
