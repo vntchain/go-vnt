@@ -220,7 +220,7 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 		)
 	}
 
-	hostAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", host.ID().Pretty()))
+	hostAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", ToString(host.ID())))
 
 	addr := host.Addrs()[0]
 	fullAddr := addr.Encapsulate(hostAddr)
