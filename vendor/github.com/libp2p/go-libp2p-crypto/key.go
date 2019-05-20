@@ -275,13 +275,11 @@ func UnmarshalPublicKey(data []byte) (PubKey, error) {
 	pmes := new(pb.PublicKey)
 	err := proto.Unmarshal(data, pmes)
 	if err != nil {
-		fmt.Println("#### key.UnmarshalPublicKey:", "err", err)
 		return nil, err
 	}
 
 	um, ok := PubKeyUnmarshallers[pmes.GetType()]
 	if !ok {
-		fmt.Println("#### key.UnmarshalPublicKey:", "err", ErrBadKeyType)
 		return nil, ErrBadKeyType
 	}
 
@@ -295,7 +293,6 @@ func MarshalPublicKey(k PubKey) ([]byte, error) {
 	pbmes.Type = k.Type()
 	data, err := k.Raw()
 	if err != nil {
-		fmt.Println("#### k.Raw(): ", "err", err)
 		return nil, err
 	}
 	pbmes.Data = data

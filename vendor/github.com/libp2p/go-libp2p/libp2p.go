@@ -3,10 +3,9 @@ package libp2p
 import (
 	"context"
 
-	config "github.com/libp2p/go-libp2p/config"
+	"github.com/libp2p/go-libp2p/config"
 
-	host "github.com/libp2p/go-libp2p-host"
-	"fmt"
+	"github.com/libp2p/go-libp2p-host"
 )
 
 // Config describes a set of settings for a libp2p node
@@ -64,7 +63,6 @@ func New(ctx context.Context, opts ...Option) (host.Host, error) {
 func NewWithoutDefaults(ctx context.Context, opts ...Option) (host.Host, error) {
 	var cfg Config
 	if err := cfg.Apply(opts...); err != nil {
-		fmt.Println("#### Apply options fail: ", "err", err)
 		return nil, err
 	}
 	return cfg.NewNode(ctx)

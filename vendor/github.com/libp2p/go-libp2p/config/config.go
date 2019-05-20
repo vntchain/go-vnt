@@ -91,7 +91,6 @@ func (cfg *Config) NewNode(ctx context.Context) (host.Host, error) {
 	// Obtain Peer ID from public key
 	pid, err := peer.IDFromPublicKey(cfg.PeerKey.GetPublic())
 	if err != nil {
-		fmt.Println("#### IDFromPublicKey: ", "err", err)
 		return nil, err
 	}
 
@@ -101,11 +100,9 @@ func (cfg *Config) NewNode(ctx context.Context) (host.Host, error) {
 
 	if !cfg.Insecure {
 		if err := cfg.Peerstore.AddPrivKey(pid, cfg.PeerKey); err != nil {
-			fmt.Println("#### AddPrivKey: ", "err", err)
 			return nil, err
 		}
 		if err := cfg.Peerstore.AddPubKey(pid, cfg.PeerKey.GetPublic()); err != nil {
-			fmt.Println("#### AddPubKey: ", "err", err)
 			return nil, err
 		}
 	}
@@ -125,7 +122,6 @@ func (cfg *Config) NewNode(ctx context.Context) (host.Host, error) {
 
 	if err != nil {
 		swrm.Close()
-		fmt.Println("#### NewHost: ", "err", err)
 		return nil, err
 	}
 
@@ -149,7 +145,6 @@ func (cfg *Config) NewNode(ctx context.Context) (host.Host, error) {
 		upgrader.Secure, err = makeSecurityTransport(h, cfg.SecurityTransports)
 		if err != nil {
 			h.Close()
-			fmt.Println("#### makeSecurityTransport: ", "err", err)
 			return nil, err
 		}
 	}
@@ -157,21 +152,18 @@ func (cfg *Config) NewNode(ctx context.Context) (host.Host, error) {
 	upgrader.Muxer, err = makeMuxer(h, cfg.Muxers)
 	if err != nil {
 		h.Close()
-		fmt.Println("#### makeMuxer: ", "err", err)
 		return nil, err
 	}
 
 	tpts, err := makeTransports(h, upgrader, cfg.Transports)
 	if err != nil {
 		h.Close()
-		fmt.Println("#### makeTransports: ", "err", err)
 		return nil, err
 	}
 	for _, t := range tpts {
 		err = swrm.AddTransport(t)
 		if err != nil {
 			h.Close()
-			fmt.Println("#### AddTransport: ", "err", err)
 			return nil, err
 		}
 	}
@@ -180,7 +172,6 @@ func (cfg *Config) NewNode(ctx context.Context) (host.Host, error) {
 		err := circuit.AddRelayTransport(swrm.Context(), h, upgrader, cfg.RelayOpts...)
 		if err != nil {
 			h.Close()
-			fmt.Println("#### AddRelayTransport: ", "err", err)
 			return nil, err
 		}
 	}
@@ -189,7 +180,6 @@ func (cfg *Config) NewNode(ctx context.Context) (host.Host, error) {
 	// should probably fail if listening on *any* addr fails.
 	if err := h.Network().Listen(cfg.ListenAddrs...); err != nil {
 		h.Close()
-		fmt.Println("#### h.Network().Liste: ", "err", err)
 		return nil, err
 	}
 
@@ -199,7 +189,6 @@ func (cfg *Config) NewNode(ctx context.Context) (host.Host, error) {
 		router, err = cfg.Routing(h)
 		if err != nil {
 			h.Close()
-			fmt.Println("#### cfg.Routing(h): ", "err", err)
 			return nil, err
 		}
 	}

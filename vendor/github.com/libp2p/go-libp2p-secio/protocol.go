@@ -76,7 +76,6 @@ func (s *secureSession) Loggable() map[string]interface{} {
 func newSecureSession(ctx context.Context, local peer.ID, key ci.PrivKey, insecure net.Conn, remotePeer peer.ID) (*secureSession, error) {
 	s := &secureSession{localPeer: local, localKey: key}
 
-	fmt.Println("#### Protocal.newSecureSession:", "peerid", remotePeer, "session", s)
 	switch {
 	case s.localPeer == "":
 		return nil, errors.New("no local id provided")
@@ -95,7 +94,6 @@ func newSecureSession(ctx context.Context, local peer.ID, key ci.PrivKey, insecu
 	handshakeCtx, cancel := context.WithTimeout(ctx, HandshakeTimeout) // remove
 	defer cancel()
 	if err := s.runHandshake(handshakeCtx); err != nil {
-		fmt.Println("#### Protocal.newSecureSession:", "peerid", remotePeer, "err", err, "session", s)
 		return nil, err
 	}
 
@@ -132,8 +130,6 @@ func (s *secureSession) runHandshake(ctx context.Context) error {
 		s.insecure.Close()
 		err = ctx.Err()
 	case err = <-result:
-
-		fmt.Println("#### Protocal.runHandshake:", "peerid", s.remotePeer, "err", err)
 	}
 	return err
 }
@@ -147,14 +143,12 @@ func (s *secureSession) runHandshakeSync() error {
 	nonceOut := make([]byte, nonceSize)
 	_, err := rand.Read(nonceOut)
 	if err != nil {
-		fmt.Println("#### Transport.runHandshakeSync1:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
 	s.local.permanentPubKey = s.localKey.GetPublic()
 	myPubKeyBytes, err := s.local.permanentPubKey.Bytes()
 	if err != nil {
-		fmt.Println("#### Transport.runHandshakeSync2:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
@@ -171,14 +165,12 @@ func (s *secureSession) runHandshakeSync() error {
 	// Marshal our propose packet
 	proposeOutBytes, err := proto.Marshal(proposeOut)
 	if err != nil {
-		fmt.Println("#### Transport.runHandshakeSync3:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
 	// Send Propose packet and Receive their Propose packet
 	proposeInBytes, err := readWriteMsg(s.insecureM, proposeOutBytes)
 	if err != nil {
-		fmt.Println("#### Transport.runHandshakeSync4:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 	defer s.insecureM.ReleaseMsg(proposeInBytes)
@@ -186,7 +178,6 @@ func (s *secureSession) runHandshakeSync() error {
 	// Parse their propose packet
 	proposeIn := new(pb.Propose)
 	if err = proto.Unmarshal(proposeInBytes, proposeIn); err != nil {
-		fmt.Println("#### Transport.runHandshakeSync5:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
@@ -199,14 +190,12 @@ func (s *secureSession) runHandshakeSync() error {
 	// get remote identity
 	s.remote.permanentPubKey, err = ci.UnmarshalPublicKey(proposeIn.GetPubkey())
 	if err != nil {
-		fmt.Println("#### Transport.runHandshakeSync6:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
 	// get peer id
 	actualRemotePeer, err := peer.IDFromPublicKey(s.remote.permanentPubKey)
 	if err != nil {
-		fmt.Println("#### Transport.runHandshakeSync7:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 	switch s.remotePeer {
@@ -219,7 +208,6 @@ func (s *secureSession) runHandshakeSync() error {
 		// Peer mismatch. Bail.
 		s.insecure.Close()
 		log.Debugf("expected peer %s, got peer %s", s.remotePeer, actualRemotePeer)
-		fmt.Println("#### Transport.runHandshakeSync8:", "peerid", s.remotePeer, "err", ErrWrongPeer)
 		return ErrWrongPeer
 	}
 
@@ -233,25 +221,21 @@ func (s *secureSession) runHandshakeSync() error {
 	oh2 := hashSha256(append(myPubKeyBytes, proposeIn.GetRand()...))
 	order := bytes.Compare(oh1, oh2)
 	if order == 0 {
-		fmt.Println("#### Transport.runHandshakeSync9:", "peerid", s.remotePeer, "err", ErrEcho)
 		return ErrEcho // talking to self (same socket. must be reuseport + dialing self)
 	}
 
 	s.local.curveT, err = selectBest(order, SupportedExchanges, proposeIn.GetExchanges())
 	if err != nil {
-		fmt.Println("#### Transport.runHandshakeSync10:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
 	s.local.cipherT, err = selectBest(order, SupportedCiphers, proposeIn.GetCiphers())
 	if err != nil {
-		fmt.Println("#### Transport.runHandshakeSync11:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
 	s.local.hashT, err = selectBest(order, SupportedHashes, proposeIn.GetHashes())
 	if err != nil {
-		fmt.Println("#### Transport.runHandshakeSync12:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
@@ -271,7 +255,6 @@ func (s *secureSession) runHandshakeSync() error {
 	var genSharedKey ci.GenSharedKey
 	s.local.ephemeralPubKey, genSharedKey, err = ci.GenerateEKeyPair(s.local.curveT)
 	if err != nil {
-		fmt.Println("#### Transport.runHandshakeSync13:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
@@ -287,21 +270,18 @@ func (s *secureSession) runHandshakeSync() error {
 	exchangeOut.Epubkey = s.local.ephemeralPubKey
 	exchangeOut.Signature, err = s.localKey.Sign(selectionOutBytes)
 	if err != nil {
-		fmt.Println("#### Transport.runHandshakeSync14:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
 	// Marshal our exchange packet
 	exchangeOutBytes, err := proto.Marshal(exchangeOut)
 	if err != nil {
-		fmt.Println("#### Transport.runHandshakeSync15:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
 	// Send Exchange packet and receive their Exchange packet
 	exchangeInBytes, err := readWriteMsg(s.insecureM, exchangeOutBytes)
 	if err != nil {
-		fmt.Println("#### Transport.runHandshakeSync16:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 	defer s.insecureM.ReleaseMsg(exchangeInBytes)
@@ -309,7 +289,6 @@ func (s *secureSession) runHandshakeSync() error {
 	// Parse their Exchange packet.
 	exchangeIn := new(pb.Exchange)
 	if err = proto.Unmarshal(exchangeInBytes, exchangeIn); err != nil {
-		fmt.Println("#### Transport.runHandshakeSync17:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
@@ -330,13 +309,11 @@ func (s *secureSession) runHandshakeSync() error {
 	sigOK, err := s.remote.permanentPubKey.Verify(selectionInBytes, exchangeIn.GetSignature())
 	if err != nil {
 		// log.Error("2.1 Verify: failed: %s", err)
-		fmt.Println("#### Transport.runHandshakeSync18:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
 	if !sigOK {
 		// log.Error("2.1 Verify: failed: %s", ErrBadSig)
-		fmt.Println("#### Transport.runHandshakeSync19:", "peerid", s.remotePeer, "err", ErrBadSig)
 		return ErrBadSig
 	}
 	// log.Debugf("2.1 Verify: signature verified.")
@@ -347,7 +324,6 @@ func (s *secureSession) runHandshakeSync() error {
 	// OK! seems like we're good to go.
 	s.sharedSecret, err = genSharedKey(exchangeIn.GetEpubkey())
 	if err != nil {
-		fmt.Println("#### Transport.runHandshakeSync20:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
@@ -362,7 +338,6 @@ func (s *secureSession) runHandshakeSync() error {
 		k1, k2 = k2, k1 // swap
 	default:
 		// we should've bailed before this. but if not, bail here.
-		fmt.Println("#### Transport.runHandshakeSync21:", "peerid", s.remotePeer, "err", ErrEcho)
 		return ErrEcho
 	}
 	s.local.keys = k1
@@ -375,12 +350,10 @@ func (s *secureSession) runHandshakeSync() error {
 	// step 2.3. MAC + Cipher -- prepare MAC + cipher
 
 	if err := s.local.makeMacAndCipher(); err != nil {
-		fmt.Println("#### Transport.runHandshakeSync22:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
 	if err := s.remote.makeMacAndCipher(); err != nil {
-		fmt.Println("#### Transport.runHandshakeSync23:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 
@@ -399,7 +372,6 @@ func (s *secureSession) runHandshakeSync() error {
 	// send their Nonce and receive ours
 	nonceOut2, err := readWriteMsg(s.ReadWriteCloser, proposeIn.GetRand())
 	if err != nil {
-		fmt.Println("#### Transport.runHandshakeSync24:", "peerid", s.remotePeer, "err", err)
 		return err
 	}
 	defer s.ReleaseMsg(nonceOut2)
