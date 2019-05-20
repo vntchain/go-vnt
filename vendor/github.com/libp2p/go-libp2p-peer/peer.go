@@ -161,11 +161,13 @@ func IDHexEncode(id ID) string {
 
 // IDFromPublicKey returns the Peer ID corresponding to pk
 func IDFromPublicKey(pk ic.PubKey) (ID, error) {
-	b, err := pk.Bytes()
+	// added by vnt
+	b, err := pk.Raw()
 	if err != nil {
 		fmt.Println("#### pk.Bytes(): ", "err", err)
 		return "", err
 	}
+
 	var alg uint64 = mh.SHA2_256
 	if AdvancedEnableInlining && len(b) <= maxInlineKeyLength {
 		alg = mh.ID
