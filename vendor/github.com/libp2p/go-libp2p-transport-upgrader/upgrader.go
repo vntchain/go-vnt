@@ -50,6 +50,7 @@ func (u *Upgrader) UpgradeListener(t transport.Transport, list manet.Listener) t
 // UpgradeOutbound upgrades the given outbound multiaddr-net connection into a
 // full libp2p-transport connection.
 func (u *Upgrader) UpgradeOutbound(ctx context.Context, t transport.Transport, maconn manet.Conn, p peer.ID) (transport.Conn, error) {
+	fmt.Println("#### upgrader.UpgradeOutbound:", "p", p)
 	if p == "" {
 		return nil, ErrNilPeer
 	}
@@ -59,6 +60,7 @@ func (u *Upgrader) UpgradeOutbound(ctx context.Context, t transport.Transport, m
 // UpgradeInbound upgrades the given inbound multiaddr-net connection into a
 // full libp2p-transport connection.
 func (u *Upgrader) UpgradeInbound(ctx context.Context, t transport.Transport, maconn manet.Conn) (transport.Conn, error) {
+	fmt.Println("#### upgrader.UpgradeInbound:")
 	return u.upgrade(ctx, t, maconn, "")
 }
 
