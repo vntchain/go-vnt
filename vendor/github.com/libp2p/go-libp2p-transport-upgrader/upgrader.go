@@ -84,7 +84,7 @@ func (u *Upgrader) upgrade(ctx context.Context, t transport.Transport, maconn ma
 			" of Private Networks is forced by the enviroment")
 		return nil, pnet.ErrNotInPrivateNetwork
 	}
-	fmt.Println("#### upgrader:", "conn", conn, "remote peer:", p)
+	fmt.Println("#### upgrader:", "peerid", p, "conn", conn)
 	sconn, err := u.setupSecurity(ctx, conn, p)
 	if err != nil {
 		conn.Close()
@@ -104,7 +104,7 @@ func (u *Upgrader) upgrade(ctx context.Context, t transport.Transport, maconn ma
 }
 
 func (u *Upgrader) setupSecurity(ctx context.Context, conn net.Conn, p peer.ID) (ss.Conn, error) {
-	fmt.Println("#### setupSecurity:", "conn", conn, "remote peer:", p)
+	fmt.Println("#### setupSecurity:", "peerid", p, "conn", conn)
 	if p == "" {
 		return u.Secure.SecureInbound(ctx, conn)
 	}

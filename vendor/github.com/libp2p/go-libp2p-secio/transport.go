@@ -38,7 +38,7 @@ func (sg *Transport) SecureInbound(ctx context.Context, insecure net.Conn) (cs.C
 	return newSecureSession(ctx, sg.LocalID, sg.PrivateKey, insecure, "")
 }
 func (sg *Transport) SecureOutbound(ctx context.Context, insecure net.Conn, p peer.ID) (cs.Conn, error) {
-	fmt.Println("#### Transport.SecureOutbound:", "insecure", insecure, "peer id", p)
+	fmt.Println("#### Transport.SecureOutbound:", "peerid", p, "insecure", insecure)
 	return newSecureSession(ctx, sg.LocalID, sg.PrivateKey, insecure, p)
 }
 
