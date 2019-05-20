@@ -76,6 +76,7 @@ func (s *secureSession) Loggable() map[string]interface{} {
 func newSecureSession(ctx context.Context, local peer.ID, key ci.PrivKey, insecure net.Conn, remotePeer peer.ID) (*secureSession, error) {
 	s := &secureSession{localPeer: local, localKey: key}
 
+	fmt.Println("#### Protocal.newSecureSession:", "session", s)
 	switch {
 	case s.localPeer == "":
 		return nil, errors.New("no local id provided")
@@ -94,6 +95,7 @@ func newSecureSession(ctx context.Context, local peer.ID, key ci.PrivKey, insecu
 	handshakeCtx, cancel := context.WithTimeout(ctx, HandshakeTimeout) // remove
 	defer cancel()
 	if err := s.runHandshake(handshakeCtx); err != nil {
+		fmt.Println("#### Protocal.newSecureSession:", "err", err, "session", s)
 		return nil, err
 	}
 
@@ -130,6 +132,8 @@ func (s *secureSession) runHandshake(ctx context.Context) error {
 		s.insecure.Close()
 		err = ctx.Err()
 	case err = <-result:
+
+		fmt.Println("#### Protocal.runHandshake:", "err", err)
 	}
 	return err
 }
