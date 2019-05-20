@@ -15,6 +15,8 @@ import (
 	sha256 "github.com/minio/sha256-simd"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/common/math"
+	"fmt"
+	"github.com/vntchain/go-vnt/crypto/secp256k1"
 )
 
 // ECDSAPrivateKey is an implementation of an ECDSA private key
@@ -89,15 +91,24 @@ func UnmarshalECDSAPrivateKey(data []byte) (PrivKey, error) {
 
 // UnmarshalECDSAPublicKey returns the public key from x509 bytes
 func UnmarshalECDSAPublicKey(data []byte) (PubKey, error) {
-	pubIfc, err := x509.ParsePKIXPublicKey(data)
-	if err != nil {
-		return nil, err
+	// added by vnt
+
+	//pubIfc, err := x509.ParsePKIXPublicKey(data)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	x, y := secp256k1.DecompressPubkey(data)
+	if x == nil {
+		return nil, fmt.Errorf("invalid public key")
 	}
 
-	pub, ok := pubIfc.(*ecdsa.PublicKey)
-	if !ok {
-		return nil, ErrNotECDSAPubKey
-	}
+	var pub = &ecdsa.PublicKey{X: x, Y: y, Curve: secp256k1.S256()}
+
+	//pub, ok := pubIfc.(*ecdsa.PublicKey)
+	//if !ok {
+	//	return nil, ErrNotECDSAPubKey
+	//}
 
 	return &ECDSAPublicKey{pub}, nil
 }
