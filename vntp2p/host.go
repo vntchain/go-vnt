@@ -153,6 +153,8 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 		pd = recoverPersistentData(vntp2pDB)
 	}
 
+	log.Info("#### pd", "pd", pd)
+
 	var privKey crypto2.PrivKey = nil
 	if nodekey == nil && pd != nil {
 		//k := string(pd.PrivKey)
