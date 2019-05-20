@@ -229,6 +229,8 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 		go loop(ctx, vdht, vntp2pDB)
 	}
 
+	log.Info("#### ConstructDHT, Host is", "id", host.ID())
+
 	return vdht, host, vntp2pDB, err
 }
 
