@@ -50,7 +50,6 @@ func (u *Upgrader) UpgradeListener(t transport.Transport, list manet.Listener) t
 // UpgradeOutbound upgrades the given outbound multiaddr-net connection into a
 // full libp2p-transport connection.
 func (u *Upgrader) UpgradeOutbound(ctx context.Context, t transport.Transport, maconn manet.Conn, p peer.ID) (transport.Conn, error) {
-	fmt.Println("#### upgrader.UpgradeOutbound:", "p", p)
 	if p == "" {
 		return nil, ErrNilPeer
 	}
@@ -60,7 +59,6 @@ func (u *Upgrader) UpgradeOutbound(ctx context.Context, t transport.Transport, m
 // UpgradeInbound upgrades the given inbound multiaddr-net connection into a
 // full libp2p-transport connection.
 func (u *Upgrader) UpgradeInbound(ctx context.Context, t transport.Transport, maconn manet.Conn) (transport.Conn, error) {
-	fmt.Println("#### upgrader.UpgradeInbound:")
 	return u.upgrade(ctx, t, maconn, "")
 }
 
@@ -84,7 +82,6 @@ func (u *Upgrader) upgrade(ctx context.Context, t transport.Transport, maconn ma
 			" of Private Networks is forced by the enviroment")
 		return nil, pnet.ErrNotInPrivateNetwork
 	}
-	fmt.Println("#### upgrader:", "peerid", p, "conn", conn)
 	sconn, err := u.setupSecurity(ctx, conn, p)
 	if err != nil {
 		conn.Close()
@@ -104,7 +101,6 @@ func (u *Upgrader) upgrade(ctx context.Context, t transport.Transport, maconn ma
 }
 
 func (u *Upgrader) setupSecurity(ctx context.Context, conn net.Conn, p peer.ID) (ss.Conn, error) {
-	fmt.Println("#### setupSecurity:", "peerid", p, "conn", conn)
 	if p == "" {
 		return u.Secure.SecureInbound(ctx, conn)
 	}

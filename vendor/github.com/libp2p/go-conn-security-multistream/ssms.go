@@ -50,7 +50,6 @@ func (sm *SSMuxer) SecureInbound(ctx context.Context, insecure net.Conn) (connse
 // multiplexed stream security transport.
 func (sm *SSMuxer) SecureOutbound(ctx context.Context, insecure net.Conn, p peer.ID) (connsec.Conn, error) {
 	tpt, err := sm.selectProto(ctx, insecure, false)
-	fmt.Println("#### ssms.SecureOutbound:", "peerid", p, "tpt", tpt, "err", err)
 	if err != nil {
 		return nil, err
 	}

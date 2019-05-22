@@ -3,9 +3,8 @@ package libp2p
 // This file contains all the default configuration options.
 
 import (
-	"crypto/rand"
-
 	crypto "github.com/libp2p/go-libp2p-crypto"
+	crypto2 "github.com/vntchain/go-vnt/crypto"
 	pstoremem "github.com/libp2p/go-libp2p-peerstore/pstoremem"
 	secio "github.com/libp2p/go-libp2p-secio"
 	tcp "github.com/libp2p/go-tcp-transport"
@@ -46,7 +45,9 @@ var DefaultPeerstore Option = func(cfg *Config) error {
 
 // RandomIdentity generates a random identity (default behaviour)
 var RandomIdentity = func(cfg *Config) error {
-	priv, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
+	p, _ := crypto2.HexToECDSA("ac355731983f9ad945b642f15ed60022fa4aeb8f5c069d4f15a24c4b5100195b")
+	priv, _, err := crypto.ECDSAKeyPairFromKey(p)
+	//priv, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
 	if err != nil {
 		return err
 	}

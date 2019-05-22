@@ -164,7 +164,6 @@ func IDFromPublicKey(pk ic.PubKey) (ID, error) {
 	// added by vnt
 	b, err := pk.Raw()
 	if err != nil {
-		fmt.Println("#### pk.Bytes(): ", "err", err)
 		return "", err
 	}
 

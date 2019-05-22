@@ -121,7 +121,6 @@ func SaveData(ctx context.Context, dht *dht.IpfsDHT, vdb *LevelDB, key string, v
 func recoverPersistentData(vdb *LevelDB) *PersistentData {
 	pd := &PersistentData{}
 	pdKey := ds.NewKey(base32.RawStdEncoding.EncodeToString([]byte("/PersistentData")))
-	fmt.Println("#### pdkey is: ", pdKey)
 	pdValue, err := vdb.Get(pdKey)
 	if err != nil {
 		// don't need to care about err != nil
@@ -152,8 +151,6 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 		}
 		pd = recoverPersistentData(vntp2pDB)
 	}
-
-	log.Info("#### pd", "pd", pd)
 
 	var privKey crypto2.PrivKey = nil
 	if nodekey == nil && pd != nil {
@@ -215,7 +212,9 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 		)
 	}
 
-	hostAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", ToString(host.ID())))
+	log.Error("#### host id", "id", host.ID())
+	hostAddr, err := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", ToString(host.ID())))
+	log.Error("#### hostAddr", "hostAddr", hostAddr, "err", err, "host.ID", host.ID())
 
 	addr := host.Addrs()[0]
 	fullAddr := addr.Encapsulate(hostAddr)
@@ -230,8 +229,6 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 	if vntp2pDB != nil {
 		go loop(ctx, vdht, vntp2pDB)
 	}
-
-	log.Info("#### ConstructDHT, Host is", "id", host.ID())
 
 	return vdht, host, vntp2pDB, err
 }
@@ -293,8 +290,10 @@ func constructPeerHost(ctx context.Context, listenstring string, nodekey crypto2
 		//if err != nil {
 		//	return nil, err
 		//}
+		log.Error("#### node key", "key", nodekey)
 		options = append(options, libp2p.ListenAddrStrings(listenstring), libp2p.Identity(nodekey))
 	} else {
+		log.Error("#### no node key", "key", nodekey)
 		options = append(options, libp2p.ListenAddrStrings(listenstring))
 	}
 
