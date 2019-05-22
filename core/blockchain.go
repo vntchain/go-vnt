@@ -1083,6 +1083,10 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 		// Block before last irreversible block can not be inserted
 		// chainmu is required. current block would not change before
 		// this block write finish.
+		// Using current block to check block instead of using
+		// lastIrreversibleBlk is to avoid this scenario that
+		// current block is genesis block and it has no parent
+		// block as LIB.
 		cur := bc.CurrentBlock()
 		if block.NumberU64() < cur.NumberU64() {
 			return i, events, coalescedLogs, ErrBlockBeforeLIB

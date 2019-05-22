@@ -212,7 +212,7 @@ func makeHeader(chain consensus.ChainReader, parent *types.Block, state *state.S
 	if parent.Time() == nil {
 		time = big.NewInt(10)
 	} else {
-		time = new(big.Int).Add(parent.Time(), big.NewInt(2)) // block time is fixed at 10 seconds
+		time = new(big.Int).Add(parent.Time(), big.NewInt(2)) // block's time interval always be 2 seconds
 	}
 
 	return &types.Header{
