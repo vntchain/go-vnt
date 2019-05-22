@@ -32,4 +32,11 @@ var (
 	// ErrNonceTooHigh is returned if the nonce of a transaction is higher than the
 	// next one expected based on the local chain.
 	ErrNonceTooHigh = errors.New("nonce too high")
+
+	// ErrBlockBeforeLIB is returned if the block's height is irreversible
+	ErrBlockBeforeLIB = errors.New("block is before or same height with last irreversible block")
+
+	// ErrForkBlockParentIsNotLIB is returned if the block is same height with head block
+	// but it's parent is not the last irreversible block
+	ErrForkBlockParentIsNotLIB = errors.New("forked block parent is not last irreversible block")
 )
