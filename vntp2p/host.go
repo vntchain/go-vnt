@@ -212,9 +212,7 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 		)
 	}
 
-	log.Error("#### host id", "id", host.ID())
 	hostAddr, err := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", ToString(host.ID())))
-	log.Error("#### hostAddr", "hostAddr", hostAddr, "err", err, "host.ID", host.ID())
 
 	addr := host.Addrs()[0]
 	fullAddr := addr.Encapsulate(hostAddr)
@@ -290,10 +288,8 @@ func constructPeerHost(ctx context.Context, listenstring string, nodekey crypto2
 		//if err != nil {
 		//	return nil, err
 		//}
-		log.Error("#### node key", "key", nodekey)
 		options = append(options, libp2p.ListenAddrStrings(listenstring), libp2p.Identity(nodekey))
 	} else {
-		log.Error("#### no node key", "key", nodekey)
 		options = append(options, libp2p.ListenAddrStrings(listenstring))
 	}
 

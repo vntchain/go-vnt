@@ -8,7 +8,7 @@ import (
 
 	cs "github.com/libp2p/go-conn-security"
 	ci "github.com/libp2p/go-libp2p-crypto"
-	"github.com/libp2p/go-libp2p-peer"
+	peer "github.com/libp2p/go-libp2p-peer"
 )
 
 // ID is secio's protocol ID (used when negotiating with multistream)

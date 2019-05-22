@@ -9,13 +9,13 @@ import (
 	"net"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
+	proto "github.com/gogo/protobuf/proto"
 	logging "github.com/ipfs/go-log"
 	cs "github.com/libp2p/go-conn-security"
 	ci "github.com/libp2p/go-libp2p-crypto"
-	"github.com/libp2p/go-libp2p-peer"
+	peer "github.com/libp2p/go-libp2p-peer"
 	pb "github.com/libp2p/go-libp2p-secio/pb"
-	"github.com/libp2p/go-msgio"
+	msgio "github.com/libp2p/go-msgio"
 	mh "github.com/multiformats/go-multihash"
 )
 
