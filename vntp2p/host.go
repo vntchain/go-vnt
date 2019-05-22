@@ -49,6 +49,7 @@ import (
 	"fmt"
 
 	"github.com/vntchain/go-vnt/crypto"
+	"encoding/hex"
 )
 
 const (
@@ -154,13 +155,13 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 
 	var privKey crypto2.PrivKey = nil
 	if nodekey == nil && pd != nil {
-		//k := string(pd.PrivKey)
-		////bDump, err := hex.DecodeString(k)
-		//if err != nil {
-		//	log.Error("ConstructDHT", "decode key error", err)
-		//	return nil, nil, nil, err
-		//}
-		nodekey, err = crypto.ToECDSA(pd.PrivKey)
+		k := string(pd.PrivKey)
+		bDump, err := hex.DecodeString(k)
+		if err != nil {
+			log.Error("ConstructDHT", "decode key error", err)
+			return nil, nil, nil, err
+		}
+		nodekey, err = crypto.ToECDSA(bDump)
 		if err != nil {
 			log.Error("ConstructDHT", "toECDSA error", err)
 			return nil, nil, nil, err
