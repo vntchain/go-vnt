@@ -126,7 +126,7 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 	}
 
 	// update lookupNode, if need more, launch lookup task
-	s.lookupNode = s.lookupNode[:copy(s.lookupNode, s.lookupNode[i:])]
+	s.lookupNode = s.lookupNode[i:]
 	if len(s.lookupNode) < needDial && !s.lookupRunning {
 		s.lookupRunning = true
 		newtasks = append(newtasks, &lookupTask{})
