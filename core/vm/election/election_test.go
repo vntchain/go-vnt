@@ -1575,3 +1575,122 @@ func operate(c electionContext, op string, address common.Address, proxy common.
 	}
 	return err
 }
+
+func TestMainNetStartup(t *testing.T) {
+	// 0. 初始化
+	context := newcontext()
+	ec := newElectionContext(context)
+	// 分配10亿VNT
+	addr := common.BytesToAddress([]byte{111})
+	db := ec.context.GetStateDb()
+	db.AddBalance(addr, vnt2wei(1e9))
+	if err := setMainNetVotes(db, MainNetVotes{big.NewInt(0), false}); err != nil {
+		t.Fatalf("init main error: %v", err)
+	}
+
+	// 1. 系统启动时检查抵押额为0
+	checkMainNetVote(t, db, "init main error failed", false, vnt2wei(0))
+
+	// 2. 执行抵押，金额4亿
+	if err := ec.stake(addr, big.NewInt(4e8)); err != nil {
+		t.Fatalf("stake 0.4 billion vnt error: %v", err)
+	}
+
+	// 3. 投票抵押额为0
+	checkMainNetVote(t, db, "after just stake 0.4 billion", false, vnt2wei(0))
+
+	// 4. 执行投票
+	// 4.1 注册见证人
+	if err := ec.registerWitness(candidates[0], candiInfos[0].url, candiInfos[0].website, candiInfos[0].name); err != nil {
+		t.Fatalf("register witness failed, err: %v", err)
+	}
+	if err := ec.voteWitnesses(addr, []common.Address{candidates[0]}); err != nil {
+		t.Fatalf("vote witenss failed, err: %v", err)
+	}
+
+	// 5. 投票抵押额为4亿
+	checkMainNetVote(t, db, "after vote 0.4 billion", false, vnt2wei(4e8))
+
+	// 6. 抵押1亿
+	if err := ec.stake(addr, big.NewInt(1e8)); err != nil {
+		t.Fatalf("stake 0.1 billion vnt error: %v", err)
+	}
+
+	// 7. 投票抵押为4亿
+	checkMainNetVote(t, db, "after vote 0.4 billion", false, vnt2wei(4e8))
+
+	// 9. 执行投票
+	if err := ec.voteWitnesses(addr, []common.Address{candidates[0]}); err != nil {
+		t.Fatalf("vote witenss failed, err: %v", err)
+	}
+
+	// 10. 投票抵押额为5亿
+	checkMainNetVote(t, db, "after vote 0.4 billion", true, vnt2wei(5e8))
+
+	// 12. 取消投票
+	if err := ec.cancelVote(addr); err != nil {
+		t.Fatalf("cancel vote failed: %v", err)
+	}
+
+	// 13. 投票抵押为0，active为真
+	checkMainNetVote(t, db, "after just stake 0.4 billion", true, vnt2wei(0))
+
+	// 14. 取消抵押
+	resetStakeTo24HourBefore(t, ec, addr)
+	if err := ec.unStake(addr); err != nil {
+		t.Fatalf("unstake failed: %v", err)
+	}
+
+	// 15. 投票抵押额为0，active为真
+	checkMainNetVote(t, db, "after just stake 0.4 billion", true, vnt2wei(0))
+}
+
+func checkMainNetVote(t *testing.T, db inter.StateDB, tag string, active bool, stake *big.Int) {
+	if mv := getMainNetVotes(db); mv.Active != active || mv.VoteStake.Cmp(stake) != 0 {
+		t.Fatalf("%v, want active=%v, voteStake=%v, got active=%v, voteStake=%v", tag, active, stake.String(), mv.Active, mv.VoteStake.String())
+	}
+}
+
+func vnt2wei(vnt int) *big.Int {
+	return big.NewInt(0).Mul(big.NewInt(int64(vnt)), big.NewInt(1e18))
+}
+
+func resetStakeTo24HourBefore(t *testing.T, ec electionContext, addr common.Address) {
+	stake := ec.getStake(addr)
+	stake.TimeStamp = big.NewInt(0).Sub(stake.TimeStamp, big.NewInt(25*60*60))
+	if err := ec.setStake(stake); err != nil {
+		t.Fatalf("set stake failed: %v", err)
+	}
+}
+
+func TestStakeButNotVote(t *testing.T) {
+	// 0. 初始化
+	context := newcontext()
+	ec := newElectionContext(context)
+	// 分配10亿VNT
+	addr := common.BytesToAddress([]byte{111})
+	db := ec.context.GetStateDb()
+	db.AddBalance(addr, vnt2wei(1e9))
+	if err := setMainNetVotes(db, MainNetVotes{big.NewInt(0), false}); err != nil {
+		t.Fatalf("init main error: %v", err)
+	}
+
+	// 1. 系统启动时检查抵押额为0
+	checkMainNetVote(t, db, "init main error failed", false, vnt2wei(0))
+
+	// 2. 执行抵押，金额4亿
+	if err := ec.stake(addr, big.NewInt(4e8)); err != nil {
+		t.Fatalf("stake 0.4 billion vnt error: %v", err)
+	}
+
+	// 2.1 修改stake的时间为24小时之前
+	resetStakeTo24HourBefore(t, ec, addr)
+
+	// 3. 取消抵押
+	if err := ec.unStake(addr); err != nil {
+		t.Fatalf("unstake failed: %v", err)
+	}
+
+	// 4. 投票抵押额为0，active为false
+	checkMainNetVote(t, db, "after just stake 0.4 billion", false, vnt2wei(0))
+}

@@ -423,6 +423,7 @@ func setRestBounty(stateDB inter.StateDB, restBounty Bounty) error {
 func getMainNetVotes(stateDb inter.StateDB) MainNetVotes {
 	// TODO vnt
 	var mvotes MainNetVotes
+	mvotes.VoteStake = big.NewInt(0)
 	return mvotes
 }
 
