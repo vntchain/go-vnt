@@ -91,14 +91,9 @@ func GetPersistentData(dht *dht.IpfsDHT) *PersistentData {
 
 	// try to get privateKey from peerstore
 	privKey := dht.Host().Peerstore().PrivKey(dht.PeerID())
-	bDump, err := privKey.Raw()
-	if err != nil {
-		log.Error("Bad private key:", "err", err)
-		return nil
-	}
-	//bDump := math.PaddedBigBytes(privKey.D, privKey.Params().BitSize/8)
-	//k := hex.EncodeToString(bDump)
-	pd.PrivKey = bDump
+	bDump, _ := privKey.Raw()
+	k := hex.EncodeToString(bDump)
+	pd.PrivKey = []byte(k)
 
 	pd.PeerInfos = pstore.PeerInfos(dht.Host().Peerstore(), dht.Host().Peerstore().Peers())
 	pd.KBuckets = GetKBuckets(dht.RoutingTable())
