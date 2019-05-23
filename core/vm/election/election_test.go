@@ -1139,53 +1139,77 @@ func TestRegisterProxy(t *testing.T) {
 func TestStake(t *testing.T) {
 	context := newcontext()
 	ec := newElectionContext(context)
+	db := ec.context.GetStateDb()
+	addr := common.HexToAddress("41b0db166cfdf1c4ba3ce657171482a9aa55cc93")
+	db.AddBalance(addr, vnt2wei(100))
 
-	addr1 := common.HexToAddress("41b0db166cfdf1c4ba3ce657171482a9aa55cc93")
-
-	context.GetStateDb().AddBalance(addr1, big.NewInt(0).Mul(big.NewInt(10000000000), big.NewInt(10000000000)))
-
-	err := ec.stake(addr1, big.NewInt(20))
+	// 抵押
+	err := ec.stake(addr, big.NewInt(20))
 	if err != nil {
 		t.Errorf("TestStake stake err:%v ", err)
 	}
+	stake := ec.getStake(addr)
+	if stake.Owner != addr || stake.StakeCount.Uint64() != 20 {
+		t.Fatalf("stake and get stake mismatch, want: %v, got: %v", 20, stake.StakeCount.Uint64())
+	}
+	bal := db.GetBalance(addr)
+	shouldLeft := vnt2wei(80)
+	if bal.Cmp(shouldLeft) != 0 {
+		t.Fatalf("after stake addr should have %v wei got %v wei", shouldLeft.String(), bal.String())
+	}
 
-	t.Logf("111 addr1 balance: %v", context.GetStateDb().GetBalance(addr1))
-
-	stake := ec.getStake(addr1)
-	t.Logf("111 addr1 stake: %v", stake.StakeCount)
-
-	err = ec.unStake(addr1)
+	// 取消抵押
+	err = ec.unStake(addr)
 	if err.Error() != "cannot unstake in 24 hours" {
 		t.Errorf("TestStake unStake err:%v ", err)
 	}
-
-	t.Logf("222 addr1 balance after unStake: %v", context.GetStateDb().GetBalance(addr1))
-
-	stake = ec.getStake(addr1)
-	t.Logf("222 addr1 stake after unStake: %v", stake.StakeCount)
-
-	if ctx, ok := context.(*testContext); ok {
-		ctx.SetTime(big.NewInt(0).Add(context.GetTime(), big.NewInt(3600*24+1)))
+	stake = ec.getStake(addr)
+	if stake.Owner != addr || stake.StakeCount.Uint64() != 20 {
+		t.Fatalf("stake and get stake mismatch, want: %v, got: %v", 20, stake.StakeCount.Uint64())
 	}
-	err = ec.unStake(addr1)
+
+	// 取消抵押
+	twentyFourHoursLater(t, context)
+	err = ec.unStake(addr)
 	if err != nil {
 		t.Errorf("TestStake unStake err:%v ", err)
 	}
+	stake = ec.getStake(addr)
+	if stake.Owner != addr || stake.StakeCount.Uint64() != 0 {
+		t.Fatalf("stake and get stake mismatch, want: %v, got: %v", 0, stake.StakeCount.Uint64())
+	}
 
-	t.Logf("333 addr1 balance after unStake: %v", context.GetStateDb().GetBalance(addr1))
+}
 
-	stake = ec.getStake(addr1)
-	t.Logf("333 addr1 stake after unStake: %v", stake.StakeCount)
+func twentyFourHoursLater(t *testing.T, context inter.ChainContext) {
+	if ctx, ok := context.(*testContext); ok {
+		ctx.SetTime(big.NewInt(0).Add(context.GetTime(), big.NewInt(3600*24+1)))
+	}
+}
 
-	err = ec.stake(addr1, big.NewInt(-20))
+func TestStakeInvalid(t *testing.T) {
+	context := newcontext()
+	ec := newElectionContext(context)
+	db := ec.context.GetStateDb()
+	addr := common.HexToAddress("41b0db166cfdf1c4ba3ce657171482a9aa55cc93")
+	db.AddBalance(addr, vnt2wei(100))
+
+	// 抵押负值
+	err := ec.stake(addr, big.NewInt(-20))
 	if err.Error() != "stake stakeCount less than 0" {
 		t.Errorf("TestStake stake err:%v ", err)
 	}
 
-	t.Logf("444 addr1 balance: %v", context.GetStateDb().GetBalance(addr1))
+	stake := ec.getStake(addr)
+	if stake.Owner != emptyAddress {
+		t.Fatalf("should no stake information for addr: %v", addr.String())
+	}
 
-	stake = ec.getStake(addr1)
-	t.Logf("444 addr1 stake: %v", stake.StakeCount)
+	bal := db.GetBalance(addr)
+	shouldLeft := vnt2wei(100)
+	if bal.Cmp(shouldLeft) != 0 {
+		t.Fatalf("after stake addr should have %v wei got %v wei", shouldLeft.String(), bal.String())
+	}
 }
 
 func TestExtractBounty(t *testing.T) {
@@ -1636,7 +1660,7 @@ func TestMainNetStartup(t *testing.T) {
 	checkMainNetVote(t, db, "after just stake 0.4 billion", true, vnt2wei(0))
 
 	// 14. 取消抵押
-	resetStakeTo24HourBefore(t, ec, addr)
+	twentyFourHoursLater(t, context)
 	if err := ec.unStake(addr); err != nil {
 		t.Fatalf("unstake failed: %v", err)
 	}
@@ -1684,7 +1708,7 @@ func TestStakeButNotVote(t *testing.T) {
 	}
 
 	// 2.1 修改stake的时间为24小时之前
-	resetStakeTo24HourBefore(t, ec, addr)
+	twentyFourHoursLater(t, context)
 
 	// 3. 取消抵押
 	if err := ec.unStake(addr); err != nil {

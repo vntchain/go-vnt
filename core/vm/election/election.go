@@ -190,7 +190,7 @@ func (c CandidateList) dump() {
 
 type Stake struct {
 	Owner      common.Address // 抵押人地址
-	StakeCount *big.Int       // 抵押的数量
+	StakeCount *big.Int       // 抵押的数量，单位VNT
 	TimeStamp  *big.Int       // 时间戳
 }
 
@@ -199,7 +199,7 @@ type Bounty struct {
 }
 
 type MainNetVotes struct {
-	VoteStake *big.Int // 进行了投票的抵押代币数量
+	VoteStake *big.Int // 进行了投票的抵押代币数量，单位VNT
 	Active    bool     // 主网是否已启动
 }
 
