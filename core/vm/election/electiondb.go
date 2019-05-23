@@ -419,3 +419,14 @@ func setRestBounty(stateDB inter.StateDB, restBounty Bounty) error {
 	}
 	return convertToKV(BOUNTYPREFIX, restBounty, setFn)
 }
+
+func getMainNetVotes(stateDb inter.StateDB) MainNetVotes {
+	// TODO vnt
+	var mvotes MainNetVotes
+	return mvotes
+}
+
+func setMainNetVotes(stateDB inter.StateDB, mvotes MainNetVotes) error {
+	// TODO vnt
+	return nil
+}

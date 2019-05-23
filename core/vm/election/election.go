@@ -198,6 +198,11 @@ type Bounty struct {
 	RestTotalBounty *big.Int // 剩余总激励，初始值10亿VNT
 }
 
+type MainNetVotes struct {
+	VoteStake *big.Int // 进行了投票的抵押代币数量
+	Active    bool     // 主网是否已启动
+}
+
 func newElectionContext(ctx inter.ChainContext) electionContext {
 	return electionContext{
 		context: ctx,
@@ -929,4 +934,10 @@ func QueryRestVNTBounty(stateDB inter.StateDB) *big.Int {
 	}
 	bounty := getRestBounty(stateDB)
 	return bounty.RestTotalBounty
+}
+
+// MainNetActive returns whether the main net is started.
+func MainNetActive(stateDB inter.StateDB) bool {
+	// TODO
+	return false
 }
