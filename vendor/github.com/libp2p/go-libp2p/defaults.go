@@ -45,7 +45,8 @@ var DefaultPeerstore Option = func(cfg *Config) error {
 
 // RandomIdentity generates a random identity (default behaviour)
 var RandomIdentity = func(cfg *Config) error {
-	p, _ := crypto2.HexToECDSA("ac355731983f9ad945b642f15ed60022fa4aeb8f5c069d4f15a24c4b5100195b")
+	p, _ := crypto2.GenerateKey()
+	//p, _ := crypto2.HexToECDSA("ac355731983f9ad945b642f15ed60022fa4aeb8f5c069d4f15a24c4b5100195b")
 	priv, _, err := crypto.ECDSAKeyPairFromKey(p)
 	//priv, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
 	if err != nil {
