@@ -10,6 +10,7 @@ import (
 	inet "github.com/libp2p/go-libp2p-net"
 	protocol "github.com/libp2p/go-libp2p-protocol"
 	smux "github.com/libp2p/go-stream-muxer"
+	"runtime"
 )
 
 type streamState int
@@ -113,6 +114,8 @@ func (s *Stream) Close() error {
 
 // Reset resets the stream, closing both ends.
 func (s *Stream) Reset() error {
+	_, file, line, _ := runtime.Caller(1)
+	fmt.Println("#### Reset called by:", "file=", file, ":", line)
 	err := s.stream.Reset()
 	s.state.Lock()
 	switch s.state.v {

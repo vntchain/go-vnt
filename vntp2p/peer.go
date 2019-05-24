@@ -36,6 +36,7 @@ import (
 	mh "github.com/multiformats/go-multihash"
 	"strings"
 	"fmt"
+	"runtime"
 )
 
 type PeerEventType string
@@ -188,9 +189,13 @@ func parseMultiaddr(maddr ma.Multiaddr) net.Addr {
 }
 
 func (p *Peer) Disconnect(reason DiscReason) {
+
+	_, file, line, _ := runtime.Caller(1)
+	fmt.Println("#### Peer.Disconnect called by:", "file=", file, ":", line)
 	// test for it
 	// p.rw.Conn().Close()
 	// p.rw.Close()
+	log.Debug("Disconnecting peer", "peer", p.PeerId(), "reason", reason)
 
 	p.Reset()
 }
@@ -198,6 +203,9 @@ func (p *Peer) Disconnect(reason DiscReason) {
 // Reset Close both direction. Use this to tell the remote side to hang up and go away.
 // But only reset once.
 func (p *Peer) Reset() {
+
+	_, file, line, _ := runtime.Caller(1)
+	fmt.Println("#### Peer.Reset called by:", "file=", file, ":", line)
 	if !atomic.CompareAndSwapInt32(&p.reseted, 0, 1) {
 		return
 	}

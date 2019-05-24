@@ -41,6 +41,7 @@ import (
 	"github.com/vntchain/go-vnt/vntp2p"
 
 	libp2p "github.com/libp2p/go-libp2p-peer"
+	"runtime"
 )
 
 const (
@@ -187,6 +188,9 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 }
 
 func (pm *ProtocolManager) removePeer(id libp2p.ID) {
+
+	_, file, line, _ := runtime.Caller(1)
+	fmt.Println("#### ProtocolManager.removePeer called by:", "file=", file, ":", line)
 	// Short circuit if the peer was already removed
 	peer := pm.peers.Peer(id)
 	if peer == nil {

@@ -192,6 +192,7 @@ func (p *peerConnection) FetchReceipts(request *fetchRequest) error {
 	}
 	// Short circuit if the peer is already fetching
 	if !atomic.CompareAndSwapInt32(&p.receiptIdle, 0, 1) {
+		log.Debug("#### peerConnection.FetchReceipts: ", "err", errAlreadyFetching)
 		return errAlreadyFetching
 	}
 	p.receiptStarted = time.Now()
@@ -531,7 +532,9 @@ func (ps *peerSet) idlePeers(minProtocol, maxProtocol int, idleCheck func(*peerC
 	defer ps.lock.RUnlock()
 
 	idle, total := make([]*peerConnection, 0, len(ps.peers)), 0
+	log.Debug("#### idlePeers:", "peers", ps.peers)
 	for _, p := range ps.peers {
+		log.Debug("#### idlePeers:", "version", p.version, "state", p.stateIdle)
 		if p.version >= minProtocol && p.version <= maxProtocol {
 			if idleCheck(p) {
 				idle = append(idle, p)
