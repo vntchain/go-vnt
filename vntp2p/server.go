@@ -21,15 +21,14 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"net"
-	"sync"
-
-	libp2p "github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p"
 	p2phost "github.com/libp2p/go-libp2p-host"
 	inet "github.com/libp2p/go-libp2p-net"
 	protocol "github.com/libp2p/go-libp2p-protocol"
 	"github.com/vntchain/go-vnt/event"
 	"github.com/vntchain/go-vnt/log"
+	"net"
+	"sync"
 
 	// inet "github.com/libp2p/go-libp2p-net"
 	peer "github.com/libp2p/go-libp2p-peer"
