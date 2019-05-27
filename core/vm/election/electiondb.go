@@ -30,11 +30,12 @@ import (
 )
 
 const (
-	VOTERPREFIX     = byte(0)
-	CANDIDATEPREFIX = byte(1)
-	STAKEPREFIX     = byte(2)
-	BOUNTYPREFIX    = byte(3)
-	PREFIXLENGTH    = 4 // key的结构为，4位表前缀，20位address，8位的value在struct中的位置
+	VOTERPREFIX        = byte(0)
+	CANDIDATEPREFIX    = byte(1)
+	STAKEPREFIX        = byte(2)
+	BOUNTYPREFIX       = byte(3)
+	MAINNETVOTESPREFIX = byte(4)
+	PREFIXLENGTH       = 4 // key的结构为，4位表前缀，20位address，8位的value在struct中的位置
 )
 
 func (ec electionContext) getVoter(addr common.Address) Voter {
@@ -420,14 +421,24 @@ func setRestBounty(stateDB inter.StateDB, restBounty Bounty) error {
 	return convertToKV(BOUNTYPREFIX, restBounty, setFn)
 }
 
+// getMainNetVotes return a initialized main net votes information,
+// when no main net votes information in state db.
 func getMainNetVotes(stateDb inter.StateDB) MainNetVotes {
-	// TODO vnt
-	var mvotes MainNetVotes
-	mvotes.VoteStake = big.NewInt(0)
-	return mvotes
+	getFn := func(key common.Hash) common.Hash {
+		return stateDb.GetState(contractAddr, key)
+	}
+	var mv MainNetVotes
+	err := convertToStruct(MAINNETVOTESPREFIX, contractAddr, &mv, getFn)
+	if err != nil {
+		return MainNetVotes{big.NewInt(0), false}
+	}
+
+	return mv
 }
 
-func setMainNetVotes(stateDB inter.StateDB, mvotes MainNetVotes) error {
-	// TODO vnt
-	return nil
+func setMainNetVotes(stateDB inter.StateDB, mv MainNetVotes) error {
+	setFn := func(key common.Hash, value common.Hash) {
+		stateDB.SetState(contractAddr, key, value)
+	}
+	return convertToKV(MAINNETVOTESPREFIX, mv, setFn)
 }
