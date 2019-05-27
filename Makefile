@@ -2,7 +2,7 @@
 # with Go source code. If you know what GOPATH is then you probably
 # don't need to bother with make.
 
-.PHONY: gvnt android ios gvnt-cross swarm evm all test clean
+.PHONY: gvnt android ios gvnt-cross swarm all test clean
 .PHONY: gvnt-linux gvnt-linux-386 gvnt-linux-amd64 gvnt-linux-mips64 gvnt-linux-mips64le
 .PHONY: gvnt-linux-arm gvnt-linux-arm-5 gvnt-linux-arm-6 gvnt-linux-arm-7 gvnt-linux-arm64
 .PHONY: gvnt-darwin gvnt-darwin-386 gvnt-darwin-amd64

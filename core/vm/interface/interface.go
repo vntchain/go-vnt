@@ -23,7 +23,7 @@ import (
 	"github.com/vntchain/go-vnt/core/types"
 )
 
-// StateDB is an EVM database for full state querying.
+// StateDB is an VM database for full state querying.
 type StateDB interface {
 	CreateAccount(common.Address)
 

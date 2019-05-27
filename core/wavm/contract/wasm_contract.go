@@ -34,7 +34,7 @@ type WASMContractRef interface {
 	Address() common.Address
 }
 
-// Contract represents an ethereum contract in the state database. It contains
+// Contract represents an VNTChain contract in the state database. It contains
 // the the contract code, calling arguments. Contract implements ContractRef
 type WASMContract struct {
 	// CallerAddress is the result of the caller which initialised this
@@ -58,7 +58,7 @@ type WASMContract struct {
 	DelegateCall bool
 }
 
-// NewWASMContract returns a new contract environment for the execution of EVM.
+// NewWASMContract returns a new contract environment for the execution of WAVM.
 func NewWASMContract(caller WASMContractRef, object WASMContractRef, value *big.Int, gas uint64) *WASMContract {
 	c := &WASMContract{CallerAddress: caller.Address(), caller: caller, self: object, Args: nil}
 

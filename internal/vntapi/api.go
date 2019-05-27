@@ -557,7 +557,7 @@ type CallArgs struct {
 }
 
 func (s *PublicBlockChainAPI) doCall(ctx context.Context, args CallArgs, blockNr rpc.BlockNumber, vmCfg vm.Config, timeout time.Duration) ([]byte, uint64, bool, error) {
-	defer func(start time.Time) { log.Debug("Executing EVM call finished", "runtime", time.Since(start)) }(time.Now())
+	defer func(start time.Time) { log.Debug("Executing VM call finished", "runtime", time.Since(start)) }(time.Now())
 	state, header, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
 	if state == nil || err != nil {
 		return nil, 0, false, err
@@ -592,22 +592,22 @@ func (s *PublicBlockChainAPI) doCall(ctx context.Context, args CallArgs, blockNr
 	// Make sure the context is cancelled when the call has completed
 	// this makes sure resources are cleaned up.
 	defer cancel()
-	// Get a new instance of the EVM.
-	evm, vmError, err := s.b.GetVM(ctx, msg, state, header, vmCfg)
+	// Get a new instance of the VM.
+	newVm, vmError, err := s.b.GetVM(ctx, msg, state, header, vmCfg)
 	if err != nil {
 		return nil, 0, false, err
 	}
-	// Wait for the context to be done and cancel the evm. Even if the
-	// EVM has finished, cancelling may be done (repeatedly)
+	// Wait for the context to be done and cancel the vm. Even if the
+	// VM has finished, cancelling may be done (repeatedly)
 	go func() {
 		<-ctx.Done()
-		evm.Cancel()
+		newVm.Cancel()
 	}()
 
 	// Setup the gas pool (also for unmetered requests)
 	// and apply the message.
 	gp := new(core.GasPool).AddGas(math.MaxUint64)
-	res, gas, failed, err := core.ApplyMessage(evm, msg, gp)
+	res, gas, failed, err := core.ApplyMessage(newVm, msg, gp)
 	if err := vmError(); err != nil {
 		return nil, 0, false, err
 	}
@@ -768,7 +768,7 @@ func (s *PublicBlockChainAPI) GetRestVNTBounty(ctx context.Context) (*big.Int, e
 	}
 }
 
-// ExecutionResult groups all structured logs emitted by the EVM
+// ExecutionResult groups all structured logs emitted by the VM
 // while replaying a transaction in debug mode as well as transaction
 // execution status, the amount of gas used and the return value
 type ExecutionResult struct {
@@ -779,7 +779,7 @@ type ExecutionResult struct {
 	DebugLogs   []DebugLogRes  `json:"debugLogs"`
 }
 
-// StructLogRes stores a structured log emitted by the EVM while replaying a
+// StructLogRes stores a structured log emitted by the VM while replaying a
 // transaction in debug mode
 type StructLogRes struct {
 	Pc      uint64             `json:"pc"`
@@ -797,7 +797,7 @@ type DebugLogRes struct {
 	PrintMsg string `json:"printMsg"`
 }
 
-// formatLogs formats EVM returned structured logs for json output
+// formatLogs formats VM returned structured logs for json output
 func FormatLogs(logs []wavm.StructLog, debugLog []wavm.DebugLog) ([]StructLogRes, []DebugLogRes) {
 	formatted := make([]StructLogRes, len(logs))
 
