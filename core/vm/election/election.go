@@ -878,21 +878,13 @@ func GetAllCandidates(stateDB inter.StateDB, sorted bool) CandidateList {
 
 // GetVoter returns a voter's information
 func GetVoter(stateDB inter.StateDB, addr common.Address) *Voter {
-	getFromDB := func(key common.Hash) common.Hash {
-		return stateDB.GetState(contractAddr, key)
-	}
-
-	v := getVoterFrom(addr, getFromDB)
+	v := getVoterFrom(addr, genGetFunc(stateDB))
 	return &v
 }
 
 // GetStake returns a user's information
 func GetStake(stateDB inter.StateDB, addr common.Address) *Stake {
-	getFromDB := func(key common.Hash) common.Hash {
-		return stateDB.GetState(contractAddr, key)
-	}
-
-	s := getStakeFrom(addr, getFromDB)
+	s := getStakeFrom(addr, genGetFunc(stateDB))
 	return &s
 }
 
