@@ -186,6 +186,7 @@ type Voter struct {
 	IsProxy           bool             `json:"isProxy"`           // 是否是代理人
 	ProxyVoteCount    *big.Int         `json:"proxyVoteCount"`    // 收到的代理的票数
 	Proxy             common.Address   `json:"proxy"`             // 该节点设置的代理人
+	LastStakeCount    *big.Int         `json:"lastStakeCount"`    // 上次投票是抵押的代币数
 	LastVoteCount     *big.Int         `json:"lastVoteCount"`     // 上次投的票数
 	LastVoteTimeStamp *big.Int         `json:"lastVoteTimeStamp"` // 上次投票时间戳
 	VoteCandidates    []common.Address `json:"voteCandidates"`    // 投了哪些人

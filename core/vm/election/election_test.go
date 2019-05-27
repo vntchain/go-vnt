@@ -1613,7 +1613,7 @@ func TestMainNetStartup(t *testing.T) {
 	}
 
 	// 1. 系统启动时检查抵押额为0
-	checkMainNetVote(t, db, "init main error failed", false, vnt2wei(0))
+	checkMainNetVote(t, db, "init main error failed", false, big.NewInt(0))
 
 	// 2. 执行抵押，金额4亿
 	if err := ec.stake(addr, big.NewInt(4e8)); err != nil {
@@ -1621,7 +1621,7 @@ func TestMainNetStartup(t *testing.T) {
 	}
 
 	// 3. 投票抵押额为0
-	checkMainNetVote(t, db, "after just stake 0.4 billion", false, vnt2wei(0))
+	checkMainNetVote(t, db, "after just stake 0.4 billion", false, big.NewInt(0))
 
 	// 4. 执行投票
 	// 4.1 注册见证人
@@ -1633,7 +1633,7 @@ func TestMainNetStartup(t *testing.T) {
 	}
 
 	// 5. 投票抵押额为4亿
-	checkMainNetVote(t, db, "after vote 0.4 billion", false, vnt2wei(4e8))
+	checkMainNetVote(t, db, "after vote 0.4 billion", false, big.NewInt(4e8))
 
 	// 6. 抵押1亿
 	if err := ec.stake(addr, big.NewInt(1e8)); err != nil {
@@ -1641,15 +1641,16 @@ func TestMainNetStartup(t *testing.T) {
 	}
 
 	// 7. 投票抵押为4亿
-	checkMainNetVote(t, db, "after vote 0.4 billion", false, vnt2wei(4e8))
+	checkMainNetVote(t, db, "after vote 0.4 billion", false, big.NewInt(4e8))
 
 	// 9. 执行投票
+	twentyFourHoursLater(t, context)
 	if err := ec.voteWitnesses(addr, []common.Address{candidates[0]}); err != nil {
 		t.Fatalf("vote witenss failed, err: %v", err)
 	}
 
 	// 10. 投票抵押额为5亿
-	checkMainNetVote(t, db, "after vote 0.4 billion", true, vnt2wei(5e8))
+	checkMainNetVote(t, db, "after vote 0.5 billion", true, big.NewInt(5e8))
 
 	// 12. 取消投票
 	if err := ec.cancelVote(addr); err != nil {
@@ -1657,7 +1658,7 @@ func TestMainNetStartup(t *testing.T) {
 	}
 
 	// 13. 投票抵押为0，active为真
-	checkMainNetVote(t, db, "after just stake 0.4 billion", true, vnt2wei(0))
+	checkMainNetVote(t, db, "after just stake 0.4 billion", true, big.NewInt(0))
 
 	// 14. 取消抵押
 	twentyFourHoursLater(t, context)
@@ -1666,7 +1667,7 @@ func TestMainNetStartup(t *testing.T) {
 	}
 
 	// 15. 投票抵押额为0，active为真
-	checkMainNetVote(t, db, "after just stake 0.4 billion", true, vnt2wei(0))
+	checkMainNetVote(t, db, "after just stake 0.4 billion", true, big.NewInt(0))
 }
 
 func checkMainNetVote(t *testing.T, db inter.StateDB, tag string, active bool, stake *big.Int) {
@@ -1677,14 +1678,6 @@ func checkMainNetVote(t *testing.T, db inter.StateDB, tag string, active bool, s
 
 func vnt2wei(vnt int) *big.Int {
 	return big.NewInt(0).Mul(big.NewInt(int64(vnt)), big.NewInt(1e18))
-}
-
-func resetStakeTo24HourBefore(t *testing.T, ec electionContext, addr common.Address) {
-	stake := ec.getStake(addr)
-	stake.TimeStamp = big.NewInt(0).Sub(stake.TimeStamp, big.NewInt(25*60*60))
-	if err := ec.setStake(stake); err != nil {
-		t.Fatalf("set stake failed: %v", err)
-	}
 }
 
 func TestStakeButNotVote(t *testing.T) {

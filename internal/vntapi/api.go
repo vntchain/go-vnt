@@ -720,6 +720,7 @@ func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Addre
 		IsProxy:           v.IsProxy,
 		ProxyVoteCount:    v.ProxyVoteCount,
 		Proxy:             v.Proxy,
+		LastStakeCount:    v.LastStakeCount,
 		LastVoteCount:     v.LastVoteCount,
 		LastVoteTimeStamp: v.TimeStamp,
 		VoteCandidates:    v.VoteCandidates,
