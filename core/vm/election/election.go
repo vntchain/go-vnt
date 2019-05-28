@@ -64,20 +64,6 @@ var (
 	mainActive = false
 )
 
-const AbiJSON = `[
-{"name":"registerWitness","inputs":[{"name":"nodeUrl","type":"bytes"},{"name":"website","type":"bytes"},{"name":"nodeName","type":"bytes"}],"outputs":[],"type":"function"},
-{"name":"unregisterWitness","inputs":[],"outputs":[],"type":"function"},
-{"name":"voteWitnesses","inputs":[{"name":"candidate","type":"address[]"}],"outputs":[],"type":"function"},
-{"name":"cancelVote","inputs":[],"outputs":[],"type":"function"},
-{"name":"startProxy","inputs":[],"outputs":[],"type":"function"},
-{"name":"stopProxy","inputs":[],"outputs":[],"type":"function"},
-{"name":"cancelProxy","inputs":[],"outputs":[],"type":"function"},
-{"name":"setProxy","inputs":[{"name":"proxy","type":"address"}],"outputs":[],"type":"function"},
-{"name":"stake","inputs":[{"name":"stakeCount","type":"uint256"}],"outputs":[],"type":"function"},
-{"name":"unStake","inputs":[],"outputs":[],"type":"function"},
-{"name":"extractOwnBounty","inputs":[],"outputs":[],"type":"function"}
-]`
-
 type Election struct{}
 
 type electionContext struct {
@@ -228,7 +214,7 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
 	}
 	ctx.GetStateDb().SetNonce(contractAddr, nonce+1)
 
-	electionABI, err := abi.JSON(strings.NewReader(AbiJSON))
+	electionABI, err := abi.JSON(strings.NewReader(ElectionAbiJSON))
 	if err != nil {
 		return nil, err
 	}
@@ -975,34 +961,4 @@ func QueryRestVNTBounty(stateDB inter.StateDB) *big.Int {
 	}
 	bounty := getRestBounty(stateDB)
 	return bounty.RestTotalBounty
-}
-
-// modifyMainNetVotes modify the votes of main net and judge whether
-// the main net match start condition.
-func modifyMainNetVotes(stateDB inter.StateDB, num *big.Int, add bool) error {
-	mv := getMainNetVotes(stateDB)
-	if add {
-		mv.VoteStake = big.NewInt(0).Add(mv.VoteStake, num)
-	} else {
-		mv.VoteStake = big.NewInt(0).Sub(mv.VoteStake, num)
-	}
-
-	// 判断是否激活，并且只执行1次
-	if !mv.Active && mv.VoteStake.Cmp(big.NewInt(5e8)) >= 0 {
-		mv.Active = true
-	}
-
-	return setMainNetVotes(stateDB, mv)
-}
-
-// MainNetActive returns whether the main net is started.
-func MainNetActive(stateDB inter.StateDB) bool {
-	if !mainActive {
-		mv := getMainNetVotes(stateDB)
-		if mv.Active {
-			mainActive = true
-		}
-	}
-
-	return mainActive
 }

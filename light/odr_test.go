@@ -42,7 +42,7 @@ import (
 var (
 	testBankKey, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	testBankAddress = crypto.PubkeyToAddress(testBankKey.PublicKey)
-	testBankFunds   = big.NewInt(100000000)
+	testBankFunds   = big.NewInt(0).Mul(big.NewInt(1e9), big.NewInt(1e18))
 
 	acc1Key, _ = crypto.HexToECDSA("8a1f9a8f95be41cd7ccb6168179afb4504aefe388d1e14474d32c45c72ce7b7a")
 	acc2Key, _ = crypto.HexToECDSA("49a7b37aa6f6645917e7b807e9d1c00d4fa71f18343b0d4122a4d2df64dd6fee")
@@ -206,6 +206,11 @@ func testChainGen(i int, block *core.BlockGen) {
 	signer := types.NewHubbleSigner(big.NewInt(1))
 	switch i {
 	case 0:
+		signTx := func(tx *types.Transaction) (*types.Transaction, error) {
+			return types.SignTx(tx, signer, testBankKey)
+		}
+		core.StartFakeMainNet(block, testBankAddress, signTx)
+
 		// In block 1, the test bank sends account #1 some ether.
 		tx, _ := types.SignTx(types.NewTransaction(block.TxNonce(testBankAddress), acc1Addr, big.NewInt(10000), params.TxGas, nil, nil), signer, testBankKey)
 		block.AddTx(tx)
