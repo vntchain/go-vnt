@@ -43,19 +43,15 @@ func TestBanTransaction(t *testing.T) {
 		amount   = big.NewInt(1000)
 	)
 
+	// 恢复到未激活状态的标记
+	election.ResetActive()
+
 	blockchain, _ := NewBlockChain(db, nil, gspec.Config, mock.NewMock(), vm.Config{})
 	defer blockchain.Stop()
 
-	rmLogsCh := make(chan RemovedLogsEvent)
-	blockchain.SubscribeRemovedLogsEvent(rmLogsCh)
 	chain, _ := GenerateChain(params.TestChainConfig, genesis, mock.NewMock(), db, 3, func(i int, gen *BlockGen) {
 		switch i {
 		case 2:
-			if !election.MainNetActive(gen.statedb) {
-				t.Fatalf("main is inactive")
-			}
-			gen.OffsetTime(2)
-
 			tx, err := types.SignTx(types.NewTransaction(gen.TxNonce(addr), receiver, amount, 1000000, big.NewInt(18000000000), nil), signer, key)
 			if err != nil {
 				t.Fatalf("failed to create tx: %v", err)
@@ -67,7 +63,7 @@ func TestBanTransaction(t *testing.T) {
 		t.Fatalf("failed to insert chain: %v", err)
 	}
 
-	// 	接收人账号，应当为0
+	// 	接收人账号余额应当为0
 	stateDb, err := blockchain.State()
 	if err != nil {
 		t.Fatalf("get state db error: %v", err)
@@ -90,14 +86,15 @@ func TestAllowTransaction(t *testing.T) {
 		amount   = big.NewInt(1000)
 	)
 
+	// 恢复到未激活状态的标记
+	election.ResetActive()
+
 	blockchain, _ := NewBlockChain(db, nil, gspec.Config, mock.NewMock(), vm.Config{})
 	defer blockchain.Stop()
 
 	signTx := func(tx *types.Transaction) (*types.Transaction, error) {
 		return types.SignTx(tx, signer, key)
 	}
-	rmLogsCh := make(chan RemovedLogsEvent)
-	blockchain.SubscribeRemovedLogsEvent(rmLogsCh)
 	chain, _ := GenerateChain(params.TestChainConfig, genesis, mock.NewMock(), db, 3, func(i int, gen *BlockGen) {
 		switch i {
 		case 0:
@@ -108,7 +105,6 @@ func TestAllowTransaction(t *testing.T) {
 			if !election.MainNetActive(gen.statedb) {
 				t.Fatalf("main is inactive")
 			}
-			gen.OffsetTime(2)
 
 			tx, err := types.SignTx(types.NewTransaction(gen.TxNonce(addr), receiver, amount, 1000000, big.NewInt(18000000000), nil), signer, key)
 			if err != nil {

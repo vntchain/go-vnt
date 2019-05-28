@@ -83,3 +83,9 @@ func GenFakeStartedTxs(nextNonce uint64, witness []common.Address) ([]*types.Tra
 
 	return []*types.Transaction{stakeTx, regTx, voteTx}, nil
 }
+
+// ResetActive is reset the main net state in memory.
+// Only used for tests.
+func ResetActive() {
+	mainActive = false
+}
