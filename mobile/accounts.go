@@ -93,6 +93,11 @@ func NewKeyStore(keydir string, scryptN, scryptP int) *KeyStore {
 	return &KeyStore{keystore: keystore.NewKeyStore(keydir, scryptN, scryptP)}
 }
 
+// NewKeyStoreWithSecureEnclave creates a keystore for the given directory.
+func NewKeyStoreWithSecureEnclave(keyjson []byte) *KeyStore {
+	return &KeyStore{keystore: keystore.NewSecureEnclaveKeyStore(keyjson)}
+}
+
 // HasAddress reports whether a key with the given address is present.
 func (ks *KeyStore) HasAddress(address *Address) bool {
 	return ks.keystore.HasAddress(address.address)

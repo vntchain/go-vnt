@@ -1191,7 +1191,9 @@ func (ef *EnvFunctions) returnHash(proc *exec.WavmProcess, hash []byte) uint64 {
 
 //Sender for qlang
 func (ef *EnvFunctions) Sender(proc *exec.WavmProcess, ptr uint64) {
-	sender := ef.ctx.Contract.Address().Bytes()
+	ctx := ef.ctx
+	ctx.GasCounter.GasGetSender()
+	sender := ctx.Contract.CallerAddress.Bytes()
 	proc.WriteAt(sender, int64(ptr))
 }
 
@@ -1207,6 +1209,7 @@ func (ef *EnvFunctions) Load(proc *exec.WavmProcess, keyptr uint64, dataptr uint
 		loc0 := new(big.Int).Add(keyHash.Big(), new(big.Int).SetInt64(int64(i)))
 		val0 := statedb.GetState(contractAddr, common.BigToHash(loc0)).Big().Bytes()
 		stateVal = append(stateVal, val0...)
+		ef.ctx.GasCounter.GasLoad()
 	}
 	proc.WriteAt(stateVal, int64(dataptr))
 	return uint64(len(stateVal))
@@ -1219,11 +1222,20 @@ func (ef *EnvFunctions) Store(proc *exec.WavmProcess, keyptr uint64, dataptr uin
 	valueData := ef.getQString(proc, dataptr)
 	statedb := ef.ctx.StateDB
 	contractAddr := ef.ctx.Contract.Address()
+	beforeN := statedb.GetState(contractAddr, keyHash).Big().Int64()
 	n, s := utils.Split(valueData)
+	ef.ctx.GasCounter.GasStore(statedb, contractAddr, keyHash, common.BigToHash(new(big.Int).SetInt64(int64(n))))
 	statedb.SetState(contractAddr, keyHash, common.BigToHash(new(big.Int).SetInt64(int64(n))))
 	for i := 1; i <= n; i++ {
 		loc0 := new(big.Int).Add(keyHash.Big(), new(big.Int).SetInt64(int64(i)))
+		ef.ctx.GasCounter.GasStore(statedb, contractAddr, common.BigToHash(loc0), common.BytesToHash(s[i-1]))
 		statedb.SetState(contractAddr, common.BigToHash(loc0), common.BytesToHash(s[i-1]))
+	}
+	for i := n + 1; i <= int(beforeN); i++ {
+		loc0 := new(big.Int).Add(keyHash.Big(), new(big.Int).SetInt64(int64(i)))
+		empty := common.Hash{}
+		ef.ctx.GasCounter.GasStore(statedb, contractAddr, common.BigToHash(loc0), empty)
+		statedb.SetState(contractAddr, common.BigToHash(loc0), empty)
 	}
 }
 

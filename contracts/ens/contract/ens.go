@@ -4,10 +4,9 @@
 package contract
 
 import (
-	"math/big"
 	"strings"
 
-	"github.com/vntchain/go-vnt"
+	hubble "github.com/vntchain/go-vnt"
 	"github.com/vntchain/go-vnt/common"
 
 	"github.com/vntchain/go-vnt/accounts/abi"
@@ -23,12 +22,12 @@ const ENSABI = "[{\"constant\":true,\"inputs\":[{\"name\":\"node\",\"type\":\"by
 const ENSBin = `0x608060405234801561001057600080fd5b5060008080526020527fad3228b676f7d3cd4284a5443f17f1962b36e491b30a40b2405849e597ba5fb58054600160a060020a03191633179055610500806100596000396000f3006080604052600436106100825763ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416630178b8bf811461008757806302571be3146100bb57806306ab5923146100d357806314ab9038146100fc57806316a25cbd146101215780631896f70a146101565780635b0fc9c31461017a575b600080fd5b34801561009357600080fd5b5061009f60043561019e565b60408051600160a060020a039092168252519081900360200190f35b3480156100c757600080fd5b5061009f6004356101bc565b3480156100df57600080fd5b506100fa600435602435600160a060020a03604435166101d7565b005b34801561010857600080fd5b506100fa60043567ffffffffffffffff60243516610291565b34801561012d57600080fd5b5061013960043561035a565b6040805167ffffffffffffffff9092168252519081900360200190f35b34801561016257600080fd5b506100fa600435600160a060020a0360243516610391565b34801561018657600080fd5b506100fa600435600160a060020a0360243516610434565b600090815260208190526040902060010154600160a060020a031690565b600090815260208190526040902054600160a060020a031690565b6000838152602081905260408120548490600160a060020a031633146101fc57600080fd5b60408051868152602080820187905282519182900383018220600160a060020a03871683529251929450869288927fce0457fe73731f824cc272376169235128c118b49d344817417c6d108d155e8292908290030190a3506000908152602081905260409020805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a03929092169190911790555050565b6000828152602081905260409020548290600160a060020a031633146102b657600080fd5b6040805167ffffffffffffffff84168152905184917f1d4f9bbfc9cab89d66e1a1562f2233ccbf1308cb4f63de2ead5787adddb8fa68919081900360200190a250600091825260208290526040909120600101805467ffffffffffffffff90921674010000000000000000000000000000000000000000027fffffffff0000000000000000ffffffffffffffffffffffffffffffffffffffff909216919091179055565b60009081526020819052604090206001015474010000000000000000000000000000000000000000900467ffffffffffffffff1690565b6000828152602081905260409020548290600160a060020a031633146103b657600080fd5b60408051600160a060020a0384168152905184917f335721b01866dc23fbee8b6b2c7b1e14d6f05c28cd35a2c934239f94095602a0919081900360200190a250600091825260208290526040909120600101805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a03909216919091179055565b6000828152602081905260409020548290600160a060020a0316331461045957600080fd5b60408051600160a060020a0384168152905184917fd4735d920b0f87494915f556dd9b54c8f309026070caea5c737245152564d266919081900360200190a250600091825260208290526040909120805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a039092169190911790555600a165627a7a723058206232b4622b6aeb7d19b20f93943e64ff2dd26535715fc488503c9847ea05beb40029`
 
 // DeployENS deploys a new VNT contract, binding an instance of ENS to it.
-func DeployENS(chainID *big.Int, auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *ENS, error) {
+func DeployENS(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *ENS, error) {
 	parsed, err := abi.JSON(strings.NewReader(ENSABI))
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	address, tx, contract, err := bind.DeployContract(auth, chainID, parsed, common.FromHex(ENSBin), backend)
+	address, tx, contract, err := bind.DeployContract(auth, parsed, common.FromHex(ENSBin), backend)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -44,19 +43,16 @@ type ENS struct {
 
 // ENSCaller is an auto generated read-only Go binding around an VNT contract.
 type ENSCaller struct {
-	chainID  *big.Int
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
 // ENSTransactor is an auto generated write-only Go binding around an VNT contract.
 type ENSTransactor struct {
-	chainID  *big.Int
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
 // ENSFilterer is an auto generated log filtering Go binding around an VNT contract events.
 type ENSFilterer struct {
-	chainID  *big.Int
 	contract *bind.BoundContract // Generic contract wrapper for the low level calls
 }
 
@@ -98,12 +94,12 @@ type ENSTransactorRaw struct {
 }
 
 // NewENS creates a new instance of ENS, bound to a specific deployed contract.
-func NewENS(chainID *big.Int, address common.Address, backend bind.ContractBackend) (*ENS, error) {
+func NewENS(address common.Address, backend bind.ContractBackend) (*ENS, error) {
 	contract, err := bindENS(address, backend, backend, backend)
 	if err != nil {
 		return nil, err
 	}
-	return &ENS{ENSCaller: ENSCaller{chainID: chainID, contract: contract}, ENSTransactor: ENSTransactor{chainID: chainID, contract: contract}, ENSFilterer: ENSFilterer{chainID: chainID, contract: contract}}, nil
+	return &ENS{ENSCaller: ENSCaller{contract: contract}, ENSTransactor: ENSTransactor{contract: contract}, ENSFilterer: ENSFilterer{contract: contract}}, nil
 }
 
 // NewENSCaller creates a new read-only instance of ENS, bound to a specific deployed contract.
@@ -152,13 +148,13 @@ func (_ENS *ENSRaw) Call(opts *bind.CallOpts, result interface{}, method string,
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_ENS *ENSRaw) Transfer(opts *bind.TransactOpts, chainID *big.Int) (*types.Transaction, error) {
-	return _ENS.Contract.ENSTransactor.contract.Transfer(opts, chainID)
+func (_ENS *ENSRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _ENS.Contract.ENSTransactor.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_ENS *ENSRaw) Transact(opts *bind.TransactOpts, chainID *big.Int, method string, params ...interface{}) (*types.Transaction, error) {
-	return _ENS.Contract.ENSTransactor.contract.Transact(opts, chainID, method, params...)
+func (_ENS *ENSRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+	return _ENS.Contract.ENSTransactor.contract.Transact(opts, method, params...)
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -171,13 +167,13 @@ func (_ENS *ENSCallerRaw) Call(opts *bind.CallOpts, result interface{}, method s
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (_ENS *ENSTransactorRaw) Transfer(opts *bind.TransactOpts, chainID *big.Int) (*types.Transaction, error) {
-	return _ENS.Contract.contract.Transfer(opts, chainID)
+func (_ENS *ENSTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _ENS.Contract.contract.Transfer(opts)
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (_ENS *ENSTransactorRaw) Transact(opts *bind.TransactOpts, chainID *big.Int, method string, params ...interface{}) (*types.Transaction, error) {
-	return _ENS.Contract.contract.Transact(opts, chainID, method, params...)
+func (_ENS *ENSTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+	return _ENS.Contract.contract.Transact(opts, method, params...)
 }
 
 // Owner is a free data retrieval call binding the contract method 0x02571be3.
@@ -262,7 +258,7 @@ func (_ENS *ENSCallerSession) Ttl(node [32]byte) (uint64, error) {
 //
 // Solidity: function setOwner(node bytes32, owner address) returns()
 func (_ENS *ENSTransactor) SetOwner(opts *bind.TransactOpts, node [32]byte, owner common.Address) (*types.Transaction, error) {
-	return _ENS.contract.Transact(opts, _ENS.chainID, "setOwner", node, owner)
+	return _ENS.contract.Transact(opts, "setOwner", node, owner)
 }
 
 // SetOwner is a paid mutator transaction binding the contract method 0x5b0fc9c3.
@@ -283,7 +279,7 @@ func (_ENS *ENSTransactorSession) SetOwner(node [32]byte, owner common.Address) 
 //
 // Solidity: function setResolver(node bytes32, resolver address) returns()
 func (_ENS *ENSTransactor) SetResolver(opts *bind.TransactOpts, node [32]byte, resolver common.Address) (*types.Transaction, error) {
-	return _ENS.contract.Transact(opts, _ENS.chainID, "setResolver", node, resolver)
+	return _ENS.contract.Transact(opts, "setResolver", node, resolver)
 }
 
 // SetResolver is a paid mutator transaction binding the contract method 0x1896f70a.
@@ -304,7 +300,7 @@ func (_ENS *ENSTransactorSession) SetResolver(node [32]byte, resolver common.Add
 //
 // Solidity: function setSubnodeOwner(node bytes32, label bytes32, owner address) returns()
 func (_ENS *ENSTransactor) SetSubnodeOwner(opts *bind.TransactOpts, node [32]byte, label [32]byte, owner common.Address) (*types.Transaction, error) {
-	return _ENS.contract.Transact(opts, _ENS.chainID, "setSubnodeOwner", node, label, owner)
+	return _ENS.contract.Transact(opts, "setSubnodeOwner", node, label, owner)
 }
 
 // SetSubnodeOwner is a paid mutator transaction binding the contract method 0x06ab5923.
@@ -325,7 +321,7 @@ func (_ENS *ENSTransactorSession) SetSubnodeOwner(node [32]byte, label [32]byte,
 //
 // Solidity: function setTTL(node bytes32, ttl uint64) returns()
 func (_ENS *ENSTransactor) SetTTL(opts *bind.TransactOpts, node [32]byte, ttl uint64) (*types.Transaction, error) {
-	return _ENS.contract.Transact(opts, _ENS.chainID, "setTTL", node, ttl)
+	return _ENS.contract.Transact(opts, "setTTL", node, ttl)
 }
 
 // SetTTL is a paid mutator transaction binding the contract method 0x14ab9038.

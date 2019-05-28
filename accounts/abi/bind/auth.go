@@ -21,6 +21,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"math/big"
 
 	"github.com/vntchain/go-vnt/accounts/keystore"
 	"github.com/vntchain/go-vnt/common"
@@ -30,7 +31,7 @@ import (
 
 // NewTransactor is a utility method to easily create a transaction signer from
 // an encrypted json key stream and the associated passphrase.
-func NewTransactor(keyin io.Reader, passphrase string) (*TransactOpts, error) {
+func NewTransactor(keyin io.Reader, passphrase string, chainID *big.Int) (*TransactOpts, error) {
 	json, err := ioutil.ReadAll(keyin)
 	if err != nil {
 		return nil, err
@@ -39,15 +40,16 @@ func NewTransactor(keyin io.Reader, passphrase string) (*TransactOpts, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewKeyedTransactor(key.PrivateKey), nil
+	return NewKeyedTransactor(key.PrivateKey, chainID), nil
 }
 
 // NewKeyedTransactor is a utility method to easily create a transaction signer
 // from a single private key.
-func NewKeyedTransactor(key *ecdsa.PrivateKey) *TransactOpts {
+func NewKeyedTransactor(key *ecdsa.PrivateKey, chainID *big.Int) *TransactOpts {
 	keyAddr := crypto.PubkeyToAddress(key.PublicKey)
 	return &TransactOpts{
-		From: keyAddr,
+		From:    keyAddr,
+		ChainID: chainID,
 		Signer: func(signer types.Signer, address common.Address, tx *types.Transaction) (*types.Transaction, error) {
 			if address != keyAddr {
 				return nil, errors.New("not authorized to sign this account")

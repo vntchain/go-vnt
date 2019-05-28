@@ -21,7 +21,6 @@ package ens
 //go:generate abigen --sol contract/PublicResolver.sol --exc contract/AbstractENS.sol:AbstractENS --pkg contract --out contract/publicresolver.go
 
 import (
-	"math/big"
 	"strings"
 
 	"github.com/vntchain/go-vnt/accounts/abi/bind"
@@ -39,14 +38,13 @@ var (
 // swarm domain name registry and resolver
 type ENS struct {
 	*contract.ENSSession
-	chainID         *big.Int
 	contractBackend bind.ContractBackend
 }
 
 // NewENS creates a struct exposing convenient high-level operations for interacting with
 // the VNT Name Service.
-func NewENS(chainID *big.Int, transactOpts *bind.TransactOpts, contractAddr common.Address, contractBackend bind.ContractBackend) (*ENS, error) {
-	ens, err := contract.NewENS(chainID, contractAddr, contractBackend)
+func NewENS(transactOpts *bind.TransactOpts, contractAddr common.Address, contractBackend bind.ContractBackend) (*ENS, error) {
+	ens, err := contract.NewENS(contractAddr, contractBackend)
 	if err != nil {
 		return nil, err
 	}
@@ -56,26 +54,25 @@ func NewENS(chainID *big.Int, transactOpts *bind.TransactOpts, contractAddr comm
 			Contract:     ens,
 			TransactOpts: *transactOpts,
 		},
-		chainID,
 		contractBackend,
 	}, nil
 }
 
 // DeployENS deploys an instance of the ENS nameservice, with a 'first-in, first-served' root registrar.
-func DeployENS(chainID *big.Int, transactOpts *bind.TransactOpts, contractBackend bind.ContractBackend) (common.Address, *ENS, error) {
+func DeployENS(transactOpts *bind.TransactOpts, contractBackend bind.ContractBackend) (common.Address, *ENS, error) {
 	// Deploy the ENS registry.
-	ensAddr, _, _, err := contract.DeployENS(chainID, transactOpts, contractBackend)
+	ensAddr, _, _, err := contract.DeployENS(transactOpts, contractBackend)
 	if err != nil {
 		return ensAddr, nil, err
 	}
 
-	ens, err := NewENS(chainID, transactOpts, ensAddr, contractBackend)
+	ens, err := NewENS(transactOpts, ensAddr, contractBackend)
 	if err != nil {
 		return ensAddr, nil, err
 	}
 
 	// Deploy the registrar.
-	regAddr, _, _, err := contract.DeployFIFSRegistrar(chainID, transactOpts, contractBackend, ensAddr, [32]byte{})
+	regAddr, _, _, err := contract.DeployFIFSRegistrar(transactOpts, contractBackend, ensAddr, [32]byte{})
 	if err != nil {
 		return ensAddr, nil, err
 	}
@@ -109,7 +106,7 @@ func (self *ENS) getResolver(node [32]byte) (*contract.PublicResolverSession, er
 		return nil, err
 	}
 
-	resolver, err := contract.NewPublicResolver(self.chainID, resolverAddr, self.contractBackend)
+	resolver, err := contract.NewPublicResolver(resolverAddr, self.contractBackend)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +123,7 @@ func (self *ENS) getRegistrar(node [32]byte) (*contract.FIFSRegistrarSession, er
 		return nil, err
 	}
 
-	registrar, err := contract.NewFIFSRegistrar(self.chainID, registrarAddr, self.contractBackend)
+	registrar, err := contract.NewFIFSRegistrar(registrarAddr, self.contractBackend)
 	if err != nil {
 		return nil, err
 	}
