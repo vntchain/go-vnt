@@ -23,8 +23,6 @@ import (
 	"strings"
 	"sync"
 
-	"math/big"
-
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/common/hexutil"
 	set "gopkg.in/fatih/set.v0"
@@ -168,6 +166,8 @@ func (bn BlockNumber) Int64() int64 {
 }
 
 // Candidate is the information of a witness candidate
+// Using hexutil.Big to replace big.Int for client
+// can read the value as string
 type Candidate struct {
 	Owner           string       `json:"owner"`           // 候选人地址
 	Name            string       `json:"name"`            // 候选人名称
@@ -184,17 +184,17 @@ type Candidate struct {
 type Voter struct {
 	Owner             common.Address   `json:"owner"`             // 投票人的地址
 	IsProxy           bool             `json:"isProxy"`           // 是否是代理人
-	ProxyVoteCount    *big.Int         `json:"proxyVoteCount"`    // 收到的代理的票数
+	ProxyVoteCount    *hexutil.Big     `json:"proxyVoteCount"`    // 收到的代理的票数
 	Proxy             common.Address   `json:"proxy"`             // 该节点设置的代理人
-	LastStakeCount    *big.Int         `json:"lastStakeCount"`    // 上次投票是抵押的代币数
-	LastVoteCount     *big.Int         `json:"lastVoteCount"`     // 上次投的票数
-	LastVoteTimeStamp *big.Int         `json:"lastVoteTimeStamp"` // 上次投票时间戳
+	LastStakeCount    *hexutil.Big     `json:"lastStakeCount"`    // 上次投票是抵押的代币数
+	LastVoteCount     *hexutil.Big     `json:"lastVoteCount"`     // 上次投的票数
+	LastVoteTimeStamp *hexutil.Big     `json:"lastVoteTimeStamp"` // 上次投票时间戳
 	VoteCandidates    []common.Address `json:"voteCandidates"`    // 投了哪些人
 }
 
 // Stake is the information of a user
 type Stake struct {
 	Owner              common.Address `json:"owner"`              // 抵押代币的所有人
-	StakeCount         *big.Int       `json:"stakeCount"`         // 抵押的代币数量
-	LastStakeTimeStamp *big.Int       `json:"lastStakeTimeStamp"` // 上次抵押时间戳
+	StakeCount         *hexutil.Big   `json:"stakeCount"`         // 抵押的代币数量
+	LastStakeTimeStamp *hexutil.Big   `json:"lastStakeTimeStamp"` // 上次抵押时间戳
 }

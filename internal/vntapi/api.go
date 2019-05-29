@@ -718,11 +718,11 @@ func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Addre
 	voter := &rpc.Voter{
 		Owner:             v.Owner,
 		IsProxy:           v.IsProxy,
-		ProxyVoteCount:    v.ProxyVoteCount,
+		ProxyVoteCount:    (*hexutil.Big)(v.ProxyVoteCount),
 		Proxy:             v.Proxy,
-		LastStakeCount:    v.LastStakeCount,
-		LastVoteCount:     v.LastVoteCount,
-		LastVoteTimeStamp: v.TimeStamp,
+		LastStakeCount:    (*hexutil.Big)(v.LastStakeCount),
+		LastVoteCount:     (*hexutil.Big)(v.LastVoteCount),
+		LastVoteTimeStamp: (*hexutil.Big)(v.TimeStamp),
 		VoteCandidates:    v.VoteCandidates,
 	}
 
@@ -746,8 +746,8 @@ func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Addre
 	}
 	stake := &rpc.Stake{
 		Owner:              st.Owner,
-		StakeCount:         st.StakeCount,
-		LastStakeTimeStamp: st.TimeStamp,
+		StakeCount:         (*hexutil.Big)(st.StakeCount),
+		LastStakeTimeStamp: (*hexutil.Big)(st.TimeStamp),
 	}
 
 	return stake, nil
