@@ -37,6 +37,12 @@ func MainNetActive(stateDB inter.StateDB) bool {
 	return mainActive
 }
 
+// GetMainNetVotes return a pointer of main net vote information.
+func GetMainNetVotes(stateDB inter.StateDB) *MainNetVotes {
+	mv := getMainNetVotes(stateDB)
+	return &mv
+}
+
 // modifyMainNetVotes modify the votes of main net and judge whether
 // the main net match start condition.
 func modifyMainNetVotes(stateDB inter.StateDB, num *big.Int, add bool) error {

@@ -35,6 +35,7 @@ import (
 	"github.com/vntchain/go-vnt/common/math"
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/rawdb"
+	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/vm/election"
@@ -767,6 +768,30 @@ func (s *PublicBlockChainAPI) GetRestVNTBounty(ctx context.Context) (*big.Int, e
 	} else {
 		return rest, nil
 	}
+}
+
+// GetMainNetVotes returns the main net active information.
+func (s *PublicBlockChainAPI) GetMainNetVotes(ctx context.Context) (*rpc.MainNetVotes, error) {
+	stateDB, err := s.stateDbOfCurrent(ctx)
+	if stateDB == nil || err != nil {
+		return nil, err
+	}
+
+	rest := election.GetMainNetVotes(stateDB)
+	if rest == nil {
+		return nil, errors.New("can not get rest main net active information")
+	}
+	mv := &rpc.MainNetVotes{
+		Active:    rest.Active,
+		VoteStake: (*hexutil.Big)(rest.VoteStake),
+	}
+	return mv, nil
+}
+
+func (s *PublicBlockChainAPI) stateDbOfCurrent(ctx context.Context) (*state.StateDB, error) {
+	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
+	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	return stateDB, err
 }
 
 // ExecutionResult groups all structured logs emitted by the EVM

@@ -417,6 +417,7 @@ func getMainNetVotes(stateDb inter.StateDB) MainNetVotes {
 	return mv
 }
 
+// setMainNetVotes store the main net votes to db.
 func setMainNetVotes(stateDB inter.StateDB, mv MainNetVotes) error {
 	return convertToKV(MAINNETVOTESPREFIX, mv, genSetFunc(stateDB))
 }

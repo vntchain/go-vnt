@@ -172,12 +172,12 @@ type Candidate struct {
 	Owner           string       `json:"owner"`           // 候选人地址
 	Name            string       `json:"name"`            // 候选人名称
 	Active          bool         `json:"active"`          // 当前是否是候选人
+	Website         string       `json:"website"`         // 见证人网站
 	Url             string       `json:"url"`             // 节点的URL
 	VoteCount       *hexutil.Big `json:"voteCount"`       // 收到的票数
 	TotalBounty     *hexutil.Big `json:"totalBounty"`     // 总奖励金额
 	ExtractedBounty *hexutil.Big `json:"extractedBounty"` // 已提取奖励金额
 	LastExtractTime *hexutil.Big `json:"lastExtractTime"` // 上次提权时间
-	Website         string       `json:"website"`         // 见证人网站
 }
 
 // Voter is the information of who has vote witness candidate
@@ -197,4 +197,10 @@ type Stake struct {
 	Owner              common.Address `json:"owner"`              // 抵押代币的所有人
 	StakeCount         *hexutil.Big   `json:"stakeCount"`         // 抵押的代币数量
 	LastStakeTimeStamp *hexutil.Big   `json:"lastStakeTimeStamp"` // 上次抵押时间戳
+}
+
+// MainNetVotes is the information of main net active.
+type MainNetVotes struct {
+	VoteStake *hexutil.Big `json:"voteStake"` // 进行了投票的抵押代币数量，单位VNT
+	Active    bool         `json:"active"`    // 主网是否已启动
 }
