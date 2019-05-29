@@ -674,8 +674,7 @@ func (s *PublicBlockChainAPI) EstimateGas(ctx context.Context, args CallArgs) (h
 // GetAllCandidates returns a list of all the candidates.
 func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candidate, error) {
 	// Get stateDB of current block
-	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
-	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	stateDB, err := s.stateDbOfCurrent(ctx)
 	if stateDB == nil || err != nil {
 		return nil, err
 	}
@@ -703,9 +702,7 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 
 // GetVoter returns a voter's information.
 func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Address) (*rpc.Voter, error) {
-	// Get stateDB of current block
-	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
-	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	stateDB, err := s.stateDbOfCurrent(ctx)
 	if stateDB == nil || err != nil {
 		return nil, err
 	}
@@ -732,9 +729,7 @@ func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Addre
 
 // GetStake returns a stake information.
 func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Address) (*rpc.Stake, error) {
-	// Get stateDB of current block
-	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
-	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	stateDB, err := s.stateDbOfCurrent(ctx)
 	if stateDB == nil || err != nil {
 		return nil, err
 	}
@@ -756,9 +751,7 @@ func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Addre
 
 // GetRestVNTBounty returns the rest VNT bounty.
 func (s *PublicBlockChainAPI) GetRestVNTBounty(ctx context.Context) (*big.Int, error) {
-	// Get stateDB of current block
-	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
-	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	stateDB, err := s.stateDbOfCurrent(ctx)
 	if stateDB == nil || err != nil {
 		return nil, err
 	}
