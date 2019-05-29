@@ -40,9 +40,9 @@ var (
 
 func TestENS(t *testing.T) {
 	contractBackend := backends.NewSimulatedBackend(core.GenesisAlloc{addr: {Balance: big.NewInt(1000000000)}})
-	transactOpts := bind.NewKeyedTransactor(key)
+	transactOpts := bind.NewKeyedTransactor(key, chainID)
 
-	ensAddr, ens, err := DeployENS(chainID, transactOpts, contractBackend)
+	ensAddr, ens, err := DeployENS(transactOpts, contractBackend)
 	if err != nil {
 		t.Fatalf("can't deploy root registry: %v", err)
 	}
@@ -55,7 +55,7 @@ func TestENS(t *testing.T) {
 	contractBackend.Commit()
 
 	// Deploy a resolver and make it responsible for the name.
-	resolverAddr, _, _, err := contract.DeployPublicResolver(chainID, transactOpts, contractBackend, ensAddr)
+	resolverAddr, _, _, err := contract.DeployPublicResolver(transactOpts, contractBackend, ensAddr)
 	if err != nil {
 		t.Fatalf("can't deploy resolver: %v", err)
 	}

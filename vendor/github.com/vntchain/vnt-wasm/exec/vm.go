@@ -70,11 +70,12 @@ type VM struct {
 	// or encountering an invalid instruction, e.g. `unreachable`.
 	RecoverPanic bool
 
-	abort              bool // Flag for host functions to terminate execution
-	debug              bool
-	captureOp          func(pc uint64, op byte) error
-	captureEnvFunction func(pc uint64, name string) error
-	recursiveCallDepth int
+	abort                   bool // Flag for host functions to terminate execution
+	debug                   bool
+	captureOp               func(pc uint64, op byte) error
+	captureEnvFunctionStart func(pc uint64, name string) error
+	captureEnvFunctionEnd   func(pc uint64, name string) error
+	recursiveCallDepth      int
 }
 
 // As per the WebAssembly spec: https://github.com/WebAssembly/design/blob/27ac254c854994103c24834a994be16f74f54186/Semantics.md#linear-memory
