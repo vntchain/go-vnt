@@ -35,6 +35,7 @@ import (
 	"github.com/vntchain/go-vnt/common/math"
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/rawdb"
+	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/vm/election"
@@ -673,8 +674,7 @@ func (s *PublicBlockChainAPI) EstimateGas(ctx context.Context, args CallArgs) (h
 // GetAllCandidates returns a list of all the candidates.
 func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candidate, error) {
 	// Get stateDB of current block
-	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
-	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	stateDB, err := s.stateDbOfCurrent(ctx)
 	if stateDB == nil || err != nil {
 		return nil, err
 	}
@@ -702,9 +702,7 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 
 // GetVoter returns a voter's information.
 func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Address) (*rpc.Voter, error) {
-	// Get stateDB of current block
-	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
-	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	stateDB, err := s.stateDbOfCurrent(ctx)
 	if stateDB == nil || err != nil {
 		return nil, err
 	}
@@ -718,10 +716,11 @@ func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Addre
 	voter := &rpc.Voter{
 		Owner:             v.Owner,
 		IsProxy:           v.IsProxy,
-		ProxyVoteCount:    v.ProxyVoteCount,
+		ProxyVoteCount:    (*hexutil.Big)(v.ProxyVoteCount),
 		Proxy:             v.Proxy,
-		LastVoteCount:     v.LastVoteCount,
-		LastVoteTimeStamp: v.TimeStamp,
+		LastStakeCount:    (*hexutil.Big)(v.LastStakeCount),
+		LastVoteCount:     (*hexutil.Big)(v.LastVoteCount),
+		LastVoteTimeStamp: (*hexutil.Big)(v.TimeStamp),
 		VoteCandidates:    v.VoteCandidates,
 	}
 
@@ -730,9 +729,7 @@ func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Addre
 
 // GetStake returns a stake information.
 func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Address) (*rpc.Stake, error) {
-	// Get stateDB of current block
-	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
-	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	stateDB, err := s.stateDbOfCurrent(ctx)
 	if stateDB == nil || err != nil {
 		return nil, err
 	}
@@ -745,8 +742,8 @@ func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Addre
 	}
 	stake := &rpc.Stake{
 		Owner:              st.Owner,
-		StakeCount:         st.StakeCount,
-		LastStakeTimeStamp: st.TimeStamp,
+		StakeCount:         (*hexutil.Big)(st.StakeCount),
+		LastStakeTimeStamp: (*hexutil.Big)(st.TimeStamp),
 	}
 
 	return stake, nil
@@ -754,9 +751,7 @@ func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Addre
 
 // GetRestVNTBounty returns the rest VNT bounty.
 func (s *PublicBlockChainAPI) GetRestVNTBounty(ctx context.Context) (*big.Int, error) {
-	// Get stateDB of current block
-	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
-	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	stateDB, err := s.stateDbOfCurrent(ctx)
 	if stateDB == nil || err != nil {
 		return nil, err
 	}
@@ -766,6 +761,30 @@ func (s *PublicBlockChainAPI) GetRestVNTBounty(ctx context.Context) (*big.Int, e
 	} else {
 		return rest, nil
 	}
+}
+
+// GetMainNetVotes returns the main net active information.
+func (s *PublicBlockChainAPI) GetMainNetVotes(ctx context.Context) (*rpc.MainNetVotes, error) {
+	stateDB, err := s.stateDbOfCurrent(ctx)
+	if stateDB == nil || err != nil {
+		return nil, err
+	}
+
+	rest := election.GetMainNetVotes(stateDB)
+	if rest == nil {
+		return nil, errors.New("can not get rest main net active information")
+	}
+	mv := &rpc.MainNetVotes{
+		Active:    rest.Active,
+		VoteStake: (*hexutil.Big)(rest.VoteStake),
+	}
+	return mv, nil
+}
+
+func (s *PublicBlockChainAPI) stateDbOfCurrent(ctx context.Context) (*state.StateDB, error) {
+	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
+	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	return stateDB, err
 }
 
 // ExecutionResult groups all structured logs emitted by the VM

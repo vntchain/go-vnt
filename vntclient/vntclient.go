@@ -518,7 +518,7 @@ func (ec *Client) NewElectionTx(ctx context.Context, sender common.Address, gasL
 }
 
 func getElectionABI() (abi.ABI, error) {
-	return abi.JSON(strings.NewReader(election.AbiJSON))
+	return abi.JSON(strings.NewReader(election.ElectionAbiJSON))
 }
 
 func packInput(abiobj abi.ABI, name string, args ...interface{}) ([]byte, error) {

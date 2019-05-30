@@ -30,6 +30,7 @@ import (
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
+	"github.com/vntchain/go-vnt/core/vm/election"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/params"
 	"github.com/vntchain/go-vnt/vntdb"
@@ -1038,7 +1039,7 @@ func TestLogReorgs(t *testing.T) {
 		db      = vntdb.NewMemDatabase()
 		// this code generates a log
 		code    = common.Hex2Bytes("0161736db9052f0100789c9c56db6f145518ff9d397ba6ed0eddeeb260b90418168818ebf6226db0722b21624d480c589110b29ddd39dd8eccced499d94221ddaec5101e7df4c542bcbc181f8cf1414a4cfc177cf1091e144d4c88461a0c2185c47c33b317290fc47998effb7ee7fbfdbe739b39e75157f966e71730fc0a03c0328949a556c324ab611298640b500cc1a5339b3eed59813c6d05d36fbb9613480f20b8e7a434cc35a83a669ac70d1f8c82ecb8630596615b97e4bb866719455bfa50a84578d2f5cae03cc11545490836c318139c415137f20536f6f1b584b68086b9daa9751c116a45565c6f4e8156284c4b63a650347cc959b250308dc02848c7e44ada9425dbf0a4f946d5290596eb401527c3521dc9fd5c81b61d477114e97abd5e8fbc0f232fbd4856db80f41572c6ead7ea75a43f0a41ad9b61acdea9a951a7f1806b795316abe582e54cb9bf3120017a12348f58875d881e37b60300146acb003801804fd06b32e40800db01fc486b70577c42e61c536f84d606a07e13ba3e65777c154a75d600dc2478a0eb0ac1df511e4b528de3007ea2a67bb719a06e634d776bd3d57690fb27b9eba83fc3007a88f357d429844a53007e2774a5a5b4d2525a6929fdd354ea059022ce83b631862def346a3c6caf4195ef13badaaab1daaa11badd27e279644f626a8aa847003c21148cb27a426eec6f6df9e9b0874ae86748691371388ba5c235530074314049247603d8006023856a38d177883004a453f1aa578c122d3c709575c790673865e9d3fa6601ec00f0325a4f1f803c80210087da70aabd1e00ed815d71fc666ccbb11d89ed586c3900eae4fe361d3c6e76c428163d39cb326c4f2a2b782addbb35956113bd80926719b65e1dcc025c804c220f42786a547b5d3bbc19107916052f6e3ebc59d700552002c6b340c76ef0d4214dd380ce17309e8d5a80ae1e507332d26f088c674951dbd726b06e1b1bcc52ce7bda190de8a670a2370a526d6cd160f7c4e505b1d3fbda824c934b53876f138d0fd2b61c9953e883fc8ce68bb1d554371916cd1eeb9ff0a5e7f75f90966f5897a60da7dc7fcc2d552bd209fcfea21b04b67c25907ed05f729dc0334a818fe7a614ab966db61131eb04b655cc4f53e5f0275498f164c9adcc58b6cc97c25d0711fe18f81d30d191dc29c4b4caaf2f2c0aa6f2bbd01506c620141a24bf4b3fc8e499eb57042b371a42ee3dc6444ff2a0d06e893dea8a183c20f62e890e95dfaf2d0a7188f4960557f9df4c57781b6d8531a1250f0a5dedd429fd5e4d1762204ad754fe90e94257df123d6a9fd06f88017551f42e096d8a52ffa84db52b3f7a4a793554de29b6a83f53f6af355d24f97596175c5de28b5446e5bf80c04f19092cfd673875a5399c2deab2d075b12b2f869649e9764d179c7fc9f22a7f3c7fa021c3f9e76c39ec40428945360a96dc19aa86107d2f9b044be684280b762b2af7b5928c378d1f7825db70cafaacf47ccb75f4fdf981fc80be37f0aace79fdd57d83af8d0cbcf4bff741ff3396fe79b570527e50b53c8992eb9856789e158ebaae8d8a5f4669daf0e0079ee594b1e6d89b181a1e39654cc913551b55cb098686479ad8316bb6e99faa169bfe9869e2bc9c9b9b7582f787e766a23d8b395cc425e072c2312a92059d58731f604f5f0594f816c09f7501484467bfc8140a170cbf522819b65d2805aee7ab6b4eef8ee8f0fefe87b39773543e379a0b815c5faee43a7e6038416e74cab07dd997b39c996ae0e746cf9eebcbb9d5a015047333440c095e952ae5e6fb9a7a5eac6738ae335771abfe5ac1666ec5a7cc582f9af91ce599f2a23463de7caba29c954e909b3f57ff170000ffff")
-		gspec   = &Genesis{Config: params.TestChainConfig, Alloc: GenesisAlloc{addr1: {Balance: big.NewInt(10000000000000)}}}
+		gspec   = &Genesis{Config: params.TestChainConfig, Alloc: GenesisAlloc{addr1: {Balance: big.NewInt(0).Mul(big.NewInt(1e9), big.NewInt(1e18))}}}
 		genesis = gspec.MustCommit(db)
 		signer  = types.NewHubbleSigner(gspec.Config.ChainID)
 	)
@@ -1046,16 +1047,28 @@ func TestLogReorgs(t *testing.T) {
 	blockchain, _ := NewBlockChain(db, nil, gspec.Config, mock.NewMock(), vm.Config{})
 	defer blockchain.Stop()
 
+	signTx := func(tx *types.Transaction) (*types.Transaction, error) {
+		return types.SignTx(tx, signer, key1)
+	}
 	rmLogsCh := make(chan RemovedLogsEvent)
 	blockchain.SubscribeRemovedLogsEvent(rmLogsCh)
 	chain, _ := GenerateChain(params.TestChainConfig, genesis, mock.NewMock(), db, 3, func(i int, gen *BlockGen) {
-		if i == 2 {
+		switch i {
+		case 0:
+			if err := StartFakeMainNet(gen, addr1, signTx); err != nil {
+				t.Fatalf(err.Error())
+			}
+		case 2:
+			if !election.MainNetActive(gen.statedb) {
+				t.Fatalf("main is inactive")
+			}
+			gen.OffsetTime(2)
+
 			tx, err := types.SignTx(types.NewContractCreation(gen.TxNonce(addr1), new(big.Int), 1000000, new(big.Int), code), signer, key1)
 			if err != nil {
 				t.Fatalf("failed to create tx: %v", err)
 			}
 			gen.AddTx(tx)
-			gen.OffsetTime(2)
 		}
 	})
 	if _, err := blockchain.InsertChain(chain); err != nil {
@@ -1063,7 +1076,13 @@ func TestLogReorgs(t *testing.T) {
 	}
 
 	// fork chain should to be canonical chain
-	chain, _ = GenerateChain(params.TestChainConfig, genesis, mock.NewMock(), db, 3, func(i int, gen *BlockGen) {})
+	chain, _ = GenerateChain(params.TestChainConfig, genesis, mock.NewMock(), db, 3, func(i int, gen *BlockGen) {
+		if i == 0 {
+			if err := StartFakeMainNet(gen, addr1, signTx); err != nil {
+				t.Fatalf(err.Error())
+			}
+		}
+	})
 	if _, err := blockchain.InsertChain(chain); err != nil {
 		t.Fatalf("failed to insert forked chain: %v", err)
 	}
