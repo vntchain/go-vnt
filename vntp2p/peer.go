@@ -80,14 +80,15 @@ type PeerInfo struct {
 }
 
 type Peer struct {
+	// TODO p2p rw只用来获取信息，其实可以获取好信息，如果不使用stream可以关闭掉
 	rw      inet.Stream // libp2p stream
 	reseted int32       // Whether stream reseted
-	log     log.Logger
+	log     log.Logger  // TODO p2p log新建时填写peer id，可以知道是和那个peer交互的日志
 	events  *event.Feed
 	err     chan error
-	msgers  map[string]*VNTMsger // protocolName - vntMessenger
+	msgers  map[string]*VNTMsger // protocolName - vntMessenger，给每个子协议分配msger，通过msger复用Peer对象
 	server  *Server
-	wg      sync.WaitGroup
+	wg      sync.WaitGroup // 该Peer的某个每个子协议单独运行
 }
 
 func newPeer(conn *Stream, server *Server) *Peer {
@@ -98,7 +99,6 @@ func newPeer(conn *Stream, server *Server) *Peer {
 			protocol: proto,
 			in:       make(chan Msg),
 			err:      make(chan error, 100),
-			w:        conn.Conn,
 		}
 		m[proto.Name] = vntMessenger
 	}
@@ -181,6 +181,7 @@ func (p *Peer) Disconnect(reason DiscReason) {
 	// p.rw.Conn().Close()
 	// p.rw.Close()
 
+	// TODO p2p 使用p.rw.Conn().Close()真正关闭连接
 	p.Reset()
 }
 
@@ -246,6 +247,7 @@ func (p *Peer) sendError(err error) {
 	}
 }
 
+// TODO p2p 改名为conn
 type Stream struct {
 	Conn      inet.Stream
 	Protocols []Protocol

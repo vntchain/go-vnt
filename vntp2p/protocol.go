@@ -44,7 +44,7 @@ type Protocol struct {
 func (server *Server) HandleStream(s inet.Stream) {
 	// peer信息只获取1次即可
 	log.Debug("Stream data coming...")
-	peer := server.GetPeerByRemoteID(s)
+	peer := server.GetPeerByRemoteID(s) // 目的是获取peer，然后通过msger向上层子协议发送数据
 	if peer == nil {
 		log.Debug("HandleStream", "localPeerID", s.Conn().LocalPeer(), "remotePeerID", s.Conn().RemotePeer(), "this remote peer is nil, don't handle it")
 		_ = s.Reset()
@@ -53,57 +53,57 @@ func (server *Server) HandleStream(s inet.Stream) {
 
 	// 发生错误时才会退出
 	defer func() {
-		log.Debug("HandleStream reset stream before exit")
-		peer.Reset()
+		log.Debug("HandleStream close stream before exit")
+		s.Close()
 	}()
 
-	// stream未关闭则连接正常可持续读取消息
-	for {
-		// 读取消息
-		msgHeaderByte := make([]byte, MessageHeaderLength)
-		_, err := io.ReadFull(s, msgHeaderByte)
-		if err != nil {
-			log.Error("HandleStream", "read msg header error", err, "peer", peer.RemoteID().ToString())
-			notifyError(peer.msgers, err)
-			return
-		}
-		bodySize := binary.LittleEndian.Uint32(msgHeaderByte)
+	// 读取消息
+	msgHeaderByte := make([]byte, MessageHeaderLength)
+	_, err := io.ReadFull(s, msgHeaderByte)
+	if err != nil {
+		log.Error("HandleStream", "read msg header error", err, "peer", peer.RemoteID().ToString())
+		s.Reset()
+		notifyError(peer.msgers, err)
+		return
+	}
+	bodySize := binary.LittleEndian.Uint32(msgHeaderByte)
 
-		msgBodyByte := make([]byte, bodySize)
-		_, err = io.ReadFull(s, msgBodyByte)
-		if err != nil {
-			log.Error("HandleStream", "read msg Body error", err, "peer", peer.RemoteID().ToString())
-			notifyError(peer.msgers, err)
-			return
-		}
-		msgBody := &MsgBody{Payload: &rlp.EncReader{}}
-		err = json.Unmarshal(msgBodyByte, msgBody)
-		if err != nil {
-			log.Error("HandleStream", "unmarshal msg Body error", err, "peer", peer.RemoteID().ToString())
-			notifyError(peer.msgers, err)
-			return
-		}
-		msgBody.ReceivedAt = time.Now()
+	msgBodyByte := make([]byte, bodySize)
+	_, err = io.ReadFull(s, msgBodyByte)
+	if err != nil {
+		log.Error("HandleStream", "read msg Body error", err, "peer", peer.RemoteID().ToString())
+		s.Reset()
+		notifyError(peer.msgers, err)
+		return
+	}
+	msgBody := &MsgBody{Payload: &rlp.EncReader{}}
+	err = json.Unmarshal(msgBodyByte, msgBody)
+	if err != nil {
+		log.Error("HandleStream", "unmarshal msg Body error", err, "peer", peer.RemoteID().ToString())
+		s.Reset()
+		notifyError(peer.msgers, err)
+		return
+	}
+	msgBody.ReceivedAt = time.Now()
 
-		// 传递给msger
-		var msgHeader MsgHeader
-		copy(msgHeader[:], msgHeaderByte)
+	// 传递给msger
+	var msgHeader MsgHeader
+	copy(msgHeader[:], msgHeaderByte)
 
-		msg := Msg{
-			Header: msgHeader,
-			Body:   *msgBody,
+	msg := Msg{
+		Header: msgHeader,
+		Body:   *msgBody,
+	}
+	if msger, ok := peer.msgers[msgBody.ProtocolID]; ok { // this node support protocolID
+		// 非阻塞向上层协议传递消息，如果2s还未被读取，认为上层协议有故障
+		select {
+		case msger.in <- msg:
+			log.Trace("HandleStream send message to messager success")
+		case <-time.NewTimer(time.Second * 2).C:
+			log.Trace("HandleStream send message to messager timeout")
 		}
-		if msger, ok := peer.msgers[msgBody.ProtocolID]; ok { // this node support protocolID
-			// 非阻塞向上层协议传递消息，如果2s还未被读取，认为上层协议有故障
-			select {
-			case msger.in <- msg:
-				log.Trace("HandleStream send message to messager success")
-			case <-time.NewTimer(time.Second * 2).C:
-				log.Trace("HandleStream send message to messager timeout")
-			}
-		} else {
-			log.Warn("HandleStream", "receive unknown message", msg)
-		}
+	} else {
+		log.Warn("HandleStream", "receive unknown message", msg)
 	}
 }
 

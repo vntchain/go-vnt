@@ -83,7 +83,8 @@ type peer struct {
 	id libp2p.ID
 
 	*vntp2p.Peer
-	rw vntp2p.MsgReadWriter
+	// 换成Peer *vntp2p.Peer，看所有调用的地方，然后编译一把，不过的地方是隐式调用的地方。1）日志，2）Disconnect
+	rw vntp2p.MsgReadWriter // 只用于读写消息
 
 	version int // Protocol version negotiated
 

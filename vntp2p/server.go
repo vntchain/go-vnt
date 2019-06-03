@@ -21,14 +21,15 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"github.com/libp2p/go-libp2p"
+	"net"
+	"sync"
+
+	libp2p "github.com/libp2p/go-libp2p"
 	p2phost "github.com/libp2p/go-libp2p-host"
 	inet "github.com/libp2p/go-libp2p-net"
 	protocol "github.com/libp2p/go-libp2p-protocol"
 	"github.com/vntchain/go-vnt/event"
 	"github.com/vntchain/go-vnt/log"
-	"net"
-	"sync"
 
 	// inet "github.com/libp2p/go-libp2p-net"
 	peer "github.com/libp2p/go-libp2p-peer"
@@ -349,6 +350,7 @@ func (server *Server) Self() *Node {
 func (server *Server) GetPeerByRemoteID(s inet.Stream) *Peer {
 	var p *Peer
 
+	// TODO p2p 应当是先查询，如果没有查询到peer，再add peer
 	// always try to new this peer
 	err := server.dispatch(&Stream{Conn: s, Protocols: server.protomap[PID]}, server.addpeer)
 	if err != nil {
@@ -414,7 +416,7 @@ func (server *Server) SetupStream(ctx context.Context, target peer.ID, pid strin
 	}
 
 	// handle response message
-	go server.HandleStream(s)
+	// go server.HandleStream(s)  // TODO p2p 这句不合逻辑的调用可以去掉了，发消息时会创建stream
 	/* rw := bufio.NewReadWriter(bufio.NewReader(s), bufio.NewWriter(s))
 	vntMessenger := &VNTMsger{
 		protocol: Protocol{},
