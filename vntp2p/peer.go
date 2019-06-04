@@ -29,14 +29,13 @@ import (
 	inet "github.com/libp2p/go-libp2p-net"
 	libp2p "github.com/libp2p/go-libp2p-peer"
 	ma "github.com/multiformats/go-multiaddr"
-	manet "github.com/multiformats/go-multiaddr-net"
+	"github.com/multiformats/go-multiaddr-net"
 	"github.com/vntchain/go-vnt/event"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/crypto"
 	mh "github.com/multiformats/go-multihash"
 	"strings"
 	"fmt"
-	"runtime"
 )
 
 type PeerEventType string
@@ -189,9 +188,6 @@ func parseMultiaddr(maddr ma.Multiaddr) net.Addr {
 }
 
 func (p *Peer) Disconnect(reason DiscReason) {
-
-	_, file, line, _ := runtime.Caller(1)
-	fmt.Println("#### Peer.Disconnect called by:", "file=", file, ":", line)
 	// test for it
 	// p.rw.Conn().Close()
 	// p.rw.Close()
@@ -203,9 +199,6 @@ func (p *Peer) Disconnect(reason DiscReason) {
 // Reset Close both direction. Use this to tell the remote side to hang up and go away.
 // But only reset once.
 func (p *Peer) Reset() {
-
-	_, file, line, _ := runtime.Caller(1)
-	fmt.Println("#### Peer.Reset called by:", "file=", file, ":", line)
 	if !atomic.CompareAndSwapInt32(&p.reseted, 0, 1) {
 		return
 	}

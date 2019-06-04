@@ -6,8 +6,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-	"runtime"
-	"fmt"
 )
 
 type streamState int
@@ -281,8 +279,6 @@ func (s *Stream) sendReset() error {
 
 // Reset resets the stream (forcibly closes the stream)
 func (s *Stream) Reset() error {
-	_, file, line, _ := runtime.Caller(1)
-	fmt.Println("#### Reset called by:", "file=", file, ":", line)
 	s.stateLock.Lock()
 	switch s.state {
 	case streamClosed, streamReset:

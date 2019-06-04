@@ -426,7 +426,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.I
 
 	// Look up the sync boundaries: the common ancestor and the target block
 	latest, err := d.fetchHeight(p)
-	log.Debug("#### Got remote height:", "height", latest, "p", p.id)
+	log.Debug("Got remote height:", "height", latest, "p", p.id)
 	if err != nil {
 		return err
 	}
@@ -1005,7 +1005,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 	idle func() ([]*peerConnection, int), setIdle func(*peerConnection, int), kind string) error {
 	num := rand.Int()
 	_, file, line, _ := runtime.Caller(1)
-	fmt.Println("#### Downloader.fetchParts called by:", "file=", file, ":", line, "num", num)
+	fmt.Println("Downloader.fetchParts called by:", "file=", file, ":", line, "num", num)
 	// Create a ticker to detect expired retrieval tasks
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
@@ -1110,20 +1110,20 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 			progressed, throttled, running := false, false, inFlight()
 			idles, total := idle()
 
-			log.Debug("#### Downloader.fetchParts origin", "num", num, "progressed", progressed,
+			log.Debug("Downloader.fetchParts origin", "num", num, "progressed", progressed,
 				"throttled", throttled, "running", running, "idles", idles, "total", total)
 
 			for _, peer := range idles {
 				// Short circuit if throttling activated
 				if throttle() {
 					throttled = true
-					log.Debug("#### Downloader.fetchParts set throttle:", "num", num, "progressed", progressed,
+					log.Debug("Downloader.fetchParts set throttle:", "num", num, "progressed", progressed,
 						"throttled", throttled, "running", running, "idles", idles, "total", total)
 					break
 				}
 				// Short circuit if there is no more available task.
 				if pending() == 0 {
-					log.Debug("#### Downloader.fetchParts pending is 0:", "num", num, "progressed", progressed,
+					log.Debug("Downloader.fetchParts pending is 0:", "num", num, "progressed", progressed,
 						"throttled", throttled, "running", running, "idles", idles, "total", total)
 					break
 				}
@@ -1136,7 +1136,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 				}
 				if progress {
 					progressed = true
-					log.Debug("#### Downloader.fetchParts set progress:", "num", num, "progressed", progressed,
+					log.Debug("Downloader.fetchParts set progress:", "num", num, "progressed", progressed,
 						"throttled", throttled, "running", running, "idles", idles, "total", total)
 				}
 				if request == nil {
@@ -1162,13 +1162,13 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 
 				running = true
 
-				log.Debug("#### Downloader.fetchParts set running:", "num", num, "progressed", progressed,
+				log.Debug("Downloader.fetchParts set running:", "num", num, "progressed", progressed,
 					"throttled", throttled, "running", running, "idles", idles, "total", total)
 			}
 			// Make sure that we have peers available for fetching. If all peers have been tried
 			// and all failed throw an error
 			if !progressed && !throttled && !running && len(idles) == total && pending() > 0 {
-				log.Debug("#### errPeersUnavailable", "num", num, "progressed", progressed, "throttled:",
+				log.Debug("errPeersUnavailable", "num", num, "progressed", progressed, "throttled:",
 					throttled, "running", running, "len(idles)", len(idles), "total", total, "pending()", pending())
 				return errPeersUnavailable
 			}
