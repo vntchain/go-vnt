@@ -46,7 +46,7 @@ const (
 	LogsSubscription
 	// PendingLogsSubscription queries for logs in pending blocks
 	PendingLogsSubscription
-	// MinedAndPendingLogsSubscription queries for logs in mined and pending blocks.
+	// MinedAndPendingLogsSubscription queries for logs in produced and pending blocks.
 	MinedAndPendingLogsSubscription
 	// PendingTransactionsSubscription queries tx hashes for pending
 	// transactions entering the pending state
@@ -212,26 +212,26 @@ func (es *EventSystem) SubscribeLogs(crit hubble.FilterQuery, logs chan []*types
 	if from == rpc.PendingBlockNumber && to == rpc.PendingBlockNumber {
 		return es.subscribePendingLogs(crit, logs), nil
 	}
-	// only interested in new mined logs
+	// only interested in new produced logs
 	if from == rpc.LatestBlockNumber && to == rpc.LatestBlockNumber {
 		return es.subscribeLogs(crit, logs), nil
 	}
-	// only interested in mined logs within a specific block range
+	// only interested in produced logs within a specific block range
 	if from >= 0 && to >= 0 && to >= from {
 		return es.subscribeLogs(crit, logs), nil
 	}
-	// interested in mined logs from a specific block number, new logs and pending logs
+	// interested in produced logs from a specific block number, new logs and pending logs
 	if from >= rpc.LatestBlockNumber && to == rpc.PendingBlockNumber {
 		return es.subscribeMinedPendingLogs(crit, logs), nil
 	}
-	// interested in logs from a specific block number to new mined blocks
+	// interested in logs from a specific block number to new produced blocks
 	if from >= 0 && to == rpc.LatestBlockNumber {
 		return es.subscribeLogs(crit, logs), nil
 	}
 	return nil, fmt.Errorf("invalid from and to block combination: from > to")
 }
 
-// subscribeMinedPendingLogs creates a subscription that returned mined and
+// subscribeMinedPendingLogs creates a subscription that returned produced and
 // pending logs that match the given criteria.
 func (es *EventSystem) subscribeMinedPendingLogs(crit hubble.FilterQuery, logs chan []*types.Log) *Subscription {
 	sub := &subscription{

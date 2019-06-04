@@ -280,8 +280,8 @@ type FilterCriteria hubble.FilterQuery
 // used to fetch logs that are already stored in the state.
 //
 // Default criteria for the from and to block are "latest".
-// Using "latest" as block number will return logs for mined blocks.
-// Using "pending" as block number returns logs for not yet mined (pending) blocks.
+// Using "latest" as block number will return logs for produced blocks.
+// Using "pending" as block number returns logs for not yet produced (pending) blocks.
 // In case logs are removed (chain reorg) previously returned logs are returned
 // again but with the removed property set to true.
 //

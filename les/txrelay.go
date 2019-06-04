@@ -141,11 +141,11 @@ func (self *LesTxRelay) Send(txs types.Transactions) {
 	self.send(txs, 3)
 }
 
-func (self *LesTxRelay) NewHead(head common.Hash, mined []common.Hash, rollback []common.Hash) {
+func (self *LesTxRelay) NewHead(head common.Hash, produced []common.Hash, rollback []common.Hash) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	for _, hash := range mined {
+	for _, hash := range produced {
 		delete(self.txPending, hash)
 	}
 

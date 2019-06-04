@@ -269,7 +269,7 @@ func (ec *VNTClient) GetPendingTransactionCount(ctx *Context) (count int, _ erro
 // Contract Calling
 
 // CallContract executes a message call transaction, which is directly executed in the VM
-// of the node, but never mined into the blockchain.
+// of the node, but never produced into the blockchain.
 //
 // blockNumber selects the block height at which the call runs. It can be <0, in which
 // case the code is taken from the latest known block. Note that state from very old
@@ -306,7 +306,7 @@ func (ec *VNTClient) EstimateGas(ctx *Context, msg *CallMsg) (gas int64, _ error
 // SendTransaction injects a signed transaction into the pending pool for execution.
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
-// contract address after the transaction has been mined.
+// contract address after the transaction has been produced.
 func (ec *VNTClient) SendTransaction(ctx *Context, tx *Transaction) error {
 	return ec.client.SendTransaction(ctx.context, tx.tx)
 }

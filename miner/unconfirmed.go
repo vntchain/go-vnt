@@ -26,22 +26,22 @@ import (
 )
 
 // headerRetriever is used by the unconfirmed block set to verify whether a previously
-// mined block is part of the canonical chain or not.
+// produced block is part of the canonical chain or not.
 type headerRetriever interface {
 	// GetHeaderByNumber retrieves the canonical header associated with a block number.
 	GetHeaderByNumber(number uint64) *types.Header
 }
 
-// unconfirmedBlock is a small collection of metadata about a locally mined block
+// unconfirmedBlock is a small collection of metadata about a locally produced block
 // that is placed into a unconfirmed set for canonical chain inclusion tracking.
 type unconfirmedBlock struct {
 	index uint64
 	hash  common.Hash
 }
 
-// unconfirmedBlocks implements a data structure to maintain locally mined blocks
+// unconfirmedBlocks implements a data structure to maintain locally produced blocks
 // have have not yet reached enough maturity to guarantee chain inclusion. It is
-// used by the miner to provide logs to the user when a previously mined block
+// used by the miner to provide logs to the user when a previously produced block
 // has a high enough guarantee to not be reorged out of the canonical chain.
 type unconfirmedBlocks struct {
 	chain  headerRetriever // Blockchain to verify canonical status through
@@ -60,7 +60,7 @@ func newUnconfirmedBlocks(chain headerRetriever, depth uint) *unconfirmedBlocks 
 
 // Insert adds a new block to the set of unconfirmed ones.
 func (set *unconfirmedBlocks) Insert(index uint64, hash common.Hash) {
-	// If a new block was mined locally, shift out any old enough blocks
+	// If a new block was produced locally, shift out any old enough blocks
 	set.Shift(index)
 
 	// Create the new item as its own ring
@@ -78,8 +78,8 @@ func (set *unconfirmedBlocks) Insert(index uint64, hash common.Hash) {
 	} else {
 		set.blocks.Move(-1).Link(item)
 	}
-	// Display a log for the user to notify of a new mined block unconfirmed
-	log.Info("🔨 mined potential block", "number", index, "hash", hash)
+	// Display a log for the user to notify of a new produced block unconfirmed
+	log.Info("🔨 produced potential block", "number", index, "hash", hash)
 }
 
 // Shift drops all unconfirmed blocks from the set which exceed the unconfirmed sets depth
@@ -99,7 +99,7 @@ func (set *unconfirmedBlocks) Shift(height uint64) {
 		header := set.chain.GetHeaderByNumber(next.index)
 		switch {
 		case header == nil:
-			log.Warn("Failed to retrieve header of mined block", "number", next.index, "hash", next.hash)
+			log.Warn("Failed to retrieve header of produced block", "number", next.index, "hash", next.hash)
 		case header.Hash() == next.hash:
 			log.Info("🔗 block reached canonical chain", "number", next.index, "hash", next.hash)
 		default:

@@ -243,7 +243,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.txsSub = pm.txpool.SubscribeNewTxsEvent(pm.txsCh)
 	go pm.txBroadcastLoop()
 
-	// broadcast mined blocks
+	// broadcast produced blocks
 	pm.minedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
 	pm.bftMsgSub = pm.eventMux.Subscribe(core.SendBftMsgEvent{})
 	pm.bftPeerSub = pm.eventMux.Subscribe(core.BftPeerChangeEvent{})

@@ -33,17 +33,17 @@ import (
 )
 
 type testTxRelay struct {
-	send, discard, mined chan int
+	send, discard, produced chan int
 }
 
 func (self *testTxRelay) Send(txs types.Transactions) {
 	self.send <- len(txs)
 }
 
-func (self *testTxRelay) NewHead(head common.Hash, mined []common.Hash, rollback []common.Hash) {
-	m := len(mined)
+func (self *testTxRelay) NewHead(head common.Hash, produced []common.Hash, rollback []common.Hash) {
+	m := len(produced)
 	if m != 0 {
-		self.mined <- m
+		self.produced <- m
 	}
 }
 
@@ -96,9 +96,9 @@ func TestTxPool(t *testing.T) {
 
 	odr := &testOdr{sdb: sdb, ldb: ldb}
 	relay := &testTxRelay{
-		send:    make(chan int, 1),
-		discard: make(chan int, 1),
-		mined:   make(chan int, 1),
+		send:     make(chan int, 1),
+		discard:  make(chan int, 1),
+		produced: make(chan int, 1),
 	}
 	lightchain, _ := NewLightChain(odr, params.TestChainConfig, mock.NewMock())
 	txPermanent = 50
@@ -123,10 +123,10 @@ func TestTxPool(t *testing.T) {
 			panic(err)
 		}
 
-		got := <-relay.mined
+		got := <-relay.produced
 		exp := minedTx(i) - minedTx(i-1)
 		if got != exp {
-			t.Errorf("relay.NewHead expected len(mined) = %d, got %d", exp, got)
+			t.Errorf("relay.NewHead expected len(produced) = %d, got %d", exp, got)
 		}
 
 		exp = 0

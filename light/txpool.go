@@ -39,13 +39,13 @@ const (
 	chainHeadChanSize = 10
 )
 
-// txPermanent is the number of mined blocks after a mined transaction is
+// txPermanent is the number of produced blocks after a produced transaction is
 // considered permanent and no rollback is expected
 var txPermanent = uint64(500)
 
 // TxPool implements the transaction pool for light clients, which keeps track
 // of the status of locally created transactions, detecting if they are included
-// in a block (mined) or rolled back. There are no queued transactions since we
+// in a block (produced) or rolled back. There are no queued transactions since we
 // always receive all locally signed transactions in the same order as they are
 // created.
 type TxPool struct {
@@ -64,8 +64,8 @@ type TxPool struct {
 	head         common.Hash
 	nonce        map[common.Address]uint64            // "pending" nonce
 	pending      map[common.Hash]*types.Transaction   // pending transactions by tx hash
-	mined        map[common.Hash][]*types.Transaction // mined transactions by block hash
-	clearIdx     uint64                               // earliest block nr that can contain mined tx info
+	produced     map[common.Hash][]*types.Transaction // produced transactions by block hash
+	clearIdx     uint64                               // earliest block nr that can contain produced tx info
 }
 
 // TxRelayBackend provides an interface to the mechanism that forwards transacions
@@ -73,13 +73,13 @@ type TxPool struct {
 //
 // Send instructs backend to forward new transactions
 // NewHead notifies backend about a new head after processed by the tx pool,
-//  including  mined and rolled back transactions since the last event
+//  including  produced and rolled back transactions since the last event
 // Discard notifies backend about transactions that should be discarded either
-//  because they have been replaced by a re-send or because they have been mined
+//  because they have been replaced by a re-send or because they have been produced
 //  long ago and no rollback is expected
 type TxRelayBackend interface {
 	Send(txs types.Transactions)
-	NewHead(head common.Hash, mined []common.Hash, rollback []common.Hash)
+	NewHead(head common.Hash, produced []common.Hash, rollback []common.Hash)
 	Discard(hashes []common.Hash)
 }
 
@@ -90,7 +90,7 @@ func NewTxPool(config *params.ChainConfig, chain *LightChain, relay TxRelayBacke
 		signer:      types.NewHubbleSigner(config.ChainID),
 		nonce:       make(map[common.Address]uint64),
 		pending:     make(map[common.Hash]*types.Transaction),
-		mined:       make(map[common.Hash][]*types.Transaction),
+		produced:    make(map[common.Hash][]*types.Transaction),
 		quit:        make(chan bool),
 		chainHeadCh: make(chan core.ChainHeadEvent, chainHeadChanSize),
 		chain:       chain,
@@ -131,25 +131,25 @@ func (pool *TxPool) GetNonce(ctx context.Context, addr common.Address) (uint64, 
 	return nonce, nil
 }
 
-// txStateChanges stores the recent changes between pending/mined states of
-// transactions. True means mined, false means rolled back, no entry means no change
+// txStateChanges stores the recent changes between pending/produced states of
+// transactions. True means produced, false means rolled back, no entry means no change
 type txStateChanges map[common.Hash]bool
 
-// setState sets the status of a tx to either recently mined or recently rolled back
-func (txc txStateChanges) setState(txHash common.Hash, mined bool) {
+// setState sets the status of a tx to either recently produced or recently rolled back
+func (txc txStateChanges) setState(txHash common.Hash, produced bool) {
 	val, ent := txc[txHash]
-	if ent && (val != mined) {
+	if ent && (val != produced) {
 		delete(txc, txHash)
 	} else {
-		txc[txHash] = mined
+		txc[txHash] = produced
 	}
 }
 
-// getLists creates lists of mined and rolled back tx hashes
-func (txc txStateChanges) getLists() (mined []common.Hash, rollback []common.Hash) {
+// getLists creates lists of produced and rolled back tx hashes
+func (txc txStateChanges) getLists() (produced []common.Hash, rollback []common.Hash) {
 	for hash, val := range txc {
 		if val {
-			mined = append(mined, hash)
+			produced = append(produced, hash)
 		} else {
 			rollback = append(rollback, hash)
 		}
@@ -158,7 +158,7 @@ func (txc txStateChanges) getLists() (mined []common.Hash, rollback []common.Has
 }
 
 // checkMinedTxs checks newly added blocks for the currently pending transactions
-// and marks them as mined if necessary. It also stores block position in the db
+// and marks them as produced if necessary. It also stores block position in the db
 // and adds them to the received txStateChanges map.
 func (pool *TxPool) checkMinedTxs(ctx context.Context, hash common.Hash, number uint64, txc txStateChanges) error {
 	// If no transactions are pending, we don't care about anything
@@ -169,14 +169,14 @@ func (pool *TxPool) checkMinedTxs(ctx context.Context, hash common.Hash, number 
 	if err != nil {
 		return err
 	}
-	// Gather all the local transaction mined in this block
-	list := pool.mined[hash]
+	// Gather all the local transaction produced in this block
+	list := pool.produced[hash]
 	for _, tx := range block.Transactions() {
 		if _, ok := pool.pending[tx.Hash()]; ok {
 			list = append(list, tx)
 		}
 	}
-	// If some transactions have been mined, write the needed data to disk and update
+	// If some transactions have been produced, write the needed data to disk and update
 	if list != nil {
 		// Retrieve all the receipts belonging to this block and write the loopup table
 		if _, err := GetBlockReceipts(ctx, pool.odr, hash, number); err != nil { // ODR caches, ignore results
@@ -189,7 +189,7 @@ func (pool *TxPool) checkMinedTxs(ctx context.Context, hash common.Hash, number 
 			delete(pool.pending, tx.Hash())
 			txc.setState(tx.Hash(), true)
 		}
-		pool.mined[hash] = list
+		pool.produced[hash] = list
 	}
 	return nil
 }
@@ -197,20 +197,20 @@ func (pool *TxPool) checkMinedTxs(ctx context.Context, hash common.Hash, number 
 // rollbackTxs marks the transactions contained in recently rolled back blocks
 // as rolled back. It also removes any positional lookup entries.
 func (pool *TxPool) rollbackTxs(hash common.Hash, txc txStateChanges) {
-	if list, ok := pool.mined[hash]; ok {
+	if list, ok := pool.produced[hash]; ok {
 		for _, tx := range list {
 			txHash := tx.Hash()
 			rawdb.DeleteTxLookupEntry(pool.chainDb, txHash)
 			pool.pending[txHash] = tx
 			txc.setState(txHash, false)
 		}
-		delete(pool.mined, hash)
+		delete(pool.produced, hash)
 	}
 }
 
 // reorgOnNewHead sets a new head header, processing (and rolling back if necessary)
 // the blocks since the last known head and returns a txStateChanges map containing
-// the recently mined and rolled back transaction hashes. If an error (context
+// the recently produced and rolled back transaction hashes. If an error (context
 // timeout) occurs during checking new blocks, it leaves the locally known head
 // at the latest checked block and still returns a valid txStateChanges, making it
 // possible to continue checking the missing blocks at the next chain head event
@@ -242,7 +242,7 @@ func (pool *TxPool) reorgOnNewHead(ctx context.Context, newHeader *types.Header)
 		pool.rollbackTxs(hash, txc)
 	}
 	pool.head = oldh.Hash()
-	// check mined txs of new blocks (array is in reversed order)
+	// check produced txs of new blocks (array is in reversed order)
 	for i := len(newHashes) - 1; i >= 0; i-- {
 		hash := newHashes[i]
 		if err := pool.checkMinedTxs(ctx, hash, newHeader.Number.Uint64()-uint64(i), txc); err != nil {
@@ -251,19 +251,19 @@ func (pool *TxPool) reorgOnNewHead(ctx context.Context, newHeader *types.Header)
 		pool.head = hash
 	}
 
-	// clear old mined tx entries of old blocks
+	// clear old produced tx entries of old blocks
 	if idx := newHeader.Number.Uint64(); idx > pool.clearIdx+txPermanent {
 		idx2 := idx - txPermanent
-		if len(pool.mined) > 0 {
+		if len(pool.produced) > 0 {
 			for i := pool.clearIdx; i < idx2; i++ {
 				hash := rawdb.ReadCanonicalHash(pool.chainDb, i)
-				if list, ok := pool.mined[hash]; ok {
+				if list, ok := pool.produced[hash]; ok {
 					hashes := make([]common.Hash, len(list))
 					for i, tx := range list {
 						hashes[i] = tx.Hash()
 					}
 					pool.relay.Discard(hashes)
-					delete(pool.mined, hash)
+					delete(pool.produced, hash)
 				}
 			}
 		}
@@ -273,7 +273,7 @@ func (pool *TxPool) reorgOnNewHead(ctx context.Context, newHeader *types.Header)
 	return txc, nil
 }
 
-// blockCheckTimeout is the time limit for checking new blocks for mined
+// blockCheckTimeout is the time limit for checking new blocks for produced
 // transactions. Checking resumes at the next chain head event if timed out.
 const blockCheckTimeout = time.Second * 3
 

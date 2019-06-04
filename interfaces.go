@@ -76,10 +76,10 @@ type ChainReader interface {
 type TransactionReader interface {
 	// TransactionByHash checks the pool of pending transactions in addition to the
 	// blockchain. The isPending return value indicates whether the transaction has been
-	// mined yet. Note that the transaction may not be part of the canonical chain even if
+	// produced yet. Note that the transaction may not be part of the canonical chain even if
 	// it's not pending.
 	TransactionByHash(ctx context.Context, txHash common.Hash) (tx *types.Transaction, isPending bool, err error)
-	// TransactionReceipt returns the receipt of a mined transaction. Note that the
+	// TransactionReceipt returns the receipt of a produced transaction. Note that the
 	// transaction may not be included in the current canonical chain even if a receipt
 	// exists.
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
@@ -122,7 +122,7 @@ type CallMsg struct {
 }
 
 // A ContractCaller provides contract calls, essentially transactions that are executed by
-// the VM but not mined into the blockchain. ContractCall is a low-level method to
+// the VM but not produced into the blockchain. ContractCall is a low-level method to
 // execute such calls. For applications which are structured around specific contracts,
 // the abigen tool provides a nicer, properly typed way to perform calls.
 type ContractCaller interface {
@@ -162,7 +162,7 @@ type LogFilterer interface {
 // TransactionSender wraps transaction sending. The SendTransaction method injects a
 // signed transaction into the pending transaction pool for execution. If the transaction
 // was a contract creation, the TransactionReceipt method can be used to retrieve the
-// contract address after the transaction has been mined.
+// contract address after the transaction has been produced.
 //
 // The transaction must be signed and have a valid nonce to be included. Consumers of the
 // API can use package accounts to maintain local private keys and need can retrieve the

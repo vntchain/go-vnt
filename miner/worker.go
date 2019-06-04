@@ -117,7 +117,7 @@ type worker struct {
 	snapshotBlock *types.Block
 	snapshotState *state.StateDB
 
-	unconfirmed *unconfirmedBlocks // set of locally mined blocks pending canonicalness confirmations
+	unconfirmed *unconfirmedBlocks // set of locally produced blocks pending canonicalness confirmations
 
 	// atomic status counters
 	producing int32
@@ -631,8 +631,8 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 	}
 
 	if len(coalescedLogs) > 0 || env.tcount > 0 {
-		// make a copy, the state caches the logs and these logs get "upgraded" from pending to mined
-		// logs by filling in the block hash when the block was mined by the local miner. This can
+		// make a copy, the state caches the logs and these logs get "upgraded" from pending to produced
+		// logs by filling in the block hash when the block was produced by the local miner. This can
 		// cause a race condition if a log was "upgraded" before the PendingLogsEvent is processed.
 		cpy := make([]*types.Log, len(coalescedLogs))
 		for i, l := range coalescedLogs {

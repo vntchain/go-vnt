@@ -410,7 +410,7 @@ func (ec *Client) PendingTransactionCount(ctx context.Context) (uint, error) {
 // Contract Calling
 
 // CallContract executes a message call transaction, which is directly executed in the VM
-// of the node, but never mined into the blockchain.
+// of the node, but never produced into the blockchain.
 //
 // blockNumber selects the block height at which the call runs. It can be nil, in which
 // case the code is taken from the latest known block. Note that state from very old
@@ -461,7 +461,7 @@ func (ec *Client) EstimateGas(ctx context.Context, msg hubble.CallMsg) (uint64, 
 // SendTransaction injects a signed transaction into the pending pool for execution.
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
-// contract address after the transaction has been mined.
+// contract address after the transaction has been produced.
 func (ec *Client) SendTransaction(ctx context.Context, tx *types.Transaction) error {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
