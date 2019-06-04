@@ -157,10 +157,10 @@ func (txc txStateChanges) getLists() (produced []common.Hash, rollback []common.
 	return
 }
 
-// checkMinedTxs checks newly added blocks for the currently pending transactions
+// checkProducedTxs checks newly added blocks for the currently pending transactions
 // and marks them as produced if necessary. It also stores block position in the db
 // and adds them to the received txStateChanges map.
-func (pool *TxPool) checkMinedTxs(ctx context.Context, hash common.Hash, number uint64, txc txStateChanges) error {
+func (pool *TxPool) checkProducedTxs(ctx context.Context, hash common.Hash, number uint64, txc txStateChanges) error {
 	// If no transactions are pending, we don't care about anything
 	if len(pool.pending) == 0 {
 		return nil
@@ -245,7 +245,7 @@ func (pool *TxPool) reorgOnNewHead(ctx context.Context, newHeader *types.Header)
 	// check produced txs of new blocks (array is in reversed order)
 	for i := len(newHashes) - 1; i >= 0; i-- {
 		hash := newHashes[i]
-		if err := pool.checkMinedTxs(ctx, hash, newHeader.Number.Uint64()-uint64(i), txc); err != nil {
+		if err := pool.checkProducedTxs(ctx, hash, newHeader.Number.Uint64()-uint64(i), txc); err != nil {
 			return txc, err
 		}
 		pool.head = hash

@@ -244,7 +244,7 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	go pm.txBroadcastLoop()
 
 	// broadcast produced blocks
-	pm.producedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
+	pm.producedBlockSub = pm.eventMux.Subscribe(core.NewProducedBlockEvent{})
 	pm.bftMsgSub = pm.eventMux.Subscribe(core.SendBftMsgEvent{})
 	pm.bftPeerSub = pm.eventMux.Subscribe(core.BftPeerChangeEvent{})
 	go pm.producedBroadcastLoop()
@@ -769,13 +769,13 @@ func (pm *ProtocolManager) BroadcastBftMsg(bftMsg types.BftMsg) {
 	log.Trace("BroadcastBftMsg exit")
 }
 
-// Mined broadcast loop
+// producedBroadcastLoop
 func (pm *ProtocolManager) producedBroadcastLoop() {
 	// automatically stops if unsubscribe
 	for obj := range pm.producedBlockSub.Chan() {
 		switch ev := obj.Data.(type) {
-		case core.NewMinedBlockEvent:
-			log.Debug("PM receive NewMinedBlockEvent")
+		case core.NewProducedBlockEvent:
+			log.Debug("PM receive NewProducedBlockEvent")
 			pm.BroadcastBlock(ev.Block, false) // Only announce all the peer
 		}
 	}

@@ -365,7 +365,7 @@ func (self *worker) wait() {
 			}
 
 			// Broadcast the block and announce chain insertion event
-			self.mux.Post(core.NewMinedBlockEvent{Block: block})
+			self.mux.Post(core.NewProducedBlockEvent{Block: block})
 
 			var (
 				events []interface{}
@@ -421,7 +421,7 @@ func (self *worker) SendBftPeerChangeMsg(urls []string) {
 	})
 }
 
-// writeBlock write block to block chain, and post NewMinedBlockEvent
+// writeBlock write block to block chain, and post NewProducedBlockEvent
 func (self *worker) writeBlock(block *types.Block) error {
 	if err := self.chain.WriteBlock(block); err != nil {
 		log.Error("Failed writing block to chain", "err", err)
@@ -429,7 +429,7 @@ func (self *worker) writeBlock(block *types.Block) error {
 	}
 
 	// Broadcast the block and announce chain insertion event
-	self.mux.Post(core.NewMinedBlockEvent{Block: block})
+	self.mux.Post(core.NewProducedBlockEvent{Block: block})
 	return nil
 }
 

@@ -46,8 +46,8 @@ const (
 	LogsSubscription
 	// PendingLogsSubscription queries for logs in pending blocks
 	PendingLogsSubscription
-	// MinedAndPendingLogsSubscription queries for logs in produced and pending blocks.
-	MinedAndPendingLogsSubscription
+	// ProducedAndPendingLogsSubscription queries for logs in produced and pending blocks.
+	ProducedAndPendingLogsSubscription
 	// PendingTransactionsSubscription queries tx hashes for pending
 	// transactions entering the pending state
 	PendingTransactionsSubscription
@@ -222,7 +222,7 @@ func (es *EventSystem) SubscribeLogs(crit hubble.FilterQuery, logs chan []*types
 	}
 	// interested in produced logs from a specific block number, new logs and pending logs
 	if from >= rpc.LatestBlockNumber && to == rpc.PendingBlockNumber {
-		return es.subscribeMinedPendingLogs(crit, logs), nil
+		return es.subscribeProducedPendingLogs(crit, logs), nil
 	}
 	// interested in logs from a specific block number to new produced blocks
 	if from >= 0 && to == rpc.LatestBlockNumber {
@@ -231,12 +231,12 @@ func (es *EventSystem) SubscribeLogs(crit hubble.FilterQuery, logs chan []*types
 	return nil, fmt.Errorf("invalid from and to block combination: from > to")
 }
 
-// subscribeMinedPendingLogs creates a subscription that returned produced and
+// subscribeProducedPendingLogs creates a subscription that returned produced and
 // pending logs that match the given criteria.
-func (es *EventSystem) subscribeMinedPendingLogs(crit hubble.FilterQuery, logs chan []*types.Log) *Subscription {
+func (es *EventSystem) subscribeProducedPendingLogs(crit hubble.FilterQuery, logs chan []*types.Log) *Subscription {
 	sub := &subscription{
 		id:        rpc.NewID(),
-		typ:       MinedAndPendingLogsSubscription,
+		typ:       ProducedAndPendingLogsSubscription,
 		logsCrit:  crit,
 		created:   time.Now(),
 		logs:      logs,
@@ -479,7 +479,7 @@ func (es *EventSystem) eventLoop() {
 			es.broadcast(index, ev)
 
 		case f := <-es.install:
-			if f.typ == MinedAndPendingLogsSubscription {
+			if f.typ == ProducedAndPendingLogsSubscription {
 				// the type are logs and pending logs subscriptions
 				index[LogsSubscription][f.id] = f
 				index[PendingLogsSubscription][f.id] = f
@@ -489,7 +489,7 @@ func (es *EventSystem) eventLoop() {
 			close(f.installed)
 
 		case f := <-es.uninstall:
-			if f.typ == MinedAndPendingLogsSubscription {
+			if f.typ == ProducedAndPendingLogsSubscription {
 				// the type are logs and pending logs subscriptions
 				delete(index[LogsSubscription], f.id)
 				delete(index[PendingLogsSubscription], f.id)

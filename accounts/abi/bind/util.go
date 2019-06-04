@@ -26,9 +26,9 @@ import (
 	"github.com/vntchain/go-vnt/log"
 )
 
-// WaitMined waits for tx to be produced on the blockchain.
+// WaitProduced waits for tx to be produced on the blockchain.
 // It stops waiting when the context is canceled.
-func WaitMined(ctx context.Context, b DeployBackend, tx *types.Transaction) (*types.Receipt, error) {
+func WaitProduced(ctx context.Context, b DeployBackend, tx *types.Transaction) (*types.Receipt, error) {
 	queryTicker := time.NewTicker(time.Second)
 	defer queryTicker.Stop()
 
@@ -58,7 +58,7 @@ func WaitDeployed(ctx context.Context, b DeployBackend, tx *types.Transaction) (
 	if tx.To() != nil {
 		return common.Address{}, fmt.Errorf("tx is not contract creation")
 	}
-	receipt, err := WaitMined(ctx, b, tx)
+	receipt, err := WaitProduced(ctx, b, tx)
 	if err != nil {
 		return common.Address{}, err
 	}

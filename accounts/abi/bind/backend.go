@@ -98,7 +98,7 @@ type ContractFilterer interface {
 	SubscribeFilterLogs(ctx context.Context, query hubble.FilterQuery, ch chan<- types.Log) (hubble.Subscription, error)
 }
 
-// DeployBackend wraps the operations needed by WaitMined and WaitDeployed.
+// DeployBackend wraps the operations needed by WaitProduced and WaitDeployed.
 type DeployBackend interface {
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 	CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error)
