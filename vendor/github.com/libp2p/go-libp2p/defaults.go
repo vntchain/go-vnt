@@ -3,13 +3,13 @@ package libp2p
 // This file contains all the default configuration options.
 
 import (
-	"github.com/libp2p/go-libp2p-crypto"
+	crypto "github.com/libp2p/go-libp2p-crypto"
 	crypto2 "github.com/vntchain/go-vnt/crypto"
-	"github.com/libp2p/go-libp2p-peerstore/pstoremem"
-	"github.com/libp2p/go-libp2p-secio"
-	"github.com/libp2p/go-tcp-transport"
+	pstoremem "github.com/libp2p/go-libp2p-peerstore/pstoremem"
+	secio "github.com/libp2p/go-libp2p-secio"
+	tcp "github.com/libp2p/go-tcp-transport"
 	ws "github.com/libp2p/go-ws-transport"
-	"github.com/multiformats/go-multiaddr"
+	multiaddr "github.com/multiformats/go-multiaddr"
 	mplex "github.com/whyrusleeping/go-smux-multiplex"
 	yamux "github.com/whyrusleeping/go-smux-yamux"
 )
