@@ -208,17 +208,17 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (vntdb.Data
 	return db, nil
 }
 
-// CreateConsensusEngine creates the required type of consensus engine instance for an VNT service
+// CreateConsensusEngine creates the required type of consensus engine instance for an vnt service
 func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainConfig, db vntdb.Database) consensus.Engine {
-	// Otherwise assume DPoS
 	cfg := chainConfig.Dpos
-	// TODO vnt below test net config data should be in a single const variable
-	// now, it's used for tests
 	if chainConfig.Dpos == nil {
 		cfg = &params.DposConfig{
-			WitnessesNum: 4,
-			Period:       2,
-			WitnessesUrl: nil,
+			WitnessesNum: params.MainnetChainConfig.Dpos.WitnessesNum,
+			Period:       params.MainnetChainConfig.Dpos.Period,
+			WitnessesUrl: make([]string, len(params.MainnetChainConfig.Dpos.WitnessesUrl)),
+		}
+		for i, url := range params.MainnetChainConfig.Dpos.WitnessesUrl {
+			cfg.WitnessesUrl[i] = url
 		}
 	}
 	return dpos.New(cfg, db)
