@@ -124,7 +124,6 @@ func (v *Validator) validate(msgs *ValidationMessages, txargs *SendTxArgs, metho
 	if txargs.To == nil {
 		//Contract creation should contain sufficient data to deploy a contract
 		// A typical error is omitting sender due to some quirk in the javascript call
-		// e.g. https://github.com/vntchain/go-vnt/issues/16106
 		if len(data) == 0 {
 			if txargs.Value.ToInt().Cmp(big.NewInt(0)) > 0 {
 				// Sending ether into black hole
