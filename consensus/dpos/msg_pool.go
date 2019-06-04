@@ -18,10 +18,10 @@ package dpos
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/log"
-	"github.com/pkg/errors"
 	"math/big"
 	"sync"
 )

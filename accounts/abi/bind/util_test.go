@@ -17,10 +17,17 @@
 package bind_test
 
 import (
-	"github.com/vntchain/go-vnt/accounts/abi/bind"
-	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/crypto"
+	"context"
+	"math/big"
 	"testing"
+	"time"
+
+	"github.com/vntchain/go-vnt/accounts/abi/bind"
+	"github.com/vntchain/go-vnt/accounts/abi/bind/backends"
+	"github.com/vntchain/go-vnt/common"
+	"github.com/vntchain/go-vnt/core"
+	"github.com/vntchain/go-vnt/core/types"
+	"github.com/vntchain/go-vnt/crypto"
 )
 
 var testKey, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
@@ -45,42 +52,47 @@ var waitDeployedTests = map[string]struct {
 }
 
 func TestWaitDeployed(t *testing.T) {
-	// todo vnt recover why header verified failed
-	// for name, test := range waitDeployedTests {
-	// 	backend := backends.NewSimulatedBackend(core.GenesisAlloc{
-	// 		crypto.PubkeyToAddress(testKey.PublicKey): {Balance: big.NewInt(10000000000)},
-	// 	})
-	//
-	// 	// Create the transaction.
-	// 	tx := types.NewContractCreation(0, big.NewInt(0), test.gas, big.NewInt(1), common.FromHex(test.code))
-	// 	tx, _ = types.SignTx(tx, types.HomesteadSigner{}, testKey)
-	//
-	// 	// Wait for it to get mined in the background.
-	// 	var (
-	// 		err     error
-	// 		address common.Address
-	// 		mined   = make(chan struct{})
-	// 		ctx     = context.Background()
-	// 	)
-	// 	go func() {
-	// 		address, err = bind.WaitDeployed(ctx, backend, tx)
-	// 		close(mined)
-	// 	}()
-	//
-	// 	// Send and mine the transaction.
-	// 	backend.SendTransaction(ctx, tx)
-	// 	backend.Commit()
-	//
-	// 	select {
-	// 	case <-mined:
-	// 		if err != test.wantErr {
-	// 			t.Errorf("test %q: error mismatch: got %q, want %q", name, err, test.wantErr)
-	// 		}
-	// 		if address != test.wantAddress {
-	// 			t.Errorf("test %q: unexpected contract address %s", name, address.Hex())
-	// 		}
-	// 	case <-time.After(2 * time.Second):
-	// 		t.Errorf("test %q: timeout", name)
-	// 	}
-	// }
+	for name, test := range waitDeployedTests {
+		backend := backends.NewSimulatedBackend(core.GenesisAlloc{
+			crypto.PubkeyToAddress(testKey.PublicKey): {Balance: big.NewInt(10000000000)},
+		})
+
+		// Create the transaction.
+		var (
+			tx  *types.Transaction
+			err error
+		)
+		tx = types.NewContractCreation(0, big.NewInt(0), test.gas, big.NewInt(1), common.FromHex(test.code))
+		tx, err = types.SignTx(tx, types.NewHubbleSigner(big.NewInt(1)), testKey)
+		if err != nil {
+			t.Fatalf("sign transaction failed: %v", err)
+		}
+
+		// Wait for it to get mined in the background.
+		var (
+			address common.Address
+			packed  = make(chan struct{})
+			ctx     = context.Background()
+		)
+		go func() {
+			address, err = bind.WaitDeployed(ctx, backend, tx)
+			close(packed)
+		}()
+
+		// Send and pack the transaction.
+		backend.SendTransaction(ctx, tx)
+		backend.Commit()
+
+		select {
+		case <-packed:
+			if err != test.wantErr {
+				t.Errorf("test %q: error mismatch: got %q, want %q", name, err, test.wantErr)
+			}
+			if address != test.wantAddress {
+				t.Errorf("test %q: unexpected contract address %s", name, address.Hex())
+			}
+		case <-time.After(2 * time.Second):
+			t.Errorf("test %q: timeout", name)
+		}
+	}
 }

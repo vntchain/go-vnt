@@ -159,7 +159,7 @@ func TestCallTracer(t *testing.T) {
 			}
 			statedb := tests.MakePreState(vntdb.NewMemDatabase(), test.Genesis.Alloc)
 
-			// Create the tracer, the EVM environment and run it
+			// Create the tracer, the VM environment and run it
 			tracer, err := New("callTracer")
 			if err != nil {
 				t.Fatalf("failed to create call tracer: %v", err)

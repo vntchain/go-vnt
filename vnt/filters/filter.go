@@ -24,9 +24,9 @@ import (
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/bloombits"
 	"github.com/vntchain/go-vnt/core/types"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/event"
 	"github.com/vntchain/go-vnt/rpc"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 type Backend interface {

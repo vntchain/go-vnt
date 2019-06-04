@@ -42,7 +42,7 @@ $ bootnode -nodekey=node.key
 ## `membernode` starts 
 
 > ATTENTION：
-> * `datadir` can't be too long (https://github.com/vntchain/go-vnt/issues/16342)。
+> * `datadir` can't be too long。
 > * `vntbootnode` is `vnt's``bootnodeURL`
 > * `port` is `vntnode's` port
 

@@ -634,6 +634,7 @@ var TypeString = require('./string');
 var TypeReal = require('./real');
 var TypeUReal = require('./ureal');
 var TypeBytes = require('./bytes');
+var sha3 = require('../utils/sha3')
 
 var isDynamic = function (Type, type) {
    return Type.isDynamicType(type) ||
@@ -675,8 +676,12 @@ Coder.prototype._requireType = function (type) {
  * @param {Object} plain param
  * @return {String} encoded plain param
  */
-Coder.prototype.encodeParam = function (type, param) {
-    return this.encodeParams([type], [param]);
+Coder.prototype.encodeParam = function (type, param, indexed) {
+    indexed = indexed || false
+    if(type === "string" && indexed) {
+        return sha3(param)
+    }
+    return this.encodeParams([type], [param], indexed);
 };
 
 /**
@@ -687,7 +692,8 @@ Coder.prototype.encodeParam = function (type, param) {
  * @param {Array} params
  * @return {String} encoded list of params
  */
-Coder.prototype.encodeParams = function (types, params) {
+Coder.prototype.encodeParams = function (types, params, indexed) {
+    indexed = indexed || false
     var Types = this.getTypes(types);
 
     var encodeds = Types.map(function (Type, index) {
@@ -790,8 +796,9 @@ Coder.prototype.encodeWithOffset = function (type, Type, encoded, offset) {
  * @param {String} bytes
  * @return {Object} plain param
  */
-Coder.prototype.decodeParam = function (type, bytes) {
-    return this.decodeParams([type], bytes)[0];
+Coder.prototype.decodeParam = function (type, bytes, indexed) {
+    indexed = indexed || false
+    return this.decodeParams([type], bytes, indexed)[0];
 };
 
 /**
@@ -802,12 +809,13 @@ Coder.prototype.decodeParam = function (type, bytes) {
  * @param {String} bytes
  * @return {Array} array of plain params
  */
-Coder.prototype.decodeParams = function (types, bytes) {
+Coder.prototype.decodeParams = function (types, bytes, indexed) {
+    indexed = indexed || false
     var Types = this.getTypes(types);
     var offsets = this.getOffsets(types, Types);
 
     return Types.map(function (Type, index) {
-        return Type.decode(bytes, offsets[index],  types[index], index);
+        return Type.decode(bytes, offsets[index], types[index], indexed);
     });
 };
 
@@ -849,7 +857,7 @@ var coder = new Coder([
 
 module.exports = coder;
 
-},{"./address":4,"./bool":5,"./bytes":6,"./dynamicbytes":8,"./formatters":9,"./int":10,"./real":12,"./string":13,"./uint":15,"./ureal":16}],8:[function(require,module,exports){
+},{"../utils/sha3":20,"./address":4,"./bool":5,"./bytes":6,"./dynamicbytes":8,"./formatters":9,"./int":10,"./real":12,"./string":13,"./uint":15,"./ureal":16}],8:[function(require,module,exports){
 var f = require('./formatters');
 var Type = require('./type');
 
@@ -1090,7 +1098,12 @@ var formatOutputDynamicBytes = function (param) {
  * @param {Param} left-aligned hex representation of string
  * @returns {String} ascii string
  */
-var formatOutputString = function (param) {
+var formatOutputString = function (param, name, indexed) {
+    indexed = indexed || false
+    if(indexed) {
+        // return utils.toUtf8(param.value)
+        return ""
+    }
     var length = (new BigNumber(param.dynamicPart().slice(0, 64), 16)).toNumber() * 2;
     return utils.toUtf8(param.dynamicPart().substr(64, length));
 };
@@ -1568,8 +1581,15 @@ Type.prototype.encode = function (value, name) {
  * @param {String} name type name
  * @returns {Object} decoded value
  */
-Type.prototype.decode = function (bytes, offset, name) {
+Type.prototype.decode = function (bytes, offset, name, indexed) {
+    indexed = indexed || false
     var self = this;
+
+    if (indexed) {
+        var length = this.staticPartLength(name);
+        var param = new Param(bytes.substr(offset * 2, length * 2));
+        return this._outputFormatter(param, name, indexed);
+    }
 
     if (this.isDynamicArray(name)) {
 
@@ -2246,7 +2266,7 @@ var toUtf8 = function(hex) {
     for (; i < l; i+=2) {
         var code = parseInt(hex.substr(i, 2), 16);
         if (code === 0)
-            break;
+            continue;
         str += String.fromCharCode(code);
     }
 
@@ -2830,6 +2850,7 @@ function Vnt (provider) {
     this.hash = Hash;
     this.utils = utils;
     this.personal = new Personal(this);
+    this.bzz = new Swarm(this);
     this.settings = new Settings();
     this.version = {
         api: version.version
@@ -3286,8 +3307,7 @@ var ContractFactory = function (core, abi) {
             var constructorAbi = abi.filter(function (json) {
                 return json.type === 'constructor' && json.inputs.length === args.length;
             })[0] || {};
-
-            if (!constructorAbi.payable) {
+            if (constructorAbi.name.substring(0, 1) != '$') {
                 throw new Error('Cannot send value to non-payable constructor');
             }
         }
@@ -3677,10 +3697,10 @@ Event.prototype.encode = function (indexed, options) {
 
         if (utils.isArray(value)) {
             return value.map(function (v) {
-                return '0x' + coder.encodeParam(i.type, v);
+                return '0x' + coder.encodeParam(i.type, v, true);
             });
         }
-        return '0x' + coder.encodeParam(i.type, value);
+        return '0x' + coder.encodeParam(i.type, value, true);
     });
 
     result.topics = result.topics.concat(indexedTopics);
@@ -3703,7 +3723,7 @@ Event.prototype.decode = function (data) {
 
     var argTopics = this._anonymous ? data.topics : data.topics.slice(1);
     var indexedData = argTopics.map(function (topics) { return topics.slice(2); }).join("");
-    var indexedParams = coder.decodeParams(this.types(true), indexedData);
+    var indexedParams = coder.decodeParams(this.types(true), indexedData, true);
 
     var notIndexedData = data.data.slice(2);
     var notIndexedParams = coder.decodeParams(this.types(false), notIndexedData);
@@ -3735,9 +3755,21 @@ Event.prototype.execute = function (indexed, options, callback) {
 
     if (utils.isFunction(arguments[arguments.length - 1])) {
         callback = arguments[arguments.length - 1];
-        if(arguments.length === 2)
+        if(arguments.length === 2){
+            options = arguments[0];
+            indxed = {}
+        } else if(arguments.length === 1) {
             options = null;
-        if(arguments.length === 1) {
+            indexed = {};
+        }
+    } else {
+        if(arguments.length === 2){
+            options = arguments[1];
+            indxed = arguments[0];
+        } else if(arguments.length === 1) {
+            options = arguments[0];
+            indexed = {};
+        } else {
             options = null;
             indexed = {};
         }
@@ -4413,7 +4445,9 @@ var Func = function (vnt, json, address) {
         return i.type;
     });
     this._constant = json.constant;
-    this._payable = json.payable;
+    if (json.name.substring(0, 1) == '$') {
+        this._payable = true;
+    }
     this._name = utils.transformToFullName(json);
     this._address = address;
 };

@@ -32,8 +32,8 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/crypto"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/rlp"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 func init() {

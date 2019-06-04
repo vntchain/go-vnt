@@ -30,6 +30,7 @@ import (
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
+	"github.com/vntchain/go-vnt/core/vm/election"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/params"
 	"github.com/vntchain/go-vnt/vntdb"
@@ -323,36 +324,139 @@ func testBrokenChain(t *testing.T, full bool) {
 	}
 }
 
-// Tests that reorganising a long difficult chain after a short easy one
-// overwrites the canonical numbers and links in the database.
+// 正常产块情况，在当前主链后产生新区块，当前新区块应当成为头区块
+// Header chain测试
 func TestReorgLongHeaders(t *testing.T) { testReorgLong(t, false) }
-func TestReorgLongBlocks(t *testing.T)  { testReorgLong(t, true) }
+
+// Block chain测试
+func TestReorgLongBlocks(t *testing.T) { testReorgLong(t, true) }
 
 func testReorgLong(t *testing.T, full bool) {
-	testReorg(t, []int64{0, 2, 4}, []int64{0, 2, 4, 6}, 3, full)
+	testReorg(t, []int64{0, 0, 0}, []int64{0, 0, 0, 0}, 4, full, true, false)
 }
 
-// Tests that reorganising a short difficult chain after a long easy one
-// overwrites the canonical numbers and links in the database.
-func TestReorgShortHeaders(t *testing.T) { testReorgShort(t, false) }
-func TestReorgShortBlocks(t *testing.T)  { testReorgShort(t, true) }
-
-func testReorgShort(t *testing.T, full bool) {
-	// Create a long easy chain vs. a short heavy one. Due to difficulty adjustment
-	// we need a fairly long chain of blocks with different difficulties for a short
-	// one to become heavyer than a long one. The 96 is an empirical value.
-	easy := make([]int64, 96)
-	for i := 0; i < len(easy); i++ {
-		easy[i] = 60
-	}
-	diff := make([]int64, len(easy)-1)
-	for i := 0; i < len(diff); i++ {
-		diff[i] = -9
-	}
-	testReorg(t, easy, diff, 95, full)
+// 测试攻击链的场景，填充过去某个时间点缺失的区块，创造更长的链
+// Test some block producers make up fake chain by filling skipped blocks.
+// first : A ->  -> B -> C
+// second: A -> B' -> C' -> D'
+func TestReorgFakeChainFillMissTimeAndLongHeaders(t *testing.T) {
+	testReorgFakeChainFillMissTimeAndLong(t, false)
+}
+func TestReorgFakeChainFillMissTimeAndLongBlocks(t *testing.T) {
+	testReorgFakeChainFillMissTimeAndLong(t, true)
+}
+func testReorgFakeChainFillMissTimeAndLong(t *testing.T, full bool) {
+	mainChain := []int64{0, 2, 0, 0}
+	fakeChain := []int64{0, 0, 0, 0, 0} // LIB之前的区块插入失败
+	testReorg(t, mainChain, fakeChain, 4, full, false, true)
 }
 
-func testReorg(t *testing.T, first, second []int64, td int64, full bool) {
+// 临时分叉情况，网络突然中断，然后下一轮结束前恢复
+// Case 1.1 two blocks in the same height for bad network
+// first:  A -> B, 代表本地链
+// second: A -> -> C, 代表远端链
+// first is still main chain
+func TestReorgSameHeightFirstIsEarlyHeader(t *testing.T) {
+	testReorgSameHeightFirstIsEarly(t, false)
+}
+func TestReorgSameHeightFirstIsEarlyBlock(t *testing.T) {
+	testReorgSameHeightFirstIsEarly(t, true)
+}
+func testReorgSameHeightFirstIsEarly(t *testing.T, full bool) {
+	first := []int64{0, 0}
+	second := []int64{0, 2}
+	testReorg(t, first, second, 2, full, true, true)
+}
+
+// 临时分叉情况，网络突然中断，然后下一轮结束前恢复
+// Case 1.2 two blocks in the same height for bad network
+// 与Case 1.1相反的过程，但都应当选择`A -> B`
+// first:  A -> -> C
+// second: A -> B
+func TestReorgSameHeightSecondIsEarlyHeader(t *testing.T) {
+	testReorgSameHeightSecondIsEarly(t, false)
+}
+func TestReorgSameHeightSecondIsEarlyBlock(t *testing.T) {
+	testReorgSameHeightSecondIsEarly(t, true)
+}
+func testReorgSameHeightSecondIsEarly(t *testing.T, full bool) {
+	first := []int64{0, 2}
+	second := []int64{0, 0}
+	testReorg(t, first, second, 2, full, true, false)
+}
+
+// 临时分叉情况，网络在第N轮突然中断，然后在N+2轮结束恢复
+// Case 2.1
+// first:  A -> B
+// second: A ->  -> C -> D
+func TestReorgFirstIsEarlyButShortHeader(t *testing.T) {
+	testReorgFirstIsEarlyButShort(t, false)
+}
+func TestReorgFirstIsEarlyButShortBlock(t *testing.T) {
+	testReorgFirstIsEarlyButShort(t, true)
+}
+func testReorgFirstIsEarlyButShort(t *testing.T, full bool) {
+	first := []int64{0, 0}
+	second := []int64{0, 2, 0}
+	testReorg(t, first, second, 3, full, true, false)
+}
+
+// 临时分叉情况，网络在第N轮突然中断，然后在N+2轮结束恢复
+// Case 2.2
+// first:  A ->  -> C -> D
+// second: A -> B
+func TestReorgSecondIsEarlyButShortHeader(t *testing.T) {
+	testReorgSecondIsEarlyButShort(t, false)
+}
+func TestReorgSecondIsEarlyButShortBlock(t *testing.T) {
+	testReorgSecondIsEarlyButShort(t, true)
+}
+func testReorgSecondIsEarlyButShort(t *testing.T, full bool) {
+	first := []int64{0, 2, 0}
+	second := []int64{0, 0}
+	testReorg(t, first, second, 3, full, false, true)
+}
+
+// 临时分叉情况，络在第N轮突然中断，然后在N+1轮结束恢复，然后在N+2轮产生了新区块，
+// 在N+1轮产生区块的少数节点，如果没再case 1.1切回到first，在first生成新区块后切回first
+// Case 3.1
+// first:  A -> B ->  -> D
+// second: A ->  -> C
+func TestReorgFirstIsEarlyAndLongHeader(t *testing.T) {
+	testReorgFirstIsEarlyAndLong(t, false)
+}
+func TestReorgFirstIsEarlyAndLongBlock(t *testing.T) {
+	testReorgFirstIsEarlyAndLong(t, true)
+}
+func testReorgFirstIsEarlyAndLong(t *testing.T, full bool) {
+	first := []int64{0, 0, 2}
+	second := []int64{0, 2}
+	testReorg(t, first, second, 3, full, false, true)
+}
+
+// 临时分叉情况，络在第N轮突然中断，然后在N+1轮结束恢复，然后在N+2轮产生了新区块，
+// 在N+1轮产生区块的少数节点，如果没再case 1.1切回到first，在first生成新区块后切回first
+// Case 3.2
+// first:  A ->  -> C
+// second: A -> B ->  -> D
+func TestReorgSecondIsEarlyAndLongHeader(t *testing.T) {
+	testReorgSecondIsEarlyAndLong(t, false)
+}
+func TestReorgSecondIsEarlyAndLongBlock(t *testing.T) {
+	testReorgSecondIsEarlyAndLong(t, true)
+}
+func testReorgSecondIsEarlyAndLong(t *testing.T, full bool) {
+	first := []int64{0, 2}
+	second := []int64{0, 0, 2}
+	testReorg(t, first, second, 3, full, true, false)
+}
+
+// first: 第一条链，是当前主链的时间戳偏移，在当前生成的区块上进一步做时间戳偏移
+// second: 第二条链，分叉链、攻击链的时间戳偏移
+// td: reorg后成为主链的区块的总高度
+// full: 是否是header chain测试
+// firstIsMain: reorg后，第一条链是主链
+func testReorg(t *testing.T, first, second []int64, td int64, full, secondInsertSuccess, firstIsMain bool) {
 	// Create a pristine chain and database
 	db, blockchain, err := newCanonical(mock.NewMock(), 0, full)
 	if err != nil {
@@ -360,62 +464,175 @@ func testReorg(t *testing.T, first, second []int64, td int64, full bool) {
 	}
 	defer blockchain.Stop()
 
-	// Insert an easy and a difficult chain afterwards
-	easyBlocks, _ := GenerateChain(params.TestChainConfig, blockchain.CurrentBlock(), mock.NewMock(), db, len(first), func(i int, b *BlockGen) {
+	// 生成区块
+	firstBlocks, _ := GenerateChain(params.TestChainConfig, blockchain.CurrentBlock(), mock.NewMock(), db, len(first), func(i int, b *BlockGen) {
 		b.OffsetTime(first[i])
 	})
-	diffBlocks, _ := GenerateChain(params.TestChainConfig, blockchain.CurrentBlock(), mock.NewMock(), db, len(second), func(i int, b *BlockGen) {
+	secondBlocks, _ := GenerateChain(params.TestChainConfig, blockchain.CurrentBlock(), mock.NewMock(), db, len(second), func(i int, b *BlockGen) {
 		b.OffsetTime(second[i])
 	})
-	if full {
-		if _, err := blockchain.InsertChain(easyBlocks); err != nil {
-			t.Fatalf("failed to insert easy chain: %v", err)
-		}
-		if _, err := blockchain.InsertChain(diffBlocks); err != nil {
-			t.Fatalf("failed to insert difficult chain: %v", err)
-		}
-	} else {
-		easyHeaders := make([]*types.Header, len(easyBlocks))
-		for i, block := range easyBlocks {
-			easyHeaders[i] = block.Header()
-		}
-		diffHeaders := make([]*types.Header, len(diffBlocks))
-		for i, block := range diffBlocks {
-			diffHeaders[i] = block.Header()
-		}
-		if _, err := blockchain.InsertHeaderChain(easyHeaders, 1); err != nil {
-			t.Fatalf("failed to insert easy chain: %v", err)
-		}
-		if _, err := blockchain.InsertHeaderChain(diffHeaders, 1); err != nil {
-			t.Fatalf("failed to insert difficult chain: %v", err)
+
+	printBlocks(t, "first  blocks:", firstBlocks)
+	printBlocks(t, "second blocks:", secondBlocks)
+
+	// 调用测试函数
+	testFun := testReorgBlock
+	if !full {
+		testFun = testReorgHeader
+	}
+	testFun(t, blockchain, firstBlocks, secondBlocks, td, secondInsertSuccess, firstIsMain)
+}
+
+// testReorgBlock block chain的reorg测试
+func testReorgBlock(t *testing.T, blockchain *BlockChain, firstBlocks, secondBlocks types.Blocks, td int64, secondInsertSuccess, firstIsMain bool) {
+	// 插入的区块链，first代表当前主链，必须成功
+	if _, err := blockchain.InsertChain(firstBlocks); err != nil {
+		t.Fatalf("failed to insert first chain: %v", err)
+	}
+	// second是攻击链或临时分叉，按要求执行，可能成功，可能失败
+	{
+		_, err := blockchain.InsertChain(secondBlocks)
+		if secondInsertSuccess {
+			if err != nil {
+				t.Logf("failed to insert second chain: %v", err)
+			}
+		} else {
+			if err == nil {
+				t.Logf("insert second chain successed, want failed")
+			}
 		}
 	}
+
+	// 检查链是否是连接正确的
+	block := blockchain.CurrentBlock()
+	for prev := blockchain.GetBlockByNumber(blockchain.CurrentBlock().NumberU64() - 1); prev.NumberU64() != 0; block, prev = prev, blockchain.GetBlockByNumber(prev.NumberU64()-1) {
+		// t.Logf("block hash: %s\n", block.Hash().String())
+		if block.ParentHash() != prev.Hash() {
+			t.Errorf("parent block hash mismatch: have %x, want %x", block.ParentHash(), prev.Hash())
+		}
+	}
+
+	// 链难度检查
+	wantTd := new(big.Int).Add(blockchain.genesisBlock.Difficulty(), big.NewInt(td))
+	if have := blockchain.GetTdByHash(blockchain.CurrentBlock().Hash()); have.Cmp(wantTd) != 0 {
+		t.Errorf("total difficulty mismatch: have %v, want %v", have, wantTd)
+	}
+
+	// 检查主链的区块是否匹配
+	targetChain := firstBlocks
+	if !firstIsMain {
+		targetChain = secondBlocks
+	}
+	blocks := make([]*types.Block, 0)
+	blk := blockchain.CurrentBlock()
+	for prev := blockchain.GetBlockByNumber(blockchain.CurrentBlock().NumberU64() - 1); blk.NumberU64() != 0; blk, prev = prev, blockchain.GetBlockByNumber(prev.NumberU64()-1) {
+		blocks = append(blocks, blk)
+	}
+	// 反序，高度从低到高
+	for i, j := 0, len(blocks)-1; i < j; i, j = i+1, j-1 {
+		blocks[i], blocks[j] = blocks[j], blocks[i]
+	}
+	printBlocks(t, "main chain:", blocks)
+
+	// 打印难度日志
+	genesis := blockchain.genesisBlock
+	td0 := blockchain.GetTdByHash(genesis.Hash())
+	t.Logf("genesis block %s, total diff: %v\n", genesis.Hash().String(), td0.String())
+	for i, b := range blocks {
+		td := blockchain.GetTdByHash(b.Hash())
+		t.Logf("block [%d] %s, total diff: %v\n", i, b.Hash().String(), td.String())
+	}
+
+	if len(blocks) != len(targetChain) {
+		t.Fatalf("total length mismatch: have %v, want %v", len(blocks), len(targetChain))
+	}
+	for i, b := range targetChain {
+		bc := blocks[i]
+		if b.Hash() != bc.Hash() {
+			t.Errorf("block [%d] mismatch: have %v, want: %v", i, bc.Hash().String(), b.Hash().String())
+		}
+	}
+}
+
+// testReorgBlock header chain的reorg测试
+func testReorgHeader(t *testing.T, blockchain *BlockChain, firstBlocks, secondBlocks types.Blocks, td int64, secondInsertSuccess, firstIsMain bool) {
+	firstHeaders := make([]*types.Header, len(firstBlocks))
+	for i, block := range firstBlocks {
+		firstHeaders[i] = block.Header()
+	}
+	secondHeaders := make([]*types.Header, len(secondBlocks))
+	for i, block := range secondBlocks {
+		secondHeaders[i] = block.Header()
+	}
+
+	// first是主链的header chain，必须成功
+	if _, err := blockchain.InsertHeaderChain(firstHeaders, 1); err != nil {
+		t.Fatalf("failed to insert first header chain: %v", err)
+	}
+	// second是攻击链或临时分叉的header chain，按要求觉得成功与否
+	{
+		_, err := blockchain.InsertHeaderChain(secondHeaders, 1)
+		if secondInsertSuccess {
+			if err != nil {
+				t.Fatalf("failed to insert second header chain: %v", err)
+			}
+		} else {
+			if err == nil {
+				t.Fatalf("insert second header chain successed, want failed")
+			}
+		}
+	}
+
 	// Check that the chain is valid number and link wise
-	if full {
-		prev := blockchain.CurrentBlock()
-		for block := blockchain.GetBlockByNumber(blockchain.CurrentBlock().NumberU64() - 1); block.NumberU64() != 0; prev, block = block, blockchain.GetBlockByNumber(block.NumberU64()-1) {
-			if prev.ParentHash() != block.Hash() {
-				t.Errorf("parent block hash mismatch: have %x, want %x", prev.ParentHash(), block.Hash())
-			}
-		}
-	} else {
-		prev := blockchain.CurrentHeader()
-		for header := blockchain.GetHeaderByNumber(blockchain.CurrentHeader().Number.Uint64() - 1); header.Number.Uint64() != 0; prev, header = header, blockchain.GetHeaderByNumber(header.Number.Uint64()-1) {
-			if prev.ParentHash != header.Hash() {
-				t.Errorf("parent header hash mismatch: have %x, want %x", prev.ParentHash, header.Hash())
-			}
+	header := blockchain.CurrentHeader()
+	for prev := blockchain.GetHeaderByNumber(blockchain.CurrentHeader().Number.Uint64() - 1); prev.Number.Uint64() != 0; header, prev = prev, blockchain.GetHeaderByNumber(prev.Number.Uint64()-1) {
+		if header.ParentHash != prev.Hash() {
+			t.Errorf("parent header hash mismatch: have %x, want %x", header.ParentHash, prev.Hash())
 		}
 	}
+
 	// Make sure the chain total difficulty is the correct one
-	want := new(big.Int).Add(blockchain.genesisBlock.Difficulty(), big.NewInt(td))
-	if full {
-		if have := blockchain.GetTdByHash(blockchain.CurrentBlock().Hash()); have.Cmp(want) != 0 {
-			t.Errorf("total difficulty mismatch: have %v, want %v", have, want)
+	wantTd := new(big.Int).Add(blockchain.genesisBlock.Difficulty(), big.NewInt(td))
+	if have := blockchain.GetTdByHash(blockchain.CurrentHeader().Hash()); have.Cmp(wantTd) != 0 {
+		t.Errorf("total difficulty mismatch: have %v, want %v", have, wantTd)
+	}
+
+	// 检查主链是否匹配
+	targetHeader := firstHeaders
+	if !firstIsMain {
+		targetHeader = secondHeaders
+	}
+	chainHeader := make([]*types.Header, 0)
+	header = blockchain.CurrentHeader()
+	for prev := blockchain.GetHeaderByNumber(blockchain.CurrentHeader().Number.Uint64() - 1); header.Number.Uint64() != 0; header, prev = prev, blockchain.GetHeaderByNumber(prev.Number.Uint64()-1) {
+		chainHeader = append(chainHeader, header)
+	}
+	for i, j := 0, len(chainHeader)-1; i < j; i, j = i+1, j-1 {
+		chainHeader[i], chainHeader[j] = chainHeader[j], chainHeader[i]
+	}
+	printHeaders(t, "header chain", chainHeader)
+
+	if len(targetHeader) != len(chainHeader) {
+		t.Fatalf("header chain lengeth mismatch, have: %d, want: %d", len(chainHeader), len(targetHeader))
+	}
+	for i := 0; i < len(targetHeader); i++ {
+		if targetHeader[i].Hash() != chainHeader[i].Hash() {
+			t.Errorf("header chain mismatch %d, have: %s, want: %s\n", i, chainHeader[i].Hash(), targetHeader[i].Hash())
 		}
-	} else {
-		if have := blockchain.GetTdByHash(blockchain.CurrentHeader().Hash()); have.Cmp(want) != 0 {
-			t.Errorf("total difficulty mismatch: have %v, want %v", have, want)
-		}
+	}
+}
+
+func printBlocks(t *testing.T, tag string, blocks []*types.Block) {
+	t.Logf("%s\n", tag)
+	for i, b := range blocks {
+		t.Logf("b [%d], h: %s, time: %s, diff: %s, hash: %s\n", i, b.Number().String(), b.Time().String(), b.Difficulty().String(), b.Hash().String())
+	}
+}
+
+func printHeaders(t *testing.T, tag string, headers []*types.Header) {
+	t.Logf("%s\n", tag)
+	for i, h := range headers {
+		t.Logf("header [%d], h: %s, time: %s, diff: %s, hash: %s\n", i, h.Number.String(), h.Time.String(), h.Difficulty.String(), h.Hash().String())
 	}
 }
 
@@ -750,72 +967,44 @@ func TestChainTxReorgs(t *testing.T) {
 		signer  = types.NewHubbleSigner(gspec.Config.ChainID)
 	)
 
-	// Create two transactions shared between the chains:
-	//  - postponed: transaction included at a later block in the forked chain
-	//  - swapped: transaction included at the same block number in the forked chain
-	postponed, _ := types.SignTx(types.NewTransaction(0, addr1, big.NewInt(1000), params.TxGas, nil, nil), signer, key1)
-	swapped, _ := types.SignTx(types.NewTransaction(1, addr1, big.NewInt(1000), params.TxGas, nil, nil), signer, key1)
-
-	// Create two transactions that will be dropped by the forked chain:
-	//  - pastDrop: transaction dropped retroactively from a past block
-	//  - freshDrop: transaction dropped exactly at the block where the reorg is detected
-	var pastDrop, freshDrop *types.Transaction
-
-	// Create three transactions that will be added in the forked chain:
-	//  - pastAdd:   transaction added before the reorganization is detected
-	//  - freshAdd:  transaction added at the exact block the reorg is detected
-	//  - futureAdd: transaction added after the reorg has already finished
-	var pastAdd, freshAdd, futureAdd *types.Transaction
+	// Create three transactions shared between the chains:
+	//  - shared: transaction included at both chain
+	//  - removed: transaction included at the forked chain, will be removed
+	//  - added : transaction included at the main chain
+	shared, _ := types.SignTx(types.NewTransaction(0, addr1, big.NewInt(1000), params.TxGas, nil, nil), signer, key1)
+	removed, _ := types.SignTx(types.NewTransaction(1, addr1, big.NewInt(1000), params.TxGas, nil, nil), signer, key1)
+	added, _ := types.SignTx(types.NewTransaction(0, addr2, big.NewInt(1000), params.TxGas, nil, nil), signer, key2)
 
 	chain, _ := GenerateChain(gspec.Config, genesis, mock.NewMock(), db, 3, func(i int, gen *BlockGen) {
 		switch i {
-		case 0:
-			pastDrop, _ = types.SignTx(types.NewTransaction(gen.TxNonce(addr2), addr2, big.NewInt(1000), params.TxGas, nil, nil), signer, key2)
-
-			gen.AddTx(pastDrop)  // This transaction will be dropped in the fork from below the split point
-			gen.AddTx(postponed) // This transaction will be postponed till block #3 in the fork
-
 		case 2:
-			freshDrop, _ = types.SignTx(types.NewTransaction(gen.TxNonce(addr2), addr2, big.NewInt(1000), params.TxGas, nil, nil), signer, key2)
+			gen.AddTx(shared)
+			gen.AddTx(removed)
 
-			gen.AddTx(freshDrop) // This transaction will be dropped in the fork from exactly at the split point
-			gen.AddTx(swapped)   // This transaction will be swapped out at the exact height
-
-			gen.OffsetTime(9) // Lower the block difficulty to simulate a weaker chain
+			gen.OffsetTime(2) // Later block timestamp to make it a forked chain
 		}
 	})
 	// Import the chain. This runs all block validation rules.
 	blockchain, _ := NewBlockChain(db, nil, gspec.Config, mock.NewMock(), vm.Config{})
 	if i, err := blockchain.InsertChain(chain); err != nil {
-		t.Fatalf("failed to insert original chain[%d]: %v", i, err)
+		t.Fatalf("failed to insert original fork chain[%d]: %v", i, err)
 	}
 	defer blockchain.Stop()
 
-	// overwrite the old chain
-	chain, _ = GenerateChain(gspec.Config, genesis, mock.NewMock(), db, 5, func(i int, gen *BlockGen) {
+	// generate main chain, overwrite the old chain
+	chain, _ = GenerateChain(gspec.Config, genesis, mock.NewMock(), db, 3, func(i int, gen *BlockGen) {
 		switch i {
-		case 0:
-			pastAdd, _ = types.SignTx(types.NewTransaction(gen.TxNonce(addr3), addr3, big.NewInt(1000), params.TxGas, nil, nil), signer, key3)
-			gen.AddTx(pastAdd) // This transaction needs to be injected during reorg
-
 		case 2:
-			gen.AddTx(postponed) // This transaction was postponed from block #1 in the original chain
-			gen.AddTx(swapped)   // This transaction was swapped from the exact current spot in the original chain
-
-			freshAdd, _ = types.SignTx(types.NewTransaction(gen.TxNonce(addr3), addr3, big.NewInt(1000), params.TxGas, nil, nil), signer, key3)
-			gen.AddTx(freshAdd) // This transaction will be added exactly at reorg time
-
-		case 3:
-			futureAdd, _ = types.SignTx(types.NewTransaction(gen.TxNonce(addr3), addr3, big.NewInt(1000), params.TxGas, nil, nil), signer, key3)
-			gen.AddTx(futureAdd) // This transaction will be added after a full reorg
+			gen.AddTx(shared)
+			gen.AddTx(added)
 		}
 	})
 	if _, err := blockchain.InsertChain(chain); err != nil {
-		t.Fatalf("failed to insert forked chain: %v", err)
+		t.Fatalf("failed to insert main chain: %v", err)
 	}
 
 	// removed tx
-	for i, tx := range (types.Transactions{pastDrop, freshDrop}) {
+	for i, tx := range (types.Transactions{removed}) {
 		if txn, _, _, _ := rawdb.ReadTransaction(db, tx.Hash()); txn != nil {
 			t.Errorf("drop %d: tx %v found while shouldn't have been", i, txn)
 		}
@@ -824,7 +1013,7 @@ func TestChainTxReorgs(t *testing.T) {
 		}
 	}
 	// added tx
-	for i, tx := range (types.Transactions{pastAdd, freshAdd, futureAdd}) {
+	for i, tx := range (types.Transactions{added}) {
 		if txn, _, _, _ := rawdb.ReadTransaction(db, tx.Hash()); txn == nil {
 			t.Errorf("add %d: expected tx to be found", i)
 		}
@@ -833,7 +1022,7 @@ func TestChainTxReorgs(t *testing.T) {
 		}
 	}
 	// shared tx
-	for i, tx := range (types.Transactions{postponed, swapped}) {
+	for i, tx := range (types.Transactions{shared}) {
 		if txn, _, _, _ := rawdb.ReadTransaction(db, tx.Hash()); txn == nil {
 			t.Errorf("share %d: expected tx to be found", i)
 		}
@@ -844,14 +1033,13 @@ func TestChainTxReorgs(t *testing.T) {
 }
 
 func TestLogReorgs(t *testing.T) {
-
 	var (
 		key1, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 		addr1   = crypto.PubkeyToAddress(key1.PublicKey)
 		db      = vntdb.NewMemDatabase()
 		// this code generates a log
-		code    = common.Hex2Bytes("60606040525b7f24ec1d3ff24c2f6ff210738839dbc339cd45a5294d85c79361016243157aae7b60405180905060405180910390a15b600a8060416000396000f360606040526008565b00")
-		gspec   = &Genesis{Config: params.TestChainConfig, Alloc: GenesisAlloc{addr1: {Balance: big.NewInt(10000000000000)}}}
+		code    = common.Hex2Bytes("0161736db9052f0100789c9c56db6f145518ff9d397ba6ed0eddeeb260b90418168818ebf6226db0722b21624d480c589110b29ddd39dd8eccced499d94221ddaec5101e7df4c542bcbc181f8cf1414a4cfc177cf1091e144d4c88461a0c2185c47c33b317290fc47998effb7ee7fbfdbe739b39e75157f966e71730fc0a03c0328949a556c324ab611298640b500cc1a5339b3eed59813c6d05d36fbb9613480f20b8e7a434cc35a83a669ac70d1f8c82ecb8630596615b97e4bb866719455bfa50a84578d2f5cae03cc11545490836c318139c415137f20536f6f1b584b68086b9daa9751c116a45565c6f4e8156284c4b63a650347cc959b250308dc02848c7e44ada9425dbf0a4f946d5290596eb401527c3521dc9fd5c81b61d477114e97abd5e8fbc0f232fbd4856db80f41572c6ead7ea75a43f0a41ad9b61acdea9a951a7f1806b795316abe582e54cb9bf3120017a12348f58875d881e37b60300146acb003801804fd06b32e40800db01fc486b70577c42e61c536f84d606a07e13ba3e65777c154a75d600dc2478a0eb0ac1df511e4b528de3007ea2a67bb719a06e634d776bd3d57690fb27b9eba83fc3007a88f357d429844a53007e2774a5a5b4d2525a6929fdd354ea059022ce83b631862def346a3c6caf4195ef13badaaab1daaa11badd27e279644f626a8aa847003c21148cb27a426eec6f6df9e9b0874ae86748691371388ba5c235530074314049247603d8006023856a38d177883004a453f1aa578c122d3c709575c790673865e9d3fa6601ec00f0325a4f1f803c80210087da70aabd1e00ed815d71fc666ccbb11d89ed586c3900eae4fe361d3c6e76c428163d39cb326c4f2a2b782addbb35956113bd80926719b65e1dcc025c804c220f42786a547b5d3bbc19107916052f6e3ebc59d700552002c6b340c76ef0d4214dd380ce17309e8d5a80ae1e507332d26f088c674951dbd726b06e1b1bcc52ce7bda190de8a670a2370a526d6cd160f7c4e505b1d3fbda824c934b53876f138d0fd2b61c9953e883fc8ce68bb1d554371916cd1eeb9ff0a5e7f75f90966f5897a60da7dc7fcc2d552bd209fcfea21b04b67c25907ed05f729dc0334a818fe7a614ab966db61131eb04b655cc4f53e5f0275498f164c9adcc58b6cc97c25d0711fe18f81d30d191dc29c4b4caaf2f2c0aa6f2bbd01506c620141a24bf4b3fc8e499eb57042b371a42ee3dc6444ff2a0d06e893dea8a183c20f62e890e95dfaf2d0a7188f4960557f9df4c57781b6d8531a1250f0a5dedd429fd5e4d1762204ad754fe90e94257df123d6a9fd06f88017551f42e096d8a52ffa84db52b3f7a4a793554de29b6a83f53f6af355d24f97596175c5de28b5446e5bf80c04f19092cfd673875a5399c2deab2d075b12b2f869649e9764d179c7fc9f22a7f3c7fa021c3f9e76c39ec40428945360a96dc19aa86107d2f9b044be684280b762b2af7b5928c378d1f7825db70cafaacf47ccb75f4fdf981fc80be37f0aace79fdd57d83af8d0cbcf4bff741ff3396fe79b570527e50b53c8992eb9856789e158ebaae8d8a5f4669daf0e0079ee594b1e6d89b181a1e39654cc913551b55cb098686479ad8316bb6e99faa169bfe9869e2bc9c9b9b7582f787e766a23d8b395cc425e072c2312a92059d58731f604f5f0594f816c09f7501484467bfc8140a170cbf522819b65d2805aee7ab6b4eef8ee8f0fefe87b39773543e379a0b815c5faee43a7e6038416e74cab07dd997b39c996ae0e746cf9eebcbb9d5a015047333440c095e952ae5e6fb9a7a5eac6738ae335771abfe5ac1666ec5a7cc582f9af91ce599f2a23463de7caba29c954e909b3f57ff170000ffff")
+		gspec   = &Genesis{Config: params.TestChainConfig, Alloc: GenesisAlloc{addr1: {Balance: big.NewInt(0).Mul(big.NewInt(1e9), big.NewInt(1e18))}}}
 		genesis = gspec.MustCommit(db)
 		signer  = types.NewHubbleSigner(gspec.Config.ChainID)
 	)
@@ -859,18 +1047,28 @@ func TestLogReorgs(t *testing.T) {
 	blockchain, _ := NewBlockChain(db, nil, gspec.Config, mock.NewMock(), vm.Config{})
 	defer blockchain.Stop()
 
+	signTx := func(tx *types.Transaction) (*types.Transaction, error) {
+		return types.SignTx(tx, signer, key1)
+	}
 	rmLogsCh := make(chan RemovedLogsEvent)
 	blockchain.SubscribeRemovedLogsEvent(rmLogsCh)
-	chain, _ := GenerateChain(params.TestChainConfig, genesis, mock.NewMock(), db, 2, func(i int, gen *BlockGen) {
-		if i == 1 {
+	chain, _ := GenerateChain(params.TestChainConfig, genesis, mock.NewMock(), db, 3, func(i int, gen *BlockGen) {
+		switch i {
+		case 0:
+			if err := StartFakeMainNet(gen, addr1, signTx); err != nil {
+				t.Fatalf(err.Error())
+			}
+		case 2:
+			if !election.MainNetActive(gen.statedb) {
+				t.Fatalf("main is inactive")
+			}
+			gen.OffsetTime(2)
+
 			tx, err := types.SignTx(types.NewContractCreation(gen.TxNonce(addr1), new(big.Int), 1000000, new(big.Int), code), signer, key1)
 			if err != nil {
 				t.Fatalf("failed to create tx: %v", err)
 			}
 			gen.AddTx(tx)
-		}
-		if i == 0 {
-			gen.OffsetTime(4)
 		}
 	})
 	if _, err := blockchain.InsertChain(chain); err != nil {
@@ -878,7 +1076,13 @@ func TestLogReorgs(t *testing.T) {
 	}
 
 	// fork chain should to be canonical chain
-	chain, _ = GenerateChain(params.TestChainConfig, genesis, mock.NewMock(), db, 3, func(i int, gen *BlockGen) {})
+	chain, _ = GenerateChain(params.TestChainConfig, genesis, mock.NewMock(), db, 3, func(i int, gen *BlockGen) {
+		if i == 0 {
+			if err := StartFakeMainNet(gen, addr1, signTx); err != nil {
+				t.Fatalf(err.Error())
+			}
+		}
+	})
 	if _, err := blockchain.InsertChain(chain); err != nil {
 		t.Fatalf("failed to insert forked chain: %v", err)
 	}
@@ -1104,141 +1308,6 @@ func TestEIP161AccountRemoval(t *testing.T) {
 	}
 	if st, _ := blockchain.State(); st.Exist(theAddr) {
 		t.Error("account should not exist")
-	}
-}
-
-// Tests that importing small side forks doesn't leave junk in the trie database
-// cache (which would eventually cause memory issues).
-func TestTrieForkGC(t *testing.T) {
-	// Generate a canonical chain to act as the main dataset
-	engine := mock.NewMock()
-
-	db := vntdb.NewMemDatabase()
-	genesis := new(Genesis).MustCommit(db)
-	ts := make([]int64, 2*triesInMemory, 2*triesInMemory)
-	for i, _ := range ts {
-		ts[i] = int64(i * 2)
-	}
-	blocks, _ := GenerateChain(params.TestChainConfig, genesis, engine, db, 2*triesInMemory, func(i int, b *BlockGen) {
-		b.SetCoinbase(common.Address{1})
-		if i == 0 {
-			b.OffsetTime(ts[i])
-		}
-	})
-
-	// Generate a bunch of fork blocks, each side forking from the canonical chain
-	for i, _ := range ts {
-		ts[i] = int64(i*2 - 2)
-	}
-	forks := make([]*types.Block, len(blocks))
-	for i := 0; i < len(forks); i++ {
-		parent := genesis
-		if i > 0 {
-			parent = blocks[i-1]
-		}
-		fork, _ := GenerateChain(params.TestChainConfig, parent, engine, db, 1, func(i int, b *BlockGen) {
-			b.SetCoinbase(common.Address{2})
-			b.OffsetTime(ts[i])
-		})
-		forks[i] = fork[0]
-	}
-	// Import the canonical and fork chain side by side, forcing the trie cache to cache both
-	diskdb := vntdb.NewMemDatabase()
-	new(Genesis).MustCommit(diskdb)
-
-	chain, err := NewBlockChain(diskdb, nil, params.TestChainConfig, engine, vm.Config{})
-	if err != nil {
-		t.Fatalf("failed to create tester chain: %v", err)
-	}
-	for i := 0; i < len(blocks); i++ {
-		if _, err := chain.InsertChain(blocks[i : i+1]); err != nil {
-			t.Fatalf("block %d: failed to insert into chain: %v", i, err)
-		}
-		if _, err := chain.InsertChain(forks[i : i+1]); err != nil {
-			t.Fatalf("fork %d: failed to insert into chain: %v", i, err)
-		}
-	}
-	// Dereference all the recent tries and ensure no past trie is left in
-	for i := 0; i < triesInMemory; i++ {
-		chain.stateCache.TrieDB().Dereference(blocks[len(blocks)-1-i].Root(), common.Hash{})
-		chain.stateCache.TrieDB().Dereference(forks[len(blocks)-1-i].Root(), common.Hash{})
-	}
-	if len(chain.stateCache.TrieDB().Nodes()) > 0 {
-		t.Fatalf("stale tries still alive after garbase collection")
-	}
-}
-
-// Tests that doing large reorgs works even if the state associated with the
-// forking point is not available any more.
-func TestLargeReorgTrieGC(t *testing.T) {
-	// Generate the original common chain segment and the two competing forks
-	engine := mock.NewMock()
-
-	db := vntdb.NewMemDatabase()
-	genesis := new(Genesis).MustCommit(db)
-
-	// let competitor replace original
-	shared, _ := GenerateChain(params.TestChainConfig, genesis, engine, db, 64, func(i int, b *BlockGen) {
-		b.SetCoinbase(common.Address{1})
-	})
-	original, _ := GenerateChain(params.TestChainConfig, shared[len(shared)-1], engine, db, 2*triesInMemory, func(i int, b *BlockGen) {
-		b.SetCoinbase(common.Address{2})
-		if i == 0 {
-			b.OffsetTime(10)
-		}
-	})
-	competitor, _ := GenerateChain(params.TestChainConfig, shared[len(shared)-1], engine, db, 2*triesInMemory+1, func(i int, b *BlockGen) {
-		b.SetCoinbase(common.Address{3})
-		if i == 0 {
-			b.OffsetTime(2)
-		}
-	})
-
-	// Import the shared chain and the original canonical one
-	diskdb := vntdb.NewMemDatabase()
-	new(Genesis).MustCommit(diskdb)
-
-	chain, err := NewBlockChain(diskdb, nil, params.TestChainConfig, engine, vm.Config{})
-	if err != nil {
-		t.Fatalf("failed to create tester chain: %v", err)
-	}
-	if _, err := chain.InsertChain(shared); err != nil {
-		t.Fatalf("failed to insert shared chain: %v", err)
-	}
-	if _, err := chain.InsertChain(original); err != nil {
-		t.Fatalf("failed to insert shared chain: %v", err)
-	}
-	// Ensure that the state associated with the forking point is pruned away
-	if node, _ := chain.stateCache.TrieDB().Node(shared[len(shared)-1].Root()); node != nil {
-		t.Fatalf("common-but-old ancestor still cache")
-	}
-	// Import the competitor chain without exceeding the canonical's TD and ensure
-	// we have not processed any of the blocks (protection against malicious blocks)
-	if n, err := chain.InsertChain(competitor[:len(competitor)-2]); err != nil {
-		t.Fatalf("failed to insert competitor chain, the %d-th block: %v", n, err)
-	}
-	for i, block := range competitor[:len(competitor)-2] {
-		if node, _ := chain.stateCache.TrieDB().Node(block.Root()); node != nil {
-			t.Fatalf("competitor %d: low TD chain became processed", i)
-		}
-	}
-	// Import the head of the competitor chain, triggering the reorg and ensure we
-	// successfully reprocess all the stashed away blocks.
-	if _, err := chain.InsertChain(competitor[len(competitor)-2:]); err != nil {
-		t.Fatalf("failed to finalize competitor chain: %v", err)
-	}
-	for i, block := range competitor[:len(competitor)-triesInMemory] {
-		if node, _ := chain.stateCache.TrieDB().Node(block.Root()); node != nil {
-			t.Fatalf("competitor %d: competing chain state missing", i)
-		}
-	}
-
-	// competitor is canonical, using the height of competitor to check
-	// state cache of original
-	for i, block := range original[:len(competitor)-triesInMemory] {
-		if node, _ := chain.stateCache.TrieDB().Node(block.Root()); node != nil {
-			t.Fatalf("competitor %d: competing chain state missing", i)
-		}
 	}
 }
 

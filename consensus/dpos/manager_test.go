@@ -19,10 +19,10 @@ package dpos
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"github.com/stretchr/testify/assert"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/params"
-	"github.com/stretchr/testify/assert"
 	"testing"
 )
 

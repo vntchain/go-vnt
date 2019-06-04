@@ -212,7 +212,7 @@ func (self *worker) start() {
 
 	// Init bft
 	if dp, ok := self.engine.(*dpos.Dpos); ok {
-		dp.InitBft(self.SendBftMsg, self.SendBftPeerChangeMsg, self.chain.VerifyBlock, self.writeBlock)
+		dp.InitBft(self.SendBftMsg, self.SendBftPeerChangeMsg, self.chain.VerifyBlockForBft, self.writeBlock)
 		// 刚启动节点的bft节点设置
 		currentRoot := self.chain.CurrentHeader().Root
 		witnessesUrl := self.chain.Config().Dpos.WitnessesUrl
@@ -335,6 +335,7 @@ func (self *worker) update() {
 	}
 }
 
+// TODO vnt this is never used for Seal never return block
 func (self *worker) wait() {
 	for {
 		for result := range self.recv {
