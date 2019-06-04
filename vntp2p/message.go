@@ -18,15 +18,14 @@ package vntp2p
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"sync/atomic"
 	"time"
 
-	inet "github.com/libp2p/go-libp2p-net"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/rlp"
 )
@@ -153,7 +152,6 @@ type VNTMsger struct {
 	protocol Protocol
 	in       chan Msg
 	err      chan error
-	w        inet.Stream
 	peer     *Peer
 }
 
@@ -167,15 +165,21 @@ func (rw *VNTMsger) WriteMsg(msg Msg) (err error) {
 	}
 	m := append(msgHeaderByte, msgBodyByte...)
 
-	_, err = rw.w.Write(m)
+	// New a stream to send msg
+	s, err := rw.peer.server.host.NewStream(context.Background(), rw.peer.RemoteID(), PID)
+	if err != nil {
+		rw.peer.log.Error("Create a new stream failed", "error", err.Error())
+		return fmt.Errorf("wirte msg error: %s", err.Error())
+	}
+
+	// Write msg to stream
+	_, err = s.Write(m)
 	if err != nil {
 		rw.peer.log.Error("Write message", "write msg error", err)
-		if atomic.LoadInt32(&rw.peer.reseted) == 0 {
-			rw.peer.log.Info("Write message", "underlay will close this connection which remotePID", rw.peer.RemoteID())
-			rw.peer.sendError(err)
-		}
-		rw.peer.log.Trace("Write message exit", "peer", rw.peer.RemoteID())
+		s.Reset()
 		return err
+	} else {
+		s.Close()
 	}
 	return nil
 }

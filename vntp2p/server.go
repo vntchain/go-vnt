@@ -430,31 +430,10 @@ func (server *Server) maxDialedConns() int {
 func (server *Server) SetupStream(ctx context.Context, target peer.ID, pid string) error {
 	s, err := server.host.NewStream(ctx, target, protocol.ID(pid))
 	if err != nil {
-		// fmt.Println("SetupStream NewStream Error: ", err)
 		return err
 	}
 
-	// handle response message
-	go server.HandleStream(s)
-	/* rw := bufio.NewReadWriter(bufio.NewReader(s), bufio.NewWriter(s))
-	vntMessenger := &VNTMsger{
-		protocol: Protocol{},
-		in:       make(chan Msg),
-		w:        rw,
-	}
-
-	their, err := doProtocolHandshake(vntMessenger, server.ourHandshake)
-	if err != nil {
-		log.Error("SetupStream()", "failed protocolHandshake", err)
-		return err
-	} */
-
-	// err = server.dispatch(&Stream{stream: s, Protocols: server.protomap[pid]}, server.addpeer)
-	// if err != nil {
-	// 	fmt.Println("SetupStream dispatch Error: ", err)
-	// 	return err
-	// }
-	server.addPeer(s)
+	_ = server.addPeer(s)
 	return nil
 }
 
