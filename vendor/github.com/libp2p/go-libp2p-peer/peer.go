@@ -49,6 +49,23 @@ func (id ID) Loggable() map[string]interface{} {
 	}
 }
 
+// comment by vnt: old String()
+//// String prints out the peer.
+////
+//// TODO(brian): ensure correctness at ID generation and
+//// enforce this by only exposing functions that generate
+//// IDs safely. Then any peer.ID type found in the
+//// codebase is known to be correct.
+//func (id ID) String() string {
+//	pid := id.Pretty()
+//
+//	if len(pid) <= 10 {
+//		return fmt.Sprintf("<peer.ID %s>", pid)
+//	}
+//	return fmt.Sprintf("<peer.ID %s*%s>", pid[:2], pid[len(pid)-6:])
+//}
+
+// comment by vnt: new String()
 // String prints out the peer.
 //
 // TODO(brian): ensure correctness at ID generation and
@@ -159,9 +176,25 @@ func IDHexEncode(id ID) string {
 	return hex.EncodeToString([]byte(id))
 }
 
+// comment by vnt: old IDFromPublicKey
+//// IDFromPublicKey returns the Peer ID corresponding to pk
+//func IDFromPublicKey(pk ic.PubKey) (ID, error) {
+//	b, err := pk.Bytes()
+//	if err != nil {
+//		return "", err
+//	}
+//	var alg uint64 = mh.SHA2_256
+//	if AdvancedEnableInlining && len(b) <= maxInlineKeyLength {
+//		alg = mh.ID
+//	}
+//	hash, _ := mh.Sum(b, alg, -1)
+//	return ID(hash), nil
+//}
+
+
+// comment by vnt: new IDFromPublicKey
 // IDFromPublicKey returns the Peer ID corresponding to pk
 func IDFromPublicKey(pk ic.PubKey) (ID, error) {
-	// added by vnt
 	b, err := pk.Raw()
 	if err != nil {
 		return "", err

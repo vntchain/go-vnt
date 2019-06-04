@@ -70,6 +70,7 @@ func NewNode(id peer.ID, ip net.IP, udpPort, tcpPort uint16) *Node {
 
 	targetAddr, peerid, err := GetAddr(target)
 	if err != nil {
+		fmt.Println("#### NewNode: fail:", err)
 		return nil
 	}
 

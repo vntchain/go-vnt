@@ -3,13 +3,13 @@ package libp2p
 // This file contains all the default configuration options.
 
 import (
-	crypto "github.com/libp2p/go-libp2p-crypto"
+	"github.com/libp2p/go-libp2p-crypto"
 	crypto2 "github.com/vntchain/go-vnt/crypto"
-	pstoremem "github.com/libp2p/go-libp2p-peerstore/pstoremem"
-	secio "github.com/libp2p/go-libp2p-secio"
-	tcp "github.com/libp2p/go-tcp-transport"
+	"github.com/libp2p/go-libp2p-peerstore/pstoremem"
+	"github.com/libp2p/go-libp2p-secio"
+	"github.com/libp2p/go-tcp-transport"
 	ws "github.com/libp2p/go-ws-transport"
-	multiaddr "github.com/multiformats/go-multiaddr"
+	"github.com/multiformats/go-multiaddr"
 	mplex "github.com/whyrusleeping/go-smux-multiplex"
 	yamux "github.com/whyrusleeping/go-smux-yamux"
 )
@@ -43,12 +43,21 @@ var DefaultPeerstore Option = func(cfg *Config) error {
 	return cfg.Apply(Peerstore(pstoremem.NewPeerstore()))
 }
 
+// comment by vnt: old RandomIdentity
+//// RandomIdentity generates a random identity (default behaviour)
+//var RandomIdentity = func(cfg *Config) error {
+//	priv, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
+//	if err != nil {
+//		return err
+//	}
+//	return cfg.Apply(Identity(priv))
+//}
+
+// comment by vnt: new RandomIdentity
 // RandomIdentity generates a random identity (default behaviour)
 var RandomIdentity = func(cfg *Config) error {
 	p, _ := crypto2.GenerateKey()
-	//p, _ := crypto2.HexToECDSA("ac355731983f9ad945b642f15ed60022fa4aeb8f5c069d4f15a24c4b5100195b")
 	priv, _, err := crypto.ECDSAKeyPairFromKey(p)
-	//priv, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
 	if err != nil {
 		return err
 	}

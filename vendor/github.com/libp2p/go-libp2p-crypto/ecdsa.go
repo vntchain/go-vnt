@@ -89,26 +89,32 @@ func UnmarshalECDSAPrivateKey(data []byte) (PrivKey, error) {
 	return &ECDSAPrivateKey{priv}, nil
 }
 
+// comment by vnt: old UnmarshalECDSAPublicKey
+//// UnmarshalECDSAPublicKey returns the public key from x509 bytes
+//func UnmarshalECDSAPublicKey(data []byte) (PubKey, error) {
+//	pubIfc, err := x509.ParsePKIXPublicKey(data)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	pub, ok := pubIfc.(*ecdsa.PublicKey)
+//	if !ok {
+//		return nil, ErrNotECDSAPubKey
+//	}
+//
+//	return &ECDSAPublicKey{pub}, nil
+//}
+
+
+// comment by vnt: new UnmarshalECDSAPublicKey
 // UnmarshalECDSAPublicKey returns the public key from x509 bytes
 func UnmarshalECDSAPublicKey(data []byte) (PubKey, error) {
-	// added by vnt
-
-	//pubIfc, err := x509.ParsePKIXPublicKey(data)
-	//if err != nil {
-	//	return nil, err
-	//}
-
 	x, y := secp256k1.DecompressPubkey(data)
 	if x == nil {
 		return nil, fmt.Errorf("invalid public key")
 	}
 
 	var pub = &ecdsa.PublicKey{X: x, Y: y, Curve: secp256k1.S256()}
-
-	//pub, ok := pubIfc.(*ecdsa.PublicKey)
-	//if !ok {
-	//	return nil, ErrNotECDSAPubKey
-	//}
 
 	return &ECDSAPublicKey{pub}, nil
 }
@@ -169,11 +175,15 @@ func (ePub *ECDSAPublicKey) Type() pb.KeyType {
 	return pb.KeyType_ECDSA
 }
 
-// Raw returns x509 bytes from a public key
+// comment by vnt: old Raw()
+//// Raw returns x509 bytes from a public key
+//func (ePub ECDSAPublicKey) Raw() ([]byte, error) {
+//	return x509.MarshalPKIXPublicKey(ePub.pub)
+//}
+
+// comment by vnt: new Raw()
 func (ePub ECDSAPublicKey) Raw() ([]byte, error) {
-	// added by vnt
 	return crypto.CompressPubkey(ePub.pub), nil
-	//return x509.MarshalPKIXPublicKey(ePub.pub)
 }
 
 // Equals compares to public keys
