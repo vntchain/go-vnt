@@ -62,14 +62,14 @@ func sentTx(i int) int {
 	return int(math.Pow(float64(i)/float64(poolTestBlocks), 0.9) * poolTestTxs)
 }
 
-// txs included in block i or before that (minedTx(i) <= sentTx(i))
-func minedTx(i int) int {
+// txs included in block i or before that (producedTx(i) <= sentTx(i))
+func producedTx(i int) int {
 	return int(math.Pow(float64(i)/float64(poolTestBlocks), 1.1) * poolTestTxs)
 }
 
 func txPoolTestChainGen(i int, block *core.BlockGen) {
-	s := minedTx(i)
-	e := minedTx(i + 1)
+	s := producedTx(i)
+	e := producedTx(i + 1)
 	for i := s; i < e; i++ {
 		block.AddTx(testTx[i])
 	}
@@ -124,14 +124,14 @@ func TestTxPool(t *testing.T) {
 		}
 
 		got := <-relay.produced
-		exp := minedTx(i) - minedTx(i-1)
+		exp := producedTx(i) - producedTx(i-1)
 		if got != exp {
 			t.Errorf("relay.NewHead expected len(produced) = %d, got %d", exp, got)
 		}
 
 		exp = 0
 		if i > int(txPermanent)+1 {
-			exp = minedTx(i-int(txPermanent)-1) - minedTx(i-int(txPermanent)-2)
+			exp = producedTx(i-int(txPermanent)-1) - producedTx(i-int(txPermanent)-2)
 		}
 		if exp != 0 {
 			got = <-relay.discard

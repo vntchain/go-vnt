@@ -78,12 +78,12 @@ type ProtocolManager struct {
 
 	SubProtocols []vntp2p.Protocol
 
-	eventMux      *event.TypeMux
-	txsCh         chan core.NewTxsEvent
-	txsSub        event.Subscription
-	minedBlockSub *event.TypeMuxSubscription
-	bftMsgSub     *event.TypeMuxSubscription
-	bftPeerSub    *event.TypeMuxSubscription
+	eventMux         *event.TypeMux
+	txsCh            chan core.NewTxsEvent
+	txsSub           event.Subscription
+	producedBlockSub *event.TypeMuxSubscription
+	bftMsgSub        *event.TypeMuxSubscription
+	bftPeerSub       *event.TypeMuxSubscription
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -244,10 +244,10 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	go pm.txBroadcastLoop()
 
 	// broadcast produced blocks
-	pm.minedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
+	pm.producedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
 	pm.bftMsgSub = pm.eventMux.Subscribe(core.SendBftMsgEvent{})
 	pm.bftPeerSub = pm.eventMux.Subscribe(core.BftPeerChangeEvent{})
-	go pm.minedBroadcastLoop()
+	go pm.producedBroadcastLoop()
 	go pm.bftBroadcastLoop()
 
 	go pm.resetBftPeerLoop()
@@ -261,8 +261,8 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping VNT protocol")
 
-	pm.txsSub.Unsubscribe()        // quits txBroadcastLoop
-	pm.minedBlockSub.Unsubscribe() // quits blockBroadcastLoop
+	pm.txsSub.Unsubscribe()           // quits txBroadcastLoop
+	pm.producedBlockSub.Unsubscribe() // quits blockBroadcastLoop
 	pm.bftMsgSub.Unsubscribe()
 	pm.bftPeerSub.Unsubscribe()
 
@@ -770,9 +770,9 @@ func (pm *ProtocolManager) BroadcastBftMsg(bftMsg types.BftMsg) {
 }
 
 // Mined broadcast loop
-func (pm *ProtocolManager) minedBroadcastLoop() {
+func (pm *ProtocolManager) producedBroadcastLoop() {
 	// automatically stops if unsubscribe
-	for obj := range pm.minedBlockSub.Chan() {
+	for obj := range pm.producedBlockSub.Chan() {
 		switch ev := obj.Data.(type) {
 		case core.NewMinedBlockEvent:
 			log.Debug("PM receive NewMinedBlockEvent")
