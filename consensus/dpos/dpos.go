@@ -768,7 +768,7 @@ func (d *Dpos) setUpdateInterval() {
 	d.updateInterval = new(big.Int).SetUint64(3 * uint64(d.config.WitnessesNum) * d.config.Period)
 }
 
-// coinBase get the address of this miner
+// coinBase get the address of this producer
 func (d *Dpos) coinBase() (cb common.Address) {
 	d.lock.RLock()
 	cb = d.signer

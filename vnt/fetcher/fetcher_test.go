@@ -50,7 +50,7 @@ func makeChain(n int, seed byte, parent *types.Block) ([]common.Hash, map[common
 	blocks, _ := core.GenerateChain(params.TestChainConfig, parent, mock.NewMock(), testdb, n, func(i int, block *core.BlockGen) {
 		block.SetCoinbase(common.Address{seed})
 
-		// If the block number is multiple of 3, send a bonus transaction to the miner
+		// If the block number is multiple of 3, send a bonus transaction to the producer
 		if parent == genesis && i%3 == 0 {
 			signer := types.MakeSigner(params.TestChainConfig, block.Number())
 			tx, err := types.SignTx(types.NewTransaction(block.TxNonce(testAddress), common.Address{seed}, big.NewInt(1000), params.TxGas, nil, nil), signer, testKey)

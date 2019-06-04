@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package miner
+package producer
 
 import (
 	"sync"
@@ -40,13 +40,13 @@ type CpuAgent struct {
 }
 
 func NewCpuAgent(chain consensus.ChainReader, engine consensus.Engine) *CpuAgent {
-	miner := &CpuAgent{
+	producer := &CpuAgent{
 		chain:  chain,
 		engine: engine,
 		stop:   make(chan struct{}, 1),
 		workCh: make(chan *Work, 1),
 	}
-	return miner
+	return producer
 }
 
 func (self *CpuAgent) Work() chan<- *Work            { return self.workCh }
@@ -80,13 +80,13 @@ out:
 	for {
 		select {
 		case work := <-self.workCh:
-			log.Debug("agent", "func", "update", "work", work, "go miner", "true")
+			log.Debug("agent", "func", "update", "work", work, "go producer", "true")
 			self.mu.Lock()
 			if self.quitCurrentOp != nil {
 				close(self.quitCurrentOp)
 			}
 			self.quitCurrentOp = make(chan struct{})
-			go self.mine(work, self.quitCurrentOp)
+			go self.produce(work, self.quitCurrentOp)
 			self.mu.Unlock()
 		case <-self.stop:
 			self.mu.Lock()
@@ -100,7 +100,7 @@ out:
 	}
 }
 
-func (self *CpuAgent) mine(work *Work, stop <-chan struct{}) {
+func (self *CpuAgent) produce(work *Work, stop <-chan struct{}) {
 	if result, err := self.engine.Seal(self.chain, work.Block, stop); result != nil {
 		log.Info("Successfully sealed new block", "number", result.Number(), "hash", result.Hash())
 		self.returnCh <- &Result{work, result}

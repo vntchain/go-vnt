@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package miner
+package producer
 
 import (
 	"container/ring"
@@ -41,7 +41,7 @@ type unconfirmedBlock struct {
 
 // unconfirmedBlocks implements a data structure to maintain locally produced blocks
 // have have not yet reached enough maturity to guarantee chain inclusion. It is
-// used by the miner to provide logs to the user when a previously produced block
+// used by the producer to provide logs to the user when a previously produced block
 // has a high enough guarantee to not be reorged out of the canonical chain.
 type unconfirmedBlocks struct {
 	chain  headerRetriever // Blockchain to verify canonical status through

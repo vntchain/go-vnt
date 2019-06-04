@@ -471,7 +471,7 @@ type blockStats struct {
 	Hash       common.Hash    `json:"hash"`
 	ParentHash common.Hash    `json:"parentHash"`
 	Timestamp  *big.Int       `json:"timestamp"`
-	Miner      common.Address `json:"producer"`
+	Producer   common.Address `json:"producer"`
 	GasUsed    uint64         `json:"gasUsed"`
 	GasLimit   uint64         `json:"gasLimit"`
 	Diff       string         `json:"difficulty"`
@@ -543,7 +543,7 @@ func (s *Service) assembleBlockStats(block *types.Block) *blockStats {
 		Hash:       header.Hash(),
 		ParentHash: header.ParentHash,
 		Timestamp:  header.Time,
-		Miner:      author,
+		Producer:   author,
 		GasUsed:    header.GasUsed,
 		GasLimit:   header.GasLimit,
 		Diff:       header.Difficulty.String(),
@@ -658,14 +658,14 @@ type nodeStats struct {
 // reportPending retrieves various stats about the node at the networking and
 // block producing layer and reports it to the stats server.
 func (s *Service) reportStats(conn *websocket.Conn) error {
-	// Gather the syncing and block producing infos from the local miner instance
+	// Gather the syncing and block producing infos from the local producer instance
 	var (
 		producing bool
 		syncing   bool
 		gasprice  int
 	)
 	if s.vnt != nil {
-		producing = s.vnt.Miner().Producing()
+		producing = s.vnt.Producer().Producing()
 
 		sync := s.vnt.Downloader().Progress()
 		syncing = s.vnt.BlockChain().CurrentHeader().Number.Uint64() >= sync.HighestBlock

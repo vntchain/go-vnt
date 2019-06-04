@@ -62,7 +62,7 @@ func (c *Config) UnmarshalTOML(unmarshal func(interface{}) error) error {
 		DatabaseHandles         *int  `toml:"-"`
 		DatabaseCache           *int
 		Coinbase                *common.Address `toml:",omitempty"`
-		MinerThreads            *int            `toml:",omitempty"`
+		ProducerThreads         *int            `toml:",omitempty"`
 		ExtraData               *hexutil.Bytes  `toml:",omitempty"`
 		GasPrice                *big.Int
 		TxPool                  *core.TxPoolConfig

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package miner
+package producer
 
 import (
 	"encoding/json"
@@ -125,7 +125,7 @@ type worker struct {
 
 	roundTimer      *time.Timer // Timer to trigger each round of producing block
 	resetTimerEvent chan *big.Int
-	minerStop       chan struct{}
+	producerStop    chan struct{}
 }
 
 func newWorker(config *params.ChainConfig, engine consensus.Engine, coinbase common.Address, vnt Backend, mux *event.TypeMux) *worker {
@@ -146,7 +146,7 @@ func newWorker(config *params.ChainConfig, engine consensus.Engine, coinbase com
 		unconfirmed:     newUnconfirmedBlocks(vnt.BlockChain(), producingLogAtDepth),
 		roundTimer:      time.NewTimer(time.Second),
 		resetTimerEvent: make(chan *big.Int, 1),
-		minerStop:       make(chan struct{}, 1),
+		producerStop:    make(chan struct{}, 1),
 	}
 	worker.stopRoundTimer()
 
@@ -236,7 +236,7 @@ func (self *worker) start() {
 func (self *worker) stop() {
 	self.wg.Wait()
 
-	self.minerStop <- struct{}{}
+	self.producerStop <- struct{}{}
 
 	self.mu.Lock()
 	defer self.mu.Unlock()
@@ -318,7 +318,7 @@ func (self *worker) update() {
 		case nextRoundTime := <-self.resetTimerEvent:
 			self.resetRoundTimer(nextRoundTime)
 
-		case <-self.minerStop:
+		case <-self.producerStop:
 			self.stopRoundTimer()
 
 			// System stopped
@@ -394,7 +394,7 @@ func (self *worker) recBftMsg() {
 	}
 }
 
-// push sends a new work task to currently live miner agents.
+// push sends a new work task to currently live producer agents.
 func (self *worker) push(work *Work) {
 	if atomic.LoadInt32(&self.producing) != 1 {
 		return
@@ -497,7 +497,7 @@ func (self *worker) commitNewWork() {
 		return
 	}
 
-	// Could potentially happen if starting to mine in an odd state.
+	// Could potentially happen if starting to produce in an odd state.
 	err := self.makeCurrent(parent, header)
 	if err != nil {
 		log.Error("Failed to create producing context", "err", err)
@@ -607,12 +607,12 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 			txs.Pop()
 
 		case core.ErrNonceTooLow:
-			// New head notification data race between the transaction pool and miner, shift
+			// New head notification data race between the transaction pool and producer, shift
 			log.Trace("Skipping transaction with low nonce", "sender", from, "nonce", tx.Nonce())
 			txs.Shift()
 
 		case core.ErrNonceTooHigh:
-			// Reorg notification data race between the transaction pool and miner, skip account =
+			// Reorg notification data race between the transaction pool and producer, skip account =
 			log.Trace("Skipping account with hight nonce", "sender", from, "nonce", tx.Nonce())
 			txs.Pop()
 
@@ -632,7 +632,7 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 
 	if len(coalescedLogs) > 0 || env.tcount > 0 {
 		// make a copy, the state caches the logs and these logs get "upgraded" from pending to produced
-		// logs by filling in the block hash when the block was produced by the local miner. This can
+		// logs by filling in the block hash when the block was produced by the local producer. This can
 		// cause a race condition if a log was "upgraded" before the PendingLogsEvent is processed.
 		cpy := make([]*types.Log, len(coalescedLogs))
 		for i, l := range coalescedLogs {
