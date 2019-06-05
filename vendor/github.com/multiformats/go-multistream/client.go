@@ -3,6 +3,7 @@ package multistream
 import (
 	"errors"
 	"io"
+	"fmt"
 )
 
 // ErrNotSupported is the error returned when the muxer does not support
@@ -25,7 +26,9 @@ func SelectProtoOrFail(proto string, rwc io.ReadWriteCloser) error {
 // SelectOneOf will perform handshakes with the protocols on the given slice
 // until it finds one which is supported by the muxer.
 func SelectOneOf(protos []string, rwc io.ReadWriteCloser) (string, error) {
+	fmt.Printf("#### client.go: SelectOneOf: protos: %v", protos)
 	err := handshake(rwc)
+	fmt.Printf("#### client.go: SelectOneOf finished: err: %v", err)
 	if err != nil {
 		return "", err
 	}
@@ -46,11 +49,14 @@ func SelectOneOf(protos []string, rwc io.ReadWriteCloser) (string, error) {
 func handshake(rwc io.ReadWriteCloser) error {
 	errCh := make(chan error, 1)
 	go func() {
+		fmt.Printf("#### client.go: handshake: will delimWriteBuffered")
 		errCh <- delimWriteBuffered(rwc, []byte(ProtocolID))
 	}()
 
 	tok, readErr := ReadNextToken(rwc)
+	fmt.Printf("#### client.go: handshake: ReadNextToken: token: %s, err: %v", tok, readErr)
 	writeErr := <-errCh
+	fmt.Printf("#### client.go: handshake: ReadNextToken: writeErr: %v", writeErr)
 
 	if writeErr != nil {
 		return writeErr
