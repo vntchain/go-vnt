@@ -516,7 +516,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		err := pm.downloader.DeliverBodies(p.id, transactions)
 		if err != nil {
-			log.Debug("Failed to deliver bodies", "err", err)
+			p.Log().Debug("Failed to deliver bodies", "err", err)
 		}
 
 	case p.version >= vnt63 && msg.Body.Type == GetNodeDataMsg:
