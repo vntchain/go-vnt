@@ -13,6 +13,8 @@ import (
 	filter "github.com/libp2p/go-maddr-filter"
 	smux "github.com/libp2p/go-stream-muxer"
 	manet "github.com/multiformats/go-multiaddr-net"
+	"math/rand"
+	"time"
 )
 
 // ErrNilPeer is returned when attempting to upgrade an outbound connection
@@ -113,15 +115,23 @@ func (u *Upgrader) setupMuxer(ctx context.Context, conn net.Conn, p peer.ID) (sm
 
 	var smconn smux.Conn
 	var err error
+	var n = rand.Int()
+	var now = time.Now().Unix()
 	go func() {
-		defer close(done)
+		defer func(){
+			close(done)
+		}()
+		fmt.Println("##### Start to connect, random %d, time %d, conn %v, p %s", n, now, conn, p)
 		smconn, err = u.Muxer.NewConn(conn, p == "")
 	}()
 
 	select {
 	case <-done:
+		end := time.Now().Unix()
+		fmt.Println("##### Success to connect, random %d, time %d, duration: %d", n, end, end-now)
 		return smconn, err
-	case <-ctx.Done():
+	case <-ctx.Done():end := time.Now().Unix()
+		fmt.Println("##### Timeout to connect, random %d, time %d, duration: %d", n, end, end-now)
 		return nil, ctx.Err()
 	}
 }
