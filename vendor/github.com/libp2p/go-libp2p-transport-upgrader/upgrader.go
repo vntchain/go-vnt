@@ -121,17 +121,18 @@ func (u *Upgrader) setupMuxer(ctx context.Context, conn net.Conn, p peer.ID) (sm
 		defer func(){
 			close(done)
 		}()
-		fmt.Println("##### Start to connect, random %d, time %d, conn %v, p %s", n, now, conn, p)
+		fmt.Printf("##### Start to connect, random %d, time %d, conn-local %s, conn-remote %s, p %s \n", n, now, conn.LocalAddr(), conn.RemoteAddr(), p)
 		smconn, err = u.Muxer.NewConn(conn, p == "")
 	}()
 
 	select {
 	case <-done:
 		end := time.Now().Unix()
-		fmt.Println("##### Success to connect, random %d, time %d, duration: %d", n, end, end-now)
+		fmt.Printf("##### Success to connect, random %d, time %d, duration: %d \n", n, end, end-now)
 		return smconn, err
-	case <-ctx.Done():end := time.Now().Unix()
-		fmt.Println("##### Timeout to connect, random %d, time %d, duration: %d", n, end, end-now)
+	case <-ctx.Done():
+		end := time.Now().Unix()
+		fmt.Printf("##### Timeout to connect, random %d, time %d, duration: %d \n", n, end, end-now)
 		return nil, ctx.Err()
 	}
 }

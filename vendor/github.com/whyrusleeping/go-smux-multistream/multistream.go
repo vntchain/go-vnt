@@ -38,6 +38,7 @@ func (t *Transport) AddTransport(path string, tpt smux.Transport) {
 }
 
 func (t *Transport) NewConn(nc net.Conn, isServer bool) (smux.Conn, error) {
+	fmt.Printf("#### multistream: Transport.NewConn Called \n")
 	if t.NegotiateTimeout != 0 {
 		if err := nc.SetDeadline(time.Now().Add(t.NegotiateTimeout)); err != nil {
 			return nil, err
