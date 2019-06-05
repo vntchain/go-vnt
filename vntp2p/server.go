@@ -21,14 +21,15 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"github.com/libp2p/go-libp2p"
+	"net"
+	"sync"
+
+	libp2p "github.com/libp2p/go-libp2p"
 	p2phost "github.com/libp2p/go-libp2p-host"
 	inet "github.com/libp2p/go-libp2p-net"
 	protocol "github.com/libp2p/go-libp2p-protocol"
 	"github.com/vntchain/go-vnt/event"
 	"github.com/vntchain/go-vnt/log"
-	"net"
-	"sync"
 
 	// inet "github.com/libp2p/go-libp2p-net"
 	peer "github.com/libp2p/go-libp2p-peer"
@@ -242,9 +243,10 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 			delTask(t)
 
 		case t := <-server.addpeer:
-			remoteID := t.Conn.Conn().RemotePeer()
+			remoteID := t.stream.Conn().RemotePeer()
 			log.Debug("Adding peer", "peer id", remoteID)
-			if _, ok := peers[remoteID]; ok { // this peer already exists
+			if p, ok := peers[remoteID]; ok {
+				p.log.Debug("Already exist peer")
 				break
 			}
 			p := newPeer(t, server)
@@ -254,7 +256,7 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 			}
 			go server.runPeer(p)
 			peers[p.RemoteID()] = p
-			log.Debug("Added peer", "peers", peers)
+			p.log.Debug("Added peer", "peers", peers)
 
 		case t := <-server.addstatic:
 			log.Debug("Adding static", "peer id", t.Id)
@@ -350,7 +352,7 @@ func (server *Server) GetPeerByRemoteID(s inet.Stream) *Peer {
 	var p *Peer
 
 	// always try to new this peer
-	err := server.dispatch(&Stream{Conn: s, Protocols: server.protomap[PID]}, server.addpeer)
+	err := server.dispatch(&Stream{stream: s, Protocols: server.protomap[PID]}, server.addpeer)
 	if err != nil {
 		log.Error("GetPeerByRemoteID()", "new peer error", err)
 		return nil
@@ -428,7 +430,7 @@ func (server *Server) SetupStream(ctx context.Context, target peer.ID, pid strin
 		return err
 	} */
 
-	err = server.dispatch(&Stream{Conn: s, Protocols: server.protomap[pid]}, server.addpeer)
+	err = server.dispatch(&Stream{stream: s, Protocols: server.protomap[pid]}, server.addpeer)
 	if err != nil {
 		fmt.Println("SetupStream dispatch Error: ", err)
 		return err
