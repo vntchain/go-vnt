@@ -1210,7 +1210,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, td *big.Int) er
 				// already imported by other means (e.g. fecher):
 				//
 				// R <remote peer>, L <local node>: Both at block 10
-				// R: Mine block 11, and propagate it to L
+				// R: Produced block 11, and propagate it to L
 				// L: Queue block 11 for import
 				// L: Notice that R's head and TD increased compared to ours, start sync
 				// L: Import of block 11 finishes

@@ -77,7 +77,7 @@ type ContractTransactor interface {
 	// EstimateGas tries to estimate the gas needed to execute a specific
 	// transaction based on the current pending state of the backend blockchain.
 	// There is no guarantee that this is the true gas limit requirement as other
-	// transactions may be added or removed by miners, but it should provide a basis
+	// transactions may be added or removed by producers, but it should provide a basis
 	// for setting a reasonable default.
 	EstimateGas(ctx context.Context, call hubble.CallMsg) (gas uint64, err error)
 	// SendTransaction injects the transaction into the pending pool for execution.
@@ -98,7 +98,7 @@ type ContractFilterer interface {
 	SubscribeFilterLogs(ctx context.Context, query hubble.FilterQuery, ch chan<- types.Log) (hubble.Subscription, error)
 }
 
-// DeployBackend wraps the operations needed by WaitMined and WaitDeployed.
+// DeployBackend wraps the operations needed by WaitProduced and WaitDeployed.
 type DeployBackend interface {
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 	CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error)

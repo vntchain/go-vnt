@@ -99,7 +99,7 @@ func (api *PrivateDebugAPI) TraceChain(ctx context.Context, start, end rpc.Block
 
 	switch start {
 	case rpc.PendingBlockNumber:
-		from = api.vnt.miner.PendingBlock()
+		from = api.vnt.producer.PendingBlock()
 	case rpc.LatestBlockNumber:
 		from = api.vnt.blockchain.CurrentBlock()
 	default:
@@ -107,7 +107,7 @@ func (api *PrivateDebugAPI) TraceChain(ctx context.Context, start, end rpc.Block
 	}
 	switch end {
 	case rpc.PendingBlockNumber:
-		to = api.vnt.miner.PendingBlock()
+		to = api.vnt.producer.PendingBlock()
 	case rpc.LatestBlockNumber:
 		to = api.vnt.blockchain.CurrentBlock()
 	default:
@@ -344,7 +344,7 @@ func (api *PrivateDebugAPI) TraceBlockByNumber(ctx context.Context, number rpc.B
 
 	switch number {
 	case rpc.PendingBlockNumber:
-		block = api.vnt.miner.PendingBlock()
+		block = api.vnt.producer.PendingBlock()
 	case rpc.LatestBlockNumber:
 		block = api.vnt.blockchain.CurrentBlock()
 	default:

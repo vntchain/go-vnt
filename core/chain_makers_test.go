@@ -64,7 +64,7 @@ func ExampleGenerateChain() {
 			gen.AddTx(tx1)
 			gen.AddTx(tx2)
 		case 2:
-			// Block 3 is empty but was mined by addr3.
+			// Block 3 is empty but was produced by addr3.
 			gen.SetCoinbase(addr3)
 			gen.SetExtra([]byte("yeehaw"))
 		}

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package miner
+package producer
 
 import (
 	"errors"
@@ -88,7 +88,7 @@ func (a *RemoteAgent) GetWork() ([3]string, error) {
 }
 
 // loop monitors producing events on the work and quit channels, updating the internal
-// state of the remote miner until a termination is requested.
+// state of the remote producer until a termination is requested.
 //
 // Note, the reason the work and quit channels are passed as parameters is because
 // RemoteAgent.Start() constantly recreates these channels, so the loop code cannot

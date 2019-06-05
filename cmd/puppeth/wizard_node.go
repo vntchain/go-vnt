@@ -89,7 +89,7 @@ func (w *wizard) deployNode(boot bool) {
 		fmt.Printf("What should the node be called on the stats page? (default = %s)\n", infos.ethstats)
 		infos.ethstats = w.readDefaultString(infos.ethstats) + ":" + w.conf.ethstats
 	}
-	// If the node is a miner/signer, load up needed credentials
+	// If the node is a producer/signer, load up needed credentials
 	if !boot {
 		// Establish the gas dynamics to be enforced by the signer
 		fmt.Println()

@@ -78,12 +78,12 @@ type ProtocolManager struct {
 
 	SubProtocols []vntp2p.Protocol
 
-	eventMux      *event.TypeMux
-	txsCh         chan core.NewTxsEvent
-	txsSub        event.Subscription
-	minedBlockSub *event.TypeMuxSubscription
-	bftMsgSub     *event.TypeMuxSubscription
-	bftPeerSub    *event.TypeMuxSubscription
+	eventMux         *event.TypeMux
+	txsCh            chan core.NewTxsEvent
+	txsSub           event.Subscription
+	producedBlockSub *event.TypeMuxSubscription
+	bftMsgSub        *event.TypeMuxSubscription
+	bftPeerSub       *event.TypeMuxSubscription
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -243,11 +243,11 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.txsSub = pm.txpool.SubscribeNewTxsEvent(pm.txsCh)
 	go pm.txBroadcastLoop()
 
-	// broadcast mined blocks
-	pm.minedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
+	// broadcast produced blocks
+	pm.producedBlockSub = pm.eventMux.Subscribe(core.NewProducedBlockEvent{})
 	pm.bftMsgSub = pm.eventMux.Subscribe(core.SendBftMsgEvent{})
 	pm.bftPeerSub = pm.eventMux.Subscribe(core.BftPeerChangeEvent{})
-	go pm.minedBroadcastLoop()
+	go pm.producedBroadcastLoop()
 	go pm.bftBroadcastLoop()
 
 	go pm.resetBftPeerLoop()
@@ -261,8 +261,8 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping VNT protocol")
 
-	pm.txsSub.Unsubscribe()        // quits txBroadcastLoop
-	pm.minedBlockSub.Unsubscribe() // quits blockBroadcastLoop
+	pm.txsSub.Unsubscribe()           // quits txBroadcastLoop
+	pm.producedBlockSub.Unsubscribe() // quits blockBroadcastLoop
 	pm.bftMsgSub.Unsubscribe()
 	pm.bftPeerSub.Unsubscribe()
 
@@ -769,13 +769,13 @@ func (pm *ProtocolManager) BroadcastBftMsg(bftMsg types.BftMsg) {
 	log.Trace("BroadcastBftMsg exit")
 }
 
-// Mined broadcast loop
-func (pm *ProtocolManager) minedBroadcastLoop() {
+// producedBroadcastLoop
+func (pm *ProtocolManager) producedBroadcastLoop() {
 	// automatically stops if unsubscribe
-	for obj := range pm.minedBlockSub.Chan() {
+	for obj := range pm.producedBlockSub.Chan() {
 		switch ev := obj.Data.(type) {
-		case core.NewMinedBlockEvent:
-			log.Debug("PM receive NewMinedBlockEvent")
+		case core.NewProducedBlockEvent:
+			log.Debug("PM receive NewProducedBlockEvent")
 			pm.BroadcastBlock(ev.Block, false) // Only announce all the peer
 		}
 	}

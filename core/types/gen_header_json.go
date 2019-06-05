@@ -78,7 +78,7 @@ func (h *Header) UnmarshalJSON(input []byte) error {
 	}
 	h.ParentHash = *dec.ParentHash
 	if dec.Coinbase == nil {
-		return errors.New("missing required field 'miner' for Header")
+		return errors.New("missing required field 'producer' for Header")
 	}
 	h.Coinbase = *dec.Coinbase
 	if dec.Root == nil {

@@ -38,9 +38,9 @@ import (
 	"github.com/vntchain/go-vnt/event"
 	"github.com/vntchain/go-vnt/internal/vntapi"
 	"github.com/vntchain/go-vnt/log"
-	"github.com/vntchain/go-vnt/miner"
 	"github.com/vntchain/go-vnt/node"
 	"github.com/vntchain/go-vnt/params"
+	"github.com/vntchain/go-vnt/producer"
 	"github.com/vntchain/go-vnt/rlp"
 	"github.com/vntchain/go-vnt/rpc"
 	"github.com/vntchain/go-vnt/vnt/downloader"
@@ -83,7 +83,7 @@ type VNT struct {
 
 	APIBackend *VntAPIBackend
 
-	miner    *miner.Miner
+	producer *producer.Producer
 	gasPrice *big.Int
 	coinbase common.Address
 
@@ -165,8 +165,8 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*VNT, error
 	if vnt.protocolManager, err = NewProtocolManager(vnt.chainConfig, config.SyncMode, config.NetworkId, vnt.eventMux, vnt.txPool, vnt.engine, vnt.blockchain, chainDb, node); err != nil {
 		return nil, err
 	}
-	vnt.miner = miner.New(vnt, vnt.chainConfig, vnt.EventMux(), vnt.engine)
-	vnt.miner.SetExtra(makeExtraData(config.ExtraData))
+	vnt.producer = producer.New(vnt, vnt.chainConfig, vnt.EventMux(), vnt.engine)
+	vnt.producer.SetExtra(makeExtraData(config.ExtraData))
 
 	vnt.APIBackend = &VntAPIBackend{vnt, nil}
 	gpoParams := config.GPO
@@ -189,7 +189,7 @@ func makeExtraData(extra []byte) []byte {
 		})
 	}
 	if uint64(len(extra)) > params.MaximumExtraDataSize {
-		log.Warn("Miner extra data exceed limit", "extra", hexutil.Bytes(extra), "limit", params.MaximumExtraDataSize)
+		log.Warn("Producer extra data exceed limit", "extra", hexutil.Bytes(extra), "limit", params.MaximumExtraDataSize)
 		extra = nil
 	}
 	return extra
@@ -242,7 +242,7 @@ func (s *VNT) APIs() []rpc.API {
 		}, {
 			Namespace: "core",
 			Version:   "1.0",
-			Service:   NewPublicMinerAPI(s),
+			Service:   NewPublicProducerAPI(s),
 			Public:    true,
 		}, {
 			Namespace: "core",
@@ -252,7 +252,7 @@ func (s *VNT) APIs() []rpc.API {
 		}, {
 			Namespace: "bp",
 			Version:   "1.0",
-			Service:   NewPrivateMinerAPI(s),
+			Service:   NewPrivateProducerAPI(s),
 			Public:    false,
 		}, {
 			Namespace: "core",
@@ -314,7 +314,7 @@ func (s *VNT) SetCoinbase(coinbase common.Address) {
 	s.coinbase = coinbase
 	s.lock.Unlock()
 
-	s.miner.SetCoinbase(coinbase)
+	s.producer.SetCoinbase(coinbase)
 }
 
 func (s *VNT) StartProducing(local bool) error {
@@ -336,16 +336,16 @@ func (s *VNT) StartProducing(local bool) error {
 		// If local (CPU) block producing is started, we can disable the transaction rejection
 		// mechanism introduced to speed sync times. CPU block producing on mainnet is ludicrous
 		// so none will ever hit this path, whereas marking sync done on CPU block producing
-		// will ensure that private networks work in single miner mode too.
+		// will ensure that private networks work in single producer mode too.
 		atomic.StoreUint32(&s.protocolManager.acceptTxs, 1)
 	}
-	go s.miner.Start(eb)
+	go s.producer.Start(eb)
 	return nil
 }
 
-func (s *VNT) StopProducing()      { s.miner.Stop() }
-func (s *VNT) IsProducing() bool   { return s.miner.Producing() }
-func (s *VNT) Miner() *miner.Miner { return s.miner }
+func (s *VNT) StopProducing()               { s.producer.Stop() }
+func (s *VNT) IsProducing() bool            { return s.producer.Producing() }
+func (s *VNT) Producer() *producer.Producer { return s.producer }
 
 func (s *VNT) AccountManager() *accounts.Manager  { return s.accountManager }
 func (s *VNT) BlockChain() *core.BlockChain       { return s.blockchain }
@@ -402,7 +402,7 @@ func (s *VNT) Stop() error {
 		s.lesServer.Stop()
 	}
 	s.txPool.Stop()
-	s.miner.Stop()
+	s.producer.Stop()
 	s.eventMux.Stop()
 
 	s.chainDb.Close()

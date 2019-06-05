@@ -186,9 +186,8 @@ func TestSelectorUnmarshalling(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Printf("DB size %v\n", db.Size())
+	t.Logf("DB size %v\n", db.Size())
 	for id, selector := range db.db {
-
 		abistring, err = MethodSelectorToAbi(selector)
 		if err != nil {
 			t.Error(err)

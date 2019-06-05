@@ -68,7 +68,7 @@ func TestWaitDeployed(t *testing.T) {
 			t.Fatalf("sign transaction failed: %v", err)
 		}
 
-		// Wait for it to get mined in the background.
+		// Wait for it to get produced in the background.
 		var (
 			address common.Address
 			packed  = make(chan struct{})

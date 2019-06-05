@@ -42,13 +42,13 @@ ADD genesis.json /genesis.json
 RUN \
   echo 'gvnt --cache 512 init /genesis.json' > gvnt.sh && \{{if .Unlock}}
 	echo 'mkdir -p /root/.vntchain/keystore/ && cp /signer.json /root/.vntchain/keystore/' >> gvnt.sh && \{{end}}
-	echo $'gvnt --networkid {{.NetworkID}} --cache 512 --port {{.Port}} --maxpeers {{.Peers}} {{.LightFlag}} --ethstats \'{{.Ethstats}}\' {{if .Bootnodes}}--bootnodes {{.Bootnodes}}{{end}} {{if .Coinbase}}--coinbase {{.Coinbase}} --mine --minerthreads 1{{end}} {{if .Unlock}}--unlock 0 --password /signer.pass --mine{{end}} --targetgaslimit {{.GasTarget}} --gasprice {{.GasPrice}}' >> gvnt.sh
+	echo $'gvnt --networkid {{.NetworkID}} --cache 512 --port {{.Port}} --maxpeers {{.Peers}} {{.LightFlag}} --ethstats \'{{.Ethstats}}\' {{if .Bootnodes}}--bootnodes {{.Bootnodes}}{{end}} {{if .Coinbase}}--coinbase {{.Coinbase}} --produce --producerthreads 1{{end}} {{if .Unlock}}--unlock 0 --password /signer.pass --produce{{end}} --targetgaslimit {{.GasTarget}} --gasprice {{.GasPrice}}' >> gvnt.sh
 
 ENTRYPOINT ["/bin/sh", "gvnt.sh"]
 `
 
 // nodeComposefile is the docker-compose.yml file required to deploy and maintain
-// an VNT node (bootnode or miner for now).
+// an VNT node (bootnode or producer for now).
 var nodeComposefile = `
 version: '2'
 services:
@@ -66,7 +66,7 @@ services:
       - TOTAL_PEERS={{.TotalPeers}}
       - LIGHT_PEERS={{.LightPeers}}
       - STATS_NAME={{.Ethstats}}
-      - MINER_NAME={{.Coinbase}}
+      - PRODUCER_NAME={{.Coinbase}}
       - GAS_TARGET={{.GasTarget}}
       - GAS_PRICE={{.GasPrice}}
     logging:
@@ -174,14 +174,14 @@ func (info *nodeInfos) Report() map[string]string {
 		"Ethstats username":        info.ethstats,
 	}
 	if info.gasTarget > 0 {
-		// Miner or signer node
+		// Producer or signer node
 		report["Gas limit (baseline target)"] = fmt.Sprintf("%0.3f MGas", info.gasTarget)
 		report["Gas price (minimum accepted)"] = fmt.Sprintf("%0.3f GWei", info.gasPrice)
 
 		if info.coinbase != "" {
-			// Ethash proof-of-work miner
+			// Ethash proof-of-work producer
 			report["Ethash directory"] = info.ethashdir
-			report["Miner account"] = info.coinbase
+			report["Producer account"] = info.coinbase
 		}
 		if info.keyJSON != "" {
 			var key struct {
@@ -251,7 +251,7 @@ func checkNode(client *sshClient, network string, boot bool) (*nodeInfos, error)
 		peersTotal: totalPeers,
 		peersLight: lightPeers,
 		ethstats:   infos.envvars["STATS_NAME"],
-		coinbase:   infos.envvars["MINER_NAME"],
+		coinbase:   infos.envvars["PRODUCER_NAME"],
 		keyJSON:    keyJSON,
 		keyPass:    keyPass,
 		gasTarget:  gasTarget,

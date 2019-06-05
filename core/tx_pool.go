@@ -418,7 +418,7 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 
 	// Update all accounts to the latest known pending nonce
 	for addr, list := range pool.pending {
-		txs := list.Flatten() // Heavy but will be cached and is needed by the miner anyway
+		txs := list.Flatten() // Heavy but will be cached and is needed by the producer anyway
 		pool.pendingState.SetNonce(addr, txs[len(txs)-1].Nonce()+1)
 	}
 	// Check the queue and move transactions over to the pending if possible

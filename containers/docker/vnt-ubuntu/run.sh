@@ -79,10 +79,10 @@ do
     let rpcport=baserpcport+i
     if [ $i -eq 0 ]  
     then  
-      nohup /gvnt --verbosity 5 --networkid 1015 --datadir  ${basenodedir}${i} --port ${port} --rpcport ${rpcport} --unlock ${keystore[${i}]} --password /password --mine > /tmp/node${i}.log 2>&1 &  
+      nohup /gvnt --verbosity 5 --networkid 1015 --datadir  ${basenodedir}${i} --port ${port} --rpcport ${rpcport} --unlock ${keystore[${i}]} --password /password --produce > /tmp/node${i}.log 2>&1 &
     else  
       let j=i-1
-      nohup /gvnt --verbosity 5 --networkid 1015 --datadir  ${basenodedir}${i} --port ${port} --rpcport ${rpcport} --unlock ${keystore[${i}]} --password /password --vntbootnode ${p2paddress[${j}]} --mine > /tmp/node${i}.log 2>&1 &        
+      nohup /gvnt --verbosity 5 --networkid 1015 --datadir  ${basenodedir}${i} --port ${port} --rpcport ${rpcport} --unlock ${keystore[${i}]} --password /password --vntbootnode ${p2paddress[${j}]} --produce > /tmp/node${i}.log 2>&1 &
     fi   
 done
 

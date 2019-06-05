@@ -326,7 +326,7 @@ func gvnt(ctx *cli.Context) error {
 
 // startNode boots up the system node and all registered protocols, after which
 // it unlocks any requested accounts, and starts the RPC/IPC interfaces and the
-// miner.
+// producer.
 func startNode(ctx *cli.Context, stack *node.Node) {
 	debug.Memsize.Add("node", stack)
 
