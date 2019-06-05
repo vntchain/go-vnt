@@ -324,29 +324,29 @@ func run(t *testing.T, jspath string) {
 
 				}
 				verify(t, ret, testcase.Wanted, abiobj, testcase.Function)
-				if testcase.Event != nil {
-					fmt.Printf("logs %s\n", rlpHash(envtest.statedb.Logs()).Hex())
-					fmt.Printf("logs %+v\n", envtest.statedb.Logs())
-					res := envtest.statedb.Logs()[0].Data
-					fmt.Printf("data %v\n", res)
-					type testevent struct {
-						Str  string
-						Addr common.Address
-						U64  uint64
-						U32  uint32
-						I64  int64
-						I32  int32
-						U256 *big.Int
-						B    bool
-					}
-					var test1 testevent
-					err := abiobj.Unpack(&test1, "TESTEVENT", res)
-					if err != nil {
-						panic(err)
-					}
-					fmt.Printf("test1 %+v\n", test1)
-					// verifyEvent(t, ret, testcase.Event, abiobj, testcase.Function)
-				}
+				// if testcase.Event != nil {
+				// 	fmt.Printf("logs %s\n", rlpHash(envtest.statedb.Logs()).Hex())
+				// 	fmt.Printf("logs %+v\n", envtest.statedb.Logs())
+				// 	res := envtest.statedb.Logs()[0].Data
+				// 	fmt.Printf("data %v\n", res)
+				// 	type testevent struct {
+				// 		Str  string
+				// 		Addr common.Address
+				// 		U64  uint64
+				// 		U32  uint32
+				// 		I64  int64
+				// 		I32  int32
+				// 		U256 *big.Int
+				// 		B    bool
+				// 	}
+				// 	var test1 testevent
+				// 	err := abiobj.Unpack(&test1, "TESTEVENT", res)
+				// 	if err != nil {
+				// 		panic(err)
+				// 	}
+				// 	fmt.Printf("test1 %+v\n", test1)
+				// 	// verifyEvent(t, ret, testcase.Event, abiobj, testcase.Function)
+				// }
 			}
 
 		}

@@ -25,6 +25,7 @@ import (
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
+	"github.com/vntchain/go-vnt/core/vm/election"
 	"github.com/vntchain/go-vnt/params"
 	"github.com/vntchain/go-vnt/vntdb"
 )
@@ -207,26 +208,44 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 	return blocks, receipts
 }
 
+// StartFakeMainNet start a fake main net.
+// Caller should make sure addr has enough balance to start the main net.
+func StartFakeMainNet(gen *BlockGen, addr common.Address, sign func(tx *types.Transaction) (*types.Transaction, error)) error {
+	// 区块的时间必须在主网基准时间之后
+	gen.OffsetTime(1546272000 + 10000)
+
+	// 获取和提交交易
+	nextNonce := gen.TxNonce(addr)
+	if txs, err := election.GenFakeStartedTxs(nextNonce, []common.Address{addr}); err != nil {
+		return fmt.Errorf("mock get started txs failed: %s", err.Error())
+	} else {
+		for _, tx := range txs {
+			tx, err := sign(tx)
+			if err != nil {
+				return fmt.Errorf("failed to sign tx: %v", err)
+			}
+			gen.AddTx(tx)
+		}
+	}
+	return nil
+}
+
 func makeHeader(chain consensus.ChainReader, parent *types.Block, state *state.StateDB, engine consensus.Engine) *types.Header {
 	var time *big.Int
 	if parent.Time() == nil {
 		time = big.NewInt(10)
 	} else {
-		time = new(big.Int).Add(parent.Time(), big.NewInt(10)) // block time is fixed at 10 seconds
+		time = new(big.Int).Add(parent.Time(), big.NewInt(2)) // block's time interval always be 2 seconds
 	}
 
 	return &types.Header{
 		Root:       state.IntermediateRoot(true),
 		ParentHash: parent.Hash(),
 		Coinbase:   parent.Coinbase(),
-		Difficulty: engine.CalcDifficulty(chain, time.Uint64(), &types.Header{
-			Number:     parent.Number(),
-			Time:       new(big.Int).Sub(time, big.NewInt(10)),
-			Difficulty: parent.Difficulty(),
-		}),
-		GasLimit: CalcGasLimit(parent),
-		Number:   new(big.Int).Add(parent.Number(), common.Big1),
-		Time:     time,
+		Difficulty: engine.CalcDifficulty(chain, time.Uint64(), &types.Header{}),
+		GasLimit:   CalcGasLimit(parent),
+		Number:     new(big.Int).Add(parent.Number(), common.Big1),
+		Time:       time,
 	}
 }
 
@@ -234,10 +253,16 @@ func makeHeader(chain consensus.ChainReader, parent *types.Block, state *state.S
 // chain. Depending on the full flag, if creates either a full block chain or a
 // header only chain.
 func newCanonical(engine consensus.Engine, n int, full bool) (vntdb.Database, *BlockChain, error) {
-	var (
-		db      = vntdb.NewMemDatabase()
-		genesis = new(Genesis).MustCommit(db)
-	)
+	db := vntdb.NewMemDatabase()
+	// New genesis and write to db
+	g := Genesis{
+		Config:     params.TestChainConfig,
+		Timestamp:  0,
+		Difficulty: big.NewInt(1),
+		Number:     0,
+	}
+
+	genesis := g.MustCommit(db)
 
 	// Initialize a fresh chain with only a genesis block
 	blockchain, _ := NewBlockChain(db, nil, params.TestChainConfig, engine, vm.Config{})

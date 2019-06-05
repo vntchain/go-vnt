@@ -48,6 +48,7 @@ const (
 )
 
 const ErrorGasLimit = "Invocation resulted in gas limit violated"
+const ErrorInitialMemLimit = "Initial memory limit"
 const ErrorDisableFloatingPoint = "Wasm contract error: disabled floating point"
 
 var errGasUintOverflow = errors.New("gas uint64 overflow")
@@ -616,5 +617,8 @@ func (gas GasCounter) GasReturnPointer(size uint64) {
 }
 
 func (gas GasCounter) GasInitialMemory(initial uint64) {
-	gas.AdjustedCharge(constGasFunc(initial * WasmCostsInitialMem))
+	amount := initial * WasmCostsInitialMem
+	if !gas.ChargeGas(amount) {
+		panic(ErrorInitialMemLimit)
+	}
 }

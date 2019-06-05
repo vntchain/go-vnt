@@ -226,12 +226,12 @@ func (self *SwapParams) SetChequebook(ctx context.Context, chainID *big.Int, bac
 }
 
 func (self *SwapParams) deployChequebook(ctx context.Context, chainID *big.Int, backend chequebook.Backend, path string) error {
-	opts := bind.NewKeyedTransactor(self.privateKey)
+	opts := bind.NewKeyedTransactor(self.privateKey, chainID)
 	opts.Value = self.AutoDepositBuffer
 	opts.Context = ctx
 
 	log.Info(fmt.Sprintf("Deploying new chequebook (owner: %v)", opts.From.Hex()))
-	contract, err := deployChequebookLoop(chainID, opts, backend)
+	contract, err := deployChequebookLoop(opts, backend)
 	if err != nil {
 		log.Error(fmt.Sprintf("unable to deploy new chequebook: %v", err))
 		return err
@@ -250,13 +250,13 @@ func (self *SwapParams) deployChequebook(ctx context.Context, chainID *big.Int, 
 }
 
 // repeatedly tries to deploy a chequebook.
-func deployChequebookLoop(chainID *big.Int, opts *bind.TransactOpts, backend chequebook.Backend) (addr common.Address, err error) {
+func deployChequebookLoop(opts *bind.TransactOpts, backend chequebook.Backend) (addr common.Address, err error) {
 	var tx *types.Transaction
 	for try := 0; try < chequebookDeployRetries; try++ {
 		if try > 0 {
 			time.Sleep(chequebookDeployDelay)
 		}
-		if _, tx, _, err = contract.DeployChequebook(chainID, opts, backend); err != nil {
+		if _, tx, _, err = contract.DeployChequebook(opts, backend); err != nil {
 			log.Warn(fmt.Sprintf("can't send chequebook deploy tx (try %d): %v", try, err))
 			continue
 		}

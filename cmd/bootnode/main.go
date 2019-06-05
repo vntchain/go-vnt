@@ -137,7 +137,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	_, host, err := p2p.ConstructDHT(ctx, p2p.MakePort(*listenAddr), nodeKey, *dataDir, restrictList, natm)
+	_, host, _, err := p2p.ConstructDHT(ctx, p2p.MakePort(*listenAddr), nodeKey, *dataDir, restrictList, natm)
 	if err != nil {
 		log.Error(fmt.Sprintf("constructDHT a: %s", err))
 		return

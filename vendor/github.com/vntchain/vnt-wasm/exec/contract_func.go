@@ -36,9 +36,12 @@ func (fn contractFunction) call(vm *VM, index int64) {
 		args[i] = reflect.ValueOf(raw)
 	}
 	fnName := runtime.FuncForPC(fn.val.Pointer()).Name()
+	if vm.debug == true && vm.captureEnvFunctionStart != nil {
+		vm.captureEnvFunctionStart(uint64(vm.ctx.pc), fnName)
+	}
 	rtrns := fn.val.Call(args)
-	if vm.debug == true && vm.captureEnvFunction != nil {
-		vm.captureEnvFunction(uint64(vm.ctx.pc), fnName)
+	if vm.debug == true && vm.captureEnvFunctionEnd != nil {
+		vm.captureEnvFunctionEnd(uint64(vm.ctx.pc), fnName)
 	}
 	if rtrns == nil {
 		return

@@ -20,9 +20,9 @@ import (
 	"reflect"
 
 	"github.com/vntchain/go-vnt/accounts"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/event"
 	"github.com/vntchain/go-vnt/rpc"
+	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/vntp2p"
 )
 

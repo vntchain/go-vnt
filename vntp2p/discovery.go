@@ -39,6 +39,7 @@ type DhtTable interface {
 	Lookup(ctx context.Context, targetID NodeID) []*NodeID
 	Update(ctx context.Context, id peer.ID) error
 	RandomPeer() []peer.ID
+	GetDhtTable() *dht.IpfsDHT
 }
 
 type VNTDht struct {
@@ -55,10 +56,15 @@ func NewDHTTable(dht *dht.IpfsDHT, id peer.ID) *VNTDht {
 }
 
 func (vdht *VNTDht) Start(ctx context.Context) error {
-	// init
+	var bootStrapConfig = dht.DefaultBootstrapConfig
+	bootStrapConfig.Period = time.Duration(refreshInterval)
+	bootStrapConfig.Timeout = time.Duration(searchTimeOut)
+	err := vdht.table.BootstrapWithConfig(ctx, bootStrapConfig)
+	if err != nil {
+		log.Debug("Start refresh k-bucket error", "error", err)
+		return err
+	}
 
-	// loop
-	go vdht.loop(ctx)
 	return nil
 }
 
@@ -75,24 +81,6 @@ func randomID() peer.ID {
 	// var aid NodeID
 	// copy(aid, id)
 	return peer.ID(id)
-}
-
-func (vdht *VNTDht) loop(ctx context.Context) {
-	var (
-		refresh     = time.NewTicker(refreshInterval)
-		refreshDone = make(chan struct{})
-	)
-	go vdht.doRefresh(ctx, refreshDone)
-	// loop:
-	for {
-		// 开始搜寻
-
-		select {
-		case <-refresh.C:
-			go vdht.doRefresh(ctx, refreshDone)
-		}
-		// 刷新K桶
-	}
 }
 
 func (vdht *VNTDht) Lookup(ctx context.Context, targetID NodeID) []*NodeID {
@@ -173,4 +161,8 @@ func GetRandomPeers(dht *dht.IpfsDHT) []peer.ID {
 
 func (vdht *VNTDht) RandomPeer() []peer.ID {
 	return GetRandomPeers(vdht.table)
+}
+
+func (vdht *VNTDht) GetDhtTable() *dht.IpfsDHT {
+	return vdht.table
 }

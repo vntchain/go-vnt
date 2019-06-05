@@ -48,7 +48,10 @@ import (
 var (
 	blockInsertTimer = metrics.NewRegisteredTimer("chain/inserts", nil)
 
-	ErrNoGenesis = errors.New("Genesis not found in chain")
+	ErrNoGenesis        = errors.New("Genesis not found in chain")
+	ErrBlockIsNil       = errors.New("block is nil")
+	ErrParentIsNil      = errors.New("parent is nil")
+	ErrNotVoteForkBlock = errors.New("not vote for block on other forked chain")
 )
 
 const (
@@ -942,6 +945,10 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 	}
 	rawdb.WriteReceipts(batch, block.Hash(), block.NumberU64(), receipts)
 
+	// Choose the longest after LIB.
+	// If same length choose the early produced block.
+	// But block still can write to db, because it is after lib.
+	// reorg is true means this block will be head block after this block inserted.
 	reorg := externTd.Cmp(localTd) > 0
 	currentBlock = bc.CurrentBlock()
 	if !reorg && externTd.Cmp(localTd) == 0 {
@@ -951,17 +958,19 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 
 		// two blocks choose by timestamp
 		ret := block.Time().Cmp(currentBlock.Time())
-		if ret > 0 {
-			log.Info("Two blocks have same difficulty", "block1",
-				currentBlock.Hash(), "time1", currentBlock.Time().String(), "block2", block.Hash(), "time2", block.Time().String())
-			return NonStatTy, fmt.Errorf("two blocks have same height and different tiemstamp, but this block is later")
-		} else if ret == 0 {
-			log.Info("Two blocks have same difficulty and same timestamp", "block1",
-				currentBlock.Hash(), "time1", currentBlock.Time().String(), "block2", block.Hash(), "time2", block.Time().String())
+		if ret < 0 {
+			reorg = true
+			log.Info("Two blocks have same difficulty this block is early", "new head block", block.Hash(),
+				"time", block.Time().String(), "old head block", currentBlock.Hash(), "time", currentBlock.Time().String())
+		} else if ret > 0 {
+			reorg = false
+			log.Info("Two blocks have same difficulty this block is later", "head block",
+				currentBlock.Hash(), "time", currentBlock.Time().String(), "this block", block.Hash(), "time", block.Time().String())
+		} else {
+			log.Info("Two blocks have same difficulty and same timestamp", "head block",
+				currentBlock.Hash(), "time", currentBlock.Time().String(), "bad block", block.Hash(), "time", block.Time().String())
 			return NonStatTy, fmt.Errorf("two blocks have same height and same tiemstamp")
 		}
-
-		reorg = true
 	}
 	if reorg {
 		// Reorganise the chain if the parent is not the head block
@@ -1065,6 +1074,26 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 		}
 		// Wait for the block's verification to complete
 		bstart := time.Now()
+
+		// Skip blocks already in the chain
+		if b := bc.GetBlockByHash(block.Hash()); b != nil {
+			continue
+		}
+
+		// Block before last irreversible block can not be inserted
+		// chainmu is required. current block would not change before
+		// this block write finish.
+		// Using current block to check block instead of using
+		// lastIrreversibleBlk is to avoid this scenario that
+		// current block is genesis block and it has no parent
+		// block as LIB.
+		cur := bc.CurrentBlock()
+		if block.NumberU64() < cur.NumberU64() {
+			return i, events, coalescedLogs, ErrBlockBeforeLIB
+		}
+		if block.NumberU64() == cur.NumberU64() && block.ParentHash() != cur.ParentHash() {
+			return i, events, coalescedLogs, ErrForkBlockParentIsNotLIB
+		}
 
 		err := <-results
 		if err == nil {
@@ -1208,6 +1237,12 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 	return 0, events, coalescedLogs, nil
 }
 
+// lastIrreversibleBlk returns the last irreversible block.
+// Last irreversible block is the parent block of current block.
+func (bc *BlockChain) lastIrreversibleBlk() *types.Block {
+	return bc.GetBlockByHash(bc.CurrentBlock().ParentHash())
+}
+
 // insertStats tracks and reports on block insertion.
 type insertStats struct {
 	queued, processed, ignored int
@@ -1288,6 +1323,7 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 		}
 	)
 
+	lastIrreversibleBlk := bc.lastIrreversibleBlk()
 	// first reduce whoever is higher bound
 	if oldBlock.NumberU64() > newBlock.NumberU64() {
 		// reduce old chain
@@ -1329,6 +1365,12 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 			return fmt.Errorf("Invalid new chain")
 		}
 	}
+
+	// Ensure blocks before last irreversible block can not be reorg
+	if oldChain[len(oldChain)-1].NumberU64() <= lastIrreversibleBlk.NumberU64() {
+		return fmt.Errorf("Invalid reorganization to rollback the irreversible blocks")
+	}
+
 	// Ensure the user sees large reorgs
 	if len(oldChain) > 0 && len(newChain) > 0 {
 		logFn := log.Debug
@@ -1586,9 +1628,17 @@ func (bc *BlockChain) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscript
 	return bc.scope.Track(bc.logsFeed.Subscribe(ch))
 }
 
-func (bc *BlockChain) VerifyBlock(block *types.Block) (types.Receipts, []*types.Log, uint64, error) {
+// VerifyBlockForBft only verify block behind the local canonical chain.
+func (bc *BlockChain) VerifyBlockForBft(block *types.Block) (types.Receipts, []*types.Log, uint64, error) {
 	if block == nil {
-		return nil, nil, 0, fmt.Errorf("block is empty")
+		return nil, nil, 0, ErrBlockIsNil
+	}
+
+	// Parent should be head block
+	headBlock := bc.CurrentBlock()
+	parentHash := block.ParentHash()
+	if headBlock.Hash() != parentHash {
+		return nil, nil, 0, ErrNotVoteForkBlock
 	}
 
 	err := bc.engine.VerifyHeader(bc, block.Header(), true)
@@ -1607,9 +1657,9 @@ func (bc *BlockChain) VerifyBlock(block *types.Block) (types.Receipts, []*types.
 		return nil, nil, 0, err
 	}
 
-	parent := bc.GetBlock(block.ParentHash(), block.NumberU64()-1)
+	parent := bc.GetBlock(parentHash, block.NumberU64()-1)
 	if parent == nil {
-		return nil, nil, 0, fmt.Errorf("parent is nil")
+		return nil, nil, 0, ErrParentIsNil
 	}
 	stateDb, err := state.New(parent.Root(), bc.stateCache)
 	if err != nil {
@@ -1642,7 +1692,7 @@ func (bc *BlockChain) WriteBlock(block *types.Block) error {
 	bstart := time.Now()
 	parent := bc.GetBlock(block.ParentHash(), block.NumberU64()-1)
 	if parent == nil {
-		return fmt.Errorf("parent is nil")
+		return ErrParentIsNil
 	}
 	stateDb, err := bc.StateAt(parent.Root())
 	if err != nil {

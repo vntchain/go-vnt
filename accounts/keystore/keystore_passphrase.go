@@ -36,11 +36,11 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/pborman/uuid"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/common/math"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/crypto/randentropy"
-	"github.com/pborman/uuid"
 	"golang.org/x/crypto/pbkdf2"
 	"golang.org/x/crypto/scrypt"
 )

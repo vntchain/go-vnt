@@ -29,7 +29,6 @@ type Argument struct {
 	Name    string
 	Type    Type
 	Indexed bool // indexed is only used by events
-	
 }
 
 type Arguments []Argument

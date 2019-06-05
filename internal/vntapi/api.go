@@ -35,6 +35,7 @@ import (
 	"github.com/vntchain/go-vnt/common/math"
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/rawdb"
+	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/vm/election"
@@ -557,7 +558,7 @@ type CallArgs struct {
 }
 
 func (s *PublicBlockChainAPI) doCall(ctx context.Context, args CallArgs, blockNr rpc.BlockNumber, vmCfg vm.Config, timeout time.Duration) ([]byte, uint64, bool, error) {
-	defer func(start time.Time) { log.Debug("Executing EVM call finished", "runtime", time.Since(start)) }(time.Now())
+	defer func(start time.Time) { log.Debug("Executing VM call finished", "runtime", time.Since(start)) }(time.Now())
 	state, header, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
 	if state == nil || err != nil {
 		return nil, 0, false, err
@@ -592,22 +593,22 @@ func (s *PublicBlockChainAPI) doCall(ctx context.Context, args CallArgs, blockNr
 	// Make sure the context is cancelled when the call has completed
 	// this makes sure resources are cleaned up.
 	defer cancel()
-	// Get a new instance of the EVM.
-	evm, vmError, err := s.b.GetVM(ctx, msg, state, header, vmCfg)
+	// Get a new instance of the VM.
+	newVm, vmError, err := s.b.GetVM(ctx, msg, state, header, vmCfg)
 	if err != nil {
 		return nil, 0, false, err
 	}
-	// Wait for the context to be done and cancel the evm. Even if the
-	// EVM has finished, cancelling may be done (repeatedly)
+	// Wait for the context to be done and cancel the vm. Even if the
+	// VM has finished, cancelling may be done (repeatedly)
 	go func() {
 		<-ctx.Done()
-		evm.Cancel()
+		newVm.Cancel()
 	}()
 
 	// Setup the gas pool (also for unmetered requests)
 	// and apply the message.
 	gp := new(core.GasPool).AddGas(math.MaxUint64)
-	res, gas, failed, err := core.ApplyMessage(evm, msg, gp)
+	res, gas, failed, err := core.ApplyMessage(newVm, msg, gp)
 	if err := vmError(); err != nil {
 		return nil, 0, false, err
 	}
@@ -673,8 +674,7 @@ func (s *PublicBlockChainAPI) EstimateGas(ctx context.Context, args CallArgs) (h
 // GetAllCandidates returns a list of all the candidates.
 func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candidate, error) {
 	// Get stateDB of current block
-	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
-	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	stateDB, err := s.stateDbOfCurrent(ctx)
 	if stateDB == nil || err != nil {
 		return nil, err
 	}
@@ -702,9 +702,7 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 
 // GetVoter returns a voter's information.
 func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Address) (*rpc.Voter, error) {
-	// Get stateDB of current block
-	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
-	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	stateDB, err := s.stateDbOfCurrent(ctx)
 	if stateDB == nil || err != nil {
 		return nil, err
 	}
@@ -718,10 +716,11 @@ func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Addre
 	voter := &rpc.Voter{
 		Owner:             v.Owner,
 		IsProxy:           v.IsProxy,
-		ProxyVoteCount:    v.ProxyVoteCount,
+		ProxyVoteCount:    (*hexutil.Big)(v.ProxyVoteCount),
 		Proxy:             v.Proxy,
-		LastVoteCount:     v.LastVoteCount,
-		LastVoteTimeStamp: v.TimeStamp,
+		LastStakeCount:    (*hexutil.Big)(v.LastStakeCount),
+		LastVoteCount:     (*hexutil.Big)(v.LastVoteCount),
+		LastVoteTimeStamp: (*hexutil.Big)(v.TimeStamp),
 		VoteCandidates:    v.VoteCandidates,
 	}
 
@@ -730,9 +729,7 @@ func (s *PublicBlockChainAPI) GetVoter(ctx context.Context, address common.Addre
 
 // GetStake returns a stake information.
 func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Address) (*rpc.Stake, error) {
-	// Get stateDB of current block
-	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
-	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	stateDB, err := s.stateDbOfCurrent(ctx)
 	if stateDB == nil || err != nil {
 		return nil, err
 	}
@@ -745,8 +742,8 @@ func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Addre
 	}
 	stake := &rpc.Stake{
 		Owner:              st.Owner,
-		StakeCount:         st.StakeCount,
-		LastStakeTimeStamp: st.TimeStamp,
+		StakeCount:         (*hexutil.Big)(st.StakeCount),
+		LastStakeTimeStamp: (*hexutil.Big)(st.TimeStamp),
 	}
 
 	return stake, nil
@@ -754,9 +751,7 @@ func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Addre
 
 // GetRestVNTBounty returns the rest VNT bounty.
 func (s *PublicBlockChainAPI) GetRestVNTBounty(ctx context.Context) (*big.Int, error) {
-	// Get stateDB of current block
-	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
-	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	stateDB, err := s.stateDbOfCurrent(ctx)
 	if stateDB == nil || err != nil {
 		return nil, err
 	}
@@ -768,7 +763,31 @@ func (s *PublicBlockChainAPI) GetRestVNTBounty(ctx context.Context) (*big.Int, e
 	}
 }
 
-// ExecutionResult groups all structured logs emitted by the EVM
+// GetMainNetVotes returns the main net active information.
+func (s *PublicBlockChainAPI) GetMainNetVotes(ctx context.Context) (*rpc.MainNetVotes, error) {
+	stateDB, err := s.stateDbOfCurrent(ctx)
+	if stateDB == nil || err != nil {
+		return nil, err
+	}
+
+	rest := election.GetMainNetVotes(stateDB)
+	if rest == nil {
+		return nil, errors.New("can not get rest main net active information")
+	}
+	mv := &rpc.MainNetVotes{
+		Active:    rest.Active,
+		VoteStake: (*hexutil.Big)(rest.VoteStake),
+	}
+	return mv, nil
+}
+
+func (s *PublicBlockChainAPI) stateDbOfCurrent(ctx context.Context) (*state.StateDB, error) {
+	blockNr := rpc.BlockNumber(s.b.CurrentBlock().NumberU64())
+	stateDB, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	return stateDB, err
+}
+
+// ExecutionResult groups all structured logs emitted by the VM
 // while replaying a transaction in debug mode as well as transaction
 // execution status, the amount of gas used and the return value
 type ExecutionResult struct {
@@ -779,7 +798,7 @@ type ExecutionResult struct {
 	DebugLogs   []DebugLogRes  `json:"debugLogs"`
 }
 
-// StructLogRes stores a structured log emitted by the EVM while replaying a
+// StructLogRes stores a structured log emitted by the VM while replaying a
 // transaction in debug mode
 type StructLogRes struct {
 	Pc      uint64             `json:"pc"`
@@ -797,7 +816,7 @@ type DebugLogRes struct {
 	PrintMsg string `json:"printMsg"`
 }
 
-// formatLogs formats EVM returned structured logs for json output
+// formatLogs formats VM returned structured logs for json output
 func FormatLogs(logs []wavm.StructLog, debugLog []wavm.DebugLog) ([]StructLogRes, []DebugLogRes) {
 	formatted := make([]StructLogRes, len(logs))
 

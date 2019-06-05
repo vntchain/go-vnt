@@ -1139,53 +1139,77 @@ func TestRegisterProxy(t *testing.T) {
 func TestStake(t *testing.T) {
 	context := newcontext()
 	ec := newElectionContext(context)
+	db := ec.context.GetStateDb()
+	addr := common.HexToAddress("41b0db166cfdf1c4ba3ce657171482a9aa55cc93")
+	db.AddBalance(addr, vnt2wei(100))
 
-	addr1 := common.HexToAddress("41b0db166cfdf1c4ba3ce657171482a9aa55cc93")
-
-	context.GetStateDb().AddBalance(addr1, big.NewInt(0).Mul(big.NewInt(10000000000), big.NewInt(10000000000)))
-
-	err := ec.stake(addr1, big.NewInt(20))
+	// 抵押
+	err := ec.stake(addr, big.NewInt(20))
 	if err != nil {
 		t.Errorf("TestStake stake err:%v ", err)
 	}
+	stake := ec.getStake(addr)
+	if stake.Owner != addr || stake.StakeCount.Uint64() != 20 {
+		t.Fatalf("stake and get stake mismatch, want: %v, got: %v", 20, stake.StakeCount.Uint64())
+	}
+	bal := db.GetBalance(addr)
+	shouldLeft := vnt2wei(80)
+	if bal.Cmp(shouldLeft) != 0 {
+		t.Fatalf("after stake addr should have %v wei got %v wei", shouldLeft.String(), bal.String())
+	}
 
-	t.Logf("111 addr1 balance: %v", context.GetStateDb().GetBalance(addr1))
-
-	stake := ec.getStake(addr1)
-	t.Logf("111 addr1 stake: %v", stake.StakeCount)
-
-	err = ec.unStake(addr1)
+	// 取消抵押
+	err = ec.unStake(addr)
 	if err.Error() != "cannot unstake in 24 hours" {
 		t.Errorf("TestStake unStake err:%v ", err)
 	}
-
-	t.Logf("222 addr1 balance after unStake: %v", context.GetStateDb().GetBalance(addr1))
-
-	stake = ec.getStake(addr1)
-	t.Logf("222 addr1 stake after unStake: %v", stake.StakeCount)
-
-	if ctx, ok := context.(*testContext); ok {
-		ctx.SetTime(big.NewInt(0).Add(context.GetTime(), big.NewInt(3600*24+1)))
+	stake = ec.getStake(addr)
+	if stake.Owner != addr || stake.StakeCount.Uint64() != 20 {
+		t.Fatalf("stake and get stake mismatch, want: %v, got: %v", 20, stake.StakeCount.Uint64())
 	}
-	err = ec.unStake(addr1)
+
+	// 取消抵押
+	twentyFourHoursLater(t, context)
+	err = ec.unStake(addr)
 	if err != nil {
 		t.Errorf("TestStake unStake err:%v ", err)
 	}
+	stake = ec.getStake(addr)
+	if stake.Owner != addr || stake.StakeCount.Uint64() != 0 {
+		t.Fatalf("stake and get stake mismatch, want: %v, got: %v", 0, stake.StakeCount.Uint64())
+	}
 
-	t.Logf("333 addr1 balance after unStake: %v", context.GetStateDb().GetBalance(addr1))
+}
 
-	stake = ec.getStake(addr1)
-	t.Logf("333 addr1 stake after unStake: %v", stake.StakeCount)
+func twentyFourHoursLater(t *testing.T, context inter.ChainContext) {
+	if ctx, ok := context.(*testContext); ok {
+		ctx.SetTime(big.NewInt(0).Add(context.GetTime(), big.NewInt(3600*24+1)))
+	}
+}
 
-	err = ec.stake(addr1, big.NewInt(-20))
+func TestStakeInvalid(t *testing.T) {
+	context := newcontext()
+	ec := newElectionContext(context)
+	db := ec.context.GetStateDb()
+	addr := common.HexToAddress("41b0db166cfdf1c4ba3ce657171482a9aa55cc93")
+	db.AddBalance(addr, vnt2wei(100))
+
+	// 抵押负值
+	err := ec.stake(addr, big.NewInt(-20))
 	if err.Error() != "stake stakeCount less than 0" {
 		t.Errorf("TestStake stake err:%v ", err)
 	}
 
-	t.Logf("444 addr1 balance: %v", context.GetStateDb().GetBalance(addr1))
+	stake := ec.getStake(addr)
+	if stake.Owner != emptyAddress {
+		t.Fatalf("should no stake information for addr: %v", addr.String())
+	}
 
-	stake = ec.getStake(addr1)
-	t.Logf("444 addr1 stake: %v", stake.StakeCount)
+	bal := db.GetBalance(addr)
+	shouldLeft := vnt2wei(100)
+	if bal.Cmp(shouldLeft) != 0 {
+		t.Fatalf("after stake addr should have %v wei got %v wei", shouldLeft.String(), bal.String())
+	}
 }
 
 func TestExtractBounty(t *testing.T) {
@@ -1574,4 +1598,116 @@ func operate(c electionContext, op string, address common.Address, proxy common.
 		err = fmt.Errorf("method not found")
 	}
 	return err
+}
+
+func TestMainNetStartup(t *testing.T) {
+	// 0. 初始化
+	context := newcontext()
+	ec := newElectionContext(context)
+	// 分配10亿VNT
+	addr := common.BytesToAddress([]byte{111})
+	db := ec.context.GetStateDb()
+	db.AddBalance(addr, vnt2wei(1e9))
+	if err := setMainNetVotes(db, MainNetVotes{big.NewInt(0), false}); err != nil {
+		t.Fatalf("init main error: %v", err)
+	}
+
+	// 1. 系统启动时检查抵押额为0
+	checkMainNetVote(t, db, "init main error failed", false, big.NewInt(0))
+
+	// 2. 执行抵押，金额4亿
+	if err := ec.stake(addr, big.NewInt(4e8)); err != nil {
+		t.Fatalf("stake 0.4 billion vnt error: %v", err)
+	}
+
+	// 3. 投票抵押额为0
+	checkMainNetVote(t, db, "after just stake 0.4 billion", false, big.NewInt(0))
+
+	// 4. 执行投票
+	// 4.1 注册见证人
+	if err := ec.registerWitness(candidates[0], candiInfos[0].url, candiInfos[0].website, candiInfos[0].name); err != nil {
+		t.Fatalf("register witness failed, err: %v", err)
+	}
+	if err := ec.voteWitnesses(addr, []common.Address{candidates[0]}); err != nil {
+		t.Fatalf("vote witenss failed, err: %v", err)
+	}
+
+	// 5. 投票抵押额为4亿
+	checkMainNetVote(t, db, "after vote 0.4 billion", false, big.NewInt(4e8))
+
+	// 6. 抵押1亿
+	if err := ec.stake(addr, big.NewInt(1e8)); err != nil {
+		t.Fatalf("stake 0.1 billion vnt error: %v", err)
+	}
+
+	// 7. 投票抵押为4亿
+	checkMainNetVote(t, db, "after vote 0.4 billion", false, big.NewInt(4e8))
+
+	// 9. 执行投票
+	twentyFourHoursLater(t, context)
+	if err := ec.voteWitnesses(addr, []common.Address{candidates[0]}); err != nil {
+		t.Fatalf("vote witenss failed, err: %v", err)
+	}
+
+	// 10. 投票抵押额为5亿
+	checkMainNetVote(t, db, "after vote 0.5 billion", true, big.NewInt(5e8))
+
+	// 12. 取消投票
+	if err := ec.cancelVote(addr); err != nil {
+		t.Fatalf("cancel vote failed: %v", err)
+	}
+
+	// 13. 投票抵押为0，active为真
+	checkMainNetVote(t, db, "after just stake 0.4 billion", true, big.NewInt(0))
+
+	// 14. 取消抵押
+	twentyFourHoursLater(t, context)
+	if err := ec.unStake(addr); err != nil {
+		t.Fatalf("unstake failed: %v", err)
+	}
+
+	// 15. 投票抵押额为0，active为真
+	checkMainNetVote(t, db, "after just stake 0.4 billion", true, big.NewInt(0))
+}
+
+func checkMainNetVote(t *testing.T, db inter.StateDB, tag string, active bool, stake *big.Int) {
+	if mv := getMainNetVotes(db); mv.Active != active || mv.VoteStake.Cmp(stake) != 0 {
+		t.Fatalf("%v, want active=%v, voteStake=%v, got active=%v, voteStake=%v", tag, active, stake.String(), mv.Active, mv.VoteStake.String())
+	}
+}
+
+func vnt2wei(vnt int) *big.Int {
+	return big.NewInt(0).Mul(big.NewInt(int64(vnt)), big.NewInt(1e18))
+}
+
+func TestStakeButNotVote(t *testing.T) {
+	// 0. 初始化
+	context := newcontext()
+	ec := newElectionContext(context)
+	// 分配10亿VNT
+	addr := common.BytesToAddress([]byte{111})
+	db := ec.context.GetStateDb()
+	db.AddBalance(addr, vnt2wei(1e9))
+	if err := setMainNetVotes(db, MainNetVotes{big.NewInt(0), false}); err != nil {
+		t.Fatalf("init main error: %v", err)
+	}
+
+	// 1. 系统启动时检查抵押额为0
+	checkMainNetVote(t, db, "init main error failed", false, vnt2wei(0))
+
+	// 2. 执行抵押，金额4亿
+	if err := ec.stake(addr, big.NewInt(4e8)); err != nil {
+		t.Fatalf("stake 0.4 billion vnt error: %v", err)
+	}
+
+	// 2.1 修改stake的时间为24小时之前
+	twentyFourHoursLater(t, context)
+
+	// 3. 取消抵押
+	if err := ec.unStake(addr); err != nil {
+		t.Fatalf("unstake failed: %v", err)
+	}
+
+	// 4. 投票抵押额为0，active为false
+	checkMainNetVote(t, db, "after just stake 0.4 billion", false, vnt2wei(0))
 }

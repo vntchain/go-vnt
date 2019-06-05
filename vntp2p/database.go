@@ -131,7 +131,6 @@ func (d *LevelDB) Close() error {
 	if err != nil {
 		return err
 	}
-	d = nil //GC
 	return nil
 }
 

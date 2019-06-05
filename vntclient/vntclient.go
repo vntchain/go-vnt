@@ -424,7 +424,7 @@ func (ec *Client) CallContract(ctx context.Context, msg hubble.CallMsg, blockNum
 	return hex, nil
 }
 
-// PendingCallContract executes a message call transaction using the EVM.
+// PendingCallContract executes a message call transaction using the VM.
 // The state seen by the contract call is the pending state.
 func (ec *Client) PendingCallContract(ctx context.Context, msg hubble.CallMsg) ([]byte, error) {
 	var hex hexutil.Bytes
@@ -518,7 +518,7 @@ func (ec *Client) NewElectionTx(ctx context.Context, sender common.Address, gasL
 }
 
 func getElectionABI() (abi.ABI, error) {
-	return abi.JSON(strings.NewReader(election.AbiJSON))
+	return abi.JSON(strings.NewReader(election.ElectionAbiJSON))
 }
 
 func packInput(abiobj abi.ABI, name string, args ...interface{}) ([]byte, error) {

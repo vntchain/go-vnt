@@ -7,6 +7,7 @@ import (
 
 	smux "github.com/libp2p/go-stream-muxer"
 	yamux "github.com/whyrusleeping/yamux"
+	"fmt"
 )
 
 // Conn is a connection to a remote peer.
@@ -60,6 +61,7 @@ var DefaultTransport = (*Transport)(&yamux.Config{
 })
 
 func (t *Transport) NewConn(nc net.Conn, isServer bool) (smux.Conn, error) {
+	fmt.Printf("#### yamux.go: Transport.NewConn Called \n")
 	var s *yamux.Session
 	var err error
 	if isServer {

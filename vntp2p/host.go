@@ -44,12 +44,12 @@ import (
 	"github.com/multiformats/go-multiaddr-net"
 	"github.com/vntchain/go-vnt/log"
 
-	recpb "github.com/libp2p/go-libp2p-record/pb"
-
 	// "github.com/vntchain/go-vnt/crypto"
 
 	"fmt"
 
+	"github.com/vntchain/go-vnt/crypto"
+	"encoding/hex"
 )
 
 const (
@@ -91,14 +91,9 @@ func GetPersistentData(dht *dht.IpfsDHT) *PersistentData {
 
 	// try to get privateKey from peerstore
 	privKey := dht.Host().Peerstore().PrivKey(dht.PeerID())
-	bDump, err := privKey.Raw()
-	if err != nil {
-		log.Error("Bad private key:", err)
-		return nil
-	}
-	//bDump := math.PaddedBigBytes(privKey.D, privKey.Params().BitSize/8)
-	//k := hex.EncodeToString(bDump)
-	pd.PrivKey = bDump
+	bDump, _ := privKey.Raw()
+	k := hex.EncodeToString(bDump)
+	pd.PrivKey = []byte(k)
 
 	pd.PeerInfos = pstore.PeerInfos(dht.Host().Peerstore(), dht.Host().Peerstore().Peers())
 	pd.KBuckets = GetKBuckets(dht.RoutingTable())
@@ -107,10 +102,12 @@ func GetPersistentData(dht *dht.IpfsDHT) *PersistentData {
 }
 
 // SaveData save PersistentData to local database
-func SaveData(ctx context.Context, dht *dht.IpfsDHT, key string, value []byte) {
+func SaveData(ctx context.Context, dht *dht.IpfsDHT, vdb *LevelDB, key string, value []byte) {
 	//fmt.Printf("saveData -->, key = %s, value = %v\n", key, string(value))
 	//dht.datastore.Put(mkDsKey(key), value)
-	err := dht.PutValue(ctx, key, value)
+	dsKey := ds.NewKey(base32.RawStdEncoding.EncodeToString([]byte(key)))
+	err := vdb.Put(dsKey, value)
+	//err := dht.PutValue(ctx, key, value)
 	if err != nil {
 		log.Error("Failed to save data", "error", err)
 	}
@@ -119,23 +116,14 @@ func SaveData(ctx context.Context, dht *dht.IpfsDHT, key string, value []byte) {
 
 func recoverPersistentData(vdb *LevelDB) *PersistentData {
 	pd := &PersistentData{}
-	record := &recpb.Record{}
 	pdKey := ds.NewKey(base32.RawStdEncoding.EncodeToString([]byte("/PersistentData")))
 	pdValue, err := vdb.Get(pdKey)
-
 	if err != nil {
 		// don't need to care about err != nil
-		log.Error("recoverPersistentData", "unmarshal pd error", err)
 		return nil
 	}
 	//fmt.Printf("R- pdValue = %v\n", pdValue.([]byte))
-	err = json.Unmarshal(pdValue, record)
-	if err != nil {
-		log.Error("recoverPersistentData", "unmarshal pd error", err)
-		return nil
-	}
-
-	err = json.Unmarshal(record.Value, pd)
+	err = json.Unmarshal(pdValue, pd)
 	if err != nil {
 		log.Error("recoverPersistentData", "unmarshal pd error", err)
 		return nil
@@ -144,7 +132,7 @@ func recoverPersistentData(vdb *LevelDB) *PersistentData {
 }
 
 // ConstructDHT create Kademlia DHT
-func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.PrivateKey, datadir string, restrictList []*net.IPNet, natm libp2p.Option) (*dht.IpfsDHT, p2phost.Host, error) {
+func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.PrivateKey, datadir string, restrictList []*net.IPNet, natm libp2p.Option) (*dht.IpfsDHT, p2phost.Host, *LevelDB, error) {
 
 	var pd *PersistentData
 	var vntp2pDB *LevelDB
@@ -155,24 +143,31 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 		vntp2pDB, err = GetDatastore(dbpath)
 		if err != nil {
 			log.Error("ConstructDHT", "getDatastore error", err, "dbpath", dbpath)
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		pd = recoverPersistentData(vntp2pDB)
 	}
 
-	var privKey crypto2.PrivKey
+	var privKey crypto2.PrivKey = nil
+	if nodekey == nil && pd != nil {
+		k := string(pd.PrivKey)
+		bDump, err := hex.DecodeString(k)
+		if err != nil {
+			log.Error("ConstructDHT", "decode key error", err)
+			return nil, nil, nil, err
+		}
+		nodekey, err = crypto.ToECDSA(bDump)
+		if err != nil {
+			log.Error("ConstructDHT", "toECDSA error", err)
+			return nil, nil, nil, err
+		}
+	}
+
 	if nodekey != nil {
 		privKey, _, err = crypto2.ECDSAKeyPairFromKey(nodekey)
 		if err != nil {
-			log.Error("Bad private key:", err)
-			return nil, nil, err
-		}
-	} else if pd != nil {
-		k := pd.PrivKey
-		privKey, err = crypto2.UnmarshalECDSAPrivateKey(k)
-		if err != nil {
-			log.Error("Bad private key:", err)
-			return nil, nil, err
+			log.Error("Bad private key:", "err", err)
+			return nil, nil, nil, err
 		}
 	}
 
@@ -195,7 +190,7 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 	host, err := constructPeerHost(ctx, listenstring, privKey, restrictList, natm)
 	if err != nil {
 		log.Error("ConstructDHT", "constructPeerHost error", err)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	var vdht *dht.IpfsDHT
@@ -213,7 +208,7 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 		)
 	}
 
-	hostAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", host.ID().Pretty()))
+	hostAddr, err := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", ToString(host.ID())))
 
 	addr := host.Addrs()[0]
 	fullAddr := addr.Encapsulate(hostAddr)
@@ -226,23 +221,23 @@ func ConstructDHT(ctx context.Context, listenstring string, nodekey *ecdsa.Priva
 	}
 
 	if vntp2pDB != nil {
-		go loop(ctx, vdht)
+		go loop(ctx, vdht, vntp2pDB)
 	}
 
-	return vdht, host, err
+	return vdht, host, vntp2pDB, err
 }
 
 // some loop handler for p2p itself can be put here
-func loop(ctx context.Context, vdht *dht.IpfsDHT) {
+func loop(ctx context.Context, vdht *dht.IpfsDHT, vdb *LevelDB) {
 	var persistData = time.NewTicker(persistDataInterval)
 	for {
 		<-persistData.C
-		go persistDataPeriodly(ctx, vdht)
+		go persistDataPeriodly(ctx, vdht, vdb)
 	}
 }
 
 // persist data unified entrance, both for bootnode and membernode
-func persistDataPeriodly(ctx context.Context, vdht *dht.IpfsDHT) {
+func persistDataPeriodly(ctx context.Context, vdht *dht.IpfsDHT, vdb *LevelDB) {
 	pd := GetPersistentData(vdht)
 	/* fmt.Printf("host privKey is: %v \n", string(pd.PrivKey))
 	fmt.Printf("peerInfos is: \n")
@@ -259,7 +254,7 @@ func persistDataPeriodly(ctx context.Context, vdht *dht.IpfsDHT) {
 		return
 	}
 	//log.Info("persistDataPeriodly TIME TO PERSIST DATA")
-	SaveData(ctx, vdht, "/PersistentData", pdByte)
+	SaveData(ctx, vdht, vdb, "/PersistentData", pdByte)
 }
 
 func recoverPeerInfosAndBuckets(ctx context.Context, pd *PersistentData, host p2phost.Host, vdht *dht.IpfsDHT) {

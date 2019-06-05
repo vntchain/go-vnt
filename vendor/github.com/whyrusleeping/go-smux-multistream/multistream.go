@@ -38,6 +38,7 @@ func (t *Transport) AddTransport(path string, tpt smux.Transport) {
 }
 
 func (t *Transport) NewConn(nc net.Conn, isServer bool) (smux.Conn, error) {
+	fmt.Printf("#### multistream: Transport.NewConn Called \n")
 	if t.NegotiateTimeout != 0 {
 		if err := nc.SetDeadline(time.Now().Add(t.NegotiateTimeout)); err != nil {
 			return nil, err
@@ -46,13 +47,17 @@ func (t *Transport) NewConn(nc net.Conn, isServer bool) (smux.Conn, error) {
 
 	var proto string
 	if isServer {
+		fmt.Printf("#### multistream: Transport.NewConn will Negoitiate server \n")
 		selected, _, err := t.mux.Negotiate(nc)
+		fmt.Printf("#### multistream: Transport.NewConn done Negoitiate server: selected: %s, err: %s \n", selected, err)
 		if err != nil {
 			return nil, err
 		}
 		proto = selected
 	} else {
+		fmt.Printf("#### multistream: Transport.NewConn will Negoitiate client \n")
 		selected, err := mss.SelectOneOf(t.OrderPreference, nc)
+		fmt.Printf("#### multistream: Transport.NewConn done Negoitiate client: selected: %s, err: %s \n", selected, err)
 		if err != nil {
 			return nil, err
 		}
@@ -69,6 +74,6 @@ func (t *Transport) NewConn(nc net.Conn, isServer bool) (smux.Conn, error) {
 	if !ok {
 		return nil, fmt.Errorf("selected protocol we don't have a transport for")
 	}
-
+	fmt.Printf("#### multistream: Transport.NewConn done Negoitiate will call newConnection of %v \n", tpt)
 	return tpt.NewConn(nc, isServer)
 }

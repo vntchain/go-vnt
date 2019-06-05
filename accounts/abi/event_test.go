@@ -25,10 +25,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vntchain/go-vnt/common"
+	"github.com/vntchain/go-vnt/crypto"
 )
 
 var jsonEventTransfer = []byte(`{

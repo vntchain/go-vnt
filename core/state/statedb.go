@@ -40,7 +40,7 @@ var (
 	// emptyState is the known hash of an empty state trie entry.
 	emptyState = crypto.Keccak256Hash(nil)
 
-	// emptyCode is the known hash of the empty EVM bytecode.
+	// emptyCode is the known hash of the empty VM bytecode.
 	emptyCode = crypto.Keccak256Hash(nil)
 )
 
@@ -415,7 +415,7 @@ func (self *StateDB) createObject(addr common.Address) (newobj, prev *stateObjec
 // CreateAccount explicitly creates a state object. If a state object with the address
 // already exists the balance is carried over to the new account.
 //
-// CreateAccount is called during the EVM CREATE operation. The situation might arise that
+// CreateAccount is called during the VM CREATE operation. The situation might arise that
 // a contract does the following:
 //
 //   1. sends funds to sha(account ++ (nonce + 1))
@@ -564,7 +564,7 @@ func (s *StateDB) IntermediateRoot(deleteEmptyObjects bool) common.Hash {
 }
 
 // Prepare sets the current transaction hash and index and block hash which is
-// used when the EVM emits new state logs.
+// used when the VM emits new state logs.
 func (self *StateDB) Prepare(thash, bhash common.Hash, ti int) {
 	self.thash = thash
 	self.bhash = bhash

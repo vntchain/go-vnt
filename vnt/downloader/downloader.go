@@ -25,7 +25,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	hubble "github.com/vntchain/go-vnt"
+	"github.com/vntchain/go-vnt"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/rawdb"
 	"github.com/vntchain/go-vnt/core/types"
@@ -1145,6 +1145,7 @@ func (d *Downloader) fetchParts(errCancel error, deliveryCh chan dataPack, deliv
 					// a much bigger issue.
 					panic(fmt.Sprintf("%v: %s fetch assignment failed", peer, kind))
 				}
+
 				running = true
 			}
 			// Make sure that we have peers available for fetching. If all peers have been tried

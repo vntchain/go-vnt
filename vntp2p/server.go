@@ -21,15 +21,14 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"net"
-	"sync"
-
-	libp2p "github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p"
 	p2phost "github.com/libp2p/go-libp2p-host"
 	inet "github.com/libp2p/go-libp2p-net"
 	protocol "github.com/libp2p/go-libp2p-protocol"
 	"github.com/vntchain/go-vnt/event"
 	"github.com/vntchain/go-vnt/log"
+	"net"
+	"sync"
 
 	// inet "github.com/libp2p/go-libp2p-net"
 	peer "github.com/libp2p/go-libp2p-peer"
@@ -50,8 +49,6 @@ type dialFlag int
 const (
 	dynDialedDail dialFlag = 1 << iota
 	staticDialedDail
-	inboundDail
-	trustedDail
 )
 
 type Config struct {
@@ -158,7 +155,7 @@ func (server *Server) Start() error {
 	server.cancel = cancel
 
 	d := server.NodeDatabase
-	vdht, host, err := ConstructDHT(ctx, MakePort(listenPort), nil, d, server.Config.NetRestrict, server.Config.NAT)
+	vdht, host, _, err := ConstructDHT(ctx, MakePort(listenPort), nil, d, server.Config.NetRestrict, server.Config.NAT)
 	if err != nil {
 		log.Error("ConstructDHT failed", "error", err)
 		return err
@@ -191,7 +188,7 @@ func (server *Server) LoadConfig(ctx context.Context) []peer.ID {
 
 	for _, bootnode := range server.Config.BootstrapNodes {
 		server.host.Peerstore().AddAddrs(bootnode.Id, []ma.Multiaddr{bootnode.Addr}, peerstore.PermanentAddrTTL)
-		server.table.Update(ctx, bootnode.Id)
+		_ = server.table.Update(ctx, bootnode.Id)
 
 		bootnodes = append(bootnodes, bootnode.Id)
 	}
@@ -202,7 +199,7 @@ func (server *Server) LoadConfig(ctx context.Context) []peer.ID {
 
 func (server *Server) run(ctx context.Context, tasker taskworker) {
 	defer server.loopWG.Done()
-	server.table.Start(ctx)
+	_ = server.table.Start(ctx)
 	var (
 		runningTasks []task
 		queuedTasks  []task
@@ -288,13 +285,12 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 func (server *Server) Stop() {
 	log.Info("Server is Stopping!")
 	defer server.cancel()
-	return
 }
 
 func (server *Server) AddPeer(ctx context.Context, node *Node) {
 
 	server.host.Peerstore().AddAddrs(node.Id, []ma.Multiaddr{node.Addr}, peerstore.PermanentAddrTTL)
-	server.table.Update(ctx, node.Id)
+	_ = server.table.Update(ctx, node.Id)
 
 	select {
 	case <-server.quit:

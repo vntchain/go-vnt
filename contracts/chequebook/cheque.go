@@ -119,11 +119,11 @@ func NewChequebook(chainID *big.Int, path string, contractAddr common.Address, p
 	balance := new(big.Int)
 	sent := make(map[common.Address]*big.Int)
 
-	chbook, err := contract.NewChequebook(chainID, contractAddr, backend)
+	chbook, err := contract.NewChequebook(contractAddr, backend)
 	if err != nil {
 		return nil, err
 	}
-	transactOpts := bind.NewKeyedTransactor(prvKey)
+	transactOpts := bind.NewKeyedTransactor(prvKey, chainID)
 	session := &contract.ChequebookSession{
 		Contract:     chbook,
 		TransactOpts: *transactOpts,
@@ -338,9 +338,9 @@ func (self *Chequebook) Deposit(amount *big.Int) (string, error) {
 // The caller must hold self.lock.
 func (self *Chequebook) deposit(amount *big.Int) (string, error) {
 	// since the amount is variable here, we do not use sessions
-	depositTransactor := bind.NewKeyedTransactor(self.prvKey)
+	depositTransactor := bind.NewKeyedTransactor(self.prvKey, self.chainID)
 	depositTransactor.Value = amount
-	chbookRaw := &contract.ChequebookRaw{ChainID: self.chainID, Contract: self.contract}
+	chbookRaw := &contract.ChequebookRaw{Contract: self.contract}
 	tx, err := chbookRaw.Transfer(depositTransactor)
 	if err != nil {
 		self.log.Warn("Failed to fund chequebook", "amount", amount, "balance", self.balance, "target", self.buffer, "err", err)
@@ -452,11 +452,11 @@ func NewInbox(chainID *big.Int, prvKey *ecdsa.PrivateKey, contractAddr, benefici
 	if signer == nil {
 		return nil, fmt.Errorf("signer is null")
 	}
-	chbook, err := contract.NewChequebook(chainID, contractAddr, abigen)
+	chbook, err := contract.NewChequebook(contractAddr, abigen)
 	if err != nil {
 		return nil, err
 	}
-	transactOpts := bind.NewKeyedTransactor(prvKey)
+	transactOpts := bind.NewKeyedTransactor(prvKey, chainID)
 	transactOpts.GasLimit = gasToCash
 	session := &contract.ChequebookSession{
 		Contract:     chbook,

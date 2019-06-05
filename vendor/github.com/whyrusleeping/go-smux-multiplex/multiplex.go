@@ -5,6 +5,7 @@ import (
 
 	mp "github.com/libp2p/go-mplex"          // Conn is a connection to a remote peer.
 	smux "github.com/libp2p/go-stream-muxer" // Conn is a connection to a remote peer.
+	"fmt"
 )
 
 type conn struct {
@@ -37,5 +38,6 @@ type Transport struct{}
 var DefaultTransport = &Transport{}
 
 func (t *Transport) NewConn(nc net.Conn, isServer bool) (smux.Conn, error) {
+	fmt.Printf("#### multiplex:Transport.NewConn Called \n")
 	return &conn{mp.NewMultiplex(nc, isServer)}, nil
 }

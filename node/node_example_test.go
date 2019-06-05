@@ -42,7 +42,7 @@ func (s *SampleService) Stop() error               { fmt.Println("Service stoppi
 
 func ExampleService() {
 	// Create a network node to run protocols with the default values.
-	stack, err := node.New(&node.Config{P2P:p2p.Config{ListenAddr:"0030304"}})
+	stack, err := node.New(&node.Config{P2P: p2p.Config{ListenAddr: "0030304"}})
 	if err != nil {
 		log.Fatalf("Failed to create network node: %v", err)
 	}

@@ -29,10 +29,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pborman/uuid"
 	"github.com/vntchain/go-vnt/accounts"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/crypto"
-	"github.com/pborman/uuid"
 )
 
 const (

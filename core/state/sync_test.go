@@ -23,8 +23,8 @@ import (
 
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/crypto"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/trie"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 // testAccount is the data associated with an account used by the state tests.
