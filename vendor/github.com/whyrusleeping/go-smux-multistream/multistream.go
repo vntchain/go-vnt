@@ -57,7 +57,7 @@ func (t *Transport) NewConn(nc net.Conn, isServer bool) (smux.Conn, error) {
 	} else {
 		fmt.Printf("#### multistream: Transport.NewConn will Negoitiate client \n")
 		selected, err := mss.SelectOneOf(t.OrderPreference, nc)
-		fmt.Printf("#### multistream: Transport.NewConn done Negoitiate client: selected: %s, err: %s \n", selected, err.Error())
+		fmt.Printf("#### multistream: Transport.NewConn done Negoitiate client: selected: %s, err: %s \n", selected, err)
 		if err != nil {
 			return nil, err
 		}
