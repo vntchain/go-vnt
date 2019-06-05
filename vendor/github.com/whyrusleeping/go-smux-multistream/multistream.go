@@ -49,7 +49,7 @@ func (t *Transport) NewConn(nc net.Conn, isServer bool) (smux.Conn, error) {
 	if isServer {
 		fmt.Printf("#### multistream: Transport.NewConn will Negoitiate server \n")
 		selected, _, err := t.mux.Negotiate(nc)
-		fmt.Printf("#### multistream: Transport.NewConn done Negoitiate server: selected: %s, err: %s \n", selected, err.Error())
+		fmt.Printf("#### multistream: Transport.NewConn done Negoitiate server: selected: %s, err: %s \n", selected, err)
 		if err != nil {
 			return nil, err
 		}
