@@ -72,12 +72,17 @@ func handshake(rwc io.ReadWriteCloser) error {
 }
 
 func trySelect(proto string, rwc io.ReadWriteCloser) error {
+	fmt.Printf("#### client.go: trySelect: proto %s \n", proto)
+	fmt.Printf("#### client.go: trySelect: will delimWriteBuffered \n")
 	err := delimWriteBuffered(rwc, []byte(proto))
+	fmt.Printf("#### client.go: trySelect: done delimWriteBuffered, err %v \n", err)
 	if err != nil {
 		return err
 	}
 
 	tok, err := ReadNextToken(rwc)
+	fmt.Printf("#### client.go: trySelect: done ReadNextToken, token %s, err %v \n", tok, err)
+
 	if err != nil {
 		return err
 	}
