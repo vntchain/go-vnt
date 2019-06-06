@@ -289,8 +289,7 @@ func (server *Server) Stop() {
 	defer server.cancel()
 }
 
-func (server *Server) AddPeer(ctx context.Context, node *Node) {
-
+func (server *Server) AddStaticPeer(ctx context.Context, node *Node) {
 	server.host.Peerstore().AddAddrs(node.Id, []ma.Multiaddr{node.Addr}, peerstore.PermanentAddrTTL)
 	_ = server.table.Update(ctx, node.Id)
 
@@ -345,34 +344,61 @@ func (server *Server) Self() *Node {
 	return &Node{Addr: addr, Id: server.host.ID()}
 }
 
-// GetPeerByRemoteID get specific peer by remoteID
-// if it doesn't exist, new it
-// this function guarantee get the wanted peer
-func (server *Server) GetPeerByRemoteID(s inet.Stream) *Peer {
+func (server *Server) getPeer(pid peer.ID) *Peer {
 	var p *Peer
 
-	// always try to new this peer
-	err := server.dispatch(&Stream{stream: s, Protocols: server.protomap[PID]}, server.addpeer)
-	if err != nil {
-		log.Error("GetPeerByRemoteID()", "new peer error", err)
-		return nil
+	query := func(peers map[peer.ID]*Peer) {
+		if val, ok := peers[pid]; ok {
+			p = val
+		}
 	}
 
 	select {
 	case <-server.quit:
-	case server.peerOp <- func(peers map[peer.ID]*Peer) {
-		remoteID := s.Conn().RemotePeer()
-		if val, ok := peers[remoteID]; ok {
-			p = val
-		}
-	}:
+		return nil
+	case server.peerOp <- query:
 		<-server.peerOpDone
 	}
 
-	pid := s.Conn().RemotePeer()
-	log.Debug("Got peer by remote id", "peerid", pid, "peer got", p)
-
 	return p
+}
+
+// addPeer add a peer and do call protocol stack to handshake.
+// If it already added, just return the peer.
+func (server *Server) addPeer(s inet.Stream) *Peer {
+	pid := s.Conn().RemotePeer()
+	retCh := make(chan *Peer)
+	stream := &Stream{stream: s, Protocols: server.protomap[PID]}
+
+	add := func(peers map[peer.ID]*Peer) {
+		var (
+			p  *Peer
+			ok bool
+		)
+
+		log.Debug("Adding peer", "peer id", pid)
+		if p, ok = peers[pid]; ok {
+			p.log.Debug("Already exist peer")
+			return
+		}
+
+		p = newPeer(stream, server)
+		if server.EnableMsgEvents {
+			p.events = &server.peerFeed
+		}
+		go server.runPeer(p)
+		peers[pid] = p
+		p.log.Debug("Added peer", "peers", peers)
+
+		retCh <- p
+	}
+
+	select {
+	case <-server.quit:
+		return nil
+	case server.peerOp <- add:
+		return <-retCh
+	}
 }
 
 func (server *Server) Peers() []*Peer {

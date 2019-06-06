@@ -262,7 +262,7 @@ func newFaucet(rctx context.Context, genesis *core.Genesis, port int, vnodes []*
 
 	for _, boot := range vnodes {
 		// old, _ := vntp2p.ParseNode(boot.String())
-		stack.Server().AddPeer(rctx, boot)
+		stack.Server().AddStaticPeer(rctx, boot)
 	}
 	// Attach to the client and retrieve and interesting metadatas
 	api, err := stack.Attach()

@@ -230,7 +230,7 @@ func (pm *ProtocolManager) resetBftPeer(urls []string) {
 		pm.peers.bftPeers[node.Id] = struct{}{}
 		if _, exists := pm.peers.peers[node.Id]; !exists {
 			log.Debug("Reset bft peer, connecting to", "peer", url)
-			go pm.node.Server().AddPeer(context.Background(), node)
+			go pm.node.Server().AddStaticPeer(context.Background(), node)
 		}
 	}
 }

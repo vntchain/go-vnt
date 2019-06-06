@@ -44,9 +44,9 @@ type Protocol struct {
 func (server *Server) HandleStream(s inet.Stream) {
 	// peer信息只获取1次即可
 	log.Debug("Stream data coming...")
-	peer := server.GetPeerByRemoteID(s)
+	peer := server.addPeer(s)
 	if peer == nil {
-		log.Debug("HandleStream", "remotePeerID", s.Conn().RemotePeer(), "this remote peer is nil, don't handle it")
+		log.Debug("HandleStream", "peer", s.Conn().RemotePeer(), "error", "this remote peer is nil, don't handle it")
 		_ = s.Reset()
 		return
 	}

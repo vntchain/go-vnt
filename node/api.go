@@ -41,7 +41,7 @@ func NewPrivateAdminAPI(node *Node) *PrivateAdminAPI {
 	return &PrivateAdminAPI{node: node}
 }
 
-// AddPeer requests connecting to a remote node, and also maintaining the new
+// AddStaticPeer requests connecting to a remote node, and also maintaining the new
 // connection at all times, even reconnecting if it is lost.
 func (api *PrivateAdminAPI) AddPeer(url string) (bool, error) {
 	// Make sure the server is running, fail otherwise
@@ -55,7 +55,7 @@ func (api *PrivateAdminAPI) AddPeer(url string) (bool, error) {
 		return false, fmt.Errorf("invalid enode: %v", err)
 	}
 	ctx := context.Background()
-	server.AddPeer(ctx, node)
+	server.AddStaticPeer(ctx, node)
 	return true, nil
 }
 

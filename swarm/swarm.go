@@ -280,7 +280,7 @@ func (self *Swarm) Start(srv *vntp2p.Server) error {
 		if err != nil {
 			return fmt.Errorf("invalid node URL: %v", err)
 		}
-		srv.AddPeer(ctx, node)
+		srv.AddStaticPeer(ctx, node)
 		return nil
 	}
 	// set chequebook

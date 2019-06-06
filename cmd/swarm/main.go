@@ -548,6 +548,6 @@ func injectBootnodes(srv *vntp2p.Server, nodes []string) {
 			log.Error("Invalid swarm bootnode", "err", err)
 			continue
 		}
-		srv.AddPeer(context.Background(), n)
+		srv.AddStaticPeer(context.Background(), n)
 	}
 }

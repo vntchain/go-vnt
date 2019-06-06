@@ -57,7 +57,7 @@ const (
 	// above some healthy uncle limit, so use that.
 	maxQueuedAnns = 4
 
-	handshakeTimeout = 5 * time.Second
+	handshakeTimeout = 10 * time.Second
 )
 
 // PeerInfo represents a short summary of the VNT sub-protocol metadata known
