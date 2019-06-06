@@ -92,11 +92,7 @@ type Server struct {
 	addstatic    chan *Node
 	removestatic chan *Node
 
-	addpeer chan *Stream
-	delpeer chan peerDrop
-
-	peerOp     chan peerOpFunc
-	peerOpDone chan struct{}
+	peerOp chan peerOpFunc // channel to operation peers in run
 
 	protomap map[string][]Protocol
 }
@@ -132,13 +128,10 @@ func (server *Server) Start() error {
 	server.lock.Lock()
 	defer server.lock.Unlock()
 
-	server.addpeer = make(chan *Stream)
-	server.delpeer = make(chan peerDrop)
 	server.addstatic = make(chan *Node)
 	server.removestatic = make(chan *Node)
 	server.quit = make(chan struct{})
 	server.peerOp = make(chan peerOpFunc)
-	server.peerOpDone = make(chan struct{})
 
 	// 协议映射初始化
 	server.protomap = make(map[string][]Protocol)
@@ -236,27 +229,10 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 
 	for {
 		scheduleTasks()
-
 		select {
 		case t := <-taskdone:
 			tasker.taskDone(t)
 			delTask(t)
-
-		case t := <-server.addpeer:
-			remoteID := t.stream.Conn().RemotePeer()
-			log.Debug("Adding peer", "peer id", remoteID)
-			if p, ok := peers[remoteID]; ok {
-				p.log.Debug("Already exist peer")
-				break
-			}
-			p := newPeer(t, server)
-
-			if server.EnableMsgEvents {
-				p.events = &server.peerFeed
-			}
-			go server.runPeer(p)
-			peers[p.RemoteID()] = p
-			p.log.Debug("Added peer", "peers", peers)
 
 		case t := <-server.addstatic:
 			log.Debug("Adding static", "peer id", t.Id)
@@ -269,17 +245,7 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 			}
 
 		case op := <-server.peerOp:
-			// This channel is used by Peers and PeerCount.
 			op(peers)
-			server.peerOpDone <- struct{}{}
-
-		case pd := <-server.delpeer:
-			// A peer disconnected.
-			pid := pd.RemoteID()
-			log.Info("Removing p2p peer", "peer", pid.ToString(), "error", pd.err)
-			if _, ok := peers[pid]; ok {
-				delete(peers, pid)
-			}
 		}
 	}
 }
@@ -345,11 +311,11 @@ func (server *Server) Self() *Node {
 }
 
 func (server *Server) getPeer(pid peer.ID) *Peer {
-	var p *Peer
+	retCh := make(chan *Peer)
 
 	query := func(peers map[peer.ID]*Peer) {
-		if val, ok := peers[pid]; ok {
-			p = val
+		if p, ok := peers[pid]; ok {
+			retCh <- p
 		}
 	}
 
@@ -357,10 +323,8 @@ func (server *Server) getPeer(pid peer.ID) *Peer {
 	case <-server.quit:
 		return nil
 	case server.peerOp <- query:
-		<-server.peerOpDone
+		return <-retCh
 	}
-
-	return p
 }
 
 // addPeer add a peer and do call protocol stack to handshake.
@@ -376,6 +340,10 @@ func (server *Server) addPeer(s inet.Stream) *Peer {
 			ok bool
 		)
 
+		defer func() {
+			retCh <- p
+		}()
+
 		log.Debug("Adding peer", "peer id", pid)
 		if p, ok = peers[pid]; ok {
 			p.log.Debug("Already exist peer")
@@ -389,8 +357,6 @@ func (server *Server) addPeer(s inet.Stream) *Peer {
 		go server.runPeer(p)
 		peers[pid] = p
 		p.log.Debug("Added peer", "peers", peers)
-
-		retCh <- p
 	}
 
 	select {
@@ -401,28 +367,52 @@ func (server *Server) addPeer(s inet.Stream) *Peer {
 	}
 }
 
-func (server *Server) Peers() []*Peer {
-	var ps []*Peer
+func (server *Server) rmPeer(pid peer.ID, err error) {
+	rm := func(peers map[peer.ID]*Peer) {
+		if p, ok := peers[pid]; ok {
+			p.log.Info("Remove p2p peer", "error", err)
+			delete(peers, pid)
+		}
+	}
+
 	select {
 	case <-server.quit:
-	case server.peerOp <- func(peers map[peer.ID]*Peer) {
+		return
+	case server.peerOp <- rm:
+		return
+	}
+}
+
+func (server *Server) Peers() []*Peer {
+	retCh := make(chan []*Peer)
+
+	get := func(peers map[peer.ID]*Peer) {
+		var ps []*Peer
 		for _, p := range peers {
 			ps = append(ps, p)
 		}
-	}:
-		<-server.peerOpDone
+		retCh <- ps
 	}
-	return ps
+
+	select {
+	case <-server.quit:
+		return nil
+	case server.peerOp <- get:
+		return <-retCh
+	}
 }
 
 func (server *Server) PeerCount() int {
-	var count int
+	retCh := make(chan int)
+	count := func(ps map[peer.ID]*Peer) {
+		retCh <- len(ps)
+	}
 	select {
 	case <-server.quit:
-	case server.peerOp <- func(ps map[peer.ID]*Peer) { count = len(ps) }:
-		<-server.peerOpDone
+		return 0
+	case server.peerOp <- count:
+		return <-retCh
 	}
-	return count
 }
 
 func (server *Server) maxDialedConns() int {
@@ -456,11 +446,12 @@ func (server *Server) SetupStream(ctx context.Context, target peer.ID, pid strin
 		return err
 	} */
 
-	err = server.dispatch(&Stream{stream: s, Protocols: server.protomap[pid]}, server.addpeer)
-	if err != nil {
-		fmt.Println("SetupStream dispatch Error: ", err)
-		return err
-	}
+	// err = server.dispatch(&Stream{stream: s, Protocols: server.protomap[pid]}, server.addpeer)
+	// if err != nil {
+	// 	fmt.Println("SetupStream dispatch Error: ", err)
+	// 	return err
+	// }
+	server.addPeer(s)
 	return nil
 }
 
@@ -472,7 +463,7 @@ func (server *Server) runPeer(p *Peer) {
 	})
 
 	// run the protocol
-	remoteRequested, err := p.run()
+	_, err := p.run()
 
 	// broadcast peer drop
 	server.peerFeed.Send(&PeerEvent{
@@ -481,9 +472,7 @@ func (server *Server) runPeer(p *Peer) {
 		Error: err.Error(),
 	})
 
-	// Note: run waits for existing peers to be sent on srv.delpeer
-	// before returning, so this send should not select on srv.quit.
-	server.delpeer <- peerDrop{p, err, remoteRequested}
+	server.rmPeer(p.RemoteID(), err)
 }
 
 func (server *Server) dispatch(s *Stream, stage chan<- *Stream) error {
