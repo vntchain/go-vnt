@@ -89,12 +89,12 @@ type Server struct {
 	lock sync.Mutex
 
 	quit         chan struct{}
-	addstatic    chan *Node
-	removestatic chan *Node
+	addStatic    chan *Node
+	removeStatic chan *Node
 
 	peerOp chan peerOpFunc // channel to operation peers in run
 
-	protomap map[string][]Protocol
+	protocols map[string][]Protocol // vntp2p.PID to vnt sub protocols
 }
 
 type peerOpFunc func(map[peer.ID]*Peer)
@@ -128,15 +128,15 @@ func (server *Server) Start() error {
 	server.lock.Lock()
 	defer server.lock.Unlock()
 
-	server.addstatic = make(chan *Node)
-	server.removestatic = make(chan *Node)
+	server.addStatic = make(chan *Node)
+	server.removeStatic = make(chan *Node)
 	server.quit = make(chan struct{})
 	server.peerOp = make(chan peerOpFunc)
 
 	// 协议映射初始化
-	server.protomap = make(map[string][]Protocol)
+	server.protocols = make(map[string][]Protocol)
 
-	server.protomap[PID] = server.Protocols
+	server.protocols[PID] = server.Protocols
 
 	// Listen
 	// run
@@ -234,11 +234,11 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 			tasker.taskDone(t)
 			delTask(t)
 
-		case t := <-server.addstatic:
+		case t := <-server.addStatic:
 			log.Debug("Adding static", "peer id", t.Id)
 			tasker.addStatic(t)
 			log.Debug("Added static", "peer id", t.Id)
-		case t := <-server.removestatic:
+		case t := <-server.removeStatic:
 			tasker.removeStatic(t)
 			if p, ok := peers[t.Id]; ok {
 				p.Disconnect(DiscRequested)
@@ -261,14 +261,14 @@ func (server *Server) AddStaticPeer(ctx context.Context, node *Node) {
 
 	select {
 	case <-server.quit:
-	case server.addstatic <- node:
+	case server.addStatic <- node:
 	}
 }
 
 func (server *Server) RemovePeer(node *Node) {
 	select {
 	case <-server.quit:
-	case server.removestatic <- node:
+	case server.removeStatic <- node:
 	}
 }
 
@@ -332,7 +332,7 @@ func (server *Server) getPeer(pid peer.ID) *Peer {
 func (server *Server) addPeer(s inet.Stream) *Peer {
 	pid := s.Conn().RemotePeer()
 	retCh := make(chan *Peer)
-	stream := &Stream{stream: s, Protocols: server.protomap[PID]}
+	stream := &Stream{stream: s, Protocols: server.protocols[PID]}
 
 	add := func(peers map[peer.ID]*Peer) {
 		var (

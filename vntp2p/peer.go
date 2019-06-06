@@ -92,8 +92,8 @@ type Peer struct {
 
 func newPeer(s *Stream, server *Server) *Peer {
 	m := make(map[string]*VNTMsger)
-	for i := range s.Protocols {
-		proto := s.Protocols[i]
+	// Create msgers for each sub protocol
+	for _, proto := range s.Protocols {
 		vntMessenger := &VNTMsger{
 			protocol: proto,
 			in:       make(chan Msg),
