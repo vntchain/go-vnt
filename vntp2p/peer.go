@@ -223,6 +223,7 @@ func (p *Peer) run() (remoteRequested bool, err error) {
 			p.log.Debug("Run protocol error", "protocol", proto.Name, "error", err)
 
 			p.sendError(err)
+			notifyError(p.msgers, err)
 			p.wg.Done()
 		}()
 	}
