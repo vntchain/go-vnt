@@ -637,6 +637,7 @@ func (whisper *Whisper) HandlePeer(peer *vntp2p.Peer, rw vntp2p.MsgReadWriter) e
 
 	// Run the peer handshake and state updates
 	if err := whisperPeer.handshake(); err != nil {
+		log.Debug("Whisper6 handshake failed", "error", err.Error())
 		return err
 	}
 	whisperPeer.start()

@@ -78,6 +78,7 @@ func (peer *Peer) stop() {
 // handshake sends the protocol initiation status message to the remote peer and
 // verifies the remote status too.
 func (peer *Peer) handshake() error {
+	peer.peer.Log().Debug("Whisper6 going to handshake")
 	// Send the handshake status message asynchronously
 	errc := make(chan error, 1)
 	go func() {
