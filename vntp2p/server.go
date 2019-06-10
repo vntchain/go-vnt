@@ -233,7 +233,6 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 		case t := <-taskdone:
 			tasker.taskDone(t)
 			delTask(t)
-
 		case t := <-server.addStatic:
 			log.Debug("Adding static", "peer id", t.Id)
 			tasker.addStatic(t)
@@ -243,9 +242,13 @@ func (server *Server) run(ctx context.Context, tasker taskworker) {
 			if p, ok := peers[t.Id]; ok {
 				p.Disconnect(DiscRequested)
 			}
-
 		case op := <-server.peerOp:
 			op(peers)
+		case <-server.quit:
+			for _, p := range peers {
+				p.Disconnect(DiscHostQuit)
+			}
+			return
 		}
 	}
 }
