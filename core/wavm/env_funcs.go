@@ -248,8 +248,40 @@ func (ef *EnvFunctions) GetValue(proc *exec.WavmProcess) uint64 {
 func (ef *EnvFunctions) SHA3(proc *exec.WavmProcess, dataIdx uint64) uint64 {
 	data := proc.ReadAt(dataIdx)
 	ef.ctx.GasCounter.GasSHA3(uint64(len(data)))
-	hash := []byte(crypto.Keccak256Hash(data).Hex())
+	hash := []byte(crypto.Keccak256(data))
 	return uint64(proc.SetBytes(hash))
+}
+
+//Ecrecover
+func (ef *EnvFunctions) Ecrecover(proc *exec.WavmProcess, hashptr uint64, sigv uint64, sigr uint64, sigs uint64) uint64 {
+	ef.ctx.GasCounter.GasEcrecover()
+	hash := proc.ReadAt(hashptr)
+	r := new(big.Int).SetBytes(proc.ReadAt(sigr))
+	s := new(big.Int).SetBytes(proc.ReadAt(sigs))
+	v := new(big.Int).SetBytes(proc.ReadAt(sigv))
+	v = v.Sub(v, new(big.Int).SetUint64(27))
+	if v.Cmp(new(big.Int).SetUint64(0)) != 0 && v.Cmp(new(big.Int).SetUint64(1)) != 0 {
+		return ef.returnAddress(proc, []byte(""))
+	}
+	// tighter sig s values input homestead only apply to tx sigs
+	sigV := byte(1)
+	if len(v.Bytes()) == 0 {
+		sigV = byte(0)
+	}
+
+	if !crypto.ValidateSignatureValues(sigV, r, s, false) {
+		return ef.returnAddress(proc, []byte(""))
+	}
+	// v needs to be at the end for libsecp256k1
+	pubKey, err := crypto.Ecrecover(hash, append(append(r.Bytes(), s.Bytes()...), sigV))
+	// make sure the public key is a valid one
+	if err != nil {
+		return ef.returnAddress(proc, []byte(""))
+	}
+
+	// // the first byte of pubkey is bitcoin heritage
+	addr := common.LeftPadBytes(crypto.Keccak256(pubKey[1:])[12:], 32)
+	return ef.returnAddress(proc, addr)
 }
 
 //GetContractAddress get contract address
@@ -1141,6 +1173,55 @@ func (ef *EnvFunctions) U256Cmp(proc *exec.WavmProcess, x, y uint64) uint64 {
 	return uint64(res)
 }
 
+func (ef *EnvFunctions) U256Shl(proc *exec.WavmProcess, value, shift uint64) uint64 {
+	bigShift := readU256FromMemory(proc, shift)
+	bigValue := readU256FromMemory(proc, value)
+	ef.ctx.GasCounter.GasFastestStep()
+	if bigShift.Cmp(common.Big256) >= 0 {
+		res := new(big.Int).SetUint64(0)
+		return ef.returnU256(proc, res)
+	}
+	n := uint(bigShift.Uint64())
+	res := math.U256(bigValue.Lsh(bigValue, n))
+	return ef.returnU256(proc, res)
+}
+
+func (ef *EnvFunctions) U256Shr(proc *exec.WavmProcess, value, shift uint64) uint64 {
+	bigShift := readU256FromMemory(proc, shift)
+	bigValue := readU256FromMemory(proc, value)
+	if bigShift.Cmp(common.Big256) >= 0 {
+		res := new(big.Int).SetUint64(0)
+		return ef.returnU256(proc, res)
+	}
+	n := uint(bigShift.Uint64())
+	res := math.U256(bigValue.Rsh(bigValue, n))
+	return ef.returnU256(proc, res)
+}
+
+func (ef *EnvFunctions) U256And(proc *exec.WavmProcess, x, y uint64) uint64 {
+	bigx := readU256FromMemory(proc, x)
+	bigy := readU256FromMemory(proc, y)
+	res := bigx.And(bigx, bigy)
+	ef.ctx.GasCounter.GasFastestStep()
+	return ef.returnU256(proc, res)
+}
+
+func (ef *EnvFunctions) U256Or(proc *exec.WavmProcess, x, y uint64) uint64 {
+	bigx := readU256FromMemory(proc, x)
+	bigy := readU256FromMemory(proc, y)
+	res := bigx.Or(bigx, bigy)
+	ef.ctx.GasCounter.GasFastestStep()
+	return ef.returnU256(proc, res)
+}
+
+func (ef *EnvFunctions) U256Xor(proc *exec.WavmProcess, x, y uint64) uint64 {
+	bigx := readU256FromMemory(proc, x)
+	bigy := readU256FromMemory(proc, y)
+	res := bigx.Xor(bigx, bigy)
+	ef.ctx.GasCounter.GasFastestStep()
+	return ef.returnU256(proc, res)
+}
+
 func (ef *EnvFunctions) Pow(proc *exec.WavmProcess, base, exponent uint64) uint64 {
 	b := new(big.Int)
 	b.SetUint64(base)
@@ -1174,7 +1255,7 @@ func (ef *EnvFunctions) returnPointer(proc *exec.WavmProcess, input []byte) uint
 func (ef *EnvFunctions) returnAddress(proc *exec.WavmProcess, input []byte) uint64 {
 	ctx := ef.ctx
 	ctx.GasCounter.GasReturnAddress()
-	return uint64(proc.SetBytes(input))
+	return uint64(proc.SetBytes(common.BytesToAddress(input).Bytes()))
 }
 
 func (ef *EnvFunctions) returnU256(proc *exec.WavmProcess, bigint *big.Int) uint64 {
