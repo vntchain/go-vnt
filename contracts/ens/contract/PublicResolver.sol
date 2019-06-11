@@ -7,39 +7,39 @@ import './AbstractENS.sol';
  * address.
  */
 contract PublicResolver {
-    bytes4 constant INTERFACE_META_ID = 0x01ffc9a7;
-    bytes4 constant ADDR_INTERFACE_ID = 0x3b3b57de;
-    bytes4 constant CONTENT_INTERFACE_ID = 0xd8389dc5;
-    bytes4 constant NAME_INTERFACE_ID = 0x691f3431;
-    bytes4 constant ABI_INTERFACE_ID = 0x2203ab56;
-    bytes4 constant PUBKEY_INTERFACE_ID = 0xc8690233;
-    bytes4 constant TEXT_INTERFACE_ID = 0x59d1d43c;
+    string constant INTERFACE_META_ID = 0x01ffc9a7;
+    string constant ADDR_INTERFACE_ID = 0x3b3b57de;
+    string constant CONTENT_INTERFACE_ID = 0xd8389dc5;
+    string constant NAME_INTERFACE_ID = 0x691f3431;
+    string constant ABI_INTERFACE_ID = 0x2203ab56;
+    string constant PUBKEY_INTERFACE_ID = 0xc8690233;
+    string constant TEXT_INTERFACE_ID = 0x59d1d43c;
 
-    event AddrChanged(bytes32 indexed node, address a);
-    event ContentChanged(bytes32 indexed node, bytes32 hash);
-    event NameChanged(bytes32 indexed node, string name);
-    event ABIChanged(bytes32 indexed node, uint256 indexed contentType);
-    event PubkeyChanged(bytes32 indexed node, bytes32 x, bytes32 y);
-    event TextChanged(bytes32 indexed node, string indexed indexedKey, string key);
+    event AddrChanged(string indexed node, address a);
+    event ContentChanged(string indexed node, string hash);
+    event NameChanged(string indexed node, string name);
+    event ABIChanged(string indexed node, uint256 indexed contentType);
+    event PubkeyChanged(string indexed node, string x, string y);
+    event TextChanged(string indexed node, string indexed indexedKey, string key);
 
     struct PublicKey {
-        bytes32 x;
-        bytes32 y;
+        string x;
+        string y;
     }
 
     struct Record {
         address addr;
-        bytes32 content;
+        string content;
         string name;
         PublicKey pubkey;
         mapping(string=>string) text;
-        mapping(uint256=>bytes) abis;
+        mapping(uint256=>string) abis;
     }
 
     AbstractENS ens;
-    mapping(bytes32=>Record) records;
+    mapping(string=>Record) records;
 
-    modifier only_owner(bytes32 node) {
+    modifier only_owner(string node) {
         if (ens.owner(node) != msg.sender) throw;
         _;
     }
@@ -57,7 +57,7 @@ contract PublicResolver {
      * @param interfaceID The ID of the interface to check for.
      * @return True if the contract implements the requested interface.
      */
-    function supportsInterface(bytes4 interfaceID) constant returns (bool) {
+    function supportsInterface(string interfaceID) constant returns (bool) {
         return interfaceID == ADDR_INTERFACE_ID ||
                interfaceID == CONTENT_INTERFACE_ID ||
                interfaceID == NAME_INTERFACE_ID ||
@@ -72,7 +72,7 @@ contract PublicResolver {
      * @param node The ENS node to query.
      * @return The associated address.
      */
-    function addr(bytes32 node) constant returns (address ret) {
+    function addr(string node) constant returns (address ret) {
         ret = records[node].addr;
     }
 
@@ -82,7 +82,7 @@ contract PublicResolver {
      * @param node The node to update.
      * @param addr The address to set.
      */
-    function setAddr(bytes32 node, address addr) only_owner(node) {
+    function setAddr(string node, address addr) only_owner(node) {
         records[node].addr = addr;
         AddrChanged(node, addr);
     }
@@ -94,7 +94,7 @@ contract PublicResolver {
      * @param node The ENS node to query.
      * @return The associated content hash.
      */
-    function content(bytes32 node) constant returns (bytes32 ret) {
+    function content(string node) constant returns (string ret) {
         ret = records[node].content;
     }
 
@@ -106,7 +106,7 @@ contract PublicResolver {
      * @param node The node to update.
      * @param hash The content hash to set
      */
-    function setContent(bytes32 node, bytes32 hash) only_owner(node) {
+    function setContent(string node, string hash) only_owner(node) {
         records[node].content = hash;
         ContentChanged(node, hash);
     }
@@ -117,7 +117,7 @@ contract PublicResolver {
      * @param node The ENS node to query.
      * @return The associated name.
      */
-    function name(bytes32 node) constant returns (string ret) {
+    function name(string node) constant returns (string ret) {
         ret = records[node].name;
     }
 
@@ -127,7 +127,7 @@ contract PublicResolver {
      * @param node The node to update.
      * @param name The name to set.
      */
-    function setName(bytes32 node, string name) only_owner(node) {
+    function setName(string node, string name) only_owner(node) {
         records[node].name = name;
         NameChanged(node, name);
     }
@@ -140,7 +140,7 @@ contract PublicResolver {
      * @return contentType The content type of the return value
      * @return data The ABI data
      */
-    function ABI(bytes32 node, uint256 contentTypes) constant returns (uint256 contentType, bytes data) {
+    function ABI(string node, uint256 contentTypes) constant returns (uint256 contentType, string data) {
         var record = records[node];
         for(contentType = 1; contentType <= contentTypes; contentType <<= 1) {
             if ((contentType & contentTypes) != 0 && record.abis[contentType].length > 0) {
@@ -159,7 +159,7 @@ contract PublicResolver {
      * @param contentType The content type of the ABI
      * @param data The ABI data.
      */
-    function setABI(bytes32 node, uint256 contentType, bytes data) only_owner(node) {
+    function setABI(string node, uint256 contentType, string data) only_owner(node) {
         // Content types must be powers of 2
         if (((contentType - 1) & contentType) != 0) throw;
 
@@ -173,7 +173,7 @@ contract PublicResolver {
      * @param node The ENS node to query
      * @return x, y the X and Y coordinates of the curve point for the public key.
      */
-    function pubkey(bytes32 node) constant returns (bytes32 x, bytes32 y) {
+    function pubkey(string node) constant returns (string x, string y) {
         return (records[node].pubkey.x, records[node].pubkey.y);
     }
 
@@ -183,7 +183,7 @@ contract PublicResolver {
      * @param x the X coordinate of the curve point for the public key.
      * @param y the Y coordinate of the curve point for the public key.
      */
-    function setPubkey(bytes32 node, bytes32 x, bytes32 y) only_owner(node) {
+    function setPubkey(string node, string x, string y) only_owner(node) {
         records[node].pubkey = PublicKey(x, y);
         PubkeyChanged(node, x, y);
     }
@@ -194,7 +194,7 @@ contract PublicResolver {
      * @param key The text data key to query.
      * @return The associated text data.
      */
-    function text(bytes32 node, string key) constant returns (string ret) {
+    function text(string node, string key) constant returns (string ret) {
         ret = records[node].text[key];
     }
 
@@ -205,7 +205,7 @@ contract PublicResolver {
      * @param key The key to set.
      * @param value The text data value to set.
      */
-    function setText(bytes32 node, string key, string value) only_owner(node) {
+    function setText(string node, string key, string value) only_owner(node) {
         records[node].text[key] = value;
         TextChanged(node, key, key);
     }

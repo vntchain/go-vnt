@@ -33,7 +33,7 @@ var (
 	chainID  = params.TestChainConfig.ChainID
 	key, _   = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	name     = "my name on ENS"
-	hash     = crypto.Keccak256Hash([]byte("my content"))
+	hash     = crypto.Keccak256Hash([]byte("my content")).Hex()
 	addr     = crypto.PubkeyToAddress(key.PublicKey)
 	testAddr = common.HexToAddress("0x1234123412341234123412341234123412341234")
 )
@@ -76,7 +76,7 @@ func TestENS(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 	if vhost != hash {
-		t.Fatalf("resolve error, expected %v, got %v", hash.Hex(), vhost.Hex())
+		t.Fatalf("resolve error, expected %v, got %v", hash, vhost)
 	}
 
 	// set the address for the name

@@ -7,9 +7,9 @@ import './AbstractENS.sol';
  */
 contract FIFSRegistrar {
     AbstractENS ens;
-    bytes32 rootNode;
+    string rootNode;
 
-    modifier only_owner(bytes32 subnode) {
+    modifier only_owner(string subnode) {
         var node = sha3(rootNode, subnode);
         var currentOwner = ens.owner(node);
 
@@ -23,7 +23,7 @@ contract FIFSRegistrar {
      * @param ensAddr The address of the ENS registry.
      * @param node The node that this registrar administers.
      */
-    function FIFSRegistrar(AbstractENS ensAddr, bytes32 node) {
+    function FIFSRegistrar(AbstractENS ensAddr, string node) {
         ens = ensAddr;
         rootNode = node;
     }
@@ -33,7 +33,7 @@ contract FIFSRegistrar {
      * @param subnode The hash of the label to register.
      * @param owner The address of the new owner.
      */
-    function register(bytes32 subnode, address owner) only_owner(subnode) {
+    function register(string subnode, address owner) only_owner(subnode) {
         ens.setSubnodeOwner(rootNode, subnode, owner);
     }
 }

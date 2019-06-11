@@ -12,10 +12,10 @@ contract ENS is AbstractENS {
         uint64 ttl;
     }
 
-    mapping(bytes32=>Record) records;
+    mapping(string=>Record) records;
 
     // Permits modifications only by the owner of the specified node.
-    modifier only_owner(bytes32 node) {
+    modifier only_owner(string node) {
         if (records[node].owner != msg.sender) throw;
         _;
     }
@@ -30,21 +30,21 @@ contract ENS is AbstractENS {
     /**
      * Returns the address that owns the specified node.
      */
-    function owner(bytes32 node) constant returns (address) {
+    function owner(string node) constant returns (address) {
         return records[node].owner;
     }
 
     /**
      * Returns the address of the resolver for the specified node.
      */
-    function resolver(bytes32 node) constant returns (address) {
+    function resolver(string node) constant returns (address) {
         return records[node].resolver;
     }
 
     /**
      * Returns the TTL of a node, and any records associated with it.
      */
-    function ttl(bytes32 node) constant returns (uint64) {
+    function ttl(string node) constant returns (uint64) {
         return records[node].ttl;
     }
 
@@ -54,7 +54,7 @@ contract ENS is AbstractENS {
      * @param node The node to transfer ownership of.
      * @param owner The address of the new owner.
      */
-    function setOwner(bytes32 node, address owner) only_owner(node) {
+    function setOwner(string node, address owner) only_owner(node) {
         Transfer(node, owner);
         records[node].owner = owner;
     }
@@ -66,7 +66,7 @@ contract ENS is AbstractENS {
      * @param label The hash of the label specifying the subnode.
      * @param owner The address of the new owner.
      */
-    function setSubnodeOwner(bytes32 node, bytes32 label, address owner) only_owner(node) {
+    function setSubnodeOwner(string node, string label, address owner) only_owner(node) {
         var subnode = sha3(node, label);
         NewOwner(node, label, owner);
         records[subnode].owner = owner;
@@ -77,7 +77,7 @@ contract ENS is AbstractENS {
      * @param node The node to update.
      * @param resolver The address of the resolver.
      */
-    function setResolver(bytes32 node, address resolver) only_owner(node) {
+    function setResolver(string node, address resolver) only_owner(node) {
         NewResolver(node, resolver);
         records[node].resolver = resolver;
     }
@@ -87,7 +87,7 @@ contract ENS is AbstractENS {
      * @param node The node to update.
      * @param ttl The TTL in seconds.
      */
-    function setTTL(bytes32 node, uint64 ttl) only_owner(node) {
+    function setTTL(string node, uint64 ttl) only_owner(node) {
         NewTTL(node, ttl);
         records[node].ttl = ttl;
     }

@@ -65,42 +65,40 @@ func DeployENS(transactOpts *bind.TransactOpts, contractBackend bind.ContractBac
 	if err != nil {
 		return ensAddr, nil, err
 	}
-
 	ens, err := NewENS(transactOpts, ensAddr, contractBackend)
 	if err != nil {
 		return ensAddr, nil, err
 	}
-
 	// Deploy the registrar.
-	regAddr, _, _, err := contract.DeployFIFSRegistrar(transactOpts, contractBackend, ensAddr, [32]byte{})
+	regAddr, _, _, err := contract.DeployFIFSRegistrar(transactOpts, contractBackend, ensAddr, "")
 	if err != nil {
 		return ensAddr, nil, err
 	}
 	// Set the registrar as owner of the ENS root.
-	if _, err = ens.SetOwner([32]byte{}, regAddr); err != nil {
+	if _, err = ens.SetOwner("", regAddr); err != nil {
 		return ensAddr, nil, err
 	}
 
 	return ensAddr, ens, nil
 }
 
-func ensParentNode(name string) (common.Hash, common.Hash) {
+func ensParentNode(name string) (string, string) {
 	parts := strings.SplitN(name, ".", 2)
 	label := crypto.Keccak256Hash([]byte(parts[0]))
 	if len(parts) == 1 {
-		return [32]byte{}, label
+		return "", string(label.Bytes())
 	} else {
 		parentNode, parentLabel := ensParentNode(parts[1])
-		return crypto.Keccak256Hash(parentNode[:], parentLabel[:]), label
+		return string(crypto.Keccak256Hash([]byte(parentNode), []byte(parentLabel)).Bytes()), string(label.Bytes())
 	}
 }
 
-func EnsNode(name string) common.Hash {
+func EnsNode(name string) string {
 	parentNode, parentLabel := ensParentNode(name)
-	return crypto.Keccak256Hash(parentNode[:], parentLabel[:])
+	return string(crypto.Keccak256Hash([]byte(parentNode), []byte(parentLabel)).Bytes())
 }
 
-func (self *ENS) getResolver(node [32]byte) (*contract.PublicResolverSession, error) {
+func (self *ENS) getResolver(node string) (*contract.PublicResolverSession, error) {
 	resolverAddr, err := self.Resolver(node)
 	if err != nil {
 		return nil, err
@@ -117,7 +115,7 @@ func (self *ENS) getResolver(node [32]byte) (*contract.PublicResolverSession, er
 	}, nil
 }
 
-func (self *ENS) getRegistrar(node [32]byte) (*contract.FIFSRegistrarSession, error) {
+func (self *ENS) getRegistrar(node string) (*contract.FIFSRegistrarSession, error) {
 	registrarAddr, err := self.Owner(node)
 	if err != nil {
 		return nil, err
@@ -135,20 +133,20 @@ func (self *ENS) getRegistrar(node [32]byte) (*contract.FIFSRegistrarSession, er
 }
 
 // Resolve is a non-transactional call that returns the content hash associated with a name.
-func (self *ENS) Resolve(name string) (common.Hash, error) {
+func (self *ENS) Resolve(name string) (string, error) {
 	node := EnsNode(name)
 
 	resolver, err := self.getResolver(node)
 	if err != nil {
-		return common.Hash{}, err
+		return "", err
 	}
 
 	ret, err := resolver.Content(node)
 	if err != nil {
-		return common.Hash{}, err
+		return "", err
 	}
 
-	return common.BytesToHash(ret[:]), nil
+	return ret, nil
 }
 
 // Addr is a non-transactional call that returns the address associated with a name.
@@ -196,7 +194,7 @@ func (self *ENS) Register(name string) (*types.Transaction, error) {
 
 // SetContentHash sets the content hash associated with a name. Only works if the caller
 // owns the name, and the associated resolver implements a `setContent` function.
-func (self *ENS) SetContentHash(name string, hash common.Hash) (*types.Transaction, error) {
+func (self *ENS) SetContentHash(name string, hash string) (*types.Transaction, error) {
 	node := EnsNode(name)
 
 	resolver, err := self.getResolver(node)

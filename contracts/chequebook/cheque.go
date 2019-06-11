@@ -299,14 +299,9 @@ func (self *Chequebook) Cash(ch *Cheque) (txhash string, err error) {
 
 // data to sign: contract address, beneficiary, cumulative amount of funds ever sent
 func sigHash(contract, beneficiary common.Address, sum *big.Int) []byte {
-	bigamount := sum.Bytes()
-	if len(bigamount) > 32 {
-		return nil
-	}
-	var amount32 [32]byte
-	copy(amount32[32-len(bigamount):32], bigamount)
+	bigamount := []byte(sum.String())
 	input := append(contract.Bytes(), beneficiary.Bytes()...)
-	input = append(input, amount32[:]...)
+	input = append(input, bigamount[:]...)
 	return crypto.Keccak256(input)
 }
 
@@ -617,8 +612,8 @@ func (self *Cheque) Verify(signerKey *ecdsa.PublicKey, contract, beneficiary com
 }
 
 // v/r/s representation of signature
-func sig2vrs(sig []byte) (v byte, r, s [32]byte) {
-	v = sig[64] + 27
+func sig2vrs(sig []byte) (v []byte, r, s [32]byte) {
+	v = []byte{sig[64] + 27}
 	copy(r[:], sig[:32])
 	copy(s[:], sig[32:64])
 	return
@@ -627,7 +622,7 @@ func sig2vrs(sig []byte) (v byte, r, s [32]byte) {
 // Cash cashes the cheque by sending an VNT transaction.
 func (self *Cheque) Cash(session *contract.ChequebookSession) (string, error) {
 	v, r, s := sig2vrs(self.Sig)
-	tx, err := session.Cash(self.Beneficiary, self.Amount, v, r, s)
+	tx, err := session.Cash(self.Beneficiary, self.Amount, string(v), string(r[:]), string(s[:]))
 	if err != nil {
 		return "", err
 	}

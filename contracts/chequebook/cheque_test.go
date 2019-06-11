@@ -18,7 +18,6 @@ package chequebook
 
 import (
 	"crypto/ecdsa"
-	"fmt"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -31,8 +30,13 @@ import (
 	"github.com/vntchain/go-vnt/contracts/chequebook/contract"
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/crypto"
+	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/params"
 )
+
+func init() {
+	log.Root().SetHandler(log.LvlFilterHandler(log.LvlTrace, log.StreamHandler(os.Stderr, log.TerminalFormat(true))))
+}
 
 var (
 	chainID = params.TestChainConfig.ChainID
@@ -76,7 +80,6 @@ func TestIssueAndReceive(t *testing.T) {
 	}
 	chbook.sent[addr1] = new(big.Int).SetUint64(42)
 	amount := common.Big1
-	fmt.Printf("333\n")
 	if _, err = chbook.Issue(addr1, amount); err == nil {
 		t.Fatalf("expected insufficient funds error, got none")
 	}
@@ -156,14 +159,12 @@ func TestVerifyErrors(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
-
 	path1 := filepath.Join(os.TempDir(), "chequebook-test-1.json")
 	contr1, _ := deploy(key1, common.Big2, backend)
 	chbook1, err := NewChequebook(chainID, path1, contr1, key1, backend)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
-
 	chbook0.sent[addr1] = new(big.Int).SetUint64(42)
 	chbook0.balance = new(big.Int).Set(common.Big2)
 	chbook1.balance = new(big.Int).Set(common.Big1)
@@ -172,17 +173,14 @@ func TestVerifyErrors(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-
 	chbox, err := NewInbox(chainID, key1, contr0, addr1, &key0.PublicKey, backend)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-
 	received, err := chbox.Receive(ch0)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-
 	if received.Cmp(big.NewInt(43)) != 0 {
 		t.Errorf("expected: %v, got %v", "43", received)
 	}
@@ -191,7 +189,6 @@ func TestVerifyErrors(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-
 	received, err = chbox.Receive(ch1)
 	t.Logf("correct error: %v", err)
 	if err == nil {
