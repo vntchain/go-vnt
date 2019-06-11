@@ -73,7 +73,6 @@ var (
 		"COPYING",
 		executablePath("abigen"),
 		executablePath("bootnode"),
-		executablePath("evm"),
 		executablePath("gvnt"),
 		executablePath("puppeth"),
 		executablePath("rlpdump"),
@@ -90,10 +89,6 @@ var (
 		{
 			Name:        "bootnode",
 			Description: "VNT bootnode.",
-		},
-		{
-			Name:        "evm",
-			Description: "Developer utility version of the EVM (VNT Virtual Machine) that is capable of running bytecode snippets within a configurable environment and execution mode.",
 		},
 		{
 			Name:        "gvnt",

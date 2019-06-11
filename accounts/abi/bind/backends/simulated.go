@@ -282,11 +282,10 @@ func (b *SimulatedBackend) callContract(ctx context.Context, call hubble.CallMsg
 	// Execute the call.
 	msg := callmsg{call}
 
-	evmContext := core.NewVMContext(msg, block.Header(), b.blockchain, nil)
+	vmContext := core.NewVMContext(msg, block.Header(), b.blockchain, nil)
 	// Create a new environment which holds all relevant information
 	// about the transaction and calling mechanisms.
-	//vmenv := vm.NewEVM(evmContext, statedb, b.config, vm.Config{})
-	vmenv := core.GetVM(msg, evmContext, stateObj, b.config, vm.Config{})
+	vmenv := core.GetVM(msg, vmContext, stateObj, b.config, vm.Config{})
 	gaspool := new(core.GasPool).AddGas(math.MaxUint64)
 
 	return core.NewStateTransition(vmenv, msg, gaspool).TransitionDb()
