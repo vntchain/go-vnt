@@ -176,10 +176,12 @@ func (rw *VNTMsger) WriteMsg(msg Msg) (err error) {
 	_, err = s.Write(m)
 	if err != nil {
 		rw.peer.log.Error("Write message", "write msg error", err)
-		s.Reset()
+		_ = s.Reset()
+		// Notify ReadMsg of current messenger to exit
+		rw.err <- fmt.Errorf("write error: %s", err.Error())
 		return err
 	} else {
-		s.Close()
+		_ = s.Close()
 	}
 	return nil
 }
