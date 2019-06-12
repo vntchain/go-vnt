@@ -47,7 +47,7 @@ type PublicVntAPI struct {
 	e *VNT
 }
 
-// NewPublicEthereumAPI creates a new VNT protocol API for full nodes.
+// NewPublicVntAPI creates a new VNT protocol API for full nodes.
 func NewPublicVntAPI(e *VNT) *PublicVntAPI {
 	return &PublicVntAPI{e}
 }

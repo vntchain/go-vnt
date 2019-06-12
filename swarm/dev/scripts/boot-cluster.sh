@@ -38,9 +38,9 @@ BOOTNODE_PUBKEY="760c4460e5336ac9bbd87952a3c7ec4363fc0a97bd31c86430806e287b437fd
 BOOTNODE_URL="vnode://${BOOTNODE_PUBKEY}@${BOOTNODE_IP}:${BOOTNODE_PORT}"
 
 # static gvnt configuration
-GETH_IP="192.168.33.3"
-GETH_RPC_PORT="8545"
-GETH_RPC_URL="http://${GETH_IP}:${GETH_RPC_PORT}"
+GVNT_IP="192.168.33.3"
+GVNT_RPC_PORT="8545"
+GVNT_RPC_URL="http://${GVNT_IP}:${GVNT_RPC_PORT}"
 
 usage() {
   cat >&2 <<USAGE
@@ -68,7 +68,7 @@ main() {
   stop_cluster
   create_network
   start_bootnode
-  start_geth_node
+  start_vnt_node
   start_swarm_nodes
 }
 
@@ -136,9 +136,9 @@ start_bootnode() {
   start_node "bootnode" "${BOOTNODE_IP}" "$(which bootnode)" ${args[@]}
 }
 
-# start_geth_node starts a gvnt node with --datadir pointing at <base-dir>/gvnt
+# start_vnt_node starts a gvnt node with --datadir pointing at <base-dir>/gvnt
 # and a single, unlocked account with password "gvnt"
-start_geth_node() {
+start_vnt_node() {
   local dir="${base_dir}/gvnt"
   mkdir -p "${dir}"
 
@@ -164,12 +164,12 @@ start_geth_node() {
     --unlock    "${address}"
     --password  "${dir}/password"
     --rpc
-    --rpcaddr   "${GETH_IP}"
-    --rpcport   "${GETH_RPC_PORT}"
+    --rpcaddr   "${GVNT_IP}"
+    --rpcport   "${GVNT_RPC_PORT}"
     --verbosity "6"
   )
 
-  start_node "gvnt" "${GETH_IP}" "$(which gvnt)" ${args[@]}
+  start_node "gvnt" "${GVNT_IP}" "$(which gvnt)" ${args[@]}
 }
 
 start_swarm_nodes() {
@@ -208,7 +208,7 @@ start_swarm_node() {
     --bootnodes    "${BOOTNODE_URL}"
     --datadir      "${dir}"
     --identity     "${name}"
-    --ens-api      "${GETH_RPC_URL}"
+    --ens-api      "${GVNT_RPC_URL}"
     --bzznetworkid "321"
     --bzzaccount   "${address}"
     --password     "${dir}/password"

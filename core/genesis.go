@@ -315,7 +315,7 @@ func decodePrealloc(data string) GenesisAlloc {
 	return ga
 }
 
-// DeveloperGenesisBlock returns the 'geth --dev' genesis block. Note, this must
+// DeveloperGenesisBlock returns the 'gvnt --dev' genesis block. Note, this must
 // be seeded with the
 // for console CI fix
 func DeveloperGenesisBlock(period uint64, faucet common.Address) *Genesis {

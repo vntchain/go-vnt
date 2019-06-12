@@ -92,7 +92,7 @@ func New(ctx *node.ServiceContext, config *vnt.Config) (*LightVnt, error) {
 	peers := newPeerSet()
 	quitSync := make(chan struct{})
 
-	leth := &LightVnt{
+	lvnt := &LightVnt{
 		config:           config,
 		chainConfig:      chainConfig,
 		chainDb:          chainDb,
@@ -109,32 +109,32 @@ func New(ctx *node.ServiceContext, config *vnt.Config) (*LightVnt, error) {
 		bloomTrieIndexer: light.NewBloomTrieIndexer(chainDb, true),
 	}
 
-	leth.relay = NewLesTxRelay(peers, leth.reqDist)
-	leth.serverPool = newServerPool(chainDb, quitSync, &leth.wg)
-	leth.retriever = newRetrieveManager(peers, leth.reqDist, leth.serverPool)
-	leth.odr = NewLesOdr(chainDb, leth.chtIndexer, leth.bloomTrieIndexer, leth.bloomIndexer, leth.retriever)
-	if leth.blockchain, err = light.NewLightChain(leth.odr, leth.chainConfig, leth.engine); err != nil {
+	lvnt.relay = NewLesTxRelay(peers, lvnt.reqDist)
+	lvnt.serverPool = newServerPool(chainDb, quitSync, &lvnt.wg)
+	lvnt.retriever = newRetrieveManager(peers, lvnt.reqDist, lvnt.serverPool)
+	lvnt.odr = NewLesOdr(chainDb, lvnt.chtIndexer, lvnt.bloomTrieIndexer, lvnt.bloomIndexer, lvnt.retriever)
+	if lvnt.blockchain, err = light.NewLightChain(lvnt.odr, lvnt.chainConfig, lvnt.engine); err != nil {
 		return nil, err
 	}
-	leth.bloomIndexer.Start(leth.blockchain)
+	lvnt.bloomIndexer.Start(lvnt.blockchain)
 	// Rewind the chain in case of an incompatible config upgrade.
 	if compat, ok := genesisErr.(*params.ConfigCompatError); ok {
 		log.Warn("Rewinding chain to upgrade configuration", "err", compat)
-		leth.blockchain.SetHead(compat.RewindTo)
+		lvnt.blockchain.SetHead(compat.RewindTo)
 		rawdb.WriteChainConfig(chainDb, genesisHash, chainConfig)
 	}
 
-	leth.txPool = light.NewTxPool(leth.chainConfig, leth.blockchain, leth.relay)
-	if leth.protocolManager, err = NewProtocolManager(leth.chainConfig, true, ClientProtocolVersions, config.NetworkId, leth.eventMux, leth.engine, leth.peers, leth.blockchain, nil, chainDb, leth.odr, leth.relay, leth.serverPool, quitSync, &leth.wg); err != nil {
+	lvnt.txPool = light.NewTxPool(lvnt.chainConfig, lvnt.blockchain, lvnt.relay)
+	if lvnt.protocolManager, err = NewProtocolManager(lvnt.chainConfig, true, ClientProtocolVersions, config.NetworkId, lvnt.eventMux, lvnt.engine, lvnt.peers, lvnt.blockchain, nil, chainDb, lvnt.odr, lvnt.relay, lvnt.serverPool, quitSync, &lvnt.wg); err != nil {
 		return nil, err
 	}
-	leth.ApiBackend = &LesApiBackend{leth, nil}
+	lvnt.ApiBackend = &LesApiBackend{lvnt, nil}
 	gpoParams := config.GPO
 	if gpoParams.Default == nil {
 		gpoParams.Default = config.GasPrice
 	}
-	leth.ApiBackend.gpo = gasprice.NewOracle(leth.ApiBackend, gpoParams)
-	return leth, nil
+	lvnt.ApiBackend.gpo = gasprice.NewOracle(lvnt.ApiBackend, gpoParams)
+	return lvnt, nil
 }
 
 // func lesTopic(genesisHash common.Hash, protocolVersion uint) discv5.Topic {

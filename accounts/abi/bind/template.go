@@ -427,8 +427,8 @@ const tmplSourceJava = `
 
 package {{.Package}};
 
-import org.hubble.geth.*;
-import org.hubble.geth.internal.*;
+import org.hubble.gvnt.*;
+import org.hubble.gvnt.internal.*;
 
 {{range $contract := .Contracts}}
 	public class {{.Type}} {

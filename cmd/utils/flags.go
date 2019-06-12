@@ -277,9 +277,9 @@ var (
 		Usage: "Record information useful for VM and contract debugging",
 	}
 	// Logging and debug settings
-	EthStatsURLFlag = cli.StringFlag{
-		Name:  "ethstats",
-		Usage: "Reporting URL of a ethstats service (nodename:secret@host:port)",
+	VntStatsURLFlag = cli.StringFlag{
+		Name:  "vntstats",
+		Usage: "Reporting URL of a vntstats service (nodename:secret@host:port)",
 	}
 	MetricsEnabledFlag = cli.BoolFlag{
 		Name:  metrics.MetricsEnabledFlag,
@@ -764,11 +764,11 @@ func SetP2PConfig(ctx *cli.Context, cfg *vntp2p.Config) {
 	if !(lightClient || lightServer) {
 		lightPeers = 0
 	}
-	ethPeers := cfg.MaxPeers - lightPeers
+	vntPeers := cfg.MaxPeers - lightPeers
 	if lightClient {
-		ethPeers = 0
+		vntPeers = 0
 	}
-	log.Info("Maximum peer count", "VNT", ethPeers, "LES", lightPeers, "total", cfg.MaxPeers)
+	log.Info("Maximum peer count", "VNT", vntPeers, "LES", lightPeers, "total", cfg.MaxPeers)
 
 	if ctx.GlobalIsSet(MaxPendingPeersFlag.Name) {
 		cfg.MaxPendingPeers = ctx.GlobalInt(MaxPendingPeersFlag.Name)
@@ -908,8 +908,8 @@ func SetShhConfig(ctx *cli.Context, stack *node.Node, cfg *whisper.Config) {
 	}
 }
 
-// SetEthConfig applies vnt-related command line flags to the config.
-func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *vnt.Config) {
+// SetVntConfig applies vnt-related command line flags to the config.
+func SetVntConfig(ctx *cli.Context, stack *node.Node, cfg *vnt.Config) {
 	// Avoid conflicting network flags
 	checkExclusive(ctx, LightServFlag, SyncModeFlag, "light")
 
@@ -965,8 +965,8 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *vnt.Config) {
 	}
 }
 
-// RegisterEthService adds an VNT client to the stack.
-func RegisterEthService(stack *node.Node, cfg *vnt.Config) {
+// RegisterVntService adds an VNT client to the stack.
+func RegisterVntService(stack *node.Node, cfg *vnt.Config) {
 	var err error
 	if cfg.SyncMode == downloader.LightSync {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
@@ -996,9 +996,9 @@ func RegisterShhService(stack *node.Node, cfg *whisper.Config) {
 	}
 }
 
-// RegisterEthStatsService configures the VNT Stats daemon and adds it to
+// RegisterVntStatsService configures the VNT Stats daemon and adds it to
 // th egiven node.
-func RegisterEthStatsService(stack *node.Node, url string) {
+func RegisterVntStatsService(stack *node.Node, url string) {
 	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		// Retrieve both vnt and les services
 		var vntServ *vnt.VNT

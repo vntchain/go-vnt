@@ -42,7 +42,7 @@ ADD genesis.json /genesis.json
 RUN \
   echo 'gvnt --cache 512 init /genesis.json' > gvnt.sh && \{{if .Unlock}}
 	echo 'mkdir -p /root/.vntchain/keystore/ && cp /signer.json /root/.vntchain/keystore/' >> gvnt.sh && \{{end}}
-	echo $'gvnt --networkid {{.NetworkID}} --cache 512 --port {{.Port}} --maxpeers {{.Peers}} {{.LightFlag}} --ethstats \'{{.Ethstats}}\' {{if .Bootnodes}}--bootnodes {{.Bootnodes}}{{end}} {{if .Coinbase}}--coinbase {{.Coinbase}} --produce --producerthreads 1{{end}} {{if .Unlock}}--unlock 0 --password /signer.pass --produce{{end}} --targetgaslimit {{.GasTarget}} --gasprice {{.GasPrice}}' >> gvnt.sh
+	echo $'gvnt --networkid {{.NetworkID}} --cache 512 --port {{.Port}} --maxpeers {{.Peers}} {{.LightFlag}} --vntstats \'{{.Vntstats}}\' {{if .Bootnodes}}--bootnodes {{.Bootnodes}}{{end}} {{if .Coinbase}}--coinbase {{.Coinbase}} --produce --producerthreads 1{{end}} {{if .Unlock}}--unlock 0 --password /signer.pass --produce{{end}} --targetgaslimit {{.GasTarget}} --gasprice {{.GasPrice}}' >> gvnt.sh
 
 ENTRYPOINT ["/bin/sh", "gvnt.sh"]
 `
@@ -59,13 +59,12 @@ services:
       - "{{.Port}}:{{.Port}}"
       - "{{.Port}}:{{.Port}}/udp"
     volumes:
-      - {{.Datadir}}:/root/.vntchain{{if .Ethashdir}}
-      - {{.Ethashdir}}:/root/.ethash{{end}}
+      - {{.Datadir}}:/root/.vntchain
     environment:
       - PORT={{.Port}}/tcp
       - TOTAL_PEERS={{.TotalPeers}}
       - LIGHT_PEERS={{.LightPeers}}
-      - STATS_NAME={{.Ethstats}}
+      - STATS_NAME={{.Vntstats}}
       - PRODUCER_NAME={{.Coinbase}}
       - GAS_TARGET={{.GasTarget}}
       - GAS_PRICE={{.GasPrice}}
@@ -101,7 +100,7 @@ func deployNode(client *sshClient, network string, bootnodes []string, config *n
 		"Peers":     config.peersTotal,
 		"LightFlag": lightFlag,
 		"Bootnodes": strings.Join(bootnodes, ","),
-		"Ethstats":  config.ethstats,
+		"Vntstats":  config.vntstats,
 		"Coinbase":  config.coinbase,
 		"GasTarget": uint64(1000000 * config.gasTarget),
 		"GasPrice":  uint64(1000000000 * config.gasPrice),
@@ -113,13 +112,12 @@ func deployNode(client *sshClient, network string, bootnodes []string, config *n
 	template.Must(template.New("").Parse(nodeComposefile)).Execute(composefile, map[string]interface{}{
 		"Type":       kind,
 		"Datadir":    config.datadir,
-		"Ethashdir":  config.ethashdir,
 		"Network":    network,
 		"Port":       config.port,
 		"TotalPeers": config.peersTotal,
 		"Light":      config.peersLight > 0,
 		"LightPeers": config.peersLight,
-		"Ethstats":   config.ethstats[:strings.Index(config.ethstats, ":")],
+		"Vntstats":   config.vntstats[:strings.Index(config.vntstats, ":")],
 		"Coinbase":   config.coinbase,
 		"GasTarget":  config.gasTarget,
 		"GasPrice":   config.gasPrice,
@@ -150,8 +148,7 @@ type nodeInfos struct {
 	genesis    []byte
 	network    int64
 	datadir    string
-	ethashdir  string
-	ethstats   string
+	vntstats   string
 	port       int
 	vnode      string
 	peersTotal int
@@ -171,7 +168,7 @@ func (info *nodeInfos) Report() map[string]string {
 		"Listener port":            strconv.Itoa(info.port),
 		"Peer count (all total)":   strconv.Itoa(info.peersTotal),
 		"Peer count (light nodes)": strconv.Itoa(info.peersLight),
-		"Ethstats username":        info.ethstats,
+		"Vntstats username":        info.vntstats,
 	}
 	if info.gasTarget > 0 {
 		// Producer or signer node
@@ -179,8 +176,6 @@ func (info *nodeInfos) Report() map[string]string {
 		report["Gas price (minimum accepted)"] = fmt.Sprintf("%0.3f GWei", info.gasPrice)
 
 		if info.coinbase != "" {
-			// Ethash proof-of-work producer
-			report["Ethash directory"] = info.ethashdir
 			report["Producer account"] = info.coinbase
 		}
 		if info.keyJSON != "" {
@@ -246,11 +241,10 @@ func checkNode(client *sshClient, network string, boot bool) (*nodeInfos, error)
 	stats := &nodeInfos{
 		genesis:    genesis,
 		datadir:    infos.volumes["/root/.vntchain"],
-		ethashdir:  infos.volumes["/root/.ethash"],
 		port:       port,
 		peersTotal: totalPeers,
 		peersLight: lightPeers,
-		ethstats:   infos.envvars["STATS_NAME"],
+		vntstats:   infos.envvars["STATS_NAME"],
 		coinbase:   infos.envvars["PRODUCER_NAME"],
 		keyJSON:    keyJSON,
 		keyPass:    keyPass,
