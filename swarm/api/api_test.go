@@ -134,11 +134,13 @@ func newTestResolver(addr string) *testResolver {
 	return r
 }
 
-func (t *testResolver) Resolve(addr string) (common.Hash, error) {
+func (t *testResolver) Resolve(addr string) (string, error) {
 	if t.hash == nil {
-		return common.Hash{}, fmt.Errorf("DNS name not found: %q", addr)
+		return "", fmt.Errorf("DNS name not found: %q", addr)
 	}
-	return *t.hash, nil
+	hash := *t.hash
+
+	return hash.Hex(), nil
 }
 
 // TestAPIResolve tests resolving URIs which can either contain content hashes
@@ -346,10 +348,10 @@ func TestMultiResolver(t *testing.T) {
 			res, err := x.r.Resolve(x.addr)
 			if err == nil {
 				if x.err != nil {
-					t.Fatalf("expected error %q, got result %q", x.err, res.Hex())
+					t.Fatalf("expected error %q, got result %q", x.err, res)
 				}
-				if res.Hex() != x.result {
-					t.Fatalf("expected result %q, got %q", x.result, res.Hex())
+				if res != x.result {
+					t.Fatalf("expected result %q, got %q", x.result, res)
 				}
 			} else {
 				if x.err == nil {

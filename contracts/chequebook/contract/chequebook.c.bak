@@ -1,3 +1,4 @@
+// +build none
 #include "./vntlib.h"
 
 // pragma solidity ^0.4.18;

@@ -32,7 +32,7 @@ import (
 	"github.com/vntchain/go-vnt/common"
 	mat "github.com/vntchain/go-vnt/common/math"
 	"github.com/vntchain/go-vnt/core/types"
-	errormsg "github.com/vntchain/go-vnt/core/wavm/errors"
+	errormsg "github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/wavm/storage"
 	"github.com/vntchain/go-vnt/core/wavm/utils"
 	"github.com/vntchain/go-vnt/crypto"

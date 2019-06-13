@@ -58,7 +58,7 @@ var (
 )
 
 type Resolver interface {
-	Resolve(string) (common.Hash, error)
+	Resolve(string) (string, error)
 }
 
 // NoResolverError is returned by MultiResolver.Resolve if no resolver
@@ -114,7 +114,7 @@ func NewMultiResolver(opts ...MultiResolverOption) (m *MultiResolver) {
 // If there are more default Resolvers, or for a specific TLD,
 // the Hash from the the first one which does not return error
 // will be returned.
-func (m MultiResolver) Resolve(addr string) (h common.Hash, err error) {
+func (m MultiResolver) Resolve(addr string) (h string, err error) {
 	rs := m.resolvers[""]
 	tld := path.Ext(addr)
 	if tld != "" {
@@ -199,7 +199,7 @@ func (self *Api) Resolve(uri *URI) (storage.Key, error) {
 	// try and resolve the address
 	resolved, err := self.dns.Resolve(uri.Addr)
 	if err == nil {
-		return resolved[:], nil
+		return common.FromHex(resolved), nil
 	} else if !isHash {
 		apiResolveFail.Inc(1)
 		return nil, err

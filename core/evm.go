@@ -114,7 +114,6 @@ func GetVM(msg Message, ctx vm.Context, statedb inter.StateDB, chainConfig *para
 	magic, _ := utils.ReadMagic(code)
 	if magic == utils.MAGIC {
 		return wavm.NewWAVM(ctx, statedb, chainConfig, vmConfig)
-	} else {
-		return vm.NewEVM(ctx, statedb, chainConfig, vmConfig)
 	}
+	return wavm.NewWAVM(ctx, statedb, chainConfig, vmConfig)
 }

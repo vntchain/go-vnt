@@ -281,7 +281,7 @@ func (ec *VNTClient) CallContract(ctx *Context, msg *CallMsg, number int64) (out
 	return ec.client.CallContract(ctx.context, msg.msg, big.NewInt(number))
 }
 
-// PendingCallContract executes a message call transaction using the EVM.
+// PendingCallContract executes a message call transaction using the VM.
 // The state seen by the contract call is the pending state.
 func (ec *VNTClient) PendingCallContract(ctx *Context, msg *CallMsg) (output []byte, _ error) {
 	return ec.client.PendingCallContract(ctx.context, msg.msg)

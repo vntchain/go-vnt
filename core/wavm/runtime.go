@@ -136,7 +136,7 @@ func (wavm *Wavm) ResolveImports(name string) (*wasm.Module, error) {
 
 func (wavm *Wavm) captureOp(pc uint64, op byte) error {
 	if wavm.WavmConfig.Debug {
-		wavm.Tracer().CaptureState(wavm.ChainContext.Wavm, pc, OpCode{Op: op}, wavm.ChainContext.Contract.Gas, 0, nil, nil, wavm.ChainContext.Contract, wavm.ChainContext.Wavm.depth, nil)
+		wavm.Tracer().CaptureState(wavm.ChainContext.Wavm, pc, OpCode{Op: op}, wavm.ChainContext.Contract.Gas, 0, wavm.ChainContext.Contract, wavm.ChainContext.Wavm.depth, nil)
 	}
 	return nil
 }
@@ -149,14 +149,14 @@ func (wavm *Wavm) captureEnvFunctionStart(pc uint64, funcName string) error {
 func (wavm *Wavm) captureEnvFunctionEnd(pc uint64, funcName string) error {
 	if wavm.WavmConfig.Debug {
 		gas := wavm.tempGasLeft - wavm.ChainContext.Contract.Gas
-		wavm.Tracer().CaptureState(wavm.ChainContext.Wavm, pc, OpCode{FuncName: funcName}, wavm.ChainContext.Contract.Gas, gas, nil, nil, wavm.ChainContext.Contract, wavm.ChainContext.Wavm.depth, nil)
+		wavm.Tracer().CaptureState(wavm.ChainContext.Wavm, pc, OpCode{FuncName: funcName}, wavm.ChainContext.Contract.Gas, gas, wavm.ChainContext.Contract, wavm.ChainContext.Wavm.depth, nil)
 	}
 	return nil
 }
 
 func (wavm *Wavm) captrueFault(pc uint64, err error) error {
 	if wavm.WavmConfig.Debug {
-		wavm.Tracer().CaptureState(wavm.ChainContext.Wavm, pc, OpCode{FuncName: "error"}, wavm.ChainContext.Contract.Gas, 0, nil, nil, wavm.ChainContext.Contract, wavm.ChainContext.Wavm.depth, err)
+		wavm.Tracer().CaptureState(wavm.ChainContext.Wavm, pc, OpCode{FuncName: "error"}, wavm.ChainContext.Contract.Gas, 0, wavm.ChainContext.Contract, wavm.ChainContext.Wavm.depth, err)
 	}
 	return nil
 }

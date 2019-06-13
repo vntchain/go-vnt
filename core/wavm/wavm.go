@@ -30,7 +30,7 @@ import (
 	"github.com/vntchain/go-vnt/core/vm/election"
 	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	wasmcontract "github.com/vntchain/go-vnt/core/wavm/contract"
-	errorsmsg "github.com/vntchain/go-vnt/core/wavm/errors"
+	errorsmsg "github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/wavm/gas"
 	"github.com/vntchain/go-vnt/core/wavm/storage"
 	"github.com/vntchain/go-vnt/core/wavm/utils"
@@ -89,7 +89,6 @@ func runWavm(wavm *WAVM, contract *wasmcontract.WASMContract, input []byte, isCr
 	if !election.MainNetActive(wavm.StateDB) && *contract.CodeAddr != electionAddress {
 		return nil, errors.New("only support election transaction in main net startup")
 	}
-
 	if contract.CodeAddr != nil {
 		precompiles := vm.PrecompiledContractsHubble
 		if p := precompiles[*contract.CodeAddr]; p != nil {
@@ -152,6 +151,9 @@ func runWavm(wavm *WAVM, contract *wasmcontract.WASMContract, input []byte, isCr
 	if isCreate == true {
 		// compile the wasm code: add gas counter, add statedb r/w
 		compiled, err := CompileModule(newwawm.Module, crx, mutable)
+		if err != nil {
+			return nil, err
+		}
 		res, err = newwawm.Apply(input, compiled, mutable)
 		if err != nil {
 			return nil, err

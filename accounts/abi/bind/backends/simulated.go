@@ -67,7 +67,7 @@ type SimulatedBackend struct {
 // for testing purposes.
 func NewSimulatedBackend(alloc core.GenesisAlloc) *SimulatedBackend {
 	database := vntdb.NewMemDatabase()
-	genesis := core.Genesis{Config: params.TestChainConfig, Alloc: alloc}
+	genesis := core.Genesis{Config: params.TestChainConfig, Alloc: alloc, Timestamp: 1546272000 + 10000}
 	genesis.MustCommit(database)
 	blockchain, _ := core.NewBlockChain(database, nil, genesis.Config, mock.NewMock(), vm.Config{})
 

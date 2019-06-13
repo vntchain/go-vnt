@@ -17,7 +17,9 @@
 package chequebook
 
 import (
+	"context"
 	"crypto/ecdsa"
+	"fmt"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -29,31 +31,59 @@ import (
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/contracts/chequebook/contract"
 	"github.com/vntchain/go-vnt/core"
+	"github.com/vntchain/go-vnt/core/types"
+	"github.com/vntchain/go-vnt/core/vm/election"
 	"github.com/vntchain/go-vnt/crypto"
-	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/params"
 )
 
-func init() {
-	log.Root().SetHandler(log.LvlFilterHandler(log.LvlTrace, log.StreamHandler(os.Stderr, log.TerminalFormat(true))))
-}
-
 var (
-	chainID = params.TestChainConfig.ChainID
-	key0, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-	key1, _ = crypto.HexToECDSA("8a1f9a8f95be41cd7ccb6168179afb4504aefe388d1e14474d32c45c72ce7b7a")
-	key2, _ = crypto.HexToECDSA("49a7b37aa6f6645917e7b807e9d1c00d4fa71f18343b0d4122a4d2df64dd6fee")
-	addr0   = crypto.PubkeyToAddress(key0.PublicKey)
-	addr1   = crypto.PubkeyToAddress(key1.PublicKey)
-	addr2   = crypto.PubkeyToAddress(key2.PublicKey)
+	chainID      = params.TestChainConfig.ChainID
+	key0, _      = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	key1, _      = crypto.HexToECDSA("8a1f9a8f95be41cd7ccb6168179afb4504aefe388d1e14474d32c45c72ce7b7a")
+	key2, _      = crypto.HexToECDSA("49a7b37aa6f6645917e7b807e9d1c00d4fa71f18343b0d4122a4d2df64dd6fee")
+	addr0        = crypto.PubkeyToAddress(key0.PublicKey)
+	addr1        = crypto.PubkeyToAddress(key1.PublicKey)
+	addr2        = crypto.PubkeyToAddress(key2.PublicKey)
+	activeKey, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f292")
+	activeAddr   = crypto.PubkeyToAddress(activeKey.PublicKey)
 )
 
+func mainnetActive(backend bind.ContractBackend) ([]*types.Transaction, error) {
+	nonce, err := backend.PendingNonceAt(context.Background(), activeAddr)
+	if err != nil {
+		return nil, err
+	}
+	txs, err := election.GenFakeStartedTxs(nonce, []common.Address{activeAddr})
+	return txs, err
+}
+
 func newTestBackend() *backends.SimulatedBackend {
-	return backends.NewSimulatedBackend(core.GenesisAlloc{
-		addr0: {Balance: big.NewInt(1000000000)},
-		addr1: {Balance: big.NewInt(1000000000)},
-		addr2: {Balance: big.NewInt(1000000000)},
+
+	backend := backends.NewSimulatedBackend(core.GenesisAlloc{
+		addr0:      {Balance: big.NewInt(1000000000)},
+		addr1:      {Balance: big.NewInt(1000000000)},
+		addr2:      {Balance: big.NewInt(1000000000)},
+		activeAddr: {Balance: big.NewInt(0).Mul(big.NewInt(1e9), big.NewInt(1e18))},
 	})
+	activeTxs, err := mainnetActive(backend)
+	if err != nil {
+		panic(fmt.Sprintf("can't create active tx: %v", err))
+	}
+	for _, v := range activeTxs {
+		signTx, err := types.SignTx(v, types.NewHubbleSigner(chainID), activeKey)
+		if err != nil {
+			panic(fmt.Sprintf("sign tx error: %v", err))
+		}
+		err = backend.SendTransaction(context.Background(), signTx)
+		if err != nil {
+			panic(fmt.Sprintf("can't send active tx: %v", err))
+		}
+
+		backend.Commit()
+	}
+
+	return backend
 }
 
 func deploy(prvKey *ecdsa.PrivateKey, amount *big.Int, backend *backends.SimulatedBackend) (common.Address, error) {
