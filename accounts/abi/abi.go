@@ -176,7 +176,7 @@ func (abi *ABI) UnmarshalJSON(data []byte) error {
 // MethodById looks up a method by the 4-byte id
 // returns nil if none found
 func (abi *ABI) MethodById(sigdata []byte) (*Method, error) {
-	for _, method := range abi.Methods {
+	for i, method := range abi.Methods {
 		if bytes.Equal(method.Id(), sigdata[:4]) {
 			return &method, nil
 		}
