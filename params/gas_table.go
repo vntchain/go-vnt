@@ -16,7 +16,7 @@
 
 package params
 
-// GasTable organizes gas prices for different ethereum phases.
+// GasTable organizes gas prices for different hubble phases.
 type GasTable struct {
 	ExtcodeSize uint64
 	ExtcodeCopy uint64

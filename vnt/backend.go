@@ -224,7 +224,7 @@ func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainCo
 	return dpos.New(cfg, db)
 }
 
-// APIs return the collection of RPC services the ethereum package offers.
+// APIs return the collection of RPC services the hubble package offers.
 // NOTE, some of these services probably need to be moved to somewhere else.
 func (s *VNT) APIs() []rpc.API {
 	apis := vntapi.GetAPIs(s.APIBackend)
