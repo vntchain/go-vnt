@@ -30,12 +30,12 @@ func Decrypt(msg []byte, pri []byte) ([]byte, error) {
 }
 
 type keyStoreSecureEnclave struct {
-	eth_keystore map[common.Address]encryptedKeyJSONV3 //keystore的集合
+	vnt_keystore map[common.Address]encryptedKeyJSONV3 //keystore的集合
 }
 
 func (ks keyStoreSecureEnclave) GetKey(addr common.Address, filename, auth string) (*Key, error) {
 	// Load the key from the keystore and decrypt its contents
-	ksjson, err := json.Marshal(ks.eth_keystore[addr])
+	ksjson, err := json.Marshal(ks.vnt_keystore[addr])
 	if err != nil {
 		return nil, err
 	}

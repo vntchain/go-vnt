@@ -28,8 +28,7 @@ import (
 	"github.com/vntchain/go-vnt/rlp"
 )
 
-// Protocol 以太坊自带代码，别的地方要用到
-// 目前依然沿用eth的子协议结构，减少上层的改动
+// 目前依然沿用原有的子协议结构，减少上层的改动
 type Protocol struct {
 	Name     string
 	Version  uint

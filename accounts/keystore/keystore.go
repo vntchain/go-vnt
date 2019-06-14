@@ -93,11 +93,11 @@ func NewSecureEnclaveKeyStore(keyjson []byte) *KeyStore {
 	if err != nil {
 		return nil
 	}
-	ethks := make(map[common.Address]encryptedKeyJSONV3)
+	vntks := make(map[common.Address]encryptedKeyJSONV3)
 	for _, v := range keystores.VNTKeystore {
-		ethks[common.HexToAddress(v.Address)] = v
+		vntks[common.HexToAddress(v.Address)] = v
 	}
-	ks := &KeyStore{storage: &keyStoreSecureEnclave{ethks}}
+	ks := &KeyStore{storage: &keyStoreSecureEnclave{vntks}}
 	ks.initWithKeyJson(keystores.VNTKeystore)
 	return ks
 }
