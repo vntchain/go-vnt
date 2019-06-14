@@ -25,13 +25,13 @@ import (
 	"github.com/vntchain/go-vnt/internal/cmdtest"
 )
 
-type testEthkey struct {
+type testVntkey struct {
 	*cmdtest.TestCmd
 }
 
 // spawns vntkey with the given command line args.
-func runVntkey(t *testing.T, args ...string) *testEthkey {
-	tt := new(testEthkey)
+func runVntkey(t *testing.T, args ...string) *testVntkey {
+	tt := new(testVntkey)
 	tt.TestCmd = cmdtest.NewTestCmd(t, tt)
 	tt.Run("vntkey-test", args...)
 	return tt

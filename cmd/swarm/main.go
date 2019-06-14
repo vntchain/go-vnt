@@ -142,7 +142,7 @@ var (
 	}
 
 	// the following flags are deprecated and should be removed in the future
-	DeprecatedEthAPIFlag = cli.StringFlag{
+	DeprecatedVntAPIFlag = cli.StringFlag{
 		Name:  "vntapi",
 		Usage: "DEPRECATED: please use --ens-api and --swap-api",
 	}
@@ -355,7 +355,7 @@ DEPRECATED: use 'swarm db clean'.
 		SwarmUpFromStdinFlag,
 		SwarmUploadMimeType,
 		//deprecated flags
-		DeprecatedEthAPIFlag,
+		DeprecatedVntAPIFlag,
 		DeprecatedEnsAddrFlag,
 	}
 	app.Flags = append(app.Flags, debug.Flags...)

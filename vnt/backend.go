@@ -354,7 +354,7 @@ func (s *VNT) EventMux() *event.TypeMux           { return s.eventMux }
 func (s *VNT) Engine() consensus.Engine           { return s.engine }
 func (s *VNT) ChainDb() vntdb.Database            { return s.chainDb }
 func (s *VNT) IsListening() bool                  { return true } // Always listening
-func (s *VNT) EthVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
+func (s *VNT) VntVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *VNT) NetVersion() uint64                 { return s.networkId }
 func (s *VNT) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
 

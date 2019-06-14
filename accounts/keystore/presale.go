@@ -69,8 +69,8 @@ func decryptPreSaleKey(fileContent []byte, password string) (key *Key, err error
 	if err != nil {
 		return nil, err
 	}
-	ethPriv := crypto.Keccak256(plainText)
-	ecKey := crypto.ToECDSAUnsafe(ethPriv)
+	vntPriv := crypto.Keccak256(plainText)
+	ecKey := crypto.ToECDSAUnsafe(vntPriv)
 
 	key = &Key{
 		Id:         nil,

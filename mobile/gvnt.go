@@ -50,7 +50,7 @@ type NodeConfig struct {
 	// set to zero, then only the configured static and trusted peers can connect.
 	MaxPeers int
 
-	// EthereumEnabled specifies whether the node should run the VNT protocol.
+	// VntEnabled specifies whether the node should run the VNT protocol.
 	VntEnabled bool
 
 	// HubbleNetworkID is the network identifier used by the VNT protocol to
