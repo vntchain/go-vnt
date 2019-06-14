@@ -17,22 +17,23 @@
 package wavm
 
 import (
+	"math/big"
+
 	"github.com/vntchain/go-vnt/accounts/abi"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/state"
-	"github.com/vntchain/go-vnt/core/vm/interface"
+	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/core/wavm/contract"
 	"github.com/vntchain/go-vnt/core/wavm/gas"
 	"github.com/vntchain/go-vnt/core/wavm/storage"
 	"github.com/vntchain/go-vnt/params"
-	"math/big"
 )
 
 type ChainContext struct {
 	// CanTransfer returns whether the account contains
-	// sufficient ether to transfer the value
+	// sufficient vnt to transfer the value
 	CanTransfer func(inter.StateDB, common.Address, *big.Int) bool
-	// Transfer transfers ether from one account to the other
+	// Transfer transfers vnt from one account to the other
 	Transfer func(inter.StateDB, common.Address, common.Address, *big.Int)
 	// GetHash returns the hash corresponding to n
 	GetHash func(uint64) common.Hash

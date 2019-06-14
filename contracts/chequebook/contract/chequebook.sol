@@ -11,7 +11,7 @@ contract chequebook is mortal {
     /// @notice Overdraft event
     event Overdraft(address deadbeat);
 
-    // Allow sending ether to the chequebook.
+    // Allow sending vnt to the chequebook.
     function() public payable { }
 
     /// @notice Cash cheque
