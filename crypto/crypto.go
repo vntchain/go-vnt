@@ -23,7 +23,6 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha1"
-	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
 	"errors"
@@ -35,6 +34,7 @@ import (
 	"os"
 	"strings"
 
+	sha256 "github.com/minio/sha256-simd"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/common/math"
 	"github.com/vntchain/go-vnt/crypto/sha3"
