@@ -1,3 +1,4 @@
+// +build none 
 #include "./vntlib.h"
 
 typedef struct
@@ -22,9 +23,9 @@ EVENT NewResolver(indexed string node, address resolver);
 EVENT NewTTL(indexed string node, uint64 ttl);
 
 /**
- * Constructs a new ENS registrar.
+ * Constructs a new VNS registrar.
  */
-constructor ENS()
+constructor VNS()
 {
     records.key = "";
     records.value.owner = GetSender();

@@ -1,3 +1,4 @@
+// +build none
 #include "./vntlib.h"
 
 KEY string INTERFACE_META_ID = "0x01ffc9a7";
@@ -31,23 +32,23 @@ typedef struct
     mapping(uint256, string) abis;
 } Record;
 
-KEY address ens;
+KEY address vns;
 KEY mapping(string, Record) records;
 
 CALL address owner(CallParams params, string node);
 
 /**
  * Constructor.
- * @param ensAddr The ENS registrar contract.
+ * @param vnsAddr The VNS registrar contract.
  */
-constructor PublicResolver(address ensAddr)
+constructor PublicResolver(address vnsAddr)
 {
-    ens = ensAddr;
+    vns = vnsAddr;
 }
 
 void onlyOwner(string node)
 {
-    CallParams params = {ens, U256(0), 100000};
+    CallParams params = {vns, U256(0), 100000};
     address addr = owner(params, node);
     address sender = GetSender();
     if (Equal(addr, sender) != true)
@@ -74,8 +75,8 @@ bool supportsInterface(string interfaceID)
 }
 
 /**
- * Returns the address associated with an ENS node.
- * @param node The ENS node to query.
+ * Returns the address associated with an VNS node.
+ * @param node The VNS node to query.
  * @return The associated address.
  */
 MUTABLE
@@ -87,8 +88,8 @@ address addr(string node)
 }
 
 /**
- * Sets the address associated with an ENS node.
- * May only be called by the owner of that node in the ENS registry.
+ * Sets the address associated with an VNS node.
+ * May only be called by the owner of that node in the VNS registry.
  * @param node The node to update.
  * @param addr The address to set.
  */
@@ -102,10 +103,10 @@ void setAddr(string node, address addr)
 }
 
 /**
- * Returns the content hash associated with an ENS node.
+ * Returns the content hash associated with an VNS node.
  * Note that this resource type is not standardized, and will likely change
  * in future to a resource type based on multihash.
- * @param node The ENS node to query.
+ * @param node The VNS node to query.
  * @return The associated content hash.
  */
 UNMUTABLE
@@ -117,8 +118,8 @@ string content(string node)
 }
 
 /**
- * Sets the content hash associated with an ENS node.
- * May only be called by the owner of that node in the ENS registry.
+ * Sets the content hash associated with an VNS node.
+ * May only be called by the owner of that node in the VNS registry.
  * Note that this resource type is not standardized, and will likely change
  * in future to a resource type based on multihash.
  * @param node The node to update.
@@ -134,9 +135,9 @@ void setContent(string node, string hash)
 }
 
 /**
- * Returns the name associated with an ENS node, for reverse records.
+ * Returns the name associated with an VNS node, for reverse records.
  * Defined in EIP181.
- * @param node The ENS node to query.
+ * @param node The VNS node to query.
  * @return The associated name.
  */
 UNMUTABLE
@@ -148,8 +149,8 @@ string name(string node)
 }
 
 /**
- * Sets the name associated with an ENS node, for reverse records.
- * May only be called by the owner of that node in the ENS registry.
+ * Sets the name associated with an VNS node, for reverse records.
+ * May only be called by the owner of that node in the VNS registry.
  * @param node The node to update.
  * @param name The name to set.
  */
@@ -163,9 +164,9 @@ void setName(string node, string name)
 }
 
 /**
- * Returns the ABI associated with an ENS node.
+ * Returns the ABI associated with an VNS node.
  * Defined in EIP205.
- * @param node The ENS node to query
+ * @param node The VNS node to query
  * @param contentTypes A bitwise OR of the ABI formats accepted by the caller.
  * @return contentType The content type of the return value
  * @return data The ABI data
@@ -205,7 +206,7 @@ uint256 ABIContentType(string node, uint256 contentTypes)
 }
 
 /**
- * Sets the ABI associated with an ENS node.
+ * Sets the ABI associated with an VNS node.
  * Nodes may have one ABI of each content type. To remove an ABI, set it to
  * the empty string.
  * @param node The node to update.
@@ -228,9 +229,9 @@ void setABI(string node, uint256 contentType, string data)
 }
 
 /**
- * Returns the SECP256k1 public key associated with an ENS node.
+ * Returns the SECP256k1 public key associated with an VNS node.
  * Defined in EIP 619.
- * @param node The ENS node to query
+ * @param node The VNS node to query
  * @return x, y the X and Y coordinates of the curve point for the public key.
  */
 UNMUTABLE
@@ -248,8 +249,8 @@ string pubkeyY(string node)
 }
 
 /**
- * Sets the SECP256k1 public key associated with an ENS node.
- * @param node The ENS node to query
+ * Sets the SECP256k1 public key associated with an VNS node.
+ * @param node The VNS node to query
  * @param x the X coordinate of the curve point for the public key.
  * @param y the Y coordinate of the curve point for the public key.
  */
@@ -264,8 +265,8 @@ void setPubkey(string node, string x, string y)
 }
 
 /**
- * Returns the text data associated with an ENS node and key.
- * @param node The ENS node to query.
+ * Returns the text data associated with an VNS node and key.
+ * @param node The VNS node to query.
  * @param key The text data key to query.
  * @return The associated text data.
  */
@@ -278,8 +279,8 @@ string text(string node, string key)
 }
 
 /**
- * Sets the text data associated with an ENS node and key.
- * May only be called by the owner of that node in the ENS registry.
+ * Sets the text data associated with an VNS node and key.
+ * May only be called by the owner of that node in the VNS registry.
  * @param node The node to update.
  * @param key The key to set.
  * @param value The text data value to set.

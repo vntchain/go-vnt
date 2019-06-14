@@ -144,7 +144,7 @@ func (t *testResolver) Resolve(addr string) (string, error) {
 }
 
 // TestAPIResolve tests resolving URIs which can either contain content hashes
-// or ENS names
+// or VNS names
 func TestAPIResolve(t *testing.T) {
 	ensAddr := "swarm.eth"
 	hashAddr := "1111111111111111111111111111111111111111111111111111111111111111"
@@ -169,7 +169,7 @@ func TestAPIResolve(t *testing.T) {
 			result: hashAddr,
 		},
 		{
-			desc:      "DNS not configured, ENS address, returns error",
+			desc:      "DNS not configured, VNS address, returns error",
 			dns:       nil,
 			addr:      ensAddr,
 			expectErr: errors.New(`no DNS to resolve name: "swarm.eth"`),
@@ -194,20 +194,20 @@ func TestAPIResolve(t *testing.T) {
 			result: hashAddr,
 		},
 		{
-			desc:   "DNS configured, ENS address, name resolves, returns resolved address",
+			desc:   "DNS configured, VNS address, name resolves, returns resolved address",
 			dns:    doesResolve,
 			addr:   ensAddr,
 			result: resolvedAddr,
 		},
 		{
-			desc:      "DNS configured, immutable ENS address, name resolves, returns error",
+			desc:      "DNS configured, immutable VNS address, name resolves, returns error",
 			dns:       doesResolve,
 			addr:      ensAddr,
 			immutable: true,
 			expectErr: errors.New(`immutable address not a content hash: "swarm.eth"`),
 		},
 		{
-			desc:      "DNS configured, ENS address, name doesn't resolve, returns error",
+			desc:      "DNS configured, VNS address, name doesn't resolve, returns error",
 			dns:       doesntResolve,
 			addr:      ensAddr,
 			expectErr: errors.New(`DNS name not found: "swarm.eth"`),

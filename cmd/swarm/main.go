@@ -105,10 +105,10 @@ var (
 		Usage:  "Swarm Syncing enabled (default true)",
 		EnvVar: SWARM_ENV_SYNC_ENABLE,
 	}
-	EnsAPIFlag = cli.StringSliceFlag{
-		Name:   "ens-api",
-		Usage:  "ENS API endpoint for a TLD and with contract address, can be repeated, format [tld:][contract-addr@]url",
-		EnvVar: SWARM_ENV_ENS_API,
+	VnsAPIFlag = cli.StringSliceFlag{
+		Name:   "vns-api",
+		Usage:  "VNS API endpoint for a TLD and with contract address, can be repeated, format [tld:][contract-addr@]url",
+		EnvVar: SWARM_ENV_VNS_API,
 	}
 	SwarmApiFlag = cli.StringFlag{
 		Name:  "bzzapi",
@@ -144,11 +144,11 @@ var (
 	// the following flags are deprecated and should be removed in the future
 	DeprecatedEthAPIFlag = cli.StringFlag{
 		Name:  "vntapi",
-		Usage: "DEPRECATED: please use --ens-api and --swap-api",
+		Usage: "DEPRECATED: please use --vns-api and --swap-api",
 	}
-	DeprecatedEnsAddrFlag = cli.StringFlag{
-		Name:  "ens-addr",
-		Usage: "DEPRECATED: ENS contract address, please use --ens-api with contract address according to its format",
+	DeprecatedVnsAddrFlag = cli.StringFlag{
+		Name:  "vns-addr",
+		Usage: "DEPRECATED: VNS contract address, please use --vns-api with contract address according to its format",
 	}
 )
 
@@ -336,7 +336,7 @@ DEPRECATED: use 'swarm db clean'.
 		utils.PasswordFileFlag,
 		// bzzd-specific flags
 		CorsStringFlag,
-		EnsAPIFlag,
+		VnsAPIFlag,
 		SwarmTomlConfigPathFlag,
 		SwarmConfigPathFlag,
 		SwarmSwapEnabledFlag,
@@ -356,7 +356,7 @@ DEPRECATED: use 'swarm db clean'.
 		SwarmUploadMimeType,
 		//deprecated flags
 		DeprecatedEthAPIFlag,
-		DeprecatedEnsAddrFlag,
+		DeprecatedVnsAddrFlag,
 	}
 	app.Flags = append(app.Flags, debug.Flags...)
 	app.Flags = append(app.Flags, swarmmetrics.Flags...)

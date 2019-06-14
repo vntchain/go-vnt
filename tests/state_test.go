@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/vntchain/go-vnt/core/vm"
+	"github.com/vntchain/go-vnt/core/wavm"
 )
 
 func TestState(t *testing.T) {
@@ -66,16 +67,16 @@ func withTrace(t *testing.T, gasLimit uint64, test func(vm.Config) error) {
 	}
 	t.Error(err)
 	if gasLimit > traceErrorLimit {
-		t.Log("gas limit too high for EVM trace")
+		t.Log("gas limit too high for VM trace")
 		return
 	}
-	tracer := vm.NewStructLogger(nil)
+	tracer := wavm.NewWasmLogger(nil)
 	err2 := test(vm.Config{Debug: true, Tracer: tracer})
 	if !reflect.DeepEqual(err, err2) {
 		t.Errorf("different error for second run: %v", err2)
 	}
 	buf := new(bytes.Buffer)
-	vm.WriteTrace(buf, tracer.StructLogs())
+	wavm.WriteTrace(buf, tracer.StructLogs())
 	if buf.Len() == 0 {
 		t.Log("no EVM operation logs generated")
 	} else {

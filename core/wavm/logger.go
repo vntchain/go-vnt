@@ -15,6 +15,8 @@ type WasmLogger struct {
 	cfg       vm.LogConfig
 	logs      []StructLog
 	debugLogs []DebugLog
+	output    []byte
+	err       error
 }
 
 type StructLog struct {
@@ -87,6 +89,12 @@ func (l *WasmLogger) CaptureFault(env vm.VM, pc uint64, op vm.OPCode, gas, cost 
 func (l *WasmLogger) CaptureEnd(output []byte, gasUsed uint64, t time.Duration, err error) error {
 	return nil
 }
+
+// Error returns the VM error captured by the trace.
+func (l *WasmLogger) Error() error { return l.err }
+
+// Output returns the VM return value captured by the trace.
+func (l *WasmLogger) Output() []byte { return l.output }
 
 // WasmLogger returns the captured log entries.
 func (l *WasmLogger) StructLogs() []StructLog { return l.logs }

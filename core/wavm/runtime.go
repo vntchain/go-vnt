@@ -347,7 +347,6 @@ func (wavm *Wavm) ExecCodeWithFuncName(input []byte) ([]byte, error) {
 		}
 	}
 	wavm.currentFuncName = funcName
-	fmt.Printf("wavm.currentFuncName %s\n", wavm.currentFuncName)
 	log.Debug("wavm", "exec function name", wavm.currentFuncName)
 	var method abi.Method
 	if wavm.ChainContext.IsCreated == true {

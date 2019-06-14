@@ -88,7 +88,7 @@ func TestCmdLineOverrides(t *testing.T) {
 		fmt.Sprintf("--%s", SwarmSyncEnabledFlag.Name),
 		fmt.Sprintf("--%s", CorsStringFlag.Name), "*",
 		fmt.Sprintf("--%s", SwarmAccountFlag.Name), account.Address.String(),
-		fmt.Sprintf("--%s", EnsAPIFlag.Name), "",
+		fmt.Sprintf("--%s", VnsAPIFlag.Name), "",
 		"--datadir", dir,
 		"--ipcpath", conf.IPCPath,
 	}
@@ -183,7 +183,7 @@ func TestFileOverrides(t *testing.T) {
 	flags := []string{
 		fmt.Sprintf("--%s", SwarmTomlConfigPathFlag.Name), f.Name(),
 		fmt.Sprintf("--%s", SwarmAccountFlag.Name), account.Address.String(),
-		"--ens-api", "",
+		"--vns-api", "",
 		"--ipcpath", conf.IPCPath,
 		"--datadir", dir,
 	}
@@ -268,7 +268,7 @@ func TestEnvVars(t *testing.T) {
 	node := &testNode{Dir: dir}
 	flags := []string{
 		fmt.Sprintf("--%s", SwarmAccountFlag.Name), account.Address.String(),
-		"--ens-api", "",
+		"--vns-api", "",
 		"--datadir", dir,
 		"--ipcpath", conf.IPCPath,
 	}
@@ -395,7 +395,7 @@ func TestCmdLineOverridesFile(t *testing.T) {
 		fmt.Sprintf("--%s", SwarmSyncEnabledFlag.Name),
 		fmt.Sprintf("--%s", SwarmTomlConfigPathFlag.Name), f.Name(),
 		fmt.Sprintf("--%s", SwarmAccountFlag.Name), account.Address.String(),
-		"--ens-api", "",
+		"--vns-api", "",
 		"--datadir", dir,
 		"--ipcpath", conf.IPCPath,
 	}
@@ -464,83 +464,83 @@ func TestValidateConfig(t *testing.T) {
 		err string
 	}{
 		{
-			cfg: &api.Config{EnsAPIs: []string{
+			cfg: &api.Config{VnsAPIs: []string{
 				"/data/testnet/gvnt.ipc",
 			}},
 		},
 		{
-			cfg: &api.Config{EnsAPIs: []string{
+			cfg: &api.Config{VnsAPIs: []string{
 				"http://127.0.0.1:1234",
 			}},
 		},
 		{
-			cfg: &api.Config{EnsAPIs: []string{
+			cfg: &api.Config{VnsAPIs: []string{
 				"ws://127.0.0.1:1234",
 			}},
 		},
 		{
-			cfg: &api.Config{EnsAPIs: []string{
+			cfg: &api.Config{VnsAPIs: []string{
 				"test:/data/testnet/gvnt.ipc",
 			}},
 		},
 		{
-			cfg: &api.Config{EnsAPIs: []string{
+			cfg: &api.Config{VnsAPIs: []string{
 				"test:ws://127.0.0.1:1234",
 			}},
 		},
 		{
-			cfg: &api.Config{EnsAPIs: []string{
+			cfg: &api.Config{VnsAPIs: []string{
 				"314159265dD8dbb310642f98f50C066173C1259b@/data/testnet/gvnt.ipc",
 			}},
 		},
 		{
-			cfg: &api.Config{EnsAPIs: []string{
+			cfg: &api.Config{VnsAPIs: []string{
 				"314159265dD8dbb310642f98f50C066173C1259b@http://127.0.0.1:1234",
 			}},
 		},
 		{
-			cfg: &api.Config{EnsAPIs: []string{
+			cfg: &api.Config{VnsAPIs: []string{
 				"314159265dD8dbb310642f98f50C066173C1259b@ws://127.0.0.1:1234",
 			}},
 		},
 		{
-			cfg: &api.Config{EnsAPIs: []string{
+			cfg: &api.Config{VnsAPIs: []string{
 				"test:314159265dD8dbb310642f98f50C066173C1259b@/data/testnet/gvnt.ipc",
 			}},
 		},
 		{
-			cfg: &api.Config{EnsAPIs: []string{
+			cfg: &api.Config{VnsAPIs: []string{
 				"eth:314159265dD8dbb310642f98f50C066173C1259b@http://127.0.0.1:1234",
 			}},
 		},
 		{
-			cfg: &api.Config{EnsAPIs: []string{
+			cfg: &api.Config{VnsAPIs: []string{
 				"eth:314159265dD8dbb310642f98f50C066173C1259b@ws://127.0.0.1:12344",
 			}},
 		},
 		{
-			cfg: &api.Config{EnsAPIs: []string{
+			cfg: &api.Config{VnsAPIs: []string{
 				"eth:",
 			}},
-			err: "invalid format [tld:][contract-addr@]url for ENS API endpoint configuration \"eth:\": missing url",
+			err: "invalid format [tld:][contract-addr@]url for VNS API endpoint configuration \"eth:\": missing url",
 		},
 		{
-			cfg: &api.Config{EnsAPIs: []string{
+			cfg: &api.Config{VnsAPIs: []string{
 				"314159265dD8dbb310642f98f50C066173C1259b@",
 			}},
-			err: "invalid format [tld:][contract-addr@]url for ENS API endpoint configuration \"314159265dD8dbb310642f98f50C066173C1259b@\": missing url",
+			err: "invalid format [tld:][contract-addr@]url for VNS API endpoint configuration \"314159265dD8dbb310642f98f50C066173C1259b@\": missing url",
 		},
 		{
-			cfg: &api.Config{EnsAPIs: []string{
+			cfg: &api.Config{VnsAPIs: []string{
 				":314159265dD8dbb310642f98f50C066173C1259",
 			}},
-			err: "invalid format [tld:][contract-addr@]url for ENS API endpoint configuration \":314159265dD8dbb310642f98f50C066173C1259\": missing tld",
+			err: "invalid format [tld:][contract-addr@]url for VNS API endpoint configuration \":314159265dD8dbb310642f98f50C066173C1259\": missing tld",
 		},
 		{
-			cfg: &api.Config{EnsAPIs: []string{
+			cfg: &api.Config{VnsAPIs: []string{
 				"@/data/testnet/gvnt.ipc",
 			}},
-			err: "invalid format [tld:][contract-addr@]url for ENS API endpoint configuration \"@/data/testnet/gvnt.ipc\": missing contract address",
+			err: "invalid format [tld:][contract-addr@]url for VNS API endpoint configuration \"@/data/testnet/gvnt.ipc\": missing contract address",
 		},
 	} {
 		err := validateConfig(c.cfg)

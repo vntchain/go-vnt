@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package ens
+package vns
 
 import (
 	"context"
@@ -24,7 +24,7 @@ import (
 	"github.com/vntchain/go-vnt/accounts/abi/bind"
 	"github.com/vntchain/go-vnt/accounts/abi/bind/backends"
 	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/contracts/ens/contract"
+	"github.com/vntchain/go-vnt/contracts/vns/contract"
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm/election"
@@ -35,7 +35,7 @@ import (
 var (
 	chainID      = params.TestChainConfig.ChainID
 	key, _       = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-	name         = "my name on ENS"
+	name         = "my name on VNS"
 	hash         = crypto.Keccak256Hash([]byte("my content")).Hex()
 	addr         = crypto.PubkeyToAddress(key.PublicKey)
 	testAddr     = common.HexToAddress("0x1234123412341234123412341234123412341234")
@@ -52,7 +52,7 @@ func mainnetActive(backend bind.ContractBackend) ([]*types.Transaction, error) {
 	return txs, err
 }
 
-func TestENS(t *testing.T) {
+func TestVNS(t *testing.T) {
 	contractBackend := backends.NewSimulatedBackend(core.GenesisAlloc{addr: {Balance: big.NewInt(1000000000)}, activeAddr: {Balance: big.NewInt(0).Mul(big.NewInt(1e9), big.NewInt(1e18))}})
 	activeTxs, err := mainnetActive(contractBackend)
 	if err != nil {
@@ -73,36 +73,36 @@ func TestENS(t *testing.T) {
 
 	transactOpts := bind.NewKeyedTransactor(key, chainID)
 
-	ensAddr, ens, err := DeployENS(transactOpts, contractBackend)
+	vnsAddr, vns, err := DeployVNS(transactOpts, contractBackend)
 	if err != nil {
 		t.Fatalf("can't deploy root registry: %v", err)
 	}
 	contractBackend.Commit()
 
 	// Set ourself as the owner of the name.
-	if _, err := ens.Register(name); err != nil {
+	if _, err := vns.Register(name); err != nil {
 		t.Fatalf("can't register: %v", err)
 	}
 	contractBackend.Commit()
 
 	// Deploy a resolver and make it responsible for the name.
-	resolverAddr, _, _, err := contract.DeployPublicResolver(transactOpts, contractBackend, ensAddr)
+	resolverAddr, _, _, err := contract.DeployPublicResolver(transactOpts, contractBackend, vnsAddr)
 	if err != nil {
 		t.Fatalf("can't deploy resolver: %v", err)
 	}
-	if _, err := ens.SetResolver(EnsNode(name), resolverAddr); err != nil {
+	if _, err := vns.SetResolver(VnsNode(name), resolverAddr); err != nil {
 		t.Fatalf("can't set resolver: %v", err)
 	}
 	contractBackend.Commit()
 
 	// Set the content hash for the name.
-	if _, err = ens.SetContentHash(name, hash); err != nil {
+	if _, err = vns.SetContentHash(name, hash); err != nil {
 		t.Fatalf("can't set content hash: %v", err)
 	}
 	contractBackend.Commit()
 
 	// Try to resolve the name.
-	vhost, err := ens.Resolve(name)
+	vhost, err := vns.Resolve(name)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -111,13 +111,13 @@ func TestENS(t *testing.T) {
 	}
 
 	// set the address for the name
-	if _, err = ens.SetAddr(name, testAddr); err != nil {
+	if _, err = vns.SetAddr(name, testAddr); err != nil {
 		t.Fatalf("can't set address: %v", err)
 	}
 	contractBackend.Commit()
 
 	// Try to resolve the name to an address
-	recoveredAddr, err := ens.Addr(name)
+	recoveredAddr, err := vns.Addr(name)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}

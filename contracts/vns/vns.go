@@ -14,18 +14,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package ens
-
-//go:generate abigen --sol contract/ENS.sol --exc contract/AbstractENS.sol:AbstractENS --pkg contract --out contract/ens.go
-//go:generate abigen --sol contract/FIFSRegistrar.sol --exc contract/AbstractENS.sol:AbstractENS --pkg contract --out contract/fifsregistrar.go
-//go:generate abigen --sol contract/PublicResolver.sol --exc contract/AbstractENS.sol:AbstractENS --pkg contract --out contract/publicresolver.go
+package vns
 
 import (
 	"strings"
 
 	"github.com/vntchain/go-vnt/accounts/abi/bind"
 	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/contracts/ens/contract"
+	"github.com/vntchain/go-vnt/contracts/vns/contract"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/crypto"
 )
@@ -36,69 +32,69 @@ var (
 )
 
 // swarm domain name registry and resolver
-type ENS struct {
-	*contract.ENSSession
+type VNS struct {
+	*contract.VNSSession
 	contractBackend bind.ContractBackend
 }
 
-// NewENS creates a struct exposing convenient high-level operations for interacting with
+// NewVNS creates a struct exposing convenient high-level operations for interacting with
 // the VNT Name Service.
-func NewENS(transactOpts *bind.TransactOpts, contractAddr common.Address, contractBackend bind.ContractBackend) (*ENS, error) {
-	ens, err := contract.NewENS(contractAddr, contractBackend)
+func NewVNS(transactOpts *bind.TransactOpts, contractAddr common.Address, contractBackend bind.ContractBackend) (*VNS, error) {
+	vns, err := contract.NewVNS(contractAddr, contractBackend)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ENS{
-		&contract.ENSSession{
-			Contract:     ens,
+	return &VNS{
+		&contract.VNSSession{
+			Contract:     vns,
 			TransactOpts: *transactOpts,
 		},
 		contractBackend,
 	}, nil
 }
 
-// DeployENS deploys an instance of the ENS nameservice, with a 'first-in, first-served' root registrar.
-func DeployENS(transactOpts *bind.TransactOpts, contractBackend bind.ContractBackend) (common.Address, *ENS, error) {
-	// Deploy the ENS registry.
-	ensAddr, _, _, err := contract.DeployENS(transactOpts, contractBackend)
+// DeployVNS deploys an instance of the VNS nameservice, with a 'first-in, first-served' root registrar.
+func DeployVNS(transactOpts *bind.TransactOpts, contractBackend bind.ContractBackend) (common.Address, *VNS, error) {
+	// Deploy the VNS registry.
+	vnsAddr, _, _, err := contract.DeployVNS(transactOpts, contractBackend)
 	if err != nil {
-		return ensAddr, nil, err
+		return vnsAddr, nil, err
 	}
-	ens, err := NewENS(transactOpts, ensAddr, contractBackend)
+	vns, err := NewVNS(transactOpts, vnsAddr, contractBackend)
 	if err != nil {
-		return ensAddr, nil, err
+		return vnsAddr, nil, err
 	}
 	// Deploy the registrar.
-	regAddr, _, _, err := contract.DeployFIFSRegistrar(transactOpts, contractBackend, ensAddr, "")
+	regAddr, _, _, err := contract.DeployFIFSRegistrar(transactOpts, contractBackend, vnsAddr, "")
 	if err != nil {
-		return ensAddr, nil, err
+		return vnsAddr, nil, err
 	}
-	// Set the registrar as owner of the ENS root.
-	if _, err = ens.SetOwner("", regAddr); err != nil {
-		return ensAddr, nil, err
+	// Set the registrar as owner of the VNS root.
+	if _, err = vns.SetOwner("", regAddr); err != nil {
+		return vnsAddr, nil, err
 	}
 
-	return ensAddr, ens, nil
+	return vnsAddr, vns, nil
 }
 
-func ensParentNode(name string) (string, string) {
+func vnsParentNode(name string) (string, string) {
 	parts := strings.SplitN(name, ".", 2)
 	label := crypto.Keccak256Hash([]byte(parts[0]))
 	if len(parts) == 1 {
 		return "", string(label.Bytes())
 	} else {
-		parentNode, parentLabel := ensParentNode(parts[1])
+		parentNode, parentLabel := vnsParentNode(parts[1])
 		return string(crypto.Keccak256Hash([]byte(parentNode), []byte(parentLabel)).Bytes()), string(label.Bytes())
 	}
 }
 
-func EnsNode(name string) string {
-	parentNode, parentLabel := ensParentNode(name)
+func VnsNode(name string) string {
+	parentNode, parentLabel := vnsParentNode(name)
 	return string(crypto.Keccak256Hash([]byte(parentNode), []byte(parentLabel)).Bytes())
 }
 
-func (self *ENS) getResolver(node string) (*contract.PublicResolverSession, error) {
+func (self *VNS) getResolver(node string) (*contract.PublicResolverSession, error) {
 	resolverAddr, err := self.Resolver(node)
 	if err != nil {
 		return nil, err
@@ -115,7 +111,7 @@ func (self *ENS) getResolver(node string) (*contract.PublicResolverSession, erro
 	}, nil
 }
 
-func (self *ENS) getRegistrar(node string) (*contract.FIFSRegistrarSession, error) {
+func (self *VNS) getRegistrar(node string) (*contract.FIFSRegistrarSession, error) {
 	registrarAddr, err := self.Owner(node)
 	if err != nil {
 		return nil, err
@@ -133,8 +129,8 @@ func (self *ENS) getRegistrar(node string) (*contract.FIFSRegistrarSession, erro
 }
 
 // Resolve is a non-transactional call that returns the content hash associated with a name.
-func (self *ENS) Resolve(name string) (string, error) {
-	node := EnsNode(name)
+func (self *VNS) Resolve(name string) (string, error) {
+	node := VnsNode(name)
 
 	resolver, err := self.getResolver(node)
 	if err != nil {
@@ -150,8 +146,8 @@ func (self *ENS) Resolve(name string) (string, error) {
 }
 
 // Addr is a non-transactional call that returns the address associated with a name.
-func (self *ENS) Addr(name string) (common.Address, error) {
-	node := EnsNode(name)
+func (self *VNS) Addr(name string) (common.Address, error) {
+	node := VnsNode(name)
 
 	resolver, err := self.getResolver(node)
 	if err != nil {
@@ -168,8 +164,8 @@ func (self *ENS) Addr(name string) (common.Address, error) {
 
 // SetAddress sets the address associated with a name. Only works if the caller
 // owns the name, and the associated resolver implements a `setAddress` function.
-func (self *ENS) SetAddr(name string, addr common.Address) (*types.Transaction, error) {
-	node := EnsNode(name)
+func (self *VNS) SetAddr(name string, addr common.Address) (*types.Transaction, error) {
+	node := VnsNode(name)
 
 	resolver, err := self.getResolver(node)
 	if err != nil {
@@ -183,8 +179,8 @@ func (self *ENS) SetAddr(name string, addr common.Address) (*types.Transaction, 
 
 // Register registers a new domain name for the caller, making them the owner of the new name.
 // Only works if the registrar for the parent domain implements the FIFS registrar protocol.
-func (self *ENS) Register(name string) (*types.Transaction, error) {
-	parentNode, label := ensParentNode(name)
+func (self *VNS) Register(name string) (*types.Transaction, error) {
+	parentNode, label := vnsParentNode(name)
 	registrar, err := self.getRegistrar(parentNode)
 	if err != nil {
 		return nil, err
@@ -194,8 +190,8 @@ func (self *ENS) Register(name string) (*types.Transaction, error) {
 
 // SetContentHash sets the content hash associated with a name. Only works if the caller
 // owns the name, and the associated resolver implements a `setContent` function.
-func (self *ENS) SetContentHash(name string, hash string) (*types.Transaction, error) {
-	node := EnsNode(name)
+func (self *VNS) SetContentHash(name string, hash string) (*types.Transaction, error) {
+	node := VnsNode(name)
 
 	resolver, err := self.getResolver(node)
 	if err != nil {

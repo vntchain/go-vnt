@@ -208,7 +208,7 @@ start_swarm_node() {
     --bootnodes    "${BOOTNODE_URL}"
     --datadir      "${dir}"
     --identity     "${name}"
-    --ens-api      "${GETH_RPC_URL}"
+    --vns-api      "${GETH_RPC_URL}"
     --bzznetworkid "321"
     --bzzaccount   "${address}"
     --password     "${dir}/password"

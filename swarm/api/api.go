@@ -73,9 +73,9 @@ func NewNoResolverError(tld string) *NoResolverError {
 
 func (e *NoResolverError) Error() string {
 	if e.TLD == "" {
-		return "no ENS resolver"
+		return "no VNS resolver"
 	}
-	return fmt.Sprintf("no ENS endpoint configured to resolve .%s TLD names", e.TLD)
+	return fmt.Sprintf("no VNS endpoint configured to resolve .%s TLD names", e.TLD)
 }
 
 // MultiResolver is used to resolve URL addresses based on their TLDs.
