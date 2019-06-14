@@ -176,7 +176,7 @@ var app = utils.NewApp(gitCommit, "VNT Swarm")
 func init() {
 	app.Action = bzzd
 	app.HideVersion = true // we have a command to print the version
-	app.Copyright = "Copyright 2013-2016 The Vntchain Authors"
+	app.Copyright = "Copyright 2018-2019 The Vntchain Authors"
 	app.Commands = []cli.Command{
 		{
 			Action:    version,
