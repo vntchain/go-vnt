@@ -4,7 +4,7 @@
           "currentNumber": 257,
           "currentGasLimit": 4000000,
           "currentDifficulty": 256,
-          "currentTimestamp": 11111111,
+          "currentTimestamp": 1546273000,
           "currentCoinbase": "0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba"
      },
      "exec": {

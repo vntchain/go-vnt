@@ -41,11 +41,11 @@ import (
 	"github.com/vntchain/vnt-wasm/wasm"
 )
 
-var debugCodePath = filepath.Join("testdata/debug", "program.wasm")
-var debugAbiPath = filepath.Join("testdata/debug", "abi.json")
+var debugCodePath = filepath.Join("tests/debug", "program.wasm")
+var debugAbiPath = filepath.Join("tests/debug", "abi.json")
 
-var eventCodePath = filepath.Join("testdata/event", "program.wasm")
-var eventAbiPath = filepath.Join("testdata/event", "abi.json")
+var eventCodePath = filepath.Join("tests/event", "program.wasm")
+var eventAbiPath = filepath.Join("tests/event", "abi.json")
 
 var logMsg = ""
 var logCtx []interface{} = nil
@@ -196,13 +196,10 @@ func handlePanic(t *testing.T, msg string) {
 func TestVM_PrintAddress(t *testing.T) {
 	log.Root().SetHandler(logHandler)
 	defer clearLog()
-
 	vm, ef := getVM(debugCodePath, debugAbiPath)
-
 	ef.ctx.Wavm.Wavm.SetFuncName("init")
 
 	var mutable = true
-
 	proc := exec.NewWavmProcess(vm.VM, vm.Memory, &mutable)
 
 	fmt.Println("testing...")

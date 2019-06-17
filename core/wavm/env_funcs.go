@@ -248,14 +248,15 @@ func (ef *EnvFunctions) GetValue(proc *exec.WavmProcess) uint64 {
 func (ef *EnvFunctions) SHA3(proc *exec.WavmProcess, dataIdx uint64) uint64 {
 	data := proc.ReadAt(dataIdx)
 	ef.ctx.GasCounter.GasSHA3(uint64(len(data)))
-	hash := []byte(crypto.Keccak256(data))
+	hash := []byte(crypto.Keccak256Hash(data).Hex())
 	return uint64(proc.SetBytes(hash))
 }
 
 //Ecrecover
 func (ef *EnvFunctions) Ecrecover(proc *exec.WavmProcess, hashptr uint64, sigv uint64, sigr uint64, sigs uint64) uint64 {
 	ef.ctx.GasCounter.GasEcrecover()
-	hash := proc.ReadAt(hashptr)
+	hashBytes := proc.ReadAt(hashptr)
+	hash := common.HexToHash(string(hashBytes))
 	r := new(big.Int).SetBytes(proc.ReadAt(sigr))
 	s := new(big.Int).SetBytes(proc.ReadAt(sigs))
 	v := new(big.Int).SetBytes(proc.ReadAt(sigv))
@@ -273,7 +274,7 @@ func (ef *EnvFunctions) Ecrecover(proc *exec.WavmProcess, hashptr uint64, sigv u
 		return ef.returnAddress(proc, []byte(""))
 	}
 	// v needs to be at the end for libsecp256k1
-	pubKey, err := crypto.Ecrecover(hash, append(append(r.Bytes(), s.Bytes()...), sigV))
+	pubKey, err := crypto.Ecrecover(hash.Bytes(), append(append(r.Bytes(), s.Bytes()...), sigV))
 	// make sure the public key is a valid one
 	if err != nil {
 		return ef.returnAddress(proc, []byte(""))

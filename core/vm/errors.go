@@ -28,4 +28,6 @@ var (
 	ErrExecutionReverted        = errors.New("wavm: execution reverted")
 	ErrMaxCodeSizeExceeded      = errors.New("wavm: max code size exceeded")
 	ErrExecutionAssert          = errors.New("wavm: execution assert")
+	ErrMagicNumberMismatch      = errors.New("magic number mismatch")
+	ErrMainnetActive            = errors.New("only support election transaction in main net startup")
 )

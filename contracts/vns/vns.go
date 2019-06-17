@@ -91,7 +91,7 @@ func vnsParentNode(name string) (string, string) {
 
 func VnsNode(name string) string {
 	parentNode, parentLabel := vnsParentNode(name)
-	return string(crypto.Keccak256Hash([]byte(parentNode), []byte(parentLabel)).Bytes())
+	return string(crypto.Keccak256Hash([]byte(parentNode), []byte(parentLabel)).Hex())
 }
 
 func (self *VNS) getResolver(node string) (*contract.PublicResolverSession, error) {

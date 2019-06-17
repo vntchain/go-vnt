@@ -25,7 +25,6 @@ import (
 	"github.com/vntchain/go-vnt/core/vm"
 	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/core/wavm"
-	"github.com/vntchain/go-vnt/core/wavm/utils"
 	"github.com/vntchain/go-vnt/params"
 )
 
@@ -101,19 +100,5 @@ func Transfer(db inter.StateDB, sender, recipient common.Address, amount *big.In
 }
 
 func GetVM(msg Message, ctx vm.Context, statedb inter.StateDB, chainConfig *params.ChainConfig, vmConfig vm.Config) vm.VM {
-	contractCreation := msg.To() == nil
-	var code []byte
-	if contractCreation {
-		code = msg.Data()
-	} else {
-		code = statedb.GetCode(*msg.To())
-	}
-	if len(code) == 0 {
-		return wavm.NewWAVM(ctx, statedb, chainConfig, vmConfig)
-	}
-	magic, _ := utils.ReadMagic(code)
-	if magic == utils.MAGIC {
-		return wavm.NewWAVM(ctx, statedb, chainConfig, vmConfig)
-	}
 	return wavm.NewWAVM(ctx, statedb, chainConfig, vmConfig)
 }

@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"io/ioutil"
 	"math/big"
 	"os"
@@ -21,6 +20,11 @@ import (
 
 var (
 	basepath = "./"
+)
+
+var (
+	activeKey, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f292")
+	activeAddr   = crypto.PubkeyToAddress(activeKey.PublicKey)
 )
 
 var logger *log.Logger
@@ -86,11 +90,17 @@ func vmTestBlockHash(n uint64) common.Hash {
 func MakePreState(db vntdb.Database, accounts core.GenesisAlloc) *state.StateDB {
 	sdb := state.NewDatabase(db)
 	statedb, _ := state.New(common.Hash{}, sdb)
+	activeAccount := core.GenesisAccount{
+		Code:    []byte{},
+		Storage: map[common.Hash]common.Hash{},
+		Balance: big.NewInt(0).Mul(big.NewInt(1e9), big.NewInt(1e18)),
+		Nonce:   0,
+	}
+	accounts[activeAddr] = activeAccount
 	for addr, a := range accounts {
 		statedb.SetCode(addr, a.Code)
 		statedb.SetNonce(addr, a.Nonce)
 		statedb.SetBalance(addr, a.Balance)
-		fmt.Printf("addr %s a.balance %d\n", addr.Hex(), a.Balance)
 		for k, v := range a.Storage {
 			statedb.SetState(addr, k, v)
 		}

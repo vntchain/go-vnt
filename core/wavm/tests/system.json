@@ -1,0 +1,191 @@
+{
+     "env": {
+          "previousHash": "5e20a0453cecd065ea59c37ac63e079ee08998b6045136a8ce6635c7912ec0b6",
+          "currentNumber": 257,
+          "currentGasLimit": 4000000,
+          "currentDifficulty": 256,
+          "currentTimestamp": 1546273000,
+          "currentCoinbase": "0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba"
+     },
+     "exec": {
+          "address": "0xcccccccccccccccccccccccccccccccccccccccc",
+          "value": 0,
+          "gas": 4000000,
+          "caller": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "origin": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "gasPrice": 1000000
+     },
+     "pre": {
+          "0xcccccccccccccccccccccccccccccccccccccccc": {
+               "balance": "0xDE0B6B3A7640000",
+               "code": "",
+               "nonce": "0x00",
+               "storage": {}
+          },
+          "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+               "balance": "0xDE0B6B3A7640000",
+               "code": "",
+               "nonce": "0x00",
+               "storage": {}
+          }
+     },
+     "testcase": [
+          {
+               "code": "system/System.compress",
+               "abi": "system/abi.json",
+               "initcase": {
+                    "needinit": true,
+                    "input": []
+               },
+               "tests": [
+                    {
+                         "function": "$getStrlen",
+                         "input": [
+                              {
+                                   "data": "asdhjasdjsdsa",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "13",
+                              "type": "int32"
+                         }
+                    },
+                    {
+                         "function": "$testPow",
+                         "input": [
+                              {
+                                   "data": "2",
+                                   "type": "uint64"
+                              },
+                              {
+                                   "data": "10",
+                                   "type": "uint64"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "1024",
+                              "type": "uint64"
+                         }
+                    },
+                    {
+                         "function": "$testAtol",
+                         "input": [
+                              {
+                                   "data": "-1",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "-1",
+                              "type": "int32"
+                         }
+                    },
+                    {
+                         "function": "$testAtol",
+                         "input": [
+                              {
+                                   "data": "-2147483648",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "-2147483648",
+                              "type": "int32"
+                         }
+                    },
+                    {
+                         "function": "$testAtol",
+                         "input": [
+                              {
+                                   "data": "2147483647",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "2147483647",
+                              "type": "int32"
+                         }
+                    },
+                    {
+                         "function": "$testStrtoul",
+                         "input": [
+                              {
+                                   "data": "0",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0",
+                              "type": "uint32"
+                         }
+                    },
+                    {
+                         "function": "$testStrtoul",
+                         "input": [
+                              {
+                                   "data": "4294967295",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "4294967295",
+                              "type": "uint32"
+                         }
+                    },
+                    {
+                         "function": "$testStrtoll",
+                         "input": [
+                              {
+                                   "data": "-9223372036854775808",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "-9223372036854775808",
+                              "type": "int64"
+                         }
+                    },
+                    {
+                         "function": "$testStrtoll",
+                         "input": [
+                              {
+                                   "data": "9223372036854775807",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "9223372036854775807",
+                              "type": "int64"
+                         }
+                    },
+                    {
+                         "function": "$testStrtoull",
+                         "input": [
+                              {
+                                   "data": "18446744073709551615",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "18446744073709551615",
+                              "type": "uint64"
+                         }
+                    },
+                    {
+                         "function": "$testStrtoull",
+                         "input": [
+                              {
+                                   "data": "0",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0",
+                              "type": "uint64"
+                         }
+                    }
+               ]
+          }
+     ]
+}

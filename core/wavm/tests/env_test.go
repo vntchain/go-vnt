@@ -17,10 +17,11 @@ import (
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/vm"
+	errorsmsg "github.com/vntchain/go-vnt/core/vm"
+	"github.com/vntchain/go-vnt/core/vm/election"
 	"github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/core/wavm"
 	wasmContract "github.com/vntchain/go-vnt/core/wavm/contract"
-	errorsmsg "github.com/vntchain/go-vnt/core/wavm/errors"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/params"
 	"github.com/vntchain/go-vnt/vntdb"
@@ -100,8 +101,6 @@ func parseData(data string, dataType string) interface{} {
 		} else {
 			parse = common.HexToAddress(data)
 		}
-
-		fmt.Printf("data %s address %v\n", data, parse)
 	case "bool":
 		if data == "true" {
 			parse = true
@@ -144,6 +143,40 @@ func unpackOutput(abiobj abi.ABI, v interface{}, name string, output []byte) int
 	return v
 }
 
+func mainnetActive(env *ENVTest, t *testing.T, vmconfig vm.Config) {
+	txs, err := election.GenFakeStartedTxs(0, []common.Address{activeAddr})
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	env.getStateDb()
+	canTransfer := func(db inter.StateDB, address common.Address, amount *big.Int) bool {
+		return core.CanTransfer(db, address, amount)
+	}
+	transfer := func(db inter.StateDB, sender, recipient common.Address, amount *big.Int) {
+		core.Transfer(db, sender, recipient, amount)
+	}
+	context := vm.Context{
+		CanTransfer: canTransfer,
+		Transfer:    transfer,
+		GetHash:     vmTestBlockHash,
+		Origin:      activeAddr,
+		Coinbase:    activeAddr,
+		BlockNumber: new(big.Int).SetUint64(env.json.Env.Number),
+		Time:        new(big.Int).SetUint64(env.json.Env.Timestamp),
+		GasLimit:    env.json.Env.GasLimit,
+		Difficulty:  env.json.Env.Difficulty,
+		GasPrice:    env.json.Exec.GasPrice,
+	}
+	wavmobj := wavm.NewWAVM(context, env.statedb, params.AllCliqueProtocolChanges, vmconfig)
+	for _, v := range txs {
+
+		_, _, err := wavmobj.Call(vm.AccountRef(activeAddr), *v.To(), v.Data(), v.Gas(), v.Value())
+		if err != nil {
+			t.Fatalf(err.Error())
+		}
+	}
+}
+
 func (t *ENVTest) newWAVM(statedb *state.StateDB, vmconfig vm.Config) vm.VM {
 	canTransfer := func(db inter.StateDB, address common.Address, amount *big.Int) bool {
 		return core.CanTransfer(db, address, amount)
@@ -166,13 +199,16 @@ func (t *ENVTest) newWAVM(statedb *state.StateDB, vmconfig vm.Config) vm.VM {
 	return wavm.NewWAVM(context, statedb, params.AllCliqueProtocolChanges, vmconfig)
 }
 
-func (t *ENVTest) Run(vmconfig vm.Config, data []byte, iscreate bool, needinit bool, test *testing.T) ([]byte, error) {
-
+func (t *ENVTest) getStateDb() {
 	if t.statedb == nil {
 		db := vntdb.NewMemDatabase()
 		statedb := MakePreState(db, t.json.Pre)
 		t.statedb = statedb
 	}
+}
+
+func (t *ENVTest) Run(vmconfig vm.Config, data []byte, iscreate bool, needinit bool, test *testing.T) ([]byte, error) {
+	t.getStateDb()
 	// now := T.Now()
 	ret, _, err := t.exec(t.statedb, vmconfig, data, iscreate, needinit)
 	if err != nil {
@@ -254,6 +290,9 @@ func run(t *testing.T, jspath string) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
+
+	mainnetActive(envtest, t, vmconfig)
+
 	for i := 0; i < 1; i++ {
 		for _, v := range envtest.json.TestCase {
 

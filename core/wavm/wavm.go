@@ -19,7 +19,6 @@ package wavm
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"math/big"
 	"sync/atomic"
 	"time"
@@ -27,10 +26,10 @@ import (
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/vm"
+	errorsmsg "github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/vm/election"
 	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	wasmcontract "github.com/vntchain/go-vnt/core/wavm/contract"
-	errorsmsg "github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/wavm/gas"
 	"github.com/vntchain/go-vnt/core/wavm/storage"
 	"github.com/vntchain/go-vnt/core/wavm/utils"
@@ -87,7 +86,7 @@ func (wavm *WAVM) GetChainConfig() *params.ChainConfig {
 func runWavm(wavm *WAVM, contract *wasmcontract.WASMContract, input []byte, isCreate bool) ([]byte, error) {
 	// Only support election transaction in main net startup
 	if !election.MainNetActive(wavm.StateDB) && *contract.CodeAddr != electionAddress {
-		return nil, errors.New("only support election transaction in main net startup")
+		return nil, vm.ErrMainnetActive
 	}
 	if contract.CodeAddr != nil {
 		precompiles := vm.PrecompiledContractsHubble
