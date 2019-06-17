@@ -144,7 +144,7 @@ func (t *testResolver) Resolve(addr string) (common.Hash, error) {
 // TestAPIResolve tests resolving URIs which can either contain content hashes
 // or ENS names
 func TestAPIResolve(t *testing.T) {
-	ensAddr := "swarm.eth"
+	ensAddr := "swarm.vnt"
 	hashAddr := "1111111111111111111111111111111111111111111111111111111111111111"
 	resolvedAddr := "2222222222222222222222222222222222222222222222222222222222222222"
 	doesResolve := newTestResolver(resolvedAddr)
@@ -170,7 +170,7 @@ func TestAPIResolve(t *testing.T) {
 			desc:      "DNS not configured, ENS address, returns error",
 			dns:       nil,
 			addr:      ensAddr,
-			expectErr: errors.New(`no DNS to resolve name: "swarm.eth"`),
+			expectErr: errors.New(`no DNS to resolve name: "swarm.vnt"`),
 		},
 		{
 			desc:   "DNS configured, hash address, hash resolves, returns resolved address",
@@ -202,13 +202,13 @@ func TestAPIResolve(t *testing.T) {
 			dns:       doesResolve,
 			addr:      ensAddr,
 			immutable: true,
-			expectErr: errors.New(`immutable address not a content hash: "swarm.eth"`),
+			expectErr: errors.New(`immutable address not a content hash: "swarm.vnt"`),
 		},
 		{
 			desc:      "DNS configured, ENS address, name doesn't resolve, returns error",
 			dns:       doesntResolve,
 			addr:      ensAddr,
-			expectErr: errors.New(`DNS name not found: "swarm.eth"`),
+			expectErr: errors.New(`DNS name not found: "swarm.vnt"`),
 		},
 	}
 	for _, x := range tests {
@@ -241,7 +241,7 @@ func TestAPIResolve(t *testing.T) {
 func TestMultiResolver(t *testing.T) {
 	doesntResolve := newTestResolver("")
 
-	vntAddr := "swarm.eth"
+	vntAddr := "swarm.vnt"
 	vntHash := "0x2222222222222222222222222222222222222222222222222222222222222222"
 	vntResolve := newTestResolver(vntHash)
 
@@ -289,7 +289,7 @@ func TestMultiResolver(t *testing.T) {
 			desc: "Default resolver doesn't resolve, tld resolver resolve, returns resolved address",
 			r: NewMultiResolver(
 				MultiResolverOptionWithResolver(doesntResolve, ""),
-				MultiResolverOptionWithResolver(vntResolve, "eth"),
+				MultiResolverOptionWithResolver(vntResolve, "vnt"),
 			),
 			addr:   vntAddr,
 			result: vntHash,
@@ -297,9 +297,9 @@ func TestMultiResolver(t *testing.T) {
 		{
 			desc: "Three TLD resolvers, third resolves, returns resolved address",
 			r: NewMultiResolver(
-				MultiResolverOptionWithResolver(doesntResolve, "eth"),
-				MultiResolverOptionWithResolver(doesntResolve, "eth"),
-				MultiResolverOptionWithResolver(vntResolve, "eth"),
+				MultiResolverOptionWithResolver(doesntResolve, "vnt"),
+				MultiResolverOptionWithResolver(doesntResolve, "vnt"),
+				MultiResolverOptionWithResolver(vntResolve, "vnt"),
 			),
 			addr:   vntAddr,
 			result: vntHash,
@@ -308,7 +308,7 @@ func TestMultiResolver(t *testing.T) {
 			desc: "One TLD resolver doesn't resolve, returns error",
 			r: NewMultiResolver(
 				MultiResolverOptionWithResolver(doesntResolve, ""),
-				MultiResolverOptionWithResolver(vntResolve, "eth"),
+				MultiResolverOptionWithResolver(vntResolve, "vnt"),
 			),
 			addr:   vntAddr,
 			result: vntHash,
@@ -317,16 +317,16 @@ func TestMultiResolver(t *testing.T) {
 			desc: "One defautl and one TLD resolver, all doesn't resolve, returns error",
 			r: NewMultiResolver(
 				MultiResolverOptionWithResolver(doesntResolve, ""),
-				MultiResolverOptionWithResolver(doesntResolve, "eth"),
+				MultiResolverOptionWithResolver(doesntResolve, "vnt"),
 			),
 			addr:   vntAddr,
 			result: vntHash,
-			err:    errors.New(`DNS name not found: "swarm.eth"`),
+			err:    errors.New(`DNS name not found: "swarm.vnt"`),
 		},
 		{
 			desc: "Two TLD resolvers, both resolve, returns resolved address",
 			r: NewMultiResolver(
-				MultiResolverOptionWithResolver(vntResolve, "eth"),
+				MultiResolverOptionWithResolver(vntResolve, "vnt"),
 				MultiResolverOptionWithResolver(testResolve, "test"),
 			),
 			addr:   testAddr,
@@ -335,7 +335,7 @@ func TestMultiResolver(t *testing.T) {
 		{
 			desc: "One TLD resolver, no default resolver, returns error for different TLD",
 			r: NewMultiResolver(
-				MultiResolverOptionWithResolver(vntResolve, "eth"),
+				MultiResolverOptionWithResolver(vntResolve, "vnt"),
 			),
 			addr: testAddr,
 			err:  NewNoResolverError("test"),

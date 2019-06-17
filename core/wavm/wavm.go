@@ -60,7 +60,7 @@ type WAVM struct {
 	// virtual machine configuration options used to initialise the
 	// wavm.
 	wavmConfig Config
-	// global (to this context) ethereum virtual machine
+	// global (to this context) vntchain virtual machine
 	// used throughout the execution of the tx.
 	abort int32
 	// callGasTemp holds the gas available for the current call. This is needed because the

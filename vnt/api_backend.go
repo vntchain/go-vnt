@@ -198,7 +198,7 @@ func (b *VntAPIBackend) Downloader() *downloader.Downloader {
 }
 
 func (b *VntAPIBackend) ProtocolVersion() int {
-	return b.vnt.EthVersion()
+	return b.vnt.VntVersion()
 }
 
 func (b *VntAPIBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {

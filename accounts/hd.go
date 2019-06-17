@@ -53,7 +53,7 @@ var DefaultLedgerBaseDerivationPath = DerivationPath{0x80000000 + 44, 0x80000000
 // the `coin_type` 60' (or 0x8000003C) to VNT.
 //
 // The root path for VNT is m/44'/60'/0'/0 according to the specification
-// from https://github.com/ethereum/EIPs/issues/84, albeit it's not set in stone
+// albeit it's not set in stone
 // yet whether accounts should increment the last component or the children of
 // that. We will go with the simpler approach of incrementing the last component.
 type DerivationPath []uint32

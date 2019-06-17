@@ -63,21 +63,14 @@ func decryptPreSaleKey(fileContent []byte, password string) (key *Key, err error
 	}
 	iv := encSeedBytes[:16]
 	cipherText := encSeedBytes[16:]
-	/*
-		See https://github.com/ethereum/pyethsaletool
-
-		pyethsaletool generates the encryption key from password by
-		2000 rounds of PBKDF2 with HMAC-SHA-256 using password as salt (:().
-		16 byte key length within PBKDF2 and resulting key is used as AES key
-	*/
 	passBytes := []byte(password)
 	derivedKey := pbkdf2.Key(passBytes, passBytes, 2000, 16, sha256.New)
 	plainText, err := aesCBCDecrypt(derivedKey, cipherText, iv)
 	if err != nil {
 		return nil, err
 	}
-	ethPriv := crypto.Keccak256(plainText)
-	ecKey := crypto.ToECDSAUnsafe(ethPriv)
+	vntPriv := crypto.Keccak256(plainText)
+	ecKey := crypto.ToECDSAUnsafe(vntPriv)
 
 	key = &Key{
 		Id:         nil,

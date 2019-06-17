@@ -315,7 +315,7 @@ func dumpConfig(ctx *cli.Context) error {
 //deprecated flags checked here
 func checkDeprecated(ctx *cli.Context) {
 	// exit if the deprecated --vntapi flag is set
-	if ctx.GlobalString(DeprecatedEthAPIFlag.Name) != "" {
+	if ctx.GlobalString(DeprecatedVntAPIFlag.Name) != "" {
 		utils.Fatalf("--vntapi is no longer a valid command line flag, please use --ens-api and/or --swap-api.")
 	}
 	// warn if --ens-api flag is set

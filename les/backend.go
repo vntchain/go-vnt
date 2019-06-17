@@ -162,7 +162,7 @@ func (s *LightDummyAPI) Producing() bool {
 	return false
 }
 
-// APIs returns the collection of RPC services the ethereum package offers.
+// APIs returns the collection of RPC services the hubble package offers.
 // NOTE, some of these services probably need to be moved to somewhere else.
 func (s *LightVnt) APIs() []rpc.API {
 	return append(vntapi.GetAPIs(s.ApiBackend), []rpc.API{
