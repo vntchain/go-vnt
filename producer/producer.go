@@ -46,8 +46,7 @@ type Backend interface {
 type Producer struct {
 	mux *event.TypeMux
 
-	worker *worker
-
+	worker    *worker
 	coinbase  common.Address
 	producing int32
 	vnt       Backend
@@ -65,7 +64,6 @@ func New(vnt Backend, config *params.ChainConfig, mux *event.TypeMux, engine con
 		worker:   newWorker(config, engine, common.Address{}, vnt, mux),
 		canStart: 1,
 	}
-	producer.Register(NewCpuAgent(vnt.BlockChain(), engine))
 	go producer.update()
 
 	return producer
@@ -122,17 +120,6 @@ func (self *Producer) Stop() {
 	self.worker.stop()
 	atomic.StoreInt32(&self.producing, 0)
 	atomic.StoreInt32(&self.shouldStart, 0)
-}
-
-func (self *Producer) Register(agent Agent) {
-	if self.Producing() {
-		agent.Start()
-	}
-	self.worker.register(agent)
-}
-
-func (self *Producer) Unregister(agent Agent) {
-	self.worker.unregister(agent)
 }
 
 func (self *Producer) Producing() bool {

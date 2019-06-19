@@ -64,10 +64,10 @@ type PublicProducerAPI struct {
 	agent *producer.RemoteAgent
 }
 
+// TODO vnt remove agent api
 // NewPublicProducerAPI create a new PublicProducerAPI instance.
 func NewPublicProducerAPI(e *VNT) *PublicProducerAPI {
 	agent := producer.NewRemoteAgent(e.BlockChain(), e.Engine())
-	e.Producer().Register(agent)
 
 	return &PublicProducerAPI{e, agent}
 }
