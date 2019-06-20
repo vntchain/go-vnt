@@ -28,7 +28,7 @@ import (
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/vm"
-	"github.com/vntchain/go-vnt/core/vm/interface"
+	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/core/wavm"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/params"
@@ -68,8 +68,7 @@ type vmExecMarshaling struct {
 	GasPrice *math.HexOrDecimal256
 }
 
-// VMTest checks VM execution without block or transaction context.
-// See https://github.com/ethereum/tests/wiki/VM-Tests for the test format specification.
+// WAVMTest checks VM execution without block or transaction context.
 type WAVMTest struct {
 	json vmJSON
 }

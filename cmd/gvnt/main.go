@@ -63,12 +63,6 @@ var (
 		utils.BootnodesV5Flag,
 		utils.DataDirFlag,
 		utils.KeyStoreDirFlag,
-		// utils.EthashCacheDirFlag,
-		// utils.EthashCachesInMemoryFlag,
-		// utils.EthashCachesOnDiskFlag,
-		// utils.EthashDatasetDirFlag,
-		// utils.EthashDatasetsInMemoryFlag,
-		// utils.EthashDatasetsOnDiskFlag,
 		utils.TxPoolNoLocalsFlag,
 		utils.TxPoolJournalFlag,
 		utils.TxPoolRejournalFlag,
@@ -105,7 +99,7 @@ var (
 		utils.NetworkIdFlag,
 		utils.RPCCORSDomainFlag,
 		utils.RPCVirtualHostsFlag,
-		utils.EthStatsURLFlag,
+		utils.VntStatsURLFlag,
 		utils.MetricsEnabledFlag,
 		utils.NoCompactionFlag,
 		utils.GpoBlocksFlag,
@@ -326,7 +320,7 @@ func gvnt(ctx *cli.Context) error {
 
 // startNode boots up the system node and all registered protocols, after which
 // it unlocks any requested accounts, and starts the RPC/IPC interfaces and the
-// miner.
+// producer.
 func startNode(ctx *cli.Context, stack *node.Node) {
 	debug.Memsize.Add("node", stack)
 

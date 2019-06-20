@@ -38,9 +38,9 @@ import (
 	"github.com/vntchain/go-vnt/event"
 	"github.com/vntchain/go-vnt/internal/vntapi"
 	"github.com/vntchain/go-vnt/log"
-	"github.com/vntchain/go-vnt/miner"
 	"github.com/vntchain/go-vnt/node"
 	"github.com/vntchain/go-vnt/params"
+	"github.com/vntchain/go-vnt/producer"
 	"github.com/vntchain/go-vnt/rlp"
 	"github.com/vntchain/go-vnt/rpc"
 	"github.com/vntchain/go-vnt/vnt/downloader"
@@ -83,7 +83,7 @@ type VNT struct {
 
 	APIBackend *VntAPIBackend
 
-	miner    *miner.Miner
+	producer *producer.Producer
 	gasPrice *big.Int
 	coinbase common.Address
 
@@ -165,8 +165,8 @@ func New(ctx *node.ServiceContext, config *Config, node *node.Node) (*VNT, error
 	if vnt.protocolManager, err = NewProtocolManager(vnt.chainConfig, config.SyncMode, config.NetworkId, vnt.eventMux, vnt.txPool, vnt.engine, vnt.blockchain, chainDb, node); err != nil {
 		return nil, err
 	}
-	vnt.miner = miner.New(vnt, vnt.chainConfig, vnt.EventMux(), vnt.engine)
-	vnt.miner.SetExtra(makeExtraData(config.ExtraData))
+	vnt.producer = producer.New(vnt, vnt.chainConfig, vnt.EventMux(), vnt.engine)
+	vnt.producer.SetExtra(makeExtraData(config.ExtraData))
 
 	vnt.APIBackend = &VntAPIBackend{vnt, nil}
 	gpoParams := config.GPO
@@ -189,7 +189,7 @@ func makeExtraData(extra []byte) []byte {
 		})
 	}
 	if uint64(len(extra)) > params.MaximumExtraDataSize {
-		log.Warn("Miner extra data exceed limit", "extra", hexutil.Bytes(extra), "limit", params.MaximumExtraDataSize)
+		log.Warn("Producer extra data exceed limit", "extra", hexutil.Bytes(extra), "limit", params.MaximumExtraDataSize)
 		extra = nil
 	}
 	return extra
@@ -208,23 +208,23 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (vntdb.Data
 	return db, nil
 }
 
-// CreateConsensusEngine creates the required type of consensus engine instance for an VNT service
+// CreateConsensusEngine creates the required type of consensus engine instance for an vnt service
 func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainConfig, db vntdb.Database) consensus.Engine {
-	// Otherwise assume DPoS
 	cfg := chainConfig.Dpos
-	// TODO vnt below test net config data should be in a single const variable
-	// now, it's used for tests
 	if chainConfig.Dpos == nil {
 		cfg = &params.DposConfig{
-			WitnessesNum: 4,
-			Period:       2,
-			WitnessesUrl: nil,
+			WitnessesNum: params.MainnetChainConfig.Dpos.WitnessesNum,
+			Period:       params.MainnetChainConfig.Dpos.Period,
+			WitnessesUrl: make([]string, len(params.MainnetChainConfig.Dpos.WitnessesUrl)),
+		}
+		for i, url := range params.MainnetChainConfig.Dpos.WitnessesUrl {
+			cfg.WitnessesUrl[i] = url
 		}
 	}
 	return dpos.New(cfg, db)
 }
 
-// APIs return the collection of RPC services the ethereum package offers.
+// APIs return the collection of RPC services the hubble package offers.
 // NOTE, some of these services probably need to be moved to somewhere else.
 func (s *VNT) APIs() []rpc.API {
 	apis := vntapi.GetAPIs(s.APIBackend)
@@ -242,7 +242,7 @@ func (s *VNT) APIs() []rpc.API {
 		}, {
 			Namespace: "core",
 			Version:   "1.0",
-			Service:   NewPublicMinerAPI(s),
+			Service:   NewPublicProducerAPI(s),
 			Public:    true,
 		}, {
 			Namespace: "core",
@@ -252,7 +252,7 @@ func (s *VNT) APIs() []rpc.API {
 		}, {
 			Namespace: "bp",
 			Version:   "1.0",
-			Service:   NewPrivateMinerAPI(s),
+			Service:   NewPrivateProducerAPI(s),
 			Public:    false,
 		}, {
 			Namespace: "core",
@@ -314,7 +314,7 @@ func (s *VNT) SetCoinbase(coinbase common.Address) {
 	s.coinbase = coinbase
 	s.lock.Unlock()
 
-	s.miner.SetCoinbase(coinbase)
+	s.producer.SetCoinbase(coinbase)
 }
 
 func (s *VNT) StartProducing(local bool) error {
@@ -336,16 +336,16 @@ func (s *VNT) StartProducing(local bool) error {
 		// If local (CPU) block producing is started, we can disable the transaction rejection
 		// mechanism introduced to speed sync times. CPU block producing on mainnet is ludicrous
 		// so none will ever hit this path, whereas marking sync done on CPU block producing
-		// will ensure that private networks work in single miner mode too.
+		// will ensure that private networks work in single producer mode too.
 		atomic.StoreUint32(&s.protocolManager.acceptTxs, 1)
 	}
-	go s.miner.Start(eb)
+	go s.producer.Start(eb)
 	return nil
 }
 
-func (s *VNT) StopProducing()      { s.miner.Stop() }
-func (s *VNT) IsProducing() bool   { return s.miner.Producing() }
-func (s *VNT) Miner() *miner.Miner { return s.miner }
+func (s *VNT) StopProducing()               { s.producer.Stop() }
+func (s *VNT) IsProducing() bool            { return s.producer.Producing() }
+func (s *VNT) Producer() *producer.Producer { return s.producer }
 
 func (s *VNT) AccountManager() *accounts.Manager  { return s.accountManager }
 func (s *VNT) BlockChain() *core.BlockChain       { return s.blockchain }
@@ -354,7 +354,7 @@ func (s *VNT) EventMux() *event.TypeMux           { return s.eventMux }
 func (s *VNT) Engine() consensus.Engine           { return s.engine }
 func (s *VNT) ChainDb() vntdb.Database            { return s.chainDb }
 func (s *VNT) IsListening() bool                  { return true } // Always listening
-func (s *VNT) EthVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
+func (s *VNT) VntVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *VNT) NetVersion() uint64                 { return s.networkId }
 func (s *VNT) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
 
@@ -402,7 +402,7 @@ func (s *VNT) Stop() error {
 		s.lesServer.Stop()
 	}
 	s.txPool.Stop()
-	s.miner.Stop()
+	s.producer.Stop()
 	s.eventMux.Stop()
 
 	s.chainDb.Close()

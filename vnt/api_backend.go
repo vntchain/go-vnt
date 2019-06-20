@@ -57,9 +57,9 @@ func (b *VntAPIBackend) SetHead(number uint64) {
 }
 
 func (b *VntAPIBackend) HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Header, error) {
-	// Pending block is only known by the miner
+	// Pending block is only known by the producer
 	if blockNr == rpc.PendingBlockNumber {
-		block := b.vnt.miner.PendingBlock()
+		block := b.vnt.producer.PendingBlock()
 		return block.Header(), nil
 	}
 	// Otherwise resolve and return the block
@@ -70,9 +70,9 @@ func (b *VntAPIBackend) HeaderByNumber(ctx context.Context, blockNr rpc.BlockNum
 }
 
 func (b *VntAPIBackend) BlockByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Block, error) {
-	// Pending block is only known by the miner
+	// Pending block is only known by the producer
 	if blockNr == rpc.PendingBlockNumber {
-		block := b.vnt.miner.PendingBlock()
+		block := b.vnt.producer.PendingBlock()
 		return block, nil
 	}
 	// Otherwise resolve and return the block
@@ -83,9 +83,9 @@ func (b *VntAPIBackend) BlockByNumber(ctx context.Context, blockNr rpc.BlockNumb
 }
 
 func (b *VntAPIBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*state.StateDB, *types.Header, error) {
-	// Pending state is only known by the miner
+	// Pending state is only known by the producer
 	if blockNr == rpc.PendingBlockNumber {
-		block, state := b.vnt.miner.Pending()
+		block, state := b.vnt.producer.Pending()
 		return state, block.Header(), nil
 	}
 	// Otherwise resolve the block number and return its state
@@ -198,7 +198,7 @@ func (b *VntAPIBackend) Downloader() *downloader.Downloader {
 }
 
 func (b *VntAPIBackend) ProtocolVersion() int {
-	return b.vnt.EthVersion()
+	return b.vnt.VntVersion()
 }
 
 func (b *VntAPIBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {

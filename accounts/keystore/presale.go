@@ -46,7 +46,7 @@ func importPreSaleKey(keyStore keyStore, keyJSON []byte, password string) (accou
 func decryptPreSaleKey(fileContent []byte, password string) (key *Key, err error) {
 	preSaleKeyStruct := struct {
 		EncSeed string
-		EthAddr string
+		VntAddr string
 		Email   string
 		BtcAddr string
 	}{}
@@ -63,21 +63,14 @@ func decryptPreSaleKey(fileContent []byte, password string) (key *Key, err error
 	}
 	iv := encSeedBytes[:16]
 	cipherText := encSeedBytes[16:]
-	/*
-		See https://github.com/ethereum/pyethsaletool
-
-		pyethsaletool generates the encryption key from password by
-		2000 rounds of PBKDF2 with HMAC-SHA-256 using password as salt (:().
-		16 byte key length within PBKDF2 and resulting key is used as AES key
-	*/
 	passBytes := []byte(password)
 	derivedKey := pbkdf2.Key(passBytes, passBytes, 2000, 16, sha256.New)
 	plainText, err := aesCBCDecrypt(derivedKey, cipherText, iv)
 	if err != nil {
 		return nil, err
 	}
-	ethPriv := crypto.Keccak256(plainText)
-	ecKey := crypto.ToECDSAUnsafe(ethPriv)
+	vntPriv := crypto.Keccak256(plainText)
+	ecKey := crypto.ToECDSAUnsafe(vntPriv)
 
 	key = &Key{
 		Id:         nil,
@@ -85,7 +78,7 @@ func decryptPreSaleKey(fileContent []byte, password string) (key *Key, err error
 		PrivateKey: ecKey,
 	}
 	derivedAddr := hex.EncodeToString(key.Address.Bytes()) // needed because .Hex() gives leading "0x"
-	expectedAddr := preSaleKeyStruct.EthAddr
+	expectedAddr := preSaleKeyStruct.VntAddr
 	if derivedAddr != expectedAddr {
 		err = fmt.Errorf("decrypted addr '%s' not equal to expected addr '%s'", derivedAddr, expectedAddr)
 	}

@@ -100,7 +100,7 @@ On the `client` qube, we need to create a listener which will receive the reques
 
 """
 This implements a dispatcher which listens to localhost:8550, and proxies
-requests via qrexec to the service qubes.EthSign on a target domain
+requests via qrexec to the service qubes.VntSign on a target domain
 """
 
 import http.server

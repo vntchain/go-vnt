@@ -212,11 +212,11 @@ func testChainGen(i int, block *core.BlockGen) {
 		}
 		core.StartFakeMainNet(block, testBankAddress, signTx)
 
-		// In block 1, the test bank sends account #1 some ether.
+		// In block 1, the test bank sends account #1 some vnt.
 		tx, _ := types.SignTx(types.NewTransaction(block.TxNonce(testBankAddress), acc1Addr, big.NewInt(10000), params.TxGas, nil, nil), signer, testBankKey)
 		block.AddTx(tx)
 	case 1:
-		// In block 2, the test bank sends some more ether to account #1.
+		// In block 2, the test bank sends some more vnt to account #1.
 		// acc1Addr passes it on to account #2.
 		// acc1Addr creates a test contract.
 		tx1, _ := types.SignTx(types.NewTransaction(block.TxNonce(testBankAddress), acc1Addr, big.NewInt(1000), params.TxGas, nil, nil), signer, testBankKey)
@@ -229,7 +229,7 @@ func testChainGen(i int, block *core.BlockGen) {
 		block.AddTx(tx2)
 		block.AddTx(tx3)
 	case 2:
-		// Block 3 is empty but was mined by account #2.
+		// Block 3 is empty but was produced by account #2.
 		block.SetCoinbase(acc2Addr)
 		block.SetExtra([]byte("yeehaw"))
 		data := common.Hex2Bytes("C16431B900000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001")

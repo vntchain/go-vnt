@@ -28,6 +28,6 @@ type PackKeyStore struct {
 // 	return keyjson
 // }
 
-// func (pk *PackKeyStore) ImportEthKeyStore(keyjson string) {
+// func (pk *PackKeyStore) ImportVntKeyStore(keyjson string) {
 
 // }

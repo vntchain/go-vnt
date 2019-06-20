@@ -510,19 +510,19 @@ func TestValidateConfig(t *testing.T) {
 		},
 		{
 			cfg: &api.Config{VnsAPIs: []string{
-				"eth:314159265dD8dbb310642f98f50C066173C1259b@http://127.0.0.1:1234",
+				"vnt:314159265dD8dbb310642f98f50C066173C1259b@http://127.0.0.1:1234",
 			}},
 		},
 		{
 			cfg: &api.Config{VnsAPIs: []string{
-				"eth:314159265dD8dbb310642f98f50C066173C1259b@ws://127.0.0.1:12344",
+				"vnt:314159265dD8dbb310642f98f50C066173C1259b@ws://127.0.0.1:12344",
 			}},
 		},
 		{
 			cfg: &api.Config{VnsAPIs: []string{
-				"eth:",
+				"vnt:",
 			}},
-			err: "invalid format [tld:][contract-addr@]url for VNS API endpoint configuration \"eth:\": missing url",
+			err: "invalid format [tld:][contract-addr@]url for VNS API endpoint configuration \"vnt:\": missing url",
 		},
 		{
 			cfg: &api.Config{VnsAPIs: []string{

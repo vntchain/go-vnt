@@ -37,14 +37,7 @@ ADD genesis.json /genesis.json
 RUN \
   echo 'node server.js &'                     > wallet.sh && \
 	echo 'gvnt --cache 512 init /genesis.json' >> wallet.sh && \
-	echo $'gvnt --networkid {{.NetworkID}} --port {{.NodePort}} --bootnodes {{.Bootnodes}} --ethstats \'{{.Ethstats}}\' --cache=512 --rpc --rpcaddr=0.0.0.0 --rpccorsdomain "*" --rpcvhosts "*"' >> wallet.sh
-
-RUN \
-	sed -i 's/PuppethNetworkID/{{.NetworkID}}/g' dist/js/etherwallet-master.js && \
-	sed -i 's/PuppethNetwork/{{.Network}}/g'     dist/js/etherwallet-master.js && \
-	sed -i 's/PuppethDenom/{{.Denom}}/g'         dist/js/etherwallet-master.js && \
-	sed -i 's/PuppethHost/{{.Host}}/g'           dist/js/etherwallet-master.js && \
-	sed -i 's/PuppethRPCPort/{{.RPCPort}}/g'     dist/js/etherwallet-master.js
+	echo $'gvnt --networkid {{.NetworkID}} --port {{.NodePort}} --bootnodes {{.Bootnodes}} --vntstats \'{{.Vntstats}}\' --cache=512 --rpc --rpcaddr=0.0.0.0 --rpccorsdomain "*" --rpcvhosts "*"' >> wallet.sh
 
 ENTRYPOINT ["/bin/sh", "wallet.sh"]
 `
@@ -66,7 +59,7 @@ services:
       - {{.Datadir}}:/root/.vntchain
     environment:
       - NODE_PORT={{.NodePort}}/tcp
-      - STATS={{.Ethstats}}{{if .VHost}}
+      - STATS={{.Vntstats}}{{if .VHost}}
       - VIRTUAL_HOST={{.VHost}}
       - VIRTUAL_PORT=80{{end}}
     logging:
@@ -93,7 +86,7 @@ func deployWallet(client *sshClient, network string, bootnodes []string, config 
 		"NodePort":  config.nodePort,
 		"RPCPort":   config.rpcPort,
 		"Bootnodes": strings.Join(bootnodes, ","),
-		"Ethstats":  config.ethstats,
+		"Vntstats":  config.vntstats,
 		"Host":      client.address,
 	})
 	files[filepath.Join(workdir, "Dockerfile")] = dockerfile.Bytes()
@@ -106,7 +99,7 @@ func deployWallet(client *sshClient, network string, bootnodes []string, config 
 		"RPCPort":  config.rpcPort,
 		"VHost":    config.webHost,
 		"WebPort":  config.webPort,
-		"Ethstats": config.ethstats[:strings.Index(config.ethstats, ":")],
+		"Vntstats": config.vntstats[:strings.Index(config.vntstats, ":")],
 	})
 	files[filepath.Join(workdir, "docker-compose.yaml")] = composefile.Bytes()
 
@@ -131,7 +124,7 @@ type walletInfos struct {
 	genesis  []byte
 	network  int64
 	datadir  string
-	ethstats string
+	vntstats string
 	nodePort int
 	rpcPort  int
 	webHost  string
@@ -143,7 +136,7 @@ type walletInfos struct {
 func (info *walletInfos) Report() map[string]string {
 	report := map[string]string{
 		"Data directory":         info.datadir,
-		"Ethstats username":      info.ethstats,
+		"Vntstats username":      info.vntstats,
 		"Node listener port ":    strconv.Itoa(info.nodePort),
 		"RPC listener port ":     strconv.Itoa(info.rpcPort),
 		"Website address ":       info.webHost,
@@ -194,7 +187,7 @@ func checkWallet(client *sshClient, network string) (*walletInfos, error) {
 		rpcPort:  rpcPort,
 		webHost:  host,
 		webPort:  webPort,
-		ethstats: infos.envvars["STATS"],
+		vntstats: infos.envvars["STATS"],
 	}
 	return stats, nil
 }

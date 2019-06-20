@@ -50,7 +50,7 @@ type NodeConfig struct {
 	// set to zero, then only the configured static and trusted peers can connect.
 	MaxPeers int
 
-	// EthereumEnabled specifies whether the node should run the VNT protocol.
+	// VntEnabled specifies whether the node should run the VNT protocol.
 	VntEnabled bool
 
 	// HubbleNetworkID is the network identifier used by the VNT protocol to
@@ -149,13 +149,13 @@ func NewNode(datadir string, config *NodeConfig) (stack *Node, _ error) {
 	}
 	// Register the VNT protocol if requested
 	if config.VntEnabled {
-		ethConf := vnt.DefaultConfig
-		ethConf.Genesis = genesis
-		ethConf.SyncMode = downloader.LightSync
-		ethConf.NetworkId = uint64(config.HubbleNetworkID)
-		ethConf.DatabaseCache = config.HubbleDatabaseCache
+		vntConf := vnt.DefaultConfig
+		vntConf.Genesis = genesis
+		vntConf.SyncMode = downloader.LightSync
+		vntConf.NetworkId = uint64(config.HubbleNetworkID)
+		vntConf.DatabaseCache = config.HubbleDatabaseCache
 		if err := rawStack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-			return les.New(ctx, &ethConf)
+			return les.New(ctx, &vntConf)
 		}); err != nil {
 			return nil, fmt.Errorf("gvnt init: %v", err)
 		}

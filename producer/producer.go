@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-// Package miner implements VNT block creation and producing.
-package miner
+// Package producer implements Hubble block creation and producing.
+package producer
 
 import (
 	"fmt"
@@ -42,8 +42,8 @@ type Backend interface {
 	ChainDb() vntdb.Database
 }
 
-// Miner creates blocks and searches for proof-of-work values.
-type Miner struct {
+// Producer creates blocks and searches for proof-of-work values.
+type Producer struct {
 	mux *event.TypeMux
 
 	worker *worker
@@ -57,25 +57,25 @@ type Miner struct {
 	shouldStart int32 // should start indicates whether we should start after sync
 }
 
-func New(vnt Backend, config *params.ChainConfig, mux *event.TypeMux, engine consensus.Engine) *Miner {
-	miner := &Miner{
+func New(vnt Backend, config *params.ChainConfig, mux *event.TypeMux, engine consensus.Engine) *Producer {
+	producer := &Producer{
 		vnt:      vnt,
 		mux:      mux,
 		engine:   engine,
 		worker:   newWorker(config, engine, common.Address{}, vnt, mux),
 		canStart: 1,
 	}
-	miner.Register(NewCpuAgent(vnt.BlockChain(), engine))
-	go miner.update()
+	producer.Register(NewCpuAgent(vnt.BlockChain(), engine))
+	go producer.update()
 
-	return miner
+	return producer
 }
 
 // update keeps track of the downloader events. Please be aware that this is a one shot type of update loop.
 // It's entered once and as soon as `Done` or `Failed` has been broadcasted the events are unregistered and
 // the loop is exited. This to prevent a major security vuln where external parties can DOS you with blocks
 // and halt your producing operation for as long as the DOS continues.
-func (self *Miner) update() {
+func (self *Producer) update() {
 	events := self.mux.Subscribe(downloader.StartEvent{}, downloader.DoneEvent{}, downloader.FailedEvent{})
 out:
 	for ev := range events.Chan() {
@@ -103,12 +103,12 @@ out:
 	}
 }
 
-func (self *Miner) Start(coinbase common.Address) {
+func (self *Producer) Start(coinbase common.Address) {
 	atomic.StoreInt32(&self.shouldStart, 1)
 	self.SetCoinbase(coinbase)
 
 	if atomic.LoadInt32(&self.canStart) == 0 {
-		log.Info("Network syncing, will start miner afterwards")
+		log.Info("Network syncing, will start producer afterwards")
 		return
 	}
 	atomic.StoreInt32(&self.producing, 1)
@@ -118,28 +118,28 @@ func (self *Miner) Start(coinbase common.Address) {
 	self.worker.commitNewWork()
 }
 
-func (self *Miner) Stop() {
+func (self *Producer) Stop() {
 	self.worker.stop()
 	atomic.StoreInt32(&self.producing, 0)
 	atomic.StoreInt32(&self.shouldStart, 0)
 }
 
-func (self *Miner) Register(agent Agent) {
+func (self *Producer) Register(agent Agent) {
 	if self.Producing() {
 		agent.Start()
 	}
 	self.worker.register(agent)
 }
 
-func (self *Miner) Unregister(agent Agent) {
+func (self *Producer) Unregister(agent Agent) {
 	self.worker.unregister(agent)
 }
 
-func (self *Miner) Producing() bool {
+func (self *Producer) Producing() bool {
 	return atomic.LoadInt32(&self.producing) > 0
 }
 
-func (self *Miner) SetExtra(extra []byte) error {
+func (self *Producer) SetExtra(extra []byte) error {
 	if uint64(len(extra)) > params.MaximumExtraDataSize {
 		return fmt.Errorf("Extra exceeds max length. %d > %v", len(extra), params.MaximumExtraDataSize)
 	}
@@ -148,7 +148,7 @@ func (self *Miner) SetExtra(extra []byte) error {
 }
 
 // Pending returns the currently pending block and associated state.
-func (self *Miner) Pending() (*types.Block, *state.StateDB) {
+func (self *Producer) Pending() (*types.Block, *state.StateDB) {
 	return self.worker.pending()
 }
 
@@ -157,11 +157,11 @@ func (self *Miner) Pending() (*types.Block, *state.StateDB) {
 // Note, to access both the pending block and the pending state
 // simultaneously, please use Pending(), as the pending state can
 // change between multiple method calls
-func (self *Miner) PendingBlock() *types.Block {
+func (self *Producer) PendingBlock() *types.Block {
 	return self.worker.pendingBlock()
 }
 
-func (self *Miner) SetCoinbase(addr common.Address) {
+func (self *Producer) SetCoinbase(addr common.Address) {
 	self.coinbase = addr
 	self.worker.setCoinbase(addr)
 }
