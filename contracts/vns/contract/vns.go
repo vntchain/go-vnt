@@ -175,7 +175,7 @@ func (_VNS *VNSTransactorRaw) Transact(opts *bind.TransactOpts, method string, p
 
 // Owner is a free data retrieval call binding the contract method 0x02571be3.
 //
-// Solidity: function owner(node bytes32) constant returns(address)
+// function owner(node bytes32) constant returns(address)
 func (_VNS *VNSCaller) Owner(opts *bind.CallOpts, node string) (common.Address, error) {
 	var (
 		ret0 = new(common.Address)
@@ -187,21 +187,21 @@ func (_VNS *VNSCaller) Owner(opts *bind.CallOpts, node string) (common.Address, 
 
 // Owner is a free data retrieval call binding the contract method 0x02571be3.
 //
-// Solidity: function owner(node bytes32) constant returns(address)
+// function owner(node bytes32) constant returns(address)
 func (_VNS *VNSSession) Owner(node string) (common.Address, error) {
 	return _VNS.Contract.Owner(&_VNS.CallOpts, node)
 }
 
 // Owner is a free data retrieval call binding the contract method 0x02571be3.
 //
-// Solidity: function owner(node bytes32) constant returns(address)
+// function owner(node bytes32) constant returns(address)
 func (_VNS *VNSCallerSession) Owner(node string) (common.Address, error) {
 	return _VNS.Contract.Owner(&_VNS.CallOpts, node)
 }
 
 // Resolver is a free data retrieval call binding the contract method 0x0178b8bf.
 //
-// Solidity: function resolver(node bytes32) constant returns(address)
+// function resolver(node bytes32) constant returns(address)
 func (_VNS *VNSCaller) Resolver(opts *bind.CallOpts, node string) (common.Address, error) {
 	var (
 		ret0 = new(common.Address)
@@ -213,21 +213,21 @@ func (_VNS *VNSCaller) Resolver(opts *bind.CallOpts, node string) (common.Addres
 
 // Resolver is a free data retrieval call binding the contract method 0x0178b8bf.
 //
-// Solidity: function resolver(node bytes32) constant returns(address)
+// function resolver(node bytes32) constant returns(address)
 func (_VNS *VNSSession) Resolver(node string) (common.Address, error) {
 	return _VNS.Contract.Resolver(&_VNS.CallOpts, node)
 }
 
 // Resolver is a free data retrieval call binding the contract method 0x0178b8bf.
 //
-// Solidity: function resolver(node bytes32) constant returns(address)
+// function resolver(node bytes32) constant returns(address)
 func (_VNS *VNSCallerSession) Resolver(node string) (common.Address, error) {
 	return _VNS.Contract.Resolver(&_VNS.CallOpts, node)
 }
 
 // Ttl is a free data retrieval call binding the contract method 0x16a25cbd.
 //
-// Solidity: function ttl(node bytes32) constant returns(uint64)
+// function ttl(node bytes32) constant returns(uint64)
 func (_VNS *VNSCaller) Ttl(opts *bind.CallOpts, node string) (uint64, error) {
 	var (
 		ret0 = new(uint64)
@@ -239,98 +239,98 @@ func (_VNS *VNSCaller) Ttl(opts *bind.CallOpts, node string) (uint64, error) {
 
 // Ttl is a free data retrieval call binding the contract method 0x16a25cbd.
 //
-// Solidity: function ttl(node bytes32) constant returns(uint64)
+// function ttl(node bytes32) constant returns(uint64)
 func (_VNS *VNSSession) Ttl(node string) (uint64, error) {
 	return _VNS.Contract.Ttl(&_VNS.CallOpts, node)
 }
 
 // Ttl is a free data retrieval call binding the contract method 0x16a25cbd.
 //
-// Solidity: function ttl(node bytes32) constant returns(uint64)
+// function ttl(node bytes32) constant returns(uint64)
 func (_VNS *VNSCallerSession) Ttl(node string) (uint64, error) {
 	return _VNS.Contract.Ttl(&_VNS.CallOpts, node)
 }
 
 // SetOwner is a paid mutator transaction binding the contract method 0x5b0fc9c3.
 //
-// Solidity: function setOwner(node bytes32, owner address) returns()
+// function setOwner(node bytes32, owner address) returns()
 func (_VNS *VNSTransactor) SetOwner(opts *bind.TransactOpts, node string, owner common.Address) (*types.Transaction, error) {
 	return _VNS.contract.Transact(opts, "setOwner", node, owner)
 }
 
 // SetOwner is a paid mutator transaction binding the contract method 0x5b0fc9c3.
 //
-// Solidity: function setOwner(node bytes32, owner address) returns()
+// function setOwner(node bytes32, owner address) returns()
 func (_VNS *VNSSession) SetOwner(node string, owner common.Address) (*types.Transaction, error) {
 	return _VNS.Contract.SetOwner(&_VNS.TransactOpts, node, owner)
 }
 
 // SetOwner is a paid mutator transaction binding the contract method 0x5b0fc9c3.
 //
-// Solidity: function setOwner(node bytes32, owner address) returns()
+// function setOwner(node bytes32, owner address) returns()
 func (_VNS *VNSTransactorSession) SetOwner(node string, owner common.Address) (*types.Transaction, error) {
 	return _VNS.Contract.SetOwner(&_VNS.TransactOpts, node, owner)
 }
 
 // SetResolver is a paid mutator transaction binding the contract method 0x1896f70a.
 //
-// Solidity: function setResolver(node bytes32, resolver address) returns()
+// function setResolver(node bytes32, resolver address) returns()
 func (_VNS *VNSTransactor) SetResolver(opts *bind.TransactOpts, node string, resolver common.Address) (*types.Transaction, error) {
 	return _VNS.contract.Transact(opts, "setResolver", node, resolver)
 }
 
 // SetResolver is a paid mutator transaction binding the contract method 0x1896f70a.
 //
-// Solidity: function setResolver(node bytes32, resolver address) returns()
+// function setResolver(node bytes32, resolver address) returns()
 func (_VNS *VNSSession) SetResolver(node string, resolver common.Address) (*types.Transaction, error) {
 	return _VNS.Contract.SetResolver(&_VNS.TransactOpts, node, resolver)
 }
 
 // SetResolver is a paid mutator transaction binding the contract method 0x1896f70a.
 //
-// Solidity: function setResolver(node bytes32, resolver address) returns()
+// function setResolver(node bytes32, resolver address) returns()
 func (_VNS *VNSTransactorSession) SetResolver(node string, resolver common.Address) (*types.Transaction, error) {
 	return _VNS.Contract.SetResolver(&_VNS.TransactOpts, node, resolver)
 }
 
 // SetSubnodeOwner is a paid mutator transaction binding the contract method 0x06ab5923.
 //
-// Solidity: function setSubnodeOwner(node bytes32, label bytes32, owner address) returns()
+// function setSubnodeOwner(node bytes32, label bytes32, owner address) returns()
 func (_VNS *VNSTransactor) SetSubnodeOwner(opts *bind.TransactOpts, node string, label string, owner common.Address) (*types.Transaction, error) {
 	return _VNS.contract.Transact(opts, "setSubnodeOwner", node, label, owner)
 }
 
 // SetSubnodeOwner is a paid mutator transaction binding the contract method 0x06ab5923.
 //
-// Solidity: function setSubnodeOwner(node bytes32, label bytes32, owner address) returns()
+// function setSubnodeOwner(node bytes32, label bytes32, owner address) returns()
 func (_VNS *VNSSession) SetSubnodeOwner(node string, label string, owner common.Address) (*types.Transaction, error) {
 	return _VNS.Contract.SetSubnodeOwner(&_VNS.TransactOpts, node, label, owner)
 }
 
 // SetSubnodeOwner is a paid mutator transaction binding the contract method 0x06ab5923.
 //
-// Solidity: function setSubnodeOwner(node bytes32, label bytes32, owner address) returns()
+// function setSubnodeOwner(node bytes32, label bytes32, owner address) returns()
 func (_VNS *VNSTransactorSession) SetSubnodeOwner(node string, label string, owner common.Address) (*types.Transaction, error) {
 	return _VNS.Contract.SetSubnodeOwner(&_VNS.TransactOpts, node, label, owner)
 }
 
 // SetTTL is a paid mutator transaction binding the contract method 0x14ab9038.
 //
-// Solidity: function setTTL(node bytes32, ttl uint64) returns()
+// function setTTL(node bytes32, ttl uint64) returns()
 func (_VNS *VNSTransactor) SetTTL(opts *bind.TransactOpts, node string, ttl uint64) (*types.Transaction, error) {
 	return _VNS.contract.Transact(opts, "setTTL", node, ttl)
 }
 
 // SetTTL is a paid mutator transaction binding the contract method 0x14ab9038.
 //
-// Solidity: function setTTL(node bytes32, ttl uint64) returns()
+// function setTTL(node bytes32, ttl uint64) returns()
 func (_VNS *VNSSession) SetTTL(node string, ttl uint64) (*types.Transaction, error) {
 	return _VNS.Contract.SetTTL(&_VNS.TransactOpts, node, ttl)
 }
 
 // SetTTL is a paid mutator transaction binding the contract method 0x14ab9038.
 //
-// Solidity: function setTTL(node bytes32, ttl uint64) returns()
+// function setTTL(node bytes32, ttl uint64) returns()
 func (_VNS *VNSTransactorSession) SetTTL(node string, ttl uint64) (*types.Transaction, error) {
 	return _VNS.Contract.SetTTL(&_VNS.TransactOpts, node, ttl)
 }
@@ -412,7 +412,7 @@ type VNSNewOwner struct {
 
 // FilterNewOwner is a free log retrieval operation binding the contract event 0xce0457fe73731f824cc272376169235128c118b49d344817417c6d108d155e82.
 //
-// Solidity: e NewOwner(node indexed bytes32, label indexed bytes32, owner address)
+// e NewOwner(node indexed bytes32, label indexed bytes32, owner address)
 func (_VNS *VNSFilterer) FilterNewOwner(opts *bind.FilterOpts, node []string, label []string) (*VNSNewOwnerIterator, error) {
 
 	var nodeRule []interface{}
@@ -433,7 +433,7 @@ func (_VNS *VNSFilterer) FilterNewOwner(opts *bind.FilterOpts, node []string, la
 
 // WatchNewOwner is a free log subscription operation binding the contract event 0xce0457fe73731f824cc272376169235128c118b49d344817417c6d108d155e82.
 //
-// Solidity: e NewOwner(node indexed bytes32, label indexed bytes32, owner address)
+// e NewOwner(node indexed bytes32, label indexed bytes32, owner address)
 func (_VNS *VNSFilterer) WatchNewOwner(opts *bind.WatchOpts, sink chan<- *VNSNewOwner, node []string, label []string) (event.Subscription, error) {
 
 	var nodeRule []interface{}
@@ -553,7 +553,7 @@ type VNSNewResolver struct {
 
 // FilterNewResolver is a free log retrieval operation binding the contract event 0x335721b01866dc23fbee8b6b2c7b1e14d6f05c28cd35a2c934239f94095602a0.
 //
-// Solidity: e NewResolver(node indexed bytes32, resolver address)
+// e NewResolver(node indexed bytes32, resolver address)
 func (_VNS *VNSFilterer) FilterNewResolver(opts *bind.FilterOpts, node []string) (*VNSNewResolverIterator, error) {
 
 	var nodeRule []interface{}
@@ -570,7 +570,7 @@ func (_VNS *VNSFilterer) FilterNewResolver(opts *bind.FilterOpts, node []string)
 
 // WatchNewResolver is a free log subscription operation binding the contract event 0x335721b01866dc23fbee8b6b2c7b1e14d6f05c28cd35a2c934239f94095602a0.
 //
-// Solidity: e NewResolver(node indexed bytes32, resolver address)
+// e NewResolver(node indexed bytes32, resolver address)
 func (_VNS *VNSFilterer) WatchNewResolver(opts *bind.WatchOpts, sink chan<- *VNSNewResolver, node []string) (event.Subscription, error) {
 
 	var nodeRule []interface{}
@@ -686,7 +686,7 @@ type VNSNewTTL struct {
 
 // FilterNewTTL is a free log retrieval operation binding the contract event 0x1d4f9bbfc9cab89d66e1a1562f2233ccbf1308cb4f63de2ead5787adddb8fa68.
 //
-// Solidity: e NewTTL(node indexed bytes32, ttl uint64)
+// e NewTTL(node indexed bytes32, ttl uint64)
 func (_VNS *VNSFilterer) FilterNewTTL(opts *bind.FilterOpts, node []string) (*VNSNewTTLIterator, error) {
 
 	var nodeRule []interface{}
@@ -703,7 +703,7 @@ func (_VNS *VNSFilterer) FilterNewTTL(opts *bind.FilterOpts, node []string) (*VN
 
 // WatchNewTTL is a free log subscription operation binding the contract event 0x1d4f9bbfc9cab89d66e1a1562f2233ccbf1308cb4f63de2ead5787adddb8fa68.
 //
-// Solidity: e NewTTL(node indexed bytes32, ttl uint64)
+// e NewTTL(node indexed bytes32, ttl uint64)
 func (_VNS *VNSFilterer) WatchNewTTL(opts *bind.WatchOpts, sink chan<- *VNSNewTTL, node []string) (event.Subscription, error) {
 
 	var nodeRule []interface{}
@@ -819,7 +819,7 @@ type VNSTransfer struct {
 
 // FilterTransfer is a free log retrieval operation binding the contract event 0xd4735d920b0f87494915f556dd9b54c8f309026070caea5c737245152564d266.
 //
-// Solidity: e Transfer(node indexed bytes32, owner address)
+// e Transfer(node indexed bytes32, owner address)
 func (_VNS *VNSFilterer) FilterTransfer(opts *bind.FilterOpts, node []string) (*VNSTransferIterator, error) {
 
 	var nodeRule []interface{}
@@ -836,7 +836,7 @@ func (_VNS *VNSFilterer) FilterTransfer(opts *bind.FilterOpts, node []string) (*
 
 // WatchTransfer is a free log subscription operation binding the contract event 0xd4735d920b0f87494915f556dd9b54c8f309026070caea5c737245152564d266.
 //
-// Solidity: e Transfer(node indexed bytes32, owner address)
+// e Transfer(node indexed bytes32, owner address)
 func (_VNS *VNSFilterer) WatchTransfer(opts *bind.WatchOpts, sink chan<- *VNSTransfer, node []string) (event.Subscription, error) {
 
 	var nodeRule []interface{}

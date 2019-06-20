@@ -172,21 +172,21 @@ func (_FIFSRegistrar *FIFSRegistrarTransactorRaw) Transact(opts *bind.TransactOp
 
 // Register is a paid mutator transaction binding the contract method 0xd22057a9.
 //
-// Solidity: function register(subnode bytes32, owner address) returns()
+// function register(subnode bytes32, owner address) returns()
 func (_FIFSRegistrar *FIFSRegistrarTransactor) Register(opts *bind.TransactOpts, subnode string, owner common.Address) (*types.Transaction, error) {
 	return _FIFSRegistrar.contract.Transact(opts, "registernode", subnode, owner)
 }
 
 // Register is a paid mutator transaction binding the contract method 0xd22057a9.
 //
-// Solidity: function register(subnode bytes32, owner address) returns()
+// function register(subnode bytes32, owner address) returns()
 func (_FIFSRegistrar *FIFSRegistrarSession) Register(subnode string, owner common.Address) (*types.Transaction, error) {
 	return _FIFSRegistrar.Contract.Register(&_FIFSRegistrar.TransactOpts, subnode, owner)
 }
 
 // Register is a paid mutator transaction binding the contract method 0xd22057a9.
 //
-// Solidity: function register(subnode bytes32, owner address) returns()
+// function register(subnode bytes32, owner address) returns()
 func (_FIFSRegistrar *FIFSRegistrarTransactorSession) Register(subnode string, owner common.Address) (*types.Transaction, error) {
 	return _FIFSRegistrar.Contract.Register(&_FIFSRegistrar.TransactOpts, subnode, owner)
 }

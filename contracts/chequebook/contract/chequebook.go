@@ -175,7 +175,7 @@ func (_Chequebook *ChequebookTransactorRaw) Transact(opts *bind.TransactOpts, me
 
 // Sent is a free data retrieval call binding the contract method 0x7bf786f8.
 //
-// Solidity: function sent( address) constant returns(uint256)
+// function sent( address) constant returns(uint256)
 func (_Chequebook *ChequebookCaller) Sent(opts *bind.CallOpts, arg0 common.Address) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -187,56 +187,56 @@ func (_Chequebook *ChequebookCaller) Sent(opts *bind.CallOpts, arg0 common.Addre
 
 // Sent is a free data retrieval call binding the contract method 0x7bf786f8.
 //
-// Solidity: function sent( address) constant returns(uint256)
+// function sent( address) constant returns(uint256)
 func (_Chequebook *ChequebookSession) Sent(arg0 common.Address) (*big.Int, error) {
 	return _Chequebook.Contract.Sent(&_Chequebook.CallOpts, arg0)
 }
 
 // Sent is a free data retrieval call binding the contract method 0x7bf786f8.
 //
-// Solidity: function sent( address) constant returns(uint256)
+// function sent( address) constant returns(uint256)
 func (_Chequebook *ChequebookCallerSession) Sent(arg0 common.Address) (*big.Int, error) {
 	return _Chequebook.Contract.Sent(&_Chequebook.CallOpts, arg0)
 }
 
 // Cash is a paid mutator transaction binding the contract method 0xfbf788d6.
 //
-// Solidity: function cash(beneficiary address, amount uint256, sig_v string, sig_r string, sig_s string) returns()
+// function cash(beneficiary address, amount uint256, sig_v string, sig_r string, sig_s string) returns()
 func (_Chequebook *ChequebookTransactor) Cash(opts *bind.TransactOpts, beneficiary common.Address, amount *big.Int, sig_v string, sig_r string, sig_s string) (*types.Transaction, error) {
 	return _Chequebook.contract.Transact(opts, "cash", beneficiary, amount, sig_v, sig_r, sig_s)
 }
 
 // Cash is a paid mutator transaction binding the contract method 0xfbf788d6.
 //
-// Solidity: function cash(beneficiary address, amount uint256, sig_v string, sig_r string, sig_s string) returns()
+// function cash(beneficiary address, amount uint256, sig_v string, sig_r string, sig_s string) returns()
 func (_Chequebook *ChequebookSession) Cash(beneficiary common.Address, amount *big.Int, sig_v string, sig_r string, sig_s string) (*types.Transaction, error) {
 	return _Chequebook.Contract.Cash(&_Chequebook.TransactOpts, beneficiary, amount, sig_v, sig_r, sig_s)
 }
 
 // Cash is a paid mutator transaction binding the contract method 0xfbf788d6.
 //
-// Solidity: function cash(beneficiary address, amount uint256, sig_v string, sig_r string, sig_s string) returns()
+// function cash(beneficiary address, amount uint256, sig_v string, sig_r string, sig_s string) returns()
 func (_Chequebook *ChequebookTransactorSession) Cash(beneficiary common.Address, amount *big.Int, sig_v string, sig_r string, sig_s string) (*types.Transaction, error) {
 	return _Chequebook.Contract.Cash(&_Chequebook.TransactOpts, beneficiary, amount, sig_v, sig_r, sig_s)
 }
 
 // Kill is a paid mutator transaction binding the contract method 0x41c0e1b5.
 //
-// Solidity: function kill() returns()
+// function kill() returns()
 func (_Chequebook *ChequebookTransactor) Kill(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Chequebook.contract.Transact(opts, "kill")
 }
 
 // Kill is a paid mutator transaction binding the contract method 0x41c0e1b5.
 //
-// Solidity: function kill() returns()
+// function kill() returns()
 func (_Chequebook *ChequebookSession) Kill() (*types.Transaction, error) {
 	return _Chequebook.Contract.Kill(&_Chequebook.TransactOpts)
 }
 
 // Kill is a paid mutator transaction binding the contract method 0x41c0e1b5.
 //
-// Solidity: function kill() returns()
+// function kill() returns()
 func (_Chequebook *ChequebookTransactorSession) Kill() (*types.Transaction, error) {
 	return _Chequebook.Contract.Kill(&_Chequebook.TransactOpts)
 }
@@ -316,7 +316,7 @@ type ChequebookOverdraft struct {
 
 // FilterOverdraft is a free log retrieval operation binding the contract event 0x2250e2993c15843b32621c89447cc589ee7a9f049c026986e545d3c2c0c6f978.
 //
-// Solidity: e Overdraft(deadbeat address)
+// e Overdraft(deadbeat address)
 func (_Chequebook *ChequebookFilterer) FilterOverdraft(opts *bind.FilterOpts) (*ChequebookOverdraftIterator, error) {
 
 	logs, sub, err := _Chequebook.contract.FilterLogs(opts, "Overdraft")
@@ -328,7 +328,7 @@ func (_Chequebook *ChequebookFilterer) FilterOverdraft(opts *bind.FilterOpts) (*
 
 // WatchOverdraft is a free log subscription operation binding the contract event 0x2250e2993c15843b32621c89447cc589ee7a9f049c026986e545d3c2c0c6f978.
 //
-// Solidity: e Overdraft(deadbeat address)
+// e Overdraft(deadbeat address)
 func (_Chequebook *ChequebookFilterer) WatchOverdraft(opts *bind.WatchOpts, sink chan<- *ChequebookOverdraft) (event.Subscription, error) {
 
 	logs, sub, err := _Chequebook.contract.WatchLogs(opts, "Overdraft")
