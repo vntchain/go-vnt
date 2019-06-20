@@ -1,11 +1,9 @@
-// +build none 
-#include "./vntlib.h"
+#include "../../../vntlib/vntlib.h"
 
-typedef struct
-{
-    address owner;
-    address resolver;
-    uint64 ttl;
+typedef struct {
+  address owner;
+  address resolver;
+  uint64 ttl;
 } Record;
 
 KEY mapping(string, Record) records;
@@ -16,19 +14,18 @@ EVENT NewOwner(indexed string node, indexed string label, address owner);
 // Logged when the owner of a node transfers ownership to a new account.
 EVENT Transfer(indexed string node, address owner);
 
-// // Logged when the resolver for a node changes.
+// Logged when the resolver for a node changes.
 EVENT NewResolver(indexed string node, address resolver);
 
-// // Logged when the TTL of a node changes
+// Logged when the TTL of a node changes
 EVENT NewTTL(indexed string node, uint64 ttl);
 
 /**
  * Constructs a new VNS registrar.
  */
-constructor VNS()
-{
-    records.key = "";
-    records.value.owner = GetSender();
+constructor VNS() {
+  records.key = "";
+  records.value.owner = GetSender();
 }
 
 /**
@@ -38,22 +35,19 @@ constructor VNS()
 //     return records[node].owner;
 // }
 
-void onlyOwner(string node)
-{
-    records.key = node;
-    address owner = records.value.owner;
-    address sender = GetSender();
-    if (Equal(owner, sender) == false)
-    {
-        Revert("need owner");
-    }
+void onlyOwner(string node) {
+  records.key = node;
+  address owner = records.value.owner;
+  address sender = GetSender();
+  if (Equal(owner, sender) == false) {
+    Revert("need owner");
+  }
 }
 
 UNMUTABLE
-address owner(string node)
-{
-    records.key = node;
-    return records.value.owner;
+address owner(string node) {
+  records.key = node;
+  return records.value.owner;
 }
 
 /**
@@ -64,10 +58,9 @@ address owner(string node)
 // }
 
 UNMUTABLE
-address resolver(string node)
-{
-    records.key = node;
-    return records.value.resolver;
+address resolver(string node) {
+  records.key = node;
+  return records.value.resolver;
 }
 
 /**
@@ -77,52 +70,39 @@ address resolver(string node)
 //     return records[node].ttl;
 // }
 UNMUTABLE
-uint64 ttl(string node)
-{
-    records.key = node;
-    return records.value.ttl;
+uint64 ttl(string node) {
+  records.key = node;
+  return records.value.ttl;
 }
 
 /**
- * Transfers ownership of a node to a new address. May only be called by the current
- * owner of the node.
+ * Transfers ownership of a node to a new address. May only be called by the
+ * current owner of the node.
  * @param node The node to transfer ownership of.
  * @param owner The address of the new owner.
  */
-// function setOwner(bytes32 node, address owner) only_owner(node) {
-//     Transfer(node, owner);
-//     records[node].owner = owner;
-// }
-
 MUTABLE
-void setOwner(string node, address owner)
-{
-    onlyOwner(node);
-    Transfer(node, owner);
-    records.key = node;
-    records.value.owner = owner;
+void setOwner(string node, address owner) {
+  onlyOwner(node);
+  Transfer(node, owner);
+  records.key = node;
+  records.value.owner = owner;
 }
 
 /**
- * Transfers ownership of a subnode sha3(node, label) to a new address. May only be
- * called by the owner of the parent node.
+ * Transfers ownership of a subnode SHA3(node, label) to a new address. May only
+ * be called by the owner of the parent node.
  * @param node The parent node.
  * @param label The hash of the label specifying the subnode.
  * @param owner The address of the new owner.
  */
-// function setSubnodeOwner(bytes32 node, bytes32 label, address owner) only_owner(node) {
-//     var subnode = sha3(node, label);
-//     NewOwner(node, label, owner);
-//     records[subnode].owner = owner;
-// }
 MUTABLE
-void setSubnodeOwner(string node, string label, address owner)
-{
-    onlyOwner(node);
-    string subnode = SHA3(Concat(node, label));
-    NewOwner(node, label, owner);
-    records.key = subnode;
-    records.value.owner = owner;
+void setSubnodeOwner(string node, string label, address owner) {
+  onlyOwner(node);
+  string subnode = SHA3(Concat(node, label));
+  NewOwner(node, label, owner);
+  records.key = subnode;
+  records.value.owner = owner;
 }
 
 /**
@@ -130,18 +110,12 @@ void setSubnodeOwner(string node, string label, address owner)
  * @param node The node to update.
  * @param resolver The address of the resolver.
  */
-// function setResolver(bytes32 node, address resolver) only_owner(node) {
-//     NewResolver(node, resolver);
-//     records[node].resolver = resolver;
-// }
-
 MUTABLE
-void setResolver(string node, address resolver)
-{
-    onlyOwner(node);
-    NewResolver(node, resolver);
-    records.key = node;
-    records.value.resolver = resolver;
+void setResolver(string node, address resolver) {
+  onlyOwner(node);
+  NewResolver(node, resolver);
+  records.key = node;
+  records.value.resolver = resolver;
 }
 
 /**
@@ -149,15 +123,9 @@ void setResolver(string node, address resolver)
  * @param node The node to update.
  * @param ttl The TTL in seconds.
  */
-// function setTTL(bytes32 node, uint64 ttl) only_owner(node) {
-//     NewTTL(node, ttl);
-//     records[node].ttl = ttl;
-// }
-
 MUTABLE
-void setTTL(string node, uint64 ttl)
-{
-    onlyOwner(node);
-    records.key = node;
-    records.value.ttl = ttl;
+void setTTL(string node, uint64 ttl) {
+  onlyOwner(node);
+  records.key = node;
+  records.value.ttl = ttl;
 }

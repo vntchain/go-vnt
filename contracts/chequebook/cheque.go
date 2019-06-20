@@ -622,7 +622,7 @@ func sig2vrs(sig []byte) (v []byte, r, s [32]byte) {
 // Cash cashes the cheque by sending an VNT transaction.
 func (self *Cheque) Cash(session *contract.ChequebookSession) (string, error) {
 	v, r, s := sig2vrs(self.Sig)
-	tx, err := session.Cash(self.Beneficiary, self.Amount, string(v), string(r[:]), string(s[:]))
+	tx, err := session.Cash(self.Beneficiary, self.Amount, common.Bytes2Hex(v), common.Bytes2Hex(r[:]), common.Bytes2Hex(s[:]))
 	if err != nil {
 		return "", err
 	}

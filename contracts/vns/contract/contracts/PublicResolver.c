@@ -1,5 +1,4 @@
-// +build none
-#include "./vntlib.h"
+#include "../../../vntlib/vntlib.h"
 
 KEY string INTERFACE_META_ID = "0x01ffc9a7";
 KEY string ADDR_INTERFACE_ID = "0x3b3b57de";
@@ -16,20 +15,18 @@ EVENT ABIChanged(indexed string node, indexed uint256 contentType);
 EVENT PubkeyChanged(indexed string node, string x, string y);
 EVENT TextChanged(indexed string node, indexed string indexedKey, string key);
 
-typedef struct
-{
-    string x;
-    string y;
+typedef struct {
+  string x;
+  string y;
 } PublicKey;
 
-typedef struct
-{
-    address addr;
-    string content;
-    string name;
-    PublicKey pubkey;
-    mapping(string, string) text;
-    mapping(uint256, string) abis;
+typedef struct {
+  address addr;
+  string content;
+  string name;
+  PublicKey pubkey;
+  mapping(string, string) text;
+  mapping(uint256, string) abis;
 } Record;
 
 KEY address vns;
@@ -41,37 +38,32 @@ CALL address owner(CallParams params, string node);
  * Constructor.
  * @param vnsAddr The VNS registrar contract.
  */
-constructor PublicResolver(address vnsAddr)
-{
-    vns = vnsAddr;
-}
+constructor PublicResolver(address vnsAddr) { vns = vnsAddr; }
 
-void onlyOwner(string node)
-{
-    CallParams params = {vns, U256(0), 100000};
-    address addr = owner(params, node);
-    address sender = GetSender();
-    if (Equal(addr, sender) != true)
-    {
-        Revert("Not Sender");
-    }
+void onlyOwner(string node) {
+  CallParams params = {vns, U256(0), 100000};
+  address addr = owner(params, node);
+  address sender = GetSender();
+  if (Equal(addr, sender) != true) {
+    Revert("Not Sender");
+  }
 }
 
 /**
- * Returns true if the resolver implements the interface specified by the provided hash.
+ * Returns true if the resolver implements the interface specified by the
+ * provided hash.
  * @param interfaceID The ID of the interface to check for.
  * @return True if the contract implements the requested interface.
  */
 UNMUTABLE
-bool supportsInterface(string interfaceID)
-{
-    return Equal(interfaceID, ADDR_INTERFACE_ID) ||
-           Equal(interfaceID, CONTENT_INTERFACE_ID) ||
-           Equal(interfaceID, NAME_INTERFACE_ID) ||
-           Equal(interfaceID, ABI_INTERFACE_ID) ||
-           Equal(interfaceID, PUBKEY_INTERFACE_ID) ||
-           Equal(interfaceID, TEXT_INTERFACE_ID) ||
-           Equal(interfaceID, INTERFACE_META_ID);
+bool supportsInterface(string interfaceID) {
+  return Equal(interfaceID, ADDR_INTERFACE_ID) ||
+         Equal(interfaceID, CONTENT_INTERFACE_ID) ||
+         Equal(interfaceID, NAME_INTERFACE_ID) ||
+         Equal(interfaceID, ABI_INTERFACE_ID) ||
+         Equal(interfaceID, PUBKEY_INTERFACE_ID) ||
+         Equal(interfaceID, TEXT_INTERFACE_ID) ||
+         Equal(interfaceID, INTERFACE_META_ID);
 }
 
 /**
@@ -80,11 +72,10 @@ bool supportsInterface(string interfaceID)
  * @return The associated address.
  */
 MUTABLE
-address addr(string node)
-{
-    records.key = node;
-    Record record = records.value;
-    return record.addr;
+address addr(string node) {
+  records.key = node;
+  Record record = records.value;
+  return record.addr;
 }
 
 /**
@@ -94,12 +85,11 @@ address addr(string node)
  * @param addr The address to set.
  */
 MUTABLE
-void setAddr(string node, address addr)
-{
-    onlyOwner(node);
-    records.key = node;
-    records.value.addr = addr;
-    AddrChanged(node, addr);
+void setAddr(string node, address addr) {
+  onlyOwner(node);
+  records.key = node;
+  records.value.addr = addr;
+  AddrChanged(node, addr);
 }
 
 /**
@@ -110,11 +100,10 @@ void setAddr(string node, address addr)
  * @return The associated content hash.
  */
 UNMUTABLE
-string content(string node)
-{
-    records.key = node;
-    Record record = records.value;
-    return record.content;
+string content(string node) {
+  records.key = node;
+  Record record = records.value;
+  return record.content;
 }
 
 /**
@@ -126,12 +115,11 @@ string content(string node)
  * @param hash The content hash to set
  */
 MUTABLE
-void setContent(string node, string hash)
-{
-    onlyOwner(node);
-    records.key = node;
-    records.value.content = hash;
-    ContentChanged(node, hash);
+void setContent(string node, string hash) {
+  onlyOwner(node);
+  records.key = node;
+  records.value.content = hash;
+  ContentChanged(node, hash);
 }
 
 /**
@@ -141,11 +129,10 @@ void setContent(string node, string hash)
  * @return The associated name.
  */
 UNMUTABLE
-string name(string node)
-{
-    records.key = node;
-    Record record = records.value;
-    return record.name;
+string name(string node) {
+  records.key = node;
+  Record record = records.value;
+  return record.name;
 }
 
 /**
@@ -155,12 +142,11 @@ string name(string node)
  * @param name The name to set.
  */
 MUTABLE
-void setName(string node, string name)
-{
-    onlyOwner(node);
-    records.key = node;
-    records.value.name = name;
-    NameChanged(node, name);
+void setName(string node, string name) {
+  onlyOwner(node);
+  records.key = node;
+  records.value.name = name;
+  NameChanged(node, name);
 }
 
 /**
@@ -172,37 +158,35 @@ void setName(string node, string name)
  * @return data The ABI data
  */
 UNMUTABLE
-string ABIRecord(string node, uint256 contentTypes)
-{
-    records.key = node;
-    Record record = records.value;
-    for (uint256 contentType = U256(1); U256_Cmp(contentType, contentTypes) != 1; contentType = U256_Shl(contentType, 1))
-    {
-        record.abis.key = contentType;
-        string recordabis = record.abis.value;
-        if (U256_Cmp(U256_And(contentType, contentTypes), U256(0)) != 0 && Equal(recordabis, "") == false)
-        {
-            return recordabis;
-        }
+string ABIRecord(string node, uint256 contentTypes) {
+  records.key = node;
+  Record record = records.value;
+  for (uint256 contentType = U256(1); U256_Cmp(contentType, contentTypes) != 1;
+       contentType = U256_Shl(contentType, 1)) {
+    record.abis.key = contentType;
+    string recordabis = record.abis.value;
+    if (U256_Cmp(U256_And(contentType, contentTypes), U256(0)) != 0 &&
+        Equal(recordabis, "") == false) {
+      return recordabis;
     }
-    return "";
+  }
+  return "";
 }
 
 UNMUTABLE
-uint256 ABIContentType(string node, uint256 contentTypes)
-{
-    records.key = node;
-    Record record = records.value;
-    for (uint256 contentType = U256(1); U256_Cmp(contentType, contentTypes) != 1; contentType = U256_Shl(contentType, 1))
-    {
-        record.abis.key = contentType;
-        string recordabis = record.abis.value;
-        if (U256_Cmp(U256_And(contentType, contentTypes), U256(0)) != 0 && Equal(recordabis, "") == false)
-        {
-            return contentType;
-        }
+uint256 ABIContentType(string node, uint256 contentTypes) {
+  records.key = node;
+  Record record = records.value;
+  for (uint256 contentType = U256(1); U256_Cmp(contentType, contentTypes) != 1;
+       contentType = U256_Shl(contentType, 1)) {
+    record.abis.key = contentType;
+    string recordabis = record.abis.value;
+    if (U256_Cmp(U256_And(contentType, contentTypes), U256(0)) != 0 &&
+        Equal(recordabis, "") == false) {
+      return contentType;
     }
-    return U256(0);
+  }
+  return U256(0);
 }
 
 /**
@@ -214,18 +198,16 @@ uint256 ABIContentType(string node, uint256 contentTypes)
  * @param data The ABI data.
  */
 MUTABLE
-void setABI(string node, uint256 contentType, string data)
-{
-    onlyOwner(node);
-    // Content types must be powers of 2
-    if (U256_Cmp(U256_Add(U256_Sub(contentType, 1), contentType), 0) != 0)
-    {
-        Revert("");
-    }
-    records.key = node;
-    records.value.abis.key = contentType;
-    records.value.abis.value = data;
-    ABIChanged(node, contentType);
+void setABI(string node, uint256 contentType, string data) {
+  onlyOwner(node);
+  // Content types must be powers of 2
+  if (U256_Cmp(U256_Add(U256_Sub(contentType, 1), contentType), 0) != 0) {
+    Revert("");
+  }
+  records.key = node;
+  records.value.abis.key = contentType;
+  records.value.abis.value = data;
+  ABIChanged(node, contentType);
 }
 
 /**
@@ -235,17 +217,15 @@ void setABI(string node, uint256 contentType, string data)
  * @return x, y the X and Y coordinates of the curve point for the public key.
  */
 UNMUTABLE
-string pubkeyX(string node)
-{
-    records.key = node;
-    return records.value.pubkey.x;
+string pubkeyX(string node) {
+  records.key = node;
+  return records.value.pubkey.x;
 }
 
 UNMUTABLE
-string pubkeyY(string node)
-{
-    records.key = node;
-    return records.value.pubkey.y;
+string pubkeyY(string node) {
+  records.key = node;
+  return records.value.pubkey.y;
 }
 
 /**
@@ -255,13 +235,12 @@ string pubkeyY(string node)
  * @param y the Y coordinate of the curve point for the public key.
  */
 MUTABLE
-void setPubkey(string node, string x, string y)
-{
-    onlyOwner(node);
-    records.key = node;
-    records.value.pubkey.x = x;
-    records.value.pubkey.y = y;
-    PubkeyChanged(node, x, y);
+void setPubkey(string node, string x, string y) {
+  onlyOwner(node);
+  records.key = node;
+  records.value.pubkey.x = x;
+  records.value.pubkey.y = y;
+  PubkeyChanged(node, x, y);
 }
 
 /**
@@ -271,11 +250,10 @@ void setPubkey(string node, string x, string y)
  * @return The associated text data.
  */
 UNMUTABLE
-string text(string node, string key)
-{
-    records.key = node;
-    records.value.text.key = key;
-    return records.value.text.value;
+string text(string node, string key) {
+  records.key = node;
+  records.value.text.key = key;
+  return records.value.text.value;
 }
 
 /**
@@ -286,11 +264,10 @@ string text(string node, string key)
  * @param value The text data value to set.
  */
 MUTABLE
-void setText(string node, string key, string value)
-{
-    onlyOwner(node);
-    records.key = node;
-    records.value.text.key = key;
-    records.value.text.value = value;
-    TextChanged(node, key, key);
+void setText(string node, string key, string value) {
+  onlyOwner(node);
+  records.key = node;
+  records.value.text.key = key;
+  records.value.text.value = value;
+  TextChanged(node, key, key);
 }

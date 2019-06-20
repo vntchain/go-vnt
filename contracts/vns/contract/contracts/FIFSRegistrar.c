@@ -1,5 +1,4 @@
-// +build none 
-#include "./vntlib.h"
+#include "../../../vntlib/vntlib.h"
 
 KEY address vns;
 KEY string rootNode;

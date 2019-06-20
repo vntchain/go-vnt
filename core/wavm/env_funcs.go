@@ -257,9 +257,10 @@ func (ef *EnvFunctions) Ecrecover(proc *exec.WavmProcess, hashptr uint64, sigv u
 	ef.ctx.GasCounter.GasEcrecover()
 	hashBytes := proc.ReadAt(hashptr)
 	hash := common.HexToHash(string(hashBytes))
-	r := new(big.Int).SetBytes(proc.ReadAt(sigr))
-	s := new(big.Int).SetBytes(proc.ReadAt(sigs))
-	v := new(big.Int).SetBytes(proc.ReadAt(sigv))
+
+	r := new(big.Int).SetBytes(common.FromHex(string(proc.ReadAt(sigr))))
+	s := new(big.Int).SetBytes(common.FromHex(string(proc.ReadAt(sigs))))
+	v := new(big.Int).SetBytes(common.FromHex(string(proc.ReadAt(sigv))))
 	v = v.Sub(v, new(big.Int).SetUint64(27))
 	if v.Cmp(new(big.Int).SetUint64(0)) != 0 && v.Cmp(new(big.Int).SetUint64(1)) != 0 {
 		return ef.returnAddress(proc, []byte(""))
