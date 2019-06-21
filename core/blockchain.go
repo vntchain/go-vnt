@@ -1706,6 +1706,7 @@ func (bc *BlockChain) WriteBlock(block *types.Block) error {
 		return err
 	}
 
+	proctime := time.Since(bstart)
 	status, err := bc.WriteBlockWithState(block, receipts, stateDb)
 	if err != nil {
 		return err
@@ -1722,6 +1723,7 @@ func (bc *BlockChain) WriteBlock(block *types.Block) error {
 		blockInsertTimer.UpdateSince(bstart)
 		events = append(events, ChainEvent{block, block.Hash(), logs})
 		lastCanon = block
+		bc.gcproc += proctime
 
 		// Only count canonical blocks for GC processing time
 	case SideStatTy:
