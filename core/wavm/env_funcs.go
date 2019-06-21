@@ -1170,7 +1170,6 @@ func (ef *EnvFunctions) U256Cmp(proc *exec.WavmProcess, x, y uint64) uint64 {
 	bigx := readU256FromMemory(proc, x)
 	bigy := readU256FromMemory(proc, y)
 	res := bigx.Cmp(bigy)
-	// ef.ctx.GasCounter.GasPow(e)
 	ef.ctx.GasCounter.GasFastestStep()
 	return uint64(res)
 }
@@ -1191,6 +1190,7 @@ func (ef *EnvFunctions) U256Shl(proc *exec.WavmProcess, value, shift uint64) uin
 func (ef *EnvFunctions) U256Shr(proc *exec.WavmProcess, value, shift uint64) uint64 {
 	bigShift := readU256FromMemory(proc, shift)
 	bigValue := readU256FromMemory(proc, value)
+	ef.ctx.GasCounter.GasFastestStep()
 	if bigShift.Cmp(common.Big256) >= 0 {
 		res := new(big.Int).SetUint64(0)
 		return ef.returnU256(proc, res)
