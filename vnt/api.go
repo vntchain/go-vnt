@@ -35,7 +35,6 @@ import (
 	"github.com/vntchain/go-vnt/internal/vntapi"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/params"
-	"github.com/vntchain/go-vnt/producer"
 	"github.com/vntchain/go-vnt/rlp"
 	"github.com/vntchain/go-vnt/rpc"
 	"github.com/vntchain/go-vnt/trie"
@@ -60,16 +59,12 @@ func (api *PublicVntAPI) Coinbase() (common.Address, error) {
 // PublicProducerAPI provides an API to control the producer.
 // It offers only methods that operate on data that pose no security risk when it is publicly accessible.
 type PublicProducerAPI struct {
-	e     *VNT
-	agent *producer.RemoteAgent
+	e *VNT
 }
 
 // NewPublicProducerAPI create a new PublicProducerAPI instance.
 func NewPublicProducerAPI(e *VNT) *PublicProducerAPI {
-	agent := producer.NewRemoteAgent(e.BlockChain(), e.Engine())
-	e.Producer().Register(agent)
-
-	return &PublicProducerAPI{e, agent}
+	return &PublicProducerAPI{e}
 }
 
 // Producing returns an indication if this node is currently block producing.

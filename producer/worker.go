@@ -49,14 +49,6 @@ const (
 	chainSideChanSize = 10
 )
 
-// Agent can register themself with the worker
-type Agent interface {
-	Work() chan<- *Work
-	SetReturnCh(chan<- *Result)
-	Stop()
-	Start()
-}
-
 // Work is the workers current environment and holds
 // all of the current state information
 type Work struct {
@@ -99,9 +91,6 @@ type worker struct {
 	recBftMsgSub *event.TypeMuxSubscription
 	wg           sync.WaitGroup
 
-	agents map[Agent]struct{}
-	recv   chan *Result
-
 	vnt     Backend
 	chain   *core.BlockChain
 	proc    core.Validator
@@ -138,11 +127,9 @@ func newWorker(config *params.ChainConfig, engine consensus.Engine, coinbase com
 		chainHeadCh:     make(chan core.ChainHeadEvent, chainHeadChanSize),
 		chainSideCh:     make(chan core.ChainSideEvent, chainSideChanSize),
 		chainDb:         vnt.ChainDb(),
-		recv:            make(chan *Result, resultQueueSize),
 		chain:           vnt.BlockChain(),
 		proc:            vnt.BlockChain().Validator(),
 		coinbase:        coinbase,
-		agents:          make(map[Agent]struct{}),
 		unconfirmed:     newUnconfirmedBlocks(vnt.BlockChain(), producingLogAtDepth),
 		roundTimer:      time.NewTimer(time.Second),
 		resetTimerEvent: make(chan *big.Int, 1),
@@ -159,7 +146,6 @@ func newWorker(config *params.ChainConfig, engine consensus.Engine, coinbase com
 
 	go worker.recBftMsg()
 	go worker.update()
-	go worker.wait()
 
 	worker.commitNewWork()
 
@@ -226,11 +212,6 @@ func (self *worker) start() {
 		}
 		self.SendBftPeerChangeMsg(witnessesUrl)
 	}
-
-	// spin up agents
-	for agent := range self.agents {
-		agent.Start()
-	}
 }
 
 func (self *worker) stop() {
@@ -240,31 +221,12 @@ func (self *worker) stop() {
 
 	self.mu.Lock()
 	defer self.mu.Unlock()
-	if atomic.LoadInt32(&self.producing) == 1 {
-		for agent := range self.agents {
-			agent.Stop()
-		}
-	}
 	atomic.StoreInt32(&self.producing, 0)
 	atomic.StoreInt32(&self.atWork, 0)
 
 	if dp, ok := self.engine.(*dpos.Dpos); ok {
 		dp.ProducingStop()
 	}
-}
-
-func (self *worker) register(agent Agent) {
-	self.mu.Lock()
-	defer self.mu.Unlock()
-	self.agents[agent] = struct{}{}
-	agent.SetReturnCh(self.recv)
-}
-
-func (self *worker) unregister(agent Agent) {
-	self.mu.Lock()
-	defer self.mu.Unlock()
-	delete(self.agents, agent)
-	agent.Stop()
 }
 
 func (self *worker) update() {
@@ -335,54 +297,6 @@ func (self *worker) update() {
 	}
 }
 
-// TODO vnt this is never used for Seal never return block
-func (self *worker) wait() {
-	for {
-		for result := range self.recv {
-			atomic.AddInt32(&self.atWork, -1)
-
-			if result == nil {
-				continue
-			}
-			block := result.Block
-			work := result.Work
-
-			// Update the block hash in all logs since it is now available and not when the
-			// receipt/log of individual transactions were created.
-			for _, r := range work.receipts {
-				for _, l := range r.Logs {
-					l.BlockHash = block.Hash()
-				}
-			}
-			for _, log := range work.state.Logs() {
-				log.BlockHash = block.Hash()
-			}
-
-			stat, err := self.chain.WriteBlockWithState(block, work.receipts, work.state)
-			if err != nil {
-				log.Error("Failed writing block to chain", "err", err)
-				continue
-			}
-
-			// Broadcast the block and announce chain insertion event
-			self.mux.Post(core.NewProducedBlockEvent{Block: block})
-
-			var (
-				events []interface{}
-				logs   = work.state.Logs()
-			)
-			events = append(events, core.ChainEvent{Block: block, Hash: block.Hash(), Logs: logs})
-			if stat == core.CanonStatTy {
-				events = append(events, core.ChainHeadEvent{Block: block})
-			}
-			self.chain.PostChainEvents(events, logs)
-
-			// Insert the block into the set of pending ones to wait for confirmations
-			self.unconfirmed.Insert(block.NumberU64(), block.Hash())
-		}
-	}
-}
-
 func (self *worker) recBftMsg() {
 	for obj := range self.recBftMsgSub.Chan() {
 		switch ev := obj.Data.(type) {
@@ -399,11 +313,9 @@ func (self *worker) push(work *Work) {
 	if atomic.LoadInt32(&self.producing) != 1 {
 		return
 	}
-	for agent := range self.agents {
-		atomic.AddInt32(&self.atWork, 1)
-		if ch := agent.Work(); ch != nil {
-			ch <- work
-		}
+
+	if _, err := self.engine.Seal(self.chain, work.Block, nil); err != nil {
+		log.Warn("Block sealing failed", "err", err)
 	}
 }
 
