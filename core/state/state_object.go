@@ -74,9 +74,8 @@ type stateObject struct {
 	dbErr error
 
 	// Write caches.
-	trie Trie          // storage trie, which becomes non-nil on first access
-	code Code          // contract bytecode, which gets set when code is loaded
-	vm   common.VmType // vm type,evm or wavm
+	trie Trie // storage trie, which becomes non-nil on first access
+	code Code // contract bytecode, which gets set when code is loaded
 
 	cachedStorage Storage // Storage entry cache to avoid duplicate reads
 	dirtyStorage  Storage // Storage entries that need to be flushed to disk

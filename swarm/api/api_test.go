@@ -134,15 +134,17 @@ func newTestResolver(addr string) *testResolver {
 	return r
 }
 
-func (t *testResolver) Resolve(addr string) (common.Hash, error) {
+func (t *testResolver) Resolve(addr string) (string, error) {
 	if t.hash == nil {
-		return common.Hash{}, fmt.Errorf("DNS name not found: %q", addr)
+		return "", fmt.Errorf("DNS name not found: %q", addr)
 	}
-	return *t.hash, nil
+	hash := *t.hash
+
+	return hash.Hex(), nil
 }
 
 // TestAPIResolve tests resolving URIs which can either contain content hashes
-// or ENS names
+// or VNS names
 func TestAPIResolve(t *testing.T) {
 	ensAddr := "swarm.vnt"
 	hashAddr := "1111111111111111111111111111111111111111111111111111111111111111"
@@ -167,7 +169,7 @@ func TestAPIResolve(t *testing.T) {
 			result: hashAddr,
 		},
 		{
-			desc:      "DNS not configured, ENS address, returns error",
+			desc:      "DNS not configured, VNS address, returns error",
 			dns:       nil,
 			addr:      ensAddr,
 			expectErr: errors.New(`no DNS to resolve name: "swarm.vnt"`),
@@ -192,20 +194,20 @@ func TestAPIResolve(t *testing.T) {
 			result: hashAddr,
 		},
 		{
-			desc:   "DNS configured, ENS address, name resolves, returns resolved address",
+			desc:   "DNS configured, VNS address, name resolves, returns resolved address",
 			dns:    doesResolve,
 			addr:   ensAddr,
 			result: resolvedAddr,
 		},
 		{
-			desc:      "DNS configured, immutable ENS address, name resolves, returns error",
+			desc:      "DNS configured, immutable VNS address, name resolves, returns error",
 			dns:       doesResolve,
 			addr:      ensAddr,
 			immutable: true,
 			expectErr: errors.New(`immutable address not a content hash: "swarm.vnt"`),
 		},
 		{
-			desc:      "DNS configured, ENS address, name doesn't resolve, returns error",
+			desc:      "DNS configured, VNS address, name doesn't resolve, returns error",
 			dns:       doesntResolve,
 			addr:      ensAddr,
 			expectErr: errors.New(`DNS name not found: "swarm.vnt"`),
@@ -346,10 +348,10 @@ func TestMultiResolver(t *testing.T) {
 			res, err := x.r.Resolve(x.addr)
 			if err == nil {
 				if x.err != nil {
-					t.Fatalf("expected error %q, got result %q", x.err, res.Hex())
+					t.Fatalf("expected error %q, got result %q", x.err, res)
 				}
-				if res.Hex() != x.result {
-					t.Fatalf("expected result %q, got %q", x.result, res.Hex())
+				if res != x.result {
+					t.Fatalf("expected result %q, got %q", x.result, res)
 				}
 			} else {
 				if x.err == nil {

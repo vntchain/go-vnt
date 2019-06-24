@@ -45,7 +45,6 @@ func (table *Table) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("argument json err: %v", err)
 	}
 
-	fmt.Printf("========ext %+v\n", ext)
 	err = ext.recursive(table)
 	if err != nil {
 		return err
@@ -55,7 +54,6 @@ func (table *Table) UnmarshalJSON(data []byte) error {
 }
 
 func (ext *Extarg) recursive(table *Table) error {
-	fmt.Printf("recursive %v\n", ext)
 	if ext.Type == "" {
 		table.Type = Type{}
 	} else {
@@ -86,7 +84,6 @@ func (tbl Table) Traversal(sym string, key *Key) {
 	if len(tbl.Tables) == 0 {
 		key.Types[sym] = tbl.Type
 		key.Keys[sym] = tbl
-		fmt.Printf("######sym %s ######\n", sym)
 	} else {
 		for _, v := range tbl.Tables {
 			s := fmt.Sprintf("%s.%s", sym, v.Name)

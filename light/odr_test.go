@@ -32,6 +32,7 @@ import (
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
+	"github.com/vntchain/go-vnt/core/wavm"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/params"
 	"github.com/vntchain/go-vnt/rlp"
@@ -191,7 +192,7 @@ func odrContractCall(ctx context.Context, db vntdb.Database, bc *core.BlockChain
 		st.SetBalance(testBankAddress, math.MaxBig256)
 		msg := callmsg{types.NewMessage(testBankAddress, &testContractAddr, 0, new(big.Int), 1000000, new(big.Int), data, false)}
 		context := core.NewVMContext(msg, header, chain, nil)
-		vmenv := vm.NewEVM(context, st, config, vm.Config{})
+		vmenv := wavm.NewWAVM(context, st, config, vm.Config{})
 		gp := new(core.GasPool).AddGas(math.MaxUint64)
 		ret, _, _, _ := core.ApplyMessage(vmenv, msg, gp)
 		res = append(res, ret...)

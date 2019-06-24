@@ -23,16 +23,52 @@ import (
 	"math/big"
 
 	"github.com/vntchain/go-vnt/common"
+	"github.com/vntchain/go-vnt/common/hexutil"
+	"github.com/vntchain/go-vnt/common/math"
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/vm"
 	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/core/wavm"
+	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/params"
 	"github.com/vntchain/go-vnt/vntdb"
 )
 
-// VMTest checks EVM execution without block or transaction context.
+type vmJSON struct {
+	Env           stEnv                 `json:"env"`
+	Exec          vmExec                `json:"exec"`
+	Logs          common.UnprefixedHash `json:"logs"`
+	GasRemaining  *math.HexOrDecimal64  `json:"gas"`
+	Out           hexutil.Bytes         `json:"out"`
+	Pre           core.GenesisAlloc     `json:"pre"`
+	Post          core.GenesisAlloc     `json:"post"`
+	PostStateRoot common.Hash           `json:"postStateRoot"`
+}
+
+type vmExec struct {
+	Address  common.Address `json:"address"  gencodec:"required"`
+	Caller   common.Address `json:"caller"   gencodec:"required"`
+	Origin   common.Address `json:"origin"   gencodec:"required"`
+	Code     []byte         `json:"code"     gencodec:"required"`
+	Data     []byte         `json:"data"     gencodec:"required"`
+	Value    *big.Int       `json:"value"    gencodec:"required"`
+	GasLimit uint64         `json:"gas"      gencodec:"required"`
+	GasPrice *big.Int       `json:"gasPrice" gencodec:"required"`
+}
+
+type vmExecMarshaling struct {
+	Address  common.UnprefixedAddress
+	Caller   common.UnprefixedAddress
+	Origin   common.UnprefixedAddress
+	Code     hexutil.Bytes
+	Data     hexutil.Bytes
+	Value    *math.HexOrDecimal256
+	GasLimit math.HexOrDecimal64
+	GasPrice *math.HexOrDecimal256
+}
+
+// WAVMTest checks VM execution without block or transaction context.
 type WAVMTest struct {
 	json vmJSON
 }
@@ -108,4 +144,8 @@ func (t *WAVMTest) newWAVM(statedb *state.StateDB, vmconfig vm.Config) vm.VM {
 	}
 	vmconfig.NoRecursion = true
 	return wavm.NewWAVM(context, statedb, params.MainnetChainConfig, vmconfig)
+}
+
+func vmTestBlockHash(n uint64) common.Hash {
+	return common.BytesToHash(crypto.Keccak256([]byte(big.NewInt(int64(n)).String())))
 }

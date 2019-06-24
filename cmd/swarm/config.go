@@ -66,8 +66,8 @@ const (
 	SWARM_ENV_SWAP_ENABLE     = "SWARM_SWAP_ENABLE"
 	SWARM_ENV_SWAP_API        = "SWARM_SWAP_API"
 	SWARM_ENV_SYNC_ENABLE     = "SWARM_SYNC_ENABLE"
-	SWARM_ENV_ENS_API         = "SWARM_ENS_API"
-	SWARM_ENV_ENS_ADDR        = "SWARM_ENS_ADDR"
+	SWARM_ENV_VNS_API         = "SWARM_VNS_API"
+	SWARM_ENV_VNS_ADDR        = "SWARM_VNS_ADDR"
 	SWARM_ENV_CORS            = "SWARM_CORS"
 	SWARM_ENV_BOOTNODES       = "SWARM_BOOTNODES"
 	GETH_ENV_DATADIR          = "GETH_DATADIR"
@@ -200,17 +200,17 @@ func cmdLineOverride(currentConfig *bzzapi.Config, ctx *cli.Context) *bzzapi.Con
 		utils.Fatalf(SWARM_ERR_SWAP_SET_NO_API)
 	}
 
-	if ctx.GlobalIsSet(EnsAPIFlag.Name) {
-		ensAPIs := ctx.GlobalStringSlice(EnsAPIFlag.Name)
-		// preserve backward compatibility to disable ENS with --ens-api=""
-		if len(ensAPIs) == 1 && ensAPIs[0] == "" {
-			ensAPIs = nil
+	if ctx.GlobalIsSet(VnsAPIFlag.Name) {
+		vnsAPIs := ctx.GlobalStringSlice(VnsAPIFlag.Name)
+		// preserve backward compatibility to disable VNS with --vns-api=""
+		if len(vnsAPIs) == 1 && vnsAPIs[0] == "" {
+			vnsAPIs = nil
 		}
-		currentConfig.EnsAPIs = ensAPIs
+		currentConfig.VnsAPIs = vnsAPIs
 	}
 
-	if ensaddr := ctx.GlobalString(DeprecatedEnsAddrFlag.Name); ensaddr != "" {
-		currentConfig.EnsRoot = common.HexToAddress(ensaddr)
+	if vnsaddr := ctx.GlobalString(DeprecatedVnsAddrFlag.Name); vnsaddr != "" {
+		currentConfig.VnsRoot = common.HexToAddress(vnsaddr)
 	}
 
 	if cors := ctx.GlobalString(CorsStringFlag.Name); cors != "" {
@@ -276,12 +276,12 @@ func envVarsOverride(currentConfig *bzzapi.Config) (config *bzzapi.Config) {
 		utils.Fatalf(SWARM_ERR_SWAP_SET_NO_API)
 	}
 
-	if ensapi := os.Getenv(SWARM_ENV_ENS_API); ensapi != "" {
-		currentConfig.EnsAPIs = strings.Split(ensapi, ",")
+	if vnsapi := os.Getenv(SWARM_ENV_VNS_API); vnsapi != "" {
+		currentConfig.VnsAPIs = strings.Split(vnsapi, ",")
 	}
 
-	if ensaddr := os.Getenv(SWARM_ENV_ENS_ADDR); ensaddr != "" {
-		currentConfig.EnsRoot = common.HexToAddress(ensaddr)
+	if vnsaddr := os.Getenv(SWARM_ENV_VNS_ADDR); vnsaddr != "" {
+		currentConfig.VnsRoot = common.HexToAddress(vnsaddr)
 	}
 
 	if cors := os.Getenv(SWARM_ENV_CORS); cors != "" {
@@ -316,28 +316,28 @@ func dumpConfig(ctx *cli.Context) error {
 func checkDeprecated(ctx *cli.Context) {
 	// exit if the deprecated --vntapi flag is set
 	if ctx.GlobalString(DeprecatedVntAPIFlag.Name) != "" {
-		utils.Fatalf("--vntapi is no longer a valid command line flag, please use --ens-api and/or --swap-api.")
+		utils.Fatalf("--vntapi is no longer a valid command line flag, please use --vns-api and/or --swap-api.")
 	}
-	// warn if --ens-api flag is set
-	if ctx.GlobalString(DeprecatedEnsAddrFlag.Name) != "" {
-		log.Warn("--ens-addr is no longer a valid command line flag, please use --ens-api to specify contract address.")
+	// warn if --vns-api flag is set
+	if ctx.GlobalString(DeprecatedVnsAddrFlag.Name) != "" {
+		log.Warn("--vns-addr is no longer a valid command line flag, please use --vns-api to specify contract address.")
 	}
 }
 
 //validate configuration parameters
 func validateConfig(cfg *bzzapi.Config) (err error) {
-	for _, ensAPI := range cfg.EnsAPIs {
-		if ensAPI != "" {
-			if err := validateEnsAPIs(ensAPI); err != nil {
-				return fmt.Errorf("invalid format [tld:][contract-addr@]url for ENS API endpoint configuration %q: %v", ensAPI, err)
+	for _, vnsAPI := range cfg.VnsAPIs {
+		if vnsAPI != "" {
+			if err := validateVnsAPIs(vnsAPI); err != nil {
+				return fmt.Errorf("invalid format [tld:][contract-addr@]url for VNS API endpoint configuration %q: %v", vnsAPI, err)
 			}
 		}
 	}
 	return nil
 }
 
-//validate EnsAPIs configuration parameter
-func validateEnsAPIs(s string) (err error) {
+//validate VnsAPIs configuration parameter
+func validateVnsAPIs(s string) (err error) {
 	// missing contract address
 	if strings.HasPrefix(s, "@") {
 		return errors.New("missing contract address")

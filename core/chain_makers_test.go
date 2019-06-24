@@ -37,34 +37,45 @@ func ExampleGenerateChain() {
 		addr2   = crypto.PubkeyToAddress(key2.PublicKey)
 		addr3   = crypto.PubkeyToAddress(key3.PublicKey)
 		db      = vntdb.NewMemDatabase()
+
+		activeKey, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f292")
+		activeAddr   = crypto.PubkeyToAddress(activeKey.PublicKey)
 	)
 
 	// Ensure that key1 has some funds in the genesis block.
 	gspec := &Genesis{
 		Config: &params.ChainConfig{ChainID: big.NewInt(1), HubbleBlock: new(big.Int)},
-		Alloc:  GenesisAlloc{addr1: {Balance: big.NewInt(1000000)}},
+		Alloc:  GenesisAlloc{addr1: {Balance: big.NewInt(1000000)}, activeAddr: {Balance: big.NewInt(0).Mul(big.NewInt(1e9), big.NewInt(1e18))}},
 	}
+	signer := types.NewHubbleSigner(gspec.Config.ChainID)
+
 	genesis := gspec.MustCommit(db)
 
+	signTx := func(tx *types.Transaction) (*types.Transaction, error) {
+		return types.SignTx(tx, signer, activeKey)
+	}
 	// This call generates a chain of 5 blocks. The function runs for
 	// each block and adds different features to gen based on the
 	// block index.
-	signer := types.NewHubbleSigner(big.NewInt(1))
-	chain, _ := GenerateChain(gspec.Config, genesis, mock.NewMock(), db, 5, func(i int, gen *BlockGen) {
+	chain, _ := GenerateChain(gspec.Config, genesis, mock.NewMock(), db, 6, func(i int, gen *BlockGen) {
 		switch i {
 		case 0:
-			// In block 1, addr1 sends addr2 some vnt.
+			if err := StartFakeMainNet(gen, activeAddr, signTx); err != nil {
+				panic(err.Error())
+			}
+		case 1:
+			// In block 2, addr1 sends addr2 some ether.
 			tx, _ := types.SignTx(types.NewTransaction(gen.TxNonce(addr1), addr2, big.NewInt(10000), params.TxGas, nil, nil), signer, key1)
 			gen.AddTx(tx)
-		case 1:
-			// In block 2, addr1 sends some more vnt to addr2.
+		case 2:
+			// In block 3, addr1 sends some more ether to addr2.
 			// addr2 passes it on to addr3.
 			tx1, _ := types.SignTx(types.NewTransaction(gen.TxNonce(addr1), addr2, big.NewInt(1000), params.TxGas, nil, nil), signer, key1)
 			tx2, _ := types.SignTx(types.NewTransaction(gen.TxNonce(addr2), addr3, big.NewInt(1000), params.TxGas, nil, nil), signer, key2)
 			gen.AddTx(tx1)
 			gen.AddTx(tx2)
-		case 2:
-			// Block 3 is empty but was produced by addr3.
+		case 3:
+			// Block 4 is empty but was mined by addr3.
 			gen.SetCoinbase(addr3)
 			gen.SetExtra([]byte("yeehaw"))
 		}
@@ -85,7 +96,7 @@ func ExampleGenerateChain() {
 	fmt.Println("balance of addr2:", state.GetBalance(addr2))
 	fmt.Println("balance of addr3:", state.GetBalance(addr3))
 	// Output:
-	// last block: #5
+	// last block: #6
 	// balance of addr1: 989000
 	// balance of addr2: 10000
 	// balance of addr3: 15000000000000001000

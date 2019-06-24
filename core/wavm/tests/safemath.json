@@ -1,0 +1,96 @@
+{
+     "env": {
+          "previousHash": "5e20a0453cecd065ea59c37ac63e079ee08998b6045136a8ce6635c7912ec0b6",
+          "currentNumber": 257,
+          "currentGasLimit": 4000000,
+          "currentDifficulty": 256,
+          "currentTimestamp": 1546273000,
+          "currentCoinbase": "0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba"
+     },
+     "exec": {
+          "address": "0xcccccccccccccccccccccccccccccccccccccccc",
+          "value": 0,
+          "gas": 4000000,
+          "caller": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "origin": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "gasPrice": 1000000
+     },
+     "pre": {
+          "0xcccccccccccccccccccccccccccccccccccccccc": {
+               "balance": "0xDE0B6B3A7640000",
+               "code": "",
+               "nonce": "0x00",
+               "storage": {}
+          },
+          "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+               "balance": "0xDE0B6B3A7640000",
+               "code": "",
+               "nonce": "0x00",
+               "storage": {}
+          }
+     },
+     "testcase": [{
+          "code": "safemath/TestSafeMath.compress",
+          "abi": "safemath/abi.json",
+          "initcase": {
+               "needinit": true,
+               "input": []
+          },
+          "tests": [{
+               "function": "Test_U256SafeMul_overflow",
+               "input": [],
+               "wanted": {
+                    "data": "false",
+                    "type": "bool"
+               },
+               "error": "wavm: execution reverted"
+          }, {
+               "function": "Test_U256SafeMul_zero",
+               "input": [],
+               "wanted": {
+                    "data": "0",
+                    "type": "uint256"
+               }
+          }, {
+               "function": "Test_U256SafeMul_custom",
+               "input": [],
+               "wanted": {
+                    "data": "57896044618658097711785492504343953926634992332820282019728792003956564819968",
+                    "type": "uint256"
+               }
+          }, {
+               "function": "Test_U256SafeDiv_zero",
+               "input": [],
+               "error": "wavm: execution reverted"
+          }, {
+               "function": "Test_U256SafeDiv_custom",
+               "input": [],
+               "wanted": {
+                    "data": "28948022309329048855892746252171976963317496166410141009864396001978282409984",
+                    "type": "uint256"
+               }
+          }, {
+               "function": "Test_U256SafeSub_overflow",
+               "input": [],
+               "error": "wavm: execution reverted"
+          }, {
+               "function": "Test_U256SafeSub_custom",
+               "input": [],
+               "wanted": {
+                    "data": "0",
+                    "type": "uint256"
+               }
+          }, {
+               "function": "Test_U256SafeAdd_overflow",
+               "input": [],
+               "error": "wavm: execution reverted"
+          }, {
+               "function": "Test_U256SafeAdd_custom",
+               "input": [],
+               "wanted": {
+                    "data": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+                    "type": "uint256"
+               }
+          }]
+     }]
+}

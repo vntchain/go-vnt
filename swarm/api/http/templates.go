@@ -198,7 +198,7 @@ var landingPageTemplate = template.Must(template.New("landingPage").Parse(`
 			</script>
 				<content-body>
 
-	            <h1>Enter the hash or ENS of a Swarm-hosted file below:</h1>
+	            <h1>Enter the hash or VNS of a Swarm-hosted file below:</h1>
 								<input type="text" id="page" size="64"/>
 								<input type="submit" value="submit" onclick="goToPage();" />
 
