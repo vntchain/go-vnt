@@ -68,11 +68,11 @@ func GenFakeStartedTxs(nextNonce uint64, witness []common.Address) ([]*types.Tra
 		return nil, err
 	}
 	// 抵押交易
-	txData, err := PackInput(electAbi, "stake", big.NewInt(6e8))
+	txData, err := PackInput(electAbi, "stake")
 	if err != nil {
 		return nil, fmt.Errorf("stake error: %v", err)
 	}
-	stakeTx := types.NewTransaction(nextNonce, common.HexToAddress(ContractAddr), common.Big0, 30000, big.NewInt(18000000000), txData)
+	stakeTx := types.NewTransaction(nextNonce, common.HexToAddress(ContractAddr), big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(6e8)), 30000, big.NewInt(18000000000), txData)
 	// 注册交易
 	txData, err = PackInput(electAbi, "registerWitness", []byte("/ip4/127.0.0.1/tcp/30303/ipfs/1kHGq5zZFRW5FBJ9YMbbvSiW4xzGg5CKMCtDeg6FNnjCbGS"),
 		[]byte("www.vnt.com"), []byte("mocktestnode"))

@@ -181,7 +181,8 @@ func (c CandidateList) dump() {
 
 type Stake struct {
 	Owner      common.Address // 抵押人地址
-	StakeCount *big.Int       // 抵押的数量，单位VNT
+	StakeCount *big.Int       // 抵押的数量，单位VNT，向下取整
+	Vnt        *big.Int       // 抵押的实际代币数，单位Wei
 	TimeStamp  *big.Int       // 时间戳
 }
 
@@ -204,7 +205,7 @@ func (e *Election) RequiredGas(input []byte) uint64 {
 	return 0
 }
 
-func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
+func (e *Election) Run(ctx inter.ChainContext, input []byte, value *big.Int) ([]byte, error) {
 	nonce := ctx.GetStateDb().GetNonce(contractAddr)
 	if nonce == 0 {
 		if err := setRestBounty(ctx.GetStateDb(), Bounty{restTotalBounty}); err != nil {
@@ -273,12 +274,9 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
 		if err = electionABI.UnpackInput(&proxy, "setProxy", methodArgs); err == nil {
 			err = c.setProxy(ctx.GetOrigin(), proxy)
 		}
-	case bytes.Equal(methodId, electionABI.Methods["stake"].Id()):
-		methodName = "stake"
-		var stakeCount *big.Int
-		if err = electionABI.UnpackInput(&stakeCount, "stake", methodArgs); err == nil {
-			err = c.stake(ctx.GetOrigin(), stakeCount)
-		}
+	case bytes.Equal(methodId, electionABI.Methods["$stake"].Id()):
+		methodName = "$stake"
+		err = c.stake(ctx.GetOrigin(), value)
 	case bytes.Equal(methodId, electionABI.Methods["unStake"].Id()):
 		methodName = "unStake"
 		err = c.unStake(ctx.GetOrigin())
@@ -675,39 +673,25 @@ func (ec electionContext) cancelProxy(address common.Address) error {
 	return err
 }
 
-func (ec electionContext) stake(address common.Address, stakeCount *big.Int) error {
-	if stakeCount.Sign() <= 0 {
-		log.Error("stake stakeCount <= 0", "address", address.Hex(), "stakeCount", stakeCount)
-		return fmt.Errorf("stake stakeCount less than 0")
+func (ec electionContext) stake(address common.Address, value *big.Int) error {
+	if value.Cmp(vnt2wei(1)) < 0 {
+		log.Error("stake less than 1 VNT", "address", address.Hex(), "VNT", value.String())
+		return fmt.Errorf("stake stakeCount less than 1 VNT")
 	}
-
-	// get address balance
-	balance := ec.context.GetStateDb().GetBalance(address)
-
-	// get the balance that need staking
-	balanceNeedStake := big.NewInt(0).Mul(stakeCount, big.NewInt(1e+18))
-
-	// if balance is not enough, just ignore
-	if balance.Cmp(balanceNeedStake) < 0 {
-		log.Error("stake not enough balance.", "address", address.Hex(), "balance", balance)
-		return fmt.Errorf("stake not enough balance.")
-	}
-
-	// sub balance of staker
-	ec.context.GetStateDb().SubBalance(address, balanceNeedStake)
-
-	// get stake from db
-	stake := ec.getStake(address)
 
 	// if stake already exists, just add stakeCount to origin stake
+	stake := ec.getStake(address)
 	if bytes.Equal(stake.Owner.Bytes(), address.Bytes()) {
-		// add stake of staker
-		stake.StakeCount = big.NewInt(0).Add(stake.StakeCount, stakeCount)
+		// add vnt to user
+		stake.Vnt = big.NewInt(0).Add(stake.Vnt, value)
 	} else {
 		// else set StakeCount as @StakeCount
 		stake.Owner = address
-		stake.StakeCount = stakeCount
+		stake.Vnt = value
 	}
+
+	// Set stake count
+	stake.StakeCount = big.NewInt(0).Div(stake.Vnt, big.NewInt(1e+18))
 
 	// update last stake time
 	stake.TimeStamp = ec.context.GetTime()
@@ -729,15 +713,13 @@ func (ec electionContext) unStake(address common.Address) error {
 	// if stake is not found in db, just ignore
 	if !bytes.Equal(stake.Owner.Bytes(), address.Bytes()) {
 		log.Error("unStake stake is not found in db.", "address", address.Hex())
-		return fmt.Errorf("unStake stake is not found in db.")
+		return fmt.Errorf("unStake stake is not found in db")
 	}
 
-	stakeCount := stake.StakeCount
-
 	// no stake, no need to unstake, just ignore
-	if stakeCount.Cmp(big.NewInt(0)) == 0 {
+	if stake.Vnt.Cmp(big.NewInt(0)) == 0 {
 		log.Error("unStake 0 stakeCount.", "address", address.Hex())
-		return fmt.Errorf("unStake 0 stakeCount.")
+		return fmt.Errorf("unStake 0 stakeCount")
 	}
 
 	// get the time point that can unstake
@@ -749,8 +731,10 @@ func (ec electionContext) unStake(address common.Address) error {
 		return fmt.Errorf("cannot unstake in 24 hours")
 	}
 
+	amount := stake.Vnt
 	// sub stakeCount of staker
 	stake.StakeCount = big.NewInt(0)
+	stake.Vnt = big.NewInt(0)
 
 	// save stake into db
 	err := ec.setStake(stake)
@@ -760,8 +744,16 @@ func (ec electionContext) unStake(address common.Address) error {
 	}
 
 	// add balance of staker
-	ec.context.GetStateDb().AddBalance(address, big.NewInt(0).Mul(stakeCount, big.NewInt(1e+18)))
+	return transfer(ec.context.GetStateDb(), contractAddr, address, amount)
+}
 
+func transfer(db inter.StateDB, sender, receiver common.Address, amount *big.Int) error {
+	if db.GetBalance(sender).Cmp(amount) < 0 {
+		return fmt.Errorf("sender[%v] do not have enough balance", sender.Hex())
+	}
+
+	db.AddBalance(receiver, amount)
+	db.SubBalance(sender, amount)
 	return nil
 }
 
@@ -961,4 +953,8 @@ func QueryRestVNTBounty(stateDB inter.StateDB) *big.Int {
 	}
 	bounty := getRestBounty(stateDB)
 	return bounty.RestTotalBounty
+}
+
+func vnt2wei(vnt int) *big.Int {
+	return big.NewInt(0).Mul(big.NewInt(int64(vnt)), big.NewInt(1e18))
 }
