@@ -68,7 +68,7 @@ func GenFakeStartedTxs(nextNonce uint64, witness []common.Address) ([]*types.Tra
 		return nil, err
 	}
 	// 抵押交易
-	txData, err := PackInput(electAbi, "stake")
+	txData, err := PackInput(electAbi, "$stake")
 	if err != nil {
 		return nil, fmt.Errorf("stake error: %v", err)
 	}
