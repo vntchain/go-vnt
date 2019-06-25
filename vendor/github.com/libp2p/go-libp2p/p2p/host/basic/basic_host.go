@@ -18,6 +18,7 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	madns "github.com/multiformats/go-multiaddr-dns"
 	msmux "github.com/multiformats/go-multistream"
+	"fmt"
 )
 
 var log = logging.Logger("basichost")
@@ -308,11 +309,13 @@ func (h *BasicHost) RemoveStreamHandler(pid protocol.ID) {
 // (Threadsafe)
 func (h *BasicHost) NewStream(ctx context.Context, p peer.ID, pids ...protocol.ID) (inet.Stream, error) {
 	pref, err := h.preferredProtocol(p, pids)
+	fmt.Printf("#### %s, Preffered protocal: %s \n", p, pref)
 	if err != nil {
 		return nil, err
 	}
 
 	if pref != "" {
+		fmt.Printf("#### %s, No protocal, new stream \n", p)
 		return h.newStream(ctx, p, pref)
 	}
 
@@ -322,11 +325,13 @@ func (h *BasicHost) NewStream(ctx context.Context, p peer.ID, pids ...protocol.I
 	}
 
 	s, err := h.Network().NewStream(ctx, p)
+	fmt.Printf("#### %s, Swarm NewStream, stream: %v, err:%v \n", p, s, err)
 	if err != nil {
 		return nil, err
 	}
 
 	selected, err := msmux.SelectOneOf(protoStrs, s)
+	fmt.Printf("#### %s, msmux.SelectOneOf, selected: %v, err:%v \n", p, selected, err)
 	if err != nil {
 		s.Reset()
 		return nil, err
