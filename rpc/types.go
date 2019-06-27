@@ -195,7 +195,8 @@ type Voter struct {
 // Stake is the information of a user
 type Stake struct {
 	Owner              common.Address `json:"owner"`              // 抵押代币的所有人
-	StakeCount         *hexutil.Big   `json:"stakeCount"`         // 抵押的代币数量
+	StakeCount         *hexutil.Big   `json:"stakeCount"`         // 会被计入票数的VNT数量，取整
+	Vnt                *hexutil.Big   `json:"vnt"`                // 抵押的代币数量
 	LastStakeTimeStamp *hexutil.Big   `json:"lastStakeTimeStamp"` // 上次抵押时间戳
 }
 

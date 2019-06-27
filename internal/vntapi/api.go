@@ -743,6 +743,7 @@ func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Addre
 	stake := &rpc.Stake{
 		Owner:              st.Owner,
 		StakeCount:         (*hexutil.Big)(st.StakeCount),
+		Vnt:                (*hexutil.Big)(st.Vnt),
 		LastStakeTimeStamp: (*hexutil.Big)(st.TimeStamp),
 	}
 

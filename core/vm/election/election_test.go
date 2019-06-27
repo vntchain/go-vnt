@@ -237,7 +237,7 @@ func TestInput(t *testing.T) {
 	context := newcontext()
 
 	for _, input := range InputCase {
-		_, err := e.Run(context, input)
+		_, err := e.Run(context, input, big.NewInt(0))
 		if err != nil && err == fmt.Errorf("call election contract err: method doesn't exist") {
 			t.Error(err)
 		}
@@ -403,7 +403,7 @@ func TestVoteWithoutEnoughTimeGap(t *testing.T) {
 
 	// 抵押
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(1e18))
-	if err := c.stake(addr, big.NewInt(1)); err != nil {
+	if err := c.stake(addr, vnt2wei(1)); err != nil {
 		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
 	}
 	// 投票
@@ -421,7 +421,7 @@ func TestVoteCandidatesFistTime(t *testing.T) {
 
 	addr := common.BytesToAddress([]byte{111})
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
-	if err := c.stake(addr, big.NewInt(10)); err != nil {
+	if err := c.stake(addr, vnt2wei(10)); err != nil {
 		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
 	}
 
@@ -491,13 +491,13 @@ func TestCancelVote(t *testing.T) {
 
 	// 抵押1
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
-	if err := c.stake(addr, big.NewInt(10)); err != nil {
+	if err := c.stake(addr, vnt2wei(10)); err != nil {
 		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
 	}
 
 	// 抵押2
 	c.context.GetStateDb().AddBalance(addr1, big.NewInt(0).Mul(big.NewInt(100), big.NewInt(1e18)))
-	if err := c.stake(addr1, big.NewInt(100)); err != nil {
+	if err := c.stake(addr1, vnt2wei(100)); err != nil {
 		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
 	}
 
@@ -606,7 +606,7 @@ func TestProxyWithoutEnoughTimeGap(t *testing.T) {
 
 	// 抵押
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(1e18))
-	if err := c.stake(addr, big.NewInt(1)); err != nil {
+	if err := c.stake(addr, vnt2wei(1)); err != nil {
 		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
 	}
 	// 设置代理
@@ -626,7 +626,7 @@ func TestProxyIsNotProxy(t *testing.T) {
 
 	// 抵押
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(1e18))
-	if err := c.stake(addr, big.NewInt(1)); err != nil {
+	if err := c.stake(addr, vnt2wei(1)); err != nil {
 		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
 	}
 
@@ -789,9 +789,15 @@ func TestStartAndStopProxy(t *testing.T) {
 	addr := common.BytesToAddress([]byte{111})
 	addr1 := common.BytesToAddress([]byte{50})
 	proxy := common.BytesToAddress([]byte{10})
-	c.context.GetStateDb().AddBalance(addr1, big.NewInt(0).Mul(big.NewInt(20), big.NewInt(1e18)))
-	if err := c.stake(addr1, big.NewInt(20)); err != nil {
+	db := c.context.GetStateDb()
+	db.AddBalance(addr1, big.NewInt(0).Mul(big.NewInt(20), big.NewInt(1e18)))
+	stakeVnt := vnt2wei(20)
+	testTransfer(db, addr1, contractAddr, stakeVnt)
+	if err := c.stake(addr1, stakeVnt); err != nil {
 		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
+	}
+	if db.GetBalance(contractAddr).Cmp(stakeVnt) != 0 {
+		t.Fatalf("contract do not have enough vnt")
 	}
 
 	// addr 设置 proxy为代理
@@ -839,7 +845,7 @@ func TestStartAndStopProxy(t *testing.T) {
 		t.Errorf("unstake, addr: %s, error: %s", addr1.String(), err)
 	}
 	c.context.GetStateDb().AddBalance(addr1, big.NewInt(0).Mul(big.NewInt(20), big.NewInt(1e18)))
-	if err := c.stake(addr1, big.NewInt(30)); err != nil {
+	if err := c.stake(addr1, vnt2wei(30)); err != nil {
 		t.Errorf("stake, addr: %s, error: %s", addr1.String(), err)
 	}
 
@@ -850,6 +856,11 @@ func TestStartAndStopProxy(t *testing.T) {
 	if _, err := checkValid(t, c); err != nil {
 		t.Error(err)
 	}
+}
+
+func testTransfer(db inter.StateDB, sender, receiver common.Address, amount *big.Int) {
+	db.AddBalance(receiver, amount)
+	db.SubBalance(sender, amount)
 }
 
 func TestStopAndSetProxy(t *testing.T) {
@@ -951,13 +962,13 @@ func setProxy(t *testing.T, c electionContext) error {
 	proxy := common.BytesToAddress([]byte{10})
 	// 账户addr抵押
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
-	if err := c.stake(addr, big.NewInt(10)); err != nil {
+	if err := c.stake(addr, vnt2wei(10)); err != nil {
 		t.Errorf("stake, addr: %s, error: %s", addr.String(), err)
 	}
 
 	// 账户proxy抵押
 	c.context.GetStateDb().AddBalance(proxy, big.NewInt(0).Mul(big.NewInt(100), big.NewInt(1e18)))
-	if err := c.stake(proxy, big.NewInt(100)); err != nil {
+	if err := c.stake(proxy, vnt2wei(100)); err != nil {
 		t.Errorf("stake, addr: %s, error: %s", proxy.String(), err)
 	}
 
@@ -1136,24 +1147,55 @@ func TestRegisterProxy(t *testing.T) {
 	}
 }
 
+type stakeCase struct {
+	bal   *big.Int // 账号总余额
+	vnt   *big.Int // 抵押的VNT数
+	stake *big.Int // 预期的抵押计数
+}
+
+// 测试抵押能成功的流程
 func TestStake(t *testing.T) {
+	sc := []stakeCase{
+		// 整数
+		{
+			vnt2wei(100),
+			vnt2wei(20),
+			big.NewInt(20),
+		},
+		// 抵押代币非VNT整数
+		{
+			vnt2wei(100),
+			big.NewInt(0).Add(vnt2wei(20), big.NewInt(100)),
+			big.NewInt(20),
+		},
+	}
+
+	for i, c := range sc {
+		t.Logf("case %v\n", i)
+		testStakeWithCase(t, &c)
+	}
+}
+
+func testStakeWithCase(t *testing.T, c *stakeCase) {
 	context := newcontext()
 	ec := newElectionContext(context)
 	db := ec.context.GetStateDb()
 	addr := common.HexToAddress("41b0db166cfdf1c4ba3ce657171482a9aa55cc93")
-	db.AddBalance(addr, vnt2wei(100))
+	db.AddBalance(addr, c.bal)
 
-	// 抵押
-	err := ec.stake(addr, big.NewInt(20))
+	// 模拟vm转账
+	db.AddBalance(contractAddr, c.vnt)
+	db.SubBalance(addr, c.vnt)
+
+	err := ec.stake(addr, c.vnt)
 	if err != nil {
 		t.Errorf("TestStake stake err:%v ", err)
 	}
 	stake := ec.getStake(addr)
-	if stake.Owner != addr || stake.StakeCount.Uint64() != 20 {
-		t.Fatalf("stake and get stake mismatch, want: %v, got: %v", 20, stake.StakeCount.Uint64())
-	}
+	checkStake(t, &stake, addr, c.vnt, c.stake)
+
 	bal := db.GetBalance(addr)
-	shouldLeft := vnt2wei(80)
+	shouldLeft := big.NewInt(0).Sub(c.bal, c.vnt)
 	if bal.Cmp(shouldLeft) != 0 {
 		t.Fatalf("after stake addr should have %v wei got %v wei", shouldLeft.String(), bal.String())
 	}
@@ -1164,9 +1206,7 @@ func TestStake(t *testing.T) {
 		t.Errorf("TestStake unStake err:%v ", err)
 	}
 	stake = ec.getStake(addr)
-	if stake.Owner != addr || stake.StakeCount.Uint64() != 20 {
-		t.Fatalf("stake and get stake mismatch, want: %v, got: %v", 20, stake.StakeCount.Uint64())
-	}
+	checkStake(t, &stake, addr, c.vnt, c.stake)
 
 	// 取消抵押
 	twentyFourHoursLater(t, context)
@@ -1175,10 +1215,20 @@ func TestStake(t *testing.T) {
 		t.Errorf("TestStake unStake err:%v ", err)
 	}
 	stake = ec.getStake(addr)
-	if stake.Owner != addr || stake.StakeCount.Uint64() != 0 {
-		t.Fatalf("stake and get stake mismatch, want: %v, got: %v", 0, stake.StakeCount.Uint64())
-	}
+	checkStake(t, &stake, addr, common.Big0, common.Big0)
+}
 
+func checkStake(t *testing.T, stake *Stake, expAddr common.Address, expVnt, expStake *big.Int) {
+	if stake.Owner == expAddr {
+		if stake.StakeCount.Cmp(expStake) != 0 {
+			t.Fatalf("stake and get stake mismatch, want: %v, got: %v", expStake.String(), stake.StakeCount.String())
+		}
+		if stake.Vnt.Cmp(expVnt) != 0 {
+			t.Fatalf("stake and get vnt mismatch, want: %v, got: %v Wei", expVnt.String(), stake.Vnt.String())
+		}
+	} else {
+		t.Fatalf("stake failed, can not get saved stake for addr: %v", expAddr)
+	}
 }
 
 func twentyFourHoursLater(t *testing.T, context inter.ChainContext) {
@@ -1195,8 +1245,8 @@ func TestStakeInvalid(t *testing.T) {
 	db.AddBalance(addr, vnt2wei(100))
 
 	// 抵押负值
-	err := ec.stake(addr, big.NewInt(-20))
-	if err.Error() != "stake stakeCount less than 0" {
+	err := ec.stake(addr, vnt2wei(-20))
+	if err.Error() != "stake stakeCount less than 1 VNT" {
 		t.Errorf("TestStake stake err:%v ", err)
 	}
 
@@ -1483,15 +1533,15 @@ func initForStateTest(t *testing.T, c electionContext) {
 	}
 
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
-	if err := c.stake(addr, big.NewInt(10)); err != nil {
+	if err := c.stake(addr, vnt2wei(10)); err != nil {
 		t.Errorf("stake error, addr: %s, error: %s", addr.String(), err)
 	}
 	c.context.GetStateDb().AddBalance(proxy, big.NewInt(0).Mul(big.NewInt(100), big.NewInt(1e18)))
-	if err := c.stake(proxy, big.NewInt(100)); err != nil {
+	if err := c.stake(proxy, vnt2wei(100)); err != nil {
 		t.Errorf("stake error, addr: %s, error: %s", proxy.String(), err)
 	}
 	c.context.GetStateDb().AddBalance(proxy1, big.NewInt(0).Mul(big.NewInt(1000), big.NewInt(1e18)))
-	if err := c.stake(proxy1, big.NewInt(1000)); err != nil {
+	if err := c.stake(proxy1, vnt2wei(1000)); err != nil {
 		t.Errorf("stake error, addr: %s, error: %s", proxy1.String(), err)
 	}
 	if err := c.startProxy(proxy); err != nil {
@@ -1616,7 +1666,8 @@ func TestMainNetStartup(t *testing.T) {
 	checkMainNetVote(t, db, "init main error failed", false, big.NewInt(0))
 
 	// 2. 执行抵押，金额4亿
-	if err := ec.stake(addr, big.NewInt(4e8)); err != nil {
+	testTransfer(db, addr, contractAddr, vnt2wei(4e8))
+	if err := ec.stake(addr, vnt2wei(4e8)); err != nil {
 		t.Fatalf("stake 0.4 billion vnt error: %v", err)
 	}
 
@@ -1636,7 +1687,8 @@ func TestMainNetStartup(t *testing.T) {
 	checkMainNetVote(t, db, "after vote 0.4 billion", false, big.NewInt(4e8))
 
 	// 6. 抵押1亿
-	if err := ec.stake(addr, big.NewInt(1e8)); err != nil {
+	testTransfer(db, addr, contractAddr, vnt2wei(1e8))
+	if err := ec.stake(addr, vnt2wei(1e8)); err != nil {
 		t.Fatalf("stake 0.1 billion vnt error: %v", err)
 	}
 
@@ -1676,10 +1728,6 @@ func checkMainNetVote(t *testing.T, db inter.StateDB, tag string, active bool, s
 	}
 }
 
-func vnt2wei(vnt int) *big.Int {
-	return big.NewInt(0).Mul(big.NewInt(int64(vnt)), big.NewInt(1e18))
-}
-
 func TestStakeButNotVote(t *testing.T) {
 	// 0. 初始化
 	context := newcontext()
@@ -1696,7 +1744,8 @@ func TestStakeButNotVote(t *testing.T) {
 	checkMainNetVote(t, db, "init main error failed", false, vnt2wei(0))
 
 	// 2. 执行抵押，金额4亿
-	if err := ec.stake(addr, big.NewInt(4e8)); err != nil {
+	testTransfer(db, addr, contractAddr, vnt2wei(4e8))
+	if err := ec.stake(addr, vnt2wei(4e8)); err != nil {
 		t.Fatalf("stake 0.4 billion vnt error: %v", err)
 	}
 
