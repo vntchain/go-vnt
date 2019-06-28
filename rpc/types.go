@@ -199,9 +199,3 @@ type Stake struct {
 	Vnt                *hexutil.Big   `json:"vnt"`                // 抵押的代币数量
 	LastStakeTimeStamp *hexutil.Big   `json:"lastStakeTimeStamp"` // 上次抵押时间戳
 }
-
-// MainNetVotes is the information of main net active.
-type MainNetVotes struct {
-	VoteStake *hexutil.Big `json:"voteStake"` // 进行了投票的抵押代币数量，单位VNT
-	Active    bool         `json:"active"`    // 主网是否已启动
-}

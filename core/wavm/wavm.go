@@ -27,7 +27,6 @@ import (
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/vm"
 	errorsmsg "github.com/vntchain/go-vnt/core/vm"
-	"github.com/vntchain/go-vnt/core/vm/election"
 	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	wasmcontract "github.com/vntchain/go-vnt/core/wavm/contract"
 	"github.com/vntchain/go-vnt/core/wavm/gas"
@@ -84,10 +83,6 @@ func (wavm *WAVM) GetChainConfig() *params.ChainConfig {
 
 // run runs the given contract and takes care of running precompiles with a fallback to the byte code interpreter.
 func runWavm(wavm *WAVM, contract *wasmcontract.WASMContract, input []byte, isCreate bool) ([]byte, error) {
-	// Only support election transaction in main net startup
-	if !election.MainNetActive(wavm.StateDB) && *contract.CodeAddr != electionAddress {
-		return nil, vm.ErrMainnetActive
-	}
 	if contract.CodeAddr != nil {
 		precompiles := vm.PrecompiledContractsHubble
 		if p := precompiles[*contract.CodeAddr]; p != nil {

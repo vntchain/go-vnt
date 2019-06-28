@@ -51,18 +51,11 @@ func ExampleGenerateChain() {
 
 	genesis := gspec.MustCommit(db)
 
-	signTx := func(tx *types.Transaction) (*types.Transaction, error) {
-		return types.SignTx(tx, signer, activeKey)
-	}
 	// This call generates a chain of 5 blocks. The function runs for
 	// each block and adds different features to gen based on the
 	// block index.
 	chain, _ := GenerateChain(gspec.Config, genesis, mock.NewMock(), db, 6, func(i int, gen *BlockGen) {
 		switch i {
-		case 0:
-			if err := StartFakeMainNet(gen, activeAddr, signTx); err != nil {
-				panic(err.Error())
-			}
 		case 1:
 			// In block 2, addr1 sends addr2 some ether.
 			tx, _ := types.SignTx(types.NewTransaction(gen.TxNonce(addr1), addr2, big.NewInt(10000), params.TxGas, nil, nil), signer, key1)

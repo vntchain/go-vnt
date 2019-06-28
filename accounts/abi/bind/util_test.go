@@ -27,7 +27,6 @@ import (
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core"
 	"github.com/vntchain/go-vnt/core/types"
-	"github.com/vntchain/go-vnt/core/vm/election"
 	"github.com/vntchain/go-vnt/crypto"
 )
 
@@ -37,29 +36,6 @@ var (
 	activeKey, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f292")
 	activeAddr   = crypto.PubkeyToAddress(activeKey.PublicKey)
 )
-
-func mainnetActive(t *testing.T, backend *backends.SimulatedBackend) {
-	nonce, err := backend.PendingNonceAt(context.Background(), activeAddr)
-	if err != nil {
-		t.Fatalf("get nonce err %s", err.Error())
-	}
-	txs, err := election.GenFakeStartedTxs(nonce, []common.Address{activeAddr})
-	if err != nil {
-		t.Fatalf("gen active txs err %s", err.Error())
-	}
-	for _, v := range txs {
-		signTx, err := types.SignTx(v, types.NewHubbleSigner(chainID), activeKey)
-		if err != nil {
-			t.Fatalf("sign tx error: %v", err.Error())
-		}
-		err = backend.SendTransaction(context.Background(), signTx)
-		if err != nil {
-			t.Fatalf("can't send active tx: %v", err.Error())
-		}
-
-		backend.Commit()
-	}
-}
 
 var waitDeployedTests = map[string]struct {
 	code        string
@@ -86,8 +62,6 @@ func TestWaitDeployed(t *testing.T) {
 			crypto.PubkeyToAddress(testKey.PublicKey): {Balance: big.NewInt(10000000000)},
 			activeAddr: {Balance: big.NewInt(0).Mul(big.NewInt(1e9), big.NewInt(1e18))},
 		})
-		// Active
-		mainnetActive(t, backend)
 
 		// Create the transaction.
 		var (

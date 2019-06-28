@@ -22,44 +22,7 @@ import (
 
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/types"
-	inter "github.com/vntchain/go-vnt/core/vm/interface"
 )
-
-// MainNetActive returns whether the main net is started.
-func MainNetActive(stateDB inter.StateDB) bool {
-	if !mainActive {
-		mv := getMainNetVotes(stateDB)
-		if mv.Active {
-			mainActive = true
-		}
-	}
-
-	return mainActive
-}
-
-// GetMainNetVotes return a pointer of main net vote information.
-func GetMainNetVotes(stateDB inter.StateDB) *MainNetVotes {
-	mv := getMainNetVotes(stateDB)
-	return &mv
-}
-
-// modifyMainNetVotes modify the votes of main net and judge whether
-// the main net match start condition.
-func modifyMainNetVotes(stateDB inter.StateDB, num *big.Int, add bool) error {
-	mv := getMainNetVotes(stateDB)
-	if add {
-		mv.VoteStake = big.NewInt(0).Add(mv.VoteStake, num)
-	} else {
-		mv.VoteStake = big.NewInt(0).Sub(mv.VoteStake, num)
-	}
-
-	// 判断是否激活，并且只执行1次
-	if !mv.Active && mv.VoteStake.Cmp(big.NewInt(5e8)) >= 0 {
-		mv.Active = true
-	}
-
-	return setMainNetVotes(stateDB, mv)
-}
 
 // GenFakeStartedTxs generate 3 fake transaction to start the main net.
 func GenFakeStartedTxs(nextNonce uint64, witness []common.Address) ([]*types.Transaction, error) {
@@ -88,10 +51,4 @@ func GenFakeStartedTxs(nextNonce uint64, witness []common.Address) ([]*types.Tra
 	voteTx := types.NewTransaction(nextNonce+2, common.HexToAddress(ContractAddr), common.Big0, 30000, big.NewInt(18000000000), txData)
 
 	return []*types.Transaction{stakeTx, regTx, voteTx}, nil
-}
-
-// ResetActive is reset the main net state in memory.
-// Only used for tests.
-func ResetActive() {
-	mainActive = false
 }

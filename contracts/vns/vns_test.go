@@ -17,7 +17,6 @@
 package vns
 
 import (
-	"context"
 	"math/big"
 	"testing"
 
@@ -26,8 +25,6 @@ import (
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/contracts/vns/contract"
 	"github.com/vntchain/go-vnt/core"
-	"github.com/vntchain/go-vnt/core/types"
-	"github.com/vntchain/go-vnt/core/vm/election"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/params"
 )
@@ -43,33 +40,8 @@ var (
 	activeAddr   = crypto.PubkeyToAddress(activeKey.PublicKey)
 )
 
-func mainnetActive(backend bind.ContractBackend) ([]*types.Transaction, error) {
-	nonce, err := backend.PendingNonceAt(context.Background(), activeAddr)
-	if err != nil {
-		return nil, err
-	}
-	txs, err := election.GenFakeStartedTxs(nonce, []common.Address{activeAddr})
-	return txs, err
-}
-
 func TestVNS(t *testing.T) {
 	contractBackend := backends.NewSimulatedBackend(core.GenesisAlloc{addr: {Balance: big.NewInt(1000000000)}, activeAddr: {Balance: big.NewInt(0).Mul(big.NewInt(1e9), big.NewInt(1e18))}})
-	activeTxs, err := mainnetActive(contractBackend)
-	if err != nil {
-		t.Fatalf("can't create active tx: %v", err)
-	}
-	for _, v := range activeTxs {
-		signTx, err := types.SignTx(v, types.NewHubbleSigner(chainID), activeKey)
-		if err != nil {
-			t.Fatalf("sign tx error: %v", err)
-		}
-		err = contractBackend.SendTransaction(context.Background(), signTx)
-		if err != nil {
-			t.Fatalf("can't send active tx: %v", err)
-		}
-
-		contractBackend.Commit()
-	}
 
 	transactOpts := bind.NewKeyedTransactor(key, chainID)
 
