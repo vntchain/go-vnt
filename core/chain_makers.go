@@ -25,7 +25,6 @@ import (
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
-	"github.com/vntchain/go-vnt/core/vm/election"
 	"github.com/vntchain/go-vnt/params"
 	"github.com/vntchain/go-vnt/vntdb"
 )
@@ -206,28 +205,6 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 		parent = block
 	}
 	return blocks, receipts
-}
-
-// StartFakeMainNet start a fake main net.
-// Caller should make sure addr has enough balance to start the main net.
-func StartFakeMainNet(gen *BlockGen, addr common.Address, sign func(tx *types.Transaction) (*types.Transaction, error)) error {
-	// 区块的时间必须在主网基准时间之后
-	gen.OffsetTime(1546272000 + 10000)
-
-	// 获取和提交交易
-	nextNonce := gen.TxNonce(addr)
-	if txs, err := election.GenFakeStartedTxs(nextNonce, []common.Address{addr}); err != nil {
-		return fmt.Errorf("mock get started txs failed: %s", err.Error())
-	} else {
-		for _, tx := range txs {
-			tx, err := sign(tx)
-			if err != nil {
-				return fmt.Errorf("failed to sign tx: %v", err)
-			}
-			gen.AddTx(tx)
-		}
-	}
-	return nil
 }
 
 func makeHeader(chain consensus.ChainReader, parent *types.Block, state *state.StateDB, engine consensus.Engine) *types.Header {

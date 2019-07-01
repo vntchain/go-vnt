@@ -30,7 +30,6 @@ import (
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
-	"github.com/vntchain/go-vnt/core/vm/election"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/params"
 	"github.com/vntchain/go-vnt/vntdb"
@@ -1047,21 +1046,10 @@ func TestLogReorgs(t *testing.T) {
 	blockchain, _ := NewBlockChain(db, nil, gspec.Config, mock.NewMock(), vm.Config{})
 	defer blockchain.Stop()
 
-	signTx := func(tx *types.Transaction) (*types.Transaction, error) {
-		return types.SignTx(tx, signer, key1)
-	}
 	rmLogsCh := make(chan RemovedLogsEvent)
 	blockchain.SubscribeRemovedLogsEvent(rmLogsCh)
 	chain, _ := GenerateChain(params.TestChainConfig, genesis, mock.NewMock(), db, 3, func(i int, gen *BlockGen) {
-		switch i {
-		case 0:
-			if err := StartFakeMainNet(gen, addr1, signTx); err != nil {
-				t.Fatalf(err.Error())
-			}
-		case 2:
-			if !election.MainNetActive(gen.statedb) {
-				t.Fatalf("main is inactive")
-			}
+		if i == 2 {
 			gen.OffsetTime(2)
 
 			tx, err := types.SignTx(types.NewContractCreation(gen.TxNonce(addr1), new(big.Int), 1000000, new(big.Int), code), signer, key1)
@@ -1076,13 +1064,7 @@ func TestLogReorgs(t *testing.T) {
 	}
 
 	// fork chain should to be canonical chain
-	chain, _ = GenerateChain(params.TestChainConfig, genesis, mock.NewMock(), db, 3, func(i int, gen *BlockGen) {
-		if i == 0 {
-			if err := StartFakeMainNet(gen, addr1, signTx); err != nil {
-				t.Fatalf(err.Error())
-			}
-		}
-	})
+	chain, _ = GenerateChain(params.TestChainConfig, genesis, mock.NewMock(), db, 3, func(i int, gen *BlockGen) {})
 	if _, err := blockchain.InsertChain(chain); err != nil {
 		t.Fatalf("failed to insert forked chain: %v", err)
 	}

@@ -190,11 +190,6 @@ type Bounty struct {
 	RestTotalBounty *big.Int // 剩余总激励，初始值10亿VNT
 }
 
-type MainNetVotes struct {
-	VoteStake *big.Int // 进行了投票的抵押代币数量，单位VNT
-	Active    bool     // 主网是否已启动
-}
-
 func newElectionContext(ctx inter.ChainContext) electionContext {
 	return electionContext{
 		context: ctx,
@@ -414,8 +409,6 @@ func (ec electionContext) voteWitnesses(address common.Address, candidates []com
 	if voteCount, stake, err = ec.prepareForVote(&voter, address); err != nil {
 		return err
 	}
-	// 保存老记录，设置新数据
-	lastStake := voter.LastStakeCount
 	// 计算当前stake可以兑换得到的票数
 	voter.LastVoteCount = new(big.Int).Set(voteCount)
 	voter.LastStakeCount = stake.StakeCount
@@ -445,15 +438,8 @@ func (ec electionContext) voteWitnesses(address common.Address, candidates []com
 		}
 	}
 
-	// 读取主网投票信息，并修改
-	if err = ec.setVoter(voter); err == nil {
-		// 先减去上次投票的数据
-		err = modifyMainNetVotes(ec.context.GetStateDb(), lastStake, false)
-		if err == nil {
-			err = modifyMainNetVotes(ec.context.GetStateDb(), voter.LastStakeCount, true)
-		}
-	}
-	return err
+	// 保存投票信息
+	return ec.setVoter(voter)
 }
 
 func (ec electionContext) cancelVote(address common.Address) error {
@@ -476,17 +462,12 @@ func (ec electionContext) cancelVote(address common.Address) error {
 		return fmt.Errorf("subVoteFromCandidates error: %s", err)
 	}
 
-	lastStake := voter.LastStakeCount
-
 	// 将上次投票信息置空
 	voter.LastVoteCount = big.NewInt(0)
 	voter.LastStakeCount = big.NewInt(0)
 	voter.VoteCandidates = nil
 
-	if err = ec.setVoter(voter); err == nil {
-		err = modifyMainNetVotes(ec.context.GetStateDb(), lastStake, false)
-	}
-	return err
+	return ec.setVoter(voter)
 }
 
 func (ec electionContext) startProxy(address common.Address) error {
@@ -575,8 +556,6 @@ func (ec electionContext) setProxy(address common.Address, proxy common.Address)
 	if voteCount, stake, err = ec.prepareForVote(&voter, address); err != nil {
 		return err
 	}
-	// 保存老记录，设置新数据
-	lastStake := voter.LastStakeCount
 	voter.LastVoteCount = new(big.Int).Set(voteCount)
 	voter.LastStakeCount = stake.StakeCount
 
@@ -611,14 +590,7 @@ func (ec electionContext) setProxy(address common.Address, proxy common.Address)
 
 	voter.VoteCandidates = nil
 	voter.Proxy = proxy
-
-	if err = ec.setVoter(voter); err == nil {
-		err = modifyMainNetVotes(ec.context.GetStateDb(), lastStake, false)
-		if err == nil {
-			err = modifyMainNetVotes(ec.context.GetStateDb(), voter.LastStakeCount, true)
-		}
-	}
-	return err
+	return ec.setVoter(voter)
 }
 
 func (ec electionContext) cancelProxy(address common.Address) error {
@@ -657,20 +629,11 @@ func (ec electionContext) cancelProxy(address common.Address) error {
 		proxy = proxyVoter.Proxy
 	}
 
-	// 保存需要使用数据
-	lastStake := voter.LastStakeCount
-
 	// 清空老数据
 	voter.Proxy = emptyAddress
 	voter.LastVoteCount = big.NewInt(0)
 	voter.LastStakeCount = big.NewInt(0)
-
-	// 保存数据与更新主网投票数据
-	var err error
-	if err = ec.setVoter(voter); err == nil {
-		err = modifyMainNetVotes(ec.context.GetStateDb(), lastStake, false)
-	}
-	return err
+	return ec.setVoter(voter)
 }
 
 func (ec electionContext) stake(address common.Address, value *big.Int) error {
