@@ -438,7 +438,7 @@ func (ec electionContext) voteWitnesses(address common.Address, candidates []com
 		}
 	}
 
-	// 读取主网投票信息
+	// 保存投票信息
 	return ec.setVoter(voter)
 }
 
