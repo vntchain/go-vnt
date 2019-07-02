@@ -231,7 +231,9 @@ func (s *Swarm) doDial(ctx context.Context, p peer.ID) (*Conn, error) {
 	// if it succeeds, dial will add the conn to the swarm itself.
 	defer log.EventBegin(ctx, "swarmDialAttemptStart", logdial).Done()
 
+	fmt.Printf("#### %s %s start to dial...", p, time.Now().String())
 	conn, err := s.dial(ctx, p)
+	fmt.Printf("#### %s %s finish to dial!", p, time.Now().String())
 	if err != nil {
 		conn = s.bestConnToPeer(p)
 		if conn != nil {
