@@ -45,24 +45,17 @@ func ExampleGenerateChain() {
 	// Ensure that key1 has some funds in the genesis block.
 	gspec := &Genesis{
 		Config: &params.ChainConfig{ChainID: big.NewInt(1), HubbleBlock: new(big.Int)},
-		Alloc:  GenesisAlloc{addr1: {Balance: big.NewInt(1000000)}, activeAddr: {Balance: big.NewInt(0).Mul(big.NewInt(1e9), big.NewInt(1e18))}},
+		Alloc:  GenesisAlloc{addr1: {Balance: big.NewInt(1000000)}, activeAddr: {Balance: big.NewInt(0).Mul(big.NewInt(10e9), big.NewInt(1e18))}},
 	}
 	signer := types.NewHubbleSigner(gspec.Config.ChainID)
 
 	genesis := gspec.MustCommit(db)
 
-	signTx := func(tx *types.Transaction) (*types.Transaction, error) {
-		return types.SignTx(tx, signer, activeKey)
-	}
 	// This call generates a chain of 5 blocks. The function runs for
 	// each block and adds different features to gen based on the
 	// block index.
 	chain, _ := GenerateChain(gspec.Config, genesis, mock.NewMock(), db, 6, func(i int, gen *BlockGen) {
 		switch i {
-		case 0:
-			if err := StartFakeMainNet(gen, activeAddr, signTx); err != nil {
-				panic(err.Error())
-			}
 		case 1:
 			// In block 2, addr1 sends addr2 some ether.
 			tx, _ := types.SignTx(types.NewTransaction(gen.TxNonce(addr1), addr2, big.NewInt(10000), params.TxGas, nil, nil), signer, key1)

@@ -207,11 +207,6 @@ func testChainGen(i int, block *core.BlockGen) {
 	signer := types.NewHubbleSigner(big.NewInt(1))
 	switch i {
 	case 0:
-		signTx := func(tx *types.Transaction) (*types.Transaction, error) {
-			return types.SignTx(tx, signer, testBankKey)
-		}
-		core.StartFakeMainNet(block, testBankAddress, signTx)
-
 		// In block 1, the test bank sends account #1 some vnt.
 		tx, _ := types.SignTx(types.NewTransaction(block.TxNonce(testBankAddress), acc1Addr, big.NewInt(10000), params.TxGas, nil, nil), signer, testBankKey)
 		block.AddTx(tx)

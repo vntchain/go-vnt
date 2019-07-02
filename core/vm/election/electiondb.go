@@ -30,12 +30,11 @@ import (
 )
 
 const (
-	VOTERPREFIX        = byte(0)
-	CANDIDATEPREFIX    = byte(1)
-	STAKEPREFIX        = byte(2)
-	BOUNTYPREFIX       = byte(3)
-	MAINNETVOTESPREFIX = byte(4)
-	PREFIXLENGTH       = 4 // key的结构为，4位表前缀，20位address，8位的value在struct中的位置
+	VOTERPREFIX     = byte(0)
+	CANDIDATEPREFIX = byte(1)
+	STAKEPREFIX     = byte(2)
+	BOUNTYPREFIX    = byte(3)
+	PREFIXLENGTH    = 4 // key的结构为，4位表前缀，20位address，8位的value在struct中的位置
 )
 
 type getFuncType func(key common.Hash) common.Hash
@@ -403,23 +402,6 @@ func getRestBounty(stateDB inter.StateDB) Bounty {
 
 func setRestBounty(stateDB inter.StateDB, restBounty Bounty) error {
 	return convertToKV(BOUNTYPREFIX, restBounty, genSetFunc(stateDB))
-}
-
-// getMainNetVotes return a initialized main net votes information,
-// when no main net votes information in state db.
-func getMainNetVotes(stateDb inter.StateDB) MainNetVotes {
-	var mv MainNetVotes
-	err := convertToStruct(MAINNETVOTESPREFIX, contractAddr, &mv, genGetFunc(stateDb))
-	if err != nil {
-		return MainNetVotes{big.NewInt(0), false}
-	}
-
-	return mv
-}
-
-// setMainNetVotes store the main net votes to db.
-func setMainNetVotes(stateDB inter.StateDB, mv MainNetVotes) error {
-	return convertToKV(MAINNETVOTESPREFIX, mv, genSetFunc(stateDB))
 }
 
 // genGetFunc generate universal get function for read from state db.

@@ -17,17 +17,19 @@
 package vm
 
 import (
+	"math/big"
+
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/vm/election"
-	"github.com/vntchain/go-vnt/core/vm/interface"
+	inter "github.com/vntchain/go-vnt/core/vm/interface"
 )
 
 // PrecompiledContract is the basic interface for native Go contracts. The implementation
 // requires a deterministic gas count based on the input size of the Run method of the
 // contract.
 type PrecompiledContract interface {
-	RequiredGas(input []byte) uint64                              // RequiredPrice calculates the contract gas use
-	Run(context inter.ChainContext, input []byte) ([]byte, error) // Run runs the precompiled contract
+	RequiredGas(input []byte) uint64                                              // RequiredPrice calculates the contract gas use
+	Run(context inter.ChainContext, input []byte, value *big.Int) ([]byte, error) // Run runs the precompiled contract
 }
 
 // PrecompiledContractsHubble contains the default set of pre-compiled VNT
@@ -40,7 +42,7 @@ var PrecompiledContractsHubble = map[common.Address]PrecompiledContract{
 func RunPrecompiledContract(context inter.ChainContext, p PrecompiledContract, input []byte, contract inter.Contract) (ret []byte, err error) {
 	gas := p.RequiredGas(input)
 	if contract.UseGas(gas) {
-		return p.Run(context, input)
+		return p.Run(context, input, contract.Value())
 	}
 	return nil, ErrOutOfGas
 }

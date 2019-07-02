@@ -743,6 +743,7 @@ func (s *PublicBlockChainAPI) GetStake(ctx context.Context, address common.Addre
 	stake := &rpc.Stake{
 		Owner:              st.Owner,
 		StakeCount:         (*hexutil.Big)(st.StakeCount),
+		Vnt:                (*hexutil.Big)(st.Vnt),
 		LastStakeTimeStamp: (*hexutil.Big)(st.TimeStamp),
 	}
 
@@ -761,24 +762,6 @@ func (s *PublicBlockChainAPI) GetRestVNTBounty(ctx context.Context) (*big.Int, e
 	} else {
 		return rest, nil
 	}
-}
-
-// GetMainNetVotes returns the main net active information.
-func (s *PublicBlockChainAPI) GetMainNetVotes(ctx context.Context) (*rpc.MainNetVotes, error) {
-	stateDB, err := s.stateDbOfCurrent(ctx)
-	if stateDB == nil || err != nil {
-		return nil, err
-	}
-
-	rest := election.GetMainNetVotes(stateDB)
-	if rest == nil {
-		return nil, errors.New("can not get rest main net active information")
-	}
-	mv := &rpc.MainNetVotes{
-		Active:    rest.Active,
-		VoteStake: (*hexutil.Big)(rest.VoteStake),
-	}
-	return mv, nil
 }
 
 func (s *PublicBlockChainAPI) stateDbOfCurrent(ctx context.Context) (*state.StateDB, error) {

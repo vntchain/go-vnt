@@ -497,7 +497,7 @@ func toCallArg(msg hubble.CallMsg) interface{} {
 //
 // parameter sender only used for to get nonce of the account who send this transaction. funcName name is the operation
 // what you want to do, and args is the parameters of funcName in election contract.
-func (ec *Client) NewElectionTx(ctx context.Context, sender common.Address, gasLimit uint64, gasPrice *big.Int, funcName string, args ...interface{}) (*types.Transaction, error) {
+func (ec *Client) NewElectionTx(ctx context.Context, sender common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, funcName string, args ...interface{}) (*types.Transaction, error) {
 	// 	Generate tx txData
 	electAbi, err := getElectionABI()
 	if err != nil {
@@ -514,7 +514,7 @@ func (ec *Client) NewElectionTx(ctx context.Context, sender common.Address, gasL
 		return nil, err
 	}
 
-	return types.NewTransaction(nonce, common.HexToAddress(election.ContractAddr), common.Big0, gasLimit, gasPrice, txData), nil
+	return types.NewTransaction(nonce, common.HexToAddress(election.ContractAddr), amount, gasLimit, gasPrice, txData), nil
 }
 
 func getElectionABI() (abi.ABI, error) {
