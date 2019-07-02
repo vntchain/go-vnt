@@ -132,36 +132,40 @@ func TestCalcVoteBounty(t *testing.T) {
 	// 情况1：人不够,但都是active
 	// 情况2：人不够，有inactive
 	// 情况3：没投票
-
 	ca1 := election.Candidate{
-		Owner:     common.BytesToAddress([]byte{1}),
-		VoteCount: big.NewInt(0),
-		Active:    true,
+		Owner:      common.BytesToAddress([]byte{1}),
+		VoteCount:  big.NewInt(0),
+		Registered: true,
+		Bind:       true,
 	}
 	ca2 := election.Candidate{
-		Owner:     common.BytesToAddress([]byte{2}),
-		VoteCount: big.NewInt(0),
-		Active:    true,
+		Owner:      common.BytesToAddress([]byte{2}),
+		VoteCount:  big.NewInt(0),
+		Registered: true,
+		Bind:       true,
 	}
 	ca3 := election.Candidate{
-		Owner:     common.BytesToAddress([]byte{3}),
-		VoteCount: big.NewInt(0),
-		Active:    true,
+		Owner:      common.BytesToAddress([]byte{3}),
+		VoteCount:  big.NewInt(0),
+		Registered: true,
+		Bind:       true,
 	}
 	ca4 := election.Candidate{
-		Owner:     common.BytesToAddress([]byte{4}),
-		VoteCount: big.NewInt(0),
-		Active:    true,
+		Owner:      common.BytesToAddress([]byte{4}),
+		VoteCount:  big.NewInt(0),
+		Registered: true,
+		Bind:       true,
 	}
 	ca5 := election.Candidate{
-		Owner:     common.BytesToAddress([]byte{5}),
-		VoteCount: big.NewInt(0),
-		Active:    false,
+		Owner:      common.BytesToAddress([]byte{5}),
+		VoteCount:  big.NewInt(0),
+		Registered: false,
 	}
 	ca6 := election.Candidate{
-		Owner:     common.BytesToAddress([]byte{5}),
-		VoteCount: big.NewInt(0),
-		Active:    true,
+		Owner:      common.BytesToAddress([]byte{5}),
+		VoteCount:  big.NewInt(0),
+		Registered: true,
+		Bind:       true,
 	}
 
 	candis1 := election.CandidateList{ca1, ca2, ca3}
@@ -188,7 +192,7 @@ func TestCalcVoteBounty(t *testing.T) {
 		t.Errorf("good want: nil, get: %x", ret)
 	}
 	for i, ca := range candis4 {
-		if ca.Active == false {
+		if !ca.Active() {
 			continue
 		}
 		caBonus := ret[ca.Owner]

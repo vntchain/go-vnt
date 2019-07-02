@@ -813,7 +813,7 @@ func (d *Dpos) calcVoteBounty(candis election.CandidateList, allBonus *big.Int) 
 	totalVotes := big.NewInt(0)
 	activeCnt := 0
 	for _, can := range candis {
-		if !can.Active {
+		if !can.Active() {
 			continue
 		}
 		totalVotes.Add(totalVotes, can.VoteCount)
@@ -827,7 +827,7 @@ func (d *Dpos) calcVoteBounty(candis election.CandidateList, allBonus *big.Int) 
 	// Calc each candidates' bonus
 	bonus := make(map[common.Address]*big.Int, activeCnt)
 	for _, can := range candis {
-		if !can.Active {
+		if !can.Active() {
 			continue
 		}
 

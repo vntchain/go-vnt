@@ -41,8 +41,11 @@ var (
 	}
 	candidate = Candidate{
 		Owner:           common.HexToAddress("9ee97d274eb4c215f23238fee1f103d9ea10a234"),
-		Active:          true,
-		VoteCount:       big.NewInt(11100),
+		Binder:          binder,
+		Beneficiary:     beneficiary,
+		Registered:      true,
+		Bind:            true,
+		VoteCount:       big.NewInt(0),
 		Url:             []byte("/ip4/192.168.9.102/tcp/5210/ipfs/1kHaMUmZgTpjGEhxcGATr1UVWy6iKkygFuknWEtW7LiLrev"),
 		TotalBounty:     big.NewInt(0).Mul(big.NewInt(10000), big.NewInt(1e18)),
 		ExtractedBounty: big.NewInt(0).Mul(big.NewInt(100), big.NewInt(1e18)),
@@ -94,8 +97,14 @@ func sameVoter(voter *Voter, voter1 *Voter) (bool, error) {
 func sameCandidate(candidate *Candidate, candidate1 *Candidate) (bool, error) {
 	if !bytes.Equal(candidate.Owner[:], candidate1.Owner[:]) {
 		return false, fmt.Errorf("Error,owner before %v and after %v is different", candidate.Owner, candidate1.Owner)
-	} else if candidate.Active != candidate1.Active {
-		return false, fmt.Errorf("Error,active before %v and after %v is different", candidate.Active, candidate1.Active)
+	} else if candidate.Registered != candidate1.Registered {
+		return false, fmt.Errorf("Error,registered before %v and after %v is different", candidate.Registered, candidate1.Registered)
+	} else if candidate.Binder != candidate1.Binder {
+		// 	TODO
+	} else if candidate.Bind != candidate1.Bind {
+		// 	TODO
+	} else if candidate.Beneficiary != candidate1.Beneficiary {
+		// 	TODO
 	} else if candidate.VoteCount.Cmp(candidate1.VoteCount) != 0 {
 		return false, fmt.Errorf("Error,voteCount before %v and after %v is different", candidate.VoteCount, candidate1.VoteCount)
 	} else if !bytes.Equal(candidate.Url, candidate1.Url) {
@@ -150,36 +159,39 @@ func TestConvertToKV(t *testing.T) {
 func TestConvertToStruct(t *testing.T) {
 	kvMap := make(map[common.Hash]common.Hash)
 	// voter
-	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000000")] = common.HexToHash("0000000000000000000000949ee97d274eb4c215f23238fee1f103d9ea10a234")
-	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000001")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001")
-	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000002")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000066")
-	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000003")] = common.HexToHash("0000000000000000000000940000000000000000000000000000000000000000")
-	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000004")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000005")
-	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000005")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000005")
-	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000006")] = common.HexToHash("000000000000000000000000000000000000000000000000000000845b4822c8")
-	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000100000007")] = common.HexToHash("0000000000000000000000949ee97d274eb4c215f23238fee1f103d9ea10a234")
-	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000200000007")] = common.HexToHash("000000000000000000000094000000000000000000000000000000000000000a")
-	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000007")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000002")
+	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000000")] = common.HexToHash("0000000000000000000000949ee97d274eb4c215f23238fee1f103d9ea10a234") // Owner
+	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000001")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001") // IsProxy
+	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000002")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000066") // ProxyVoteCount
+	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000003")] = common.HexToHash("0000000000000000000000940000000000000000000000000000000000000000") // Proxy
+	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000004")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000005") // LastStakeCount
+	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000005")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000005") // LastVoteCount
+	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000006")] = common.HexToHash("000000000000000000000000000000000000000000000000000000845b4822c8") // TimeStamp
+	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000100000007")] = common.HexToHash("0000000000000000000000949ee97d274eb4c215f23238fee1f103d9ea10a234") // VoteCandidates
+	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000200000007")] = common.HexToHash("000000000000000000000094000000000000000000000000000000000000000a") // VoteCandidates
+	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000007")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000002") // VoteCandidates
 	// candidate
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000000")] = common.HexToHash("0000000000000000000000949ee97d274eb4c215f23238fee1f103d9ea10a234")
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000001")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000822b5c")
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000002")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001")
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000003")] = common.HexToHash("0000000000000000000000000000b8502f6970342f3139322e3136382e392e31")
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000100000003")] = common.HexToHash("30322f7463702f353231302f697066732f316b48614d556d5a6754706a474568")
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000200000003")] = common.HexToHash("786347415472315556577936694b6b796746756b6e57457457374c694c726576")
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000004")] = common.HexToHash("0000000000000000000000000000000000000000008a021e19e0c9bab2400000")
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000005")] = common.HexToHash("0000000000000000000000000000000000000000000089056bc75e2d63100000")
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000006")] = common.HexToHash("000000000000000000000000000000000000000000000000000000845b4144f8")
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000100000007")] = common.HexToHash("776562736974652e6e65742f746573742f7769746e6573732f77656273697465")
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000007")] = common.HexToHash("0000000000000000000000000000000000000000000000a87777772e74657374")
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000008")] = common.HexToHash("00000000000000000000000000000000000000000000000087746573744e6574")
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000000")] = common.HexToHash("0000000000000000000000949ee97d274eb4c215f23238fee1f103d9ea10a234") // owner
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000001")] = common.HexToHash("0000000000000000000000949ee97d274eb4c215f23238fee1f103d9ea10a231") // Binder
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000002")] = common.HexToHash("0000000000000000000000949ee97d274eb4c215f23238fee1f103d9ea10a232") // Beneficiary
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000003")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000822b5c") // vote count
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000004")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001") // register
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000005")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001") // bind
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000006")] = common.HexToHash("0000000000000000000000000000b8502f6970342f3139322e3136382e392e31") // url
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000100000006")] = common.HexToHash("30322f7463702f353231302f697066732f316b48614d556d5a6754706a474568") // url
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000200000006")] = common.HexToHash("786347415472315556577936694b6b796746756b6e57457457374c694c726576") // url
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000007")] = common.HexToHash("0000000000000000000000000000000000000000008a021e19e0c9bab2400000") // TotalBounty
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000008")] = common.HexToHash("0000000000000000000000000000000000000000000089056bc75e2d63100000") // ExtractedBounty
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000009")] = common.HexToHash("000000000000000000000000000000000000000000000000000000845b4144f8") // LastExtractTime
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a234000000010000000a")] = common.HexToHash("776562736974652e6e65742f746573742f7769746e6573732f77656273697465") // Website
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a234000000000000000a")] = common.HexToHash("0000000000000000000000000000000000000000000000a87777772e74657374") // Website
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a234000000000000000b")] = common.HexToHash("00000000000000000000000000000000000000000000000087746573744e6574") // name
 	// stake
-	kvMap[common.HexToHash("020000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000000")] = common.HexToHash("0000000000000000000000949ee97d274eb4c215f23238fee1f103d9ea10a234")
-	kvMap[common.HexToHash("020000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000001")] = common.HexToHash("00000000000000000000000000000000000000000000000000000000000081e6")
-	kvMap[common.HexToHash("020000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000002")] = common.HexToHash("00000000000000000000000000000000000000000000000000000000000081e6")
-	kvMap[common.HexToHash("020000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000003")] = common.HexToHash("000000000000000000000000000000000000000000000000000000845b4822c8")
+	kvMap[common.HexToHash("020000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000000")] = common.HexToHash("0000000000000000000000949ee97d274eb4c215f23238fee1f103d9ea10a234") // Owner
+	kvMap[common.HexToHash("020000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000001")] = common.HexToHash("00000000000000000000000000000000000000000000000000000000000081e6") // StakeCount
+	kvMap[common.HexToHash("020000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000002")] = common.HexToHash("00000000000000000000000000000000000000000000000000000000000081e6") // Vnt
+	kvMap[common.HexToHash("020000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000003")] = common.HexToHash("000000000000000000000000000000000000000000000000000000845b4822c8") // TimeStamp
 	// bounty
-	kvMap[common.HexToHash("0300000000000000000000000000000000000000000000090000000000000000")] = common.HexToHash("0000000000000000000000000000000000000000000000880de0b6b3a7640000")
+	kvMap[common.HexToHash("0300000000000000000000000000000000000000000000090000000000000000")] = common.HexToHash("0000000000000000000000000000000000000000000000880de0b6b3a7640000") // RestTotalBounty
 
 	getFn := func(hash common.Hash) common.Hash {
 		return kvMap[hash]
@@ -309,8 +321,8 @@ func TestGetAllCandidate(t *testing.T) {
 		t.Error("the number of candidates is wrong!")
 	} else {
 		for _, candidate := range candidates {
-			if !candidate.Active || candidate.VoteCount.Cmp(big.NewInt(11100)) != 0 {
-				t.Errorf("%v", candidate)
+			if !candidate.Active() || candidate.VoteCount.Cmp(big.NewInt(0)) != 0 {
+				t.Fatalf("Error: %s", candidate.String())
 			}
 		}
 	}
@@ -433,7 +445,7 @@ func TestGetFirstXCandidates_2(t *testing.T) {
 
 	candidates := getAllCandidate(stateDB)
 	for _, candi := range candidates {
-		t.Logf("candidate owner: %x, active: %v, voteCount : %v\n", candi.Owner, candi.Active, candi.VoteCount)
+		t.Logf("candidate owner: %x, active: %v, voteCount : %v\n", candi.Owner, candi.Active(), candi.VoteCount)
 	}
 }
 
@@ -472,7 +484,7 @@ func TestGetFirstXCandidates_3(t *testing.T) {
 		candidate1 := candidate
 		candidate1.Owner[0] = byte(tests[i].addrPre)
 		candidate1.VoteCount = big.NewInt(tests[i].votes)
-		candidate1.Active = tests[i].active
+		candidate1.Registered = tests[i].active
 		if err := c.setCandidate(candidate1); err != nil {
 			t.Errorf("candiates: %s, error: %s", candidate1.Owner, err)
 		}
@@ -494,7 +506,7 @@ func TestGetFirstXCandidates_3(t *testing.T) {
 
 	candidates := getAllCandidate(stateDB)
 	for _, candi := range candidates {
-		t.Logf("candidate owner: %x, active: %v, voteCount : %v\n", candi.Owner, candi.Active, candi.VoteCount)
+		t.Logf("candidate owner: %x, active: %v, voteCount : %v\n", candi.Owner, candi.Active(), candi.VoteCount)
 	}
 }
 
@@ -534,7 +546,7 @@ func TestGetFirstXCandidates_4(t *testing.T) {
 		candidate1 := candidate
 		candidate1.Owner[0] = byte(tests[i].addrPre)
 		candidate1.VoteCount = big.NewInt(tests[i].votes)
-		candidate1.Active = true
+		candidate1.Registered = true
 		if err := c.setCandidate(candidate1); err != nil {
 			t.Errorf("candiates: %s, error: %s", candidate1.Owner, err)
 		}

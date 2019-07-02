@@ -689,7 +689,7 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 	for i, ca := range list {
 		rpcCandidates[i].Owner = ca.Owner.String()
 		rpcCandidates[i].Name = string(ca.Name)
-		rpcCandidates[i].Active = ca.Active
+		rpcCandidates[i].Active = ca.Registered
 		rpcCandidates[i].Url = string(ca.Url)
 		rpcCandidates[i].VoteCount = (*hexutil.Big)(ca.VoteCount)
 		rpcCandidates[i].TotalBounty = (*hexutil.Big)(ca.TotalBounty)

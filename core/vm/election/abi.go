@@ -23,7 +23,7 @@ import (
 )
 
 const ElectionAbiJSON = `[
-{"name":"registerWitness","inputs":[{"name":"nodeUrl","type":"bytes"},{"name":"website","type":"bytes"},{"name":"nodeName","type":"bytes"}],"outputs":[],"type":"function"},
+{"name":"registerWitness","inputs":[{"name":"nodeUrl","type":"bytes"},{"name":"website","type":"bytes"},{"name":"nodeName","type":"bytes"},{"name":"locker","type":"address"},{"beneficiary":"nodeName","type":"address"}],"outputs":[],"type":"function"},
 {"name":"unregisterWitness","inputs":[],"outputs":[],"type":"function"},
 {"name":"voteWitnesses","inputs":[{"name":"candidate","type":"address[]"}],"outputs":[],"type":"function"},
 {"name":"cancelVote","inputs":[],"outputs":[],"type":"function"},
@@ -33,7 +33,9 @@ const ElectionAbiJSON = `[
 {"name":"setProxy","inputs":[{"name":"proxy","type":"address"}],"outputs":[],"type":"function"},
 {"name":"$stake","inputs":[],"outputs":[],"type":"function"},
 {"name":"unStake","inputs":[],"outputs":[],"type":"function"},
-{"name":"extractOwnBounty","inputs":[],"outputs":[],"type":"function"}
+{"name":"extractOwnBounty","inputs":[],"outputs":[],"type":"function"},
+{"name":"$bindCandidate","inputs":[{"name":"candidate","type":"address"},{"name":"beneficiary","type":"address"}],"outputs":[],"type":"function"},
+{"name":"unbindCandidate","inputs":[{"name":"candidate","type":"address"},{"name":"beneficiary","type":"address"}],"outputs":[],"type":"function"}
 ]`
 
 func GetElectionABI() (abi.ABI, error) {

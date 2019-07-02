@@ -169,6 +169,7 @@ func (bn BlockNumber) Int64() int64 {
 // Using hexutil.Big to replace big.Int for client
 // can read the value as string
 type Candidate struct {
+	// TODO 接口增加字段
 	Owner           string       `json:"owner"`           // 候选人地址
 	Name            string       `json:"name"`            // 候选人名称
 	Active          bool         `json:"active"`          // 当前是否是候选人
