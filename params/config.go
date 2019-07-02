@@ -34,7 +34,13 @@ var (
 		ChainID: big.NewInt(1),
 		Dpos: &DposConfig{
 			Period:       2,
-			WitnessesNum: 19,
+			WitnessesNum: 4,
+			WitnessesUrl: []string{
+				"/ip4/127.0.0.1/tcp/5210/ipfs/1kHcch6yuBCgC5nPPSK3Yp7Es4c4eenxAeK167pYwUvNjRo",
+				"/ip4/127.0.0.1/tcp/5211/ipfs/1kHJFKr2bzUnMr1NbeyYbYJa3RXT18cEu7cNDrHWjg8XYKB",
+				"/ip4/127.0.0.1/tcp/5212/ipfs/1kHfop9dnUHHmtBXVkLB5UauAmACtrsEX5H5t6oCRpdL198",
+				"/ip4/127.0.0.1/tcp/5213/ipfs/1kHHWuQNUVV2wgE8SqzQjWhiFQcfpkP5tRVTdJXAPWVj4nR",
+			},
 		},
 	}
 
