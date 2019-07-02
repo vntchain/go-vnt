@@ -203,6 +203,7 @@ func (s *Swarm) dialPeer(ctx context.Context, p peer.ID) (*Conn, error) {
 	}
 
 	conn, err := s.dsync.DialLock(ctx, p)
+	fmt.Printf("#### %s, DialLock conn %v, err %v \n", p, conn, err)
 	if err != nil {
 		return nil, err
 	}
