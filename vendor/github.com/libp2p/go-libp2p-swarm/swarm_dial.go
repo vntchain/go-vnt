@@ -231,9 +231,9 @@ func (s *Swarm) doDial(ctx context.Context, p peer.ID) (*Conn, error) {
 	// if it succeeds, dial will add the conn to the swarm itself.
 	defer log.EventBegin(ctx, "swarmDialAttemptStart", logdial).Done()
 
-	fmt.Printf("#### %s %s start to dial...", p, time.Now().String())
+	fmt.Printf("#### %s %s start to dial... \n", p, time.Now().String())
 	conn, err := s.dial(ctx, p)
-	fmt.Printf("#### %s %s finish to dial!", p, time.Now().String())
+	fmt.Printf("#### %s %s finish to dial! \n", p, time.Now().String())
 	if err != nil {
 		conn = s.bestConnToPeer(p)
 		if conn != nil {
@@ -356,6 +356,7 @@ func (s *Swarm) dialAddrs(ctx context.Context, p peer.ID, remoteAddrs <-chan ma.
 				continue
 			}
 
+			fmt.Printf("#### %s will dial addr %s", p, addr)
 			s.limitedDial(ctx, p, addr, respch)
 			active++
 		case <-ctx.Done():
@@ -405,6 +406,7 @@ func (s *Swarm) dialAddr(ctx context.Context, p peer.ID, addr ma.Multiaddr) (tra
 	}
 
 	connC, err := transport.Dial(ctx, addr, p)
+	fmt.Printf("#### %s transport.Dial, addr %s, conn: %v, err: %v \n", p, addr, connC, err)
 	if err != nil {
 		return nil, fmt.Errorf("%s --> %s dial attempt failed: %s", s.local, p, err)
 	}

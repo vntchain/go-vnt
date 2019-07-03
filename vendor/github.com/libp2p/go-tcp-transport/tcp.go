@@ -12,6 +12,7 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr-net"
 	mafmt "github.com/whyrusleeping/mafmt"
+	"fmt"
 )
 
 // DefaultConnectTimeout is the (default) maximum amount of time the TCP
@@ -70,6 +71,7 @@ func (t *TcpTransport) maDial(ctx context.Context, raddr ma.Multiaddr) (manet.Co
 // Dial dials the peer at the remote address.
 func (t *TcpTransport) Dial(ctx context.Context, raddr ma.Multiaddr, p peer.ID) (tpt.Conn, error) {
 	conn, err := t.maDial(ctx, raddr)
+	fmt.Printf("#### %s TcpTransport.Dial, raddr: %s, conn: %v, err: %v", p, raddr, conn, err)
 	if err != nil {
 		return nil, err
 	}
