@@ -40,11 +40,11 @@ var (
 	// emptyState is the known hash of an empty state trie entry.
 	emptyState = crypto.Keccak256Hash(nil)
 
-	// emptyCode is the known hash of the empty EVM bytecode.
+	// emptyCode is the known hash of the empty VM bytecode.
 	emptyCode = crypto.Keccak256Hash(nil)
 )
 
-// StateDBs within the ethereum protocol are used to store anything
+// StateDBs within the hubble protocol are used to store anything
 // within the merkle trie. StateDBs take care of caching and storing
 // nested states. It's the general query interface to retrieve:
 // * Contracts
@@ -415,13 +415,13 @@ func (self *StateDB) createObject(addr common.Address) (newobj, prev *stateObjec
 // CreateAccount explicitly creates a state object. If a state object with the address
 // already exists the balance is carried over to the new account.
 //
-// CreateAccount is called during the EVM CREATE operation. The situation might arise that
+// CreateAccount is called during the VM CREATE operation. The situation might arise that
 // a contract does the following:
 //
 //   1. sends funds to sha(account ++ (nonce + 1))
 //   2. tx_create(sha(account ++ nonce)) (note that this gets the address of 1)
 //
-// Carrying over the balance ensures that Ether doesn't disappear.
+// Carrying over the balance ensures that vnt doesn't disappear.
 func (self *StateDB) CreateAccount(addr common.Address) {
 	new, prev := self.createObject(addr)
 	if prev != nil {
@@ -564,7 +564,7 @@ func (s *StateDB) IntermediateRoot(deleteEmptyObjects bool) common.Hash {
 }
 
 // Prepare sets the current transaction hash and index and block hash which is
-// used when the EVM emits new state logs.
+// used when the VM emits new state logs.
 func (self *StateDB) Prepare(thash, bhash common.Hash, ti int) {
 	self.thash = thash
 	self.bhash = bhash

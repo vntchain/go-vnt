@@ -24,7 +24,7 @@ import (
 	"github.com/vntchain/go-vnt/vntdb"
 )
 
-// Implement our EthTest Manager
+// Implement our VntTest Manager
 type TestManager struct {
 	// stateManager *StateManager
 	eventMux *event.TypeMux

@@ -292,7 +292,7 @@ func testReorg(t *testing.T, first, second []int, td int64) {
 
 	// Insert an easy and a difficult chain afterwards
 	bc.InsertHeaderChain(makeHeaderChainWithDiff(bc.genesisBlock, first, 11), 1)
-	bc.InsertHeaderChain(makeHeaderChainWithDiff(bc.genesisBlock, second, 22), 1)
+	bc.InsertHeaderChain(makeHeaderChainWithDiff(bc.genesisBlock, second, 11), 1)
 
 	// Check that the chain is valid number and link wise
 	prev := bc.CurrentHeader()

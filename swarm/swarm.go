@@ -30,7 +30,7 @@ import (
 	"github.com/vntchain/go-vnt/accounts/abi/bind"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/contracts/chequebook"
-	"github.com/vntchain/go-vnt/contracts/ens"
+	"github.com/vntchain/go-vnt/contracts/vns"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/metrics"
@@ -148,11 +148,11 @@ func NewSwarm(ctx *node.ServiceContext, backend chequebook.Backend, config *api.
 	self.dpa = storage.NewDPA(dpaChunkStore, self.config.ChunkerParams)
 	log.Debug(fmt.Sprintf("-> Content Store API"))
 
-	if len(config.EnsAPIs) > 0 {
+	if len(config.VnsAPIs) > 0 {
 		opts := []api.MultiResolverOption{}
-		for _, c := range config.EnsAPIs {
-			tld, endpoint, addr := parseEnsAPIAddress(c)
-			r, err := newEnsClient(endpoint, addr, config)
+		for _, c := range config.VnsAPIs {
+			tld, endpoint, addr := parseVnsAPIAddress(c)
+			r, err := newVnsClient(endpoint, addr, config)
 			if err != nil {
 				return nil, err
 			}
@@ -171,10 +171,10 @@ func NewSwarm(ctx *node.ServiceContext, backend chequebook.Backend, config *api.
 	return self, nil
 }
 
-// parseEnsAPIAddress parses string according to format
-// [tld:][contract-addr@]url and returns ENSClientConfig structure
+// parseVnsAPIAddress parses string according to format
+// [tld:][contract-addr@]url and returns VNSClientConfig structure
 // with endpoint, contract address and TLD.
-func parseEnsAPIAddress(s string) (tld, endpoint string, addr common.Address) {
+func parseVnsAPIAddress(s string) (tld, endpoint string, addr common.Address) {
 	isAllLetterString := func(s string) bool {
 		for _, r := range s {
 			if !unicode.IsLetter(r) {
@@ -197,41 +197,41 @@ func parseEnsAPIAddress(s string) (tld, endpoint string, addr common.Address) {
 	return
 }
 
-// newEnsClient creates a new ENS client for that is a consumer of
-// a ENS API on a specific endpoint. It is used as a helper function
+// newVnsClient creates a new VNS client for that is a consumer of
+// a VNS API on a specific endpoint. It is used as a helper function
 // for creating multiple resolvers in NewSwarm function.
-func newEnsClient(endpoint string, addr common.Address, config *api.Config) (*ens.ENS, error) {
-	log.Info("connecting to ENS API", "url", endpoint)
+func newVnsClient(endpoint string, addr common.Address, config *api.Config) (*vns.VNS, error) {
+	log.Info("connecting to VNS API", "url", endpoint)
 	client, err := rpc.Dial(endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error connecting to ENS API %s: %s", endpoint, err)
+		return nil, fmt.Errorf("error connecting to VNS API %s: %s", endpoint, err)
 	}
-	ensClient := vntclient.NewClient(client)
+	vnsClient := vntclient.NewClient(client)
 
-	ensRoot := config.EnsRoot
+	vnsRoot := config.VnsRoot
 	if addr != (common.Address{}) {
-		ensRoot = addr
+		vnsRoot = addr
 	} else {
-		a, err := detectEnsAddr(client)
+		a, err := detectVnsAddr(client)
 		if err == nil {
-			ensRoot = a
+			vnsRoot = a
 		} else {
-			log.Warn(fmt.Sprintf("could not determine ENS contract address, using default %s", ensRoot), "err", err)
+			log.Warn(fmt.Sprintf("could not determine VNS contract address, using default %s", vnsRoot), "err", err)
 		}
 	}
-	transactOpts := bind.NewKeyedTransactor(config.Swap.PrivateKey())
-	dns, err := ens.NewENS(big.NewInt(int64(config.NetworkId)), transactOpts, ensRoot, ensClient)
+	transactOpts := bind.NewKeyedTransactor(config.Swap.PrivateKey(), big.NewInt(int64(config.NetworkId)))
+	dns, err := vns.NewVNS(transactOpts, vnsRoot, vnsClient)
 	if err != nil {
 		return nil, err
 	}
-	log.Debug(fmt.Sprintf("-> Swarm Domain Name Registrar %v @ address %v", endpoint, ensRoot.Hex()))
+	log.Debug(fmt.Sprintf("-> Swarm Domain Name Registrar %v @ address %v", endpoint, vnsRoot.Hex()))
 	return dns, err
 }
 
-// detectEnsAddr determines the ENS contract address by getting both the
+// detectVnsAddr determines the VNS contract address by getting both the
 // version and genesis hash using the client and matching them to either
 // mainnet or testnet addresses
-func detectEnsAddr(client *rpc.Client) (common.Address, error) {
+func detectVnsAddr(client *rpc.Client) (common.Address, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -248,12 +248,12 @@ func detectEnsAddr(client *rpc.Client) (common.Address, error) {
 	switch {
 
 	case version == "1" && block.Hash() == params.MainnetGenesisHash:
-		log.Info("using Mainnet ENS contract address", "addr", ens.MainNetAddress)
-		return ens.MainNetAddress, nil
+		log.Info("using Mainnet VNS contract address", "addr", vns.MainNetAddress)
+		return vns.MainNetAddress, nil
 
 	//case version == "3" && block.Hash() == params.TestnetGenesisHash:
-	//	log.Info("using Testnet ENS contract address", "addr", ens.TestNetAddress)
-	//	return ens.TestNetAddress, nil
+	//	log.Info("using Testnet VNS contract address", "addr", vns.TestNetAddress)
+	//	return vns.TestNetAddress, nil
 
 	default:
 		return common.Address{}, fmt.Errorf("unknown version and genesis hash: %s %s", version, block.Hash())

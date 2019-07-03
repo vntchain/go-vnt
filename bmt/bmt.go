@@ -37,7 +37,7 @@ It is used as the chunk hash function in swarm which in turn is the basis for th
 The BMT is optimal for providing compact inclusion proofs, i.e. prove that a
 segment is a substring of a chunk starting at a particular offset
 The size of the underlying segments is fixed at 32 bytes (called the resolution
-of the BMT hash), the EVM word size to optimize for on-chain BMT verification
+of the BMT hash), the VM word size to optimize for on-chain BMT verification
 as well as the hash size optimal for inclusion proofs in the merkle tree of the swarm hash.
 
 Two implementations are provided:

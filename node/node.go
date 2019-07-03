@@ -422,6 +422,9 @@ func (n *Node) Stop() error {
 	failure := &StopError{
 		Services: make(map[reflect.Type]error),
 	}
+	// Declares server closing to avoid handling new message
+	n.server.Close()
+
 	for kind, service := range n.services {
 		if err := service.Stop(); err != nil {
 			failure.Services[kind] = err

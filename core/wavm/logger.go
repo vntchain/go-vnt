@@ -15,6 +15,8 @@ type WasmLogger struct {
 	cfg       vm.LogConfig
 	logs      []StructLog
 	debugLogs []DebugLog
+	output    []byte
+	err       error
 }
 
 type StructLog struct {
@@ -64,7 +66,7 @@ func NewWasmLogger(cfg *vm.LogConfig) *WasmLogger {
 func (l *WasmLogger) CaptureStart(from common.Address, to common.Address, call bool, input []byte, gas uint64, value *big.Int) error {
 	return nil
 }
-func (l *WasmLogger) CaptureState(env vm.VM, pc uint64, op vm.OPCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract inter.Contract, depth int, err error) error {
+func (l *WasmLogger) CaptureState(env vm.VM, pc uint64, op vm.OPCode, gas, cost uint64, contract inter.Contract, depth int, err error) error {
 	// check if already accumulated the specified number of logs
 	if l.cfg.Limit != 0 && l.cfg.Limit <= len(l.logs) {
 		return vm.ErrTraceLimitReached
@@ -81,12 +83,18 @@ func (l *WasmLogger) CaptureLog(env vm.VM, msg string) error {
 	l.debugLogs = append(l.debugLogs, log)
 	return nil
 }
-func (l *WasmLogger) CaptureFault(env vm.VM, pc uint64, op vm.OPCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract inter.Contract, depth int, err error) error {
+func (l *WasmLogger) CaptureFault(env vm.VM, pc uint64, op vm.OPCode, gas, cost uint64, contract inter.Contract, depth int, err error) error {
 	return nil
 }
 func (l *WasmLogger) CaptureEnd(output []byte, gasUsed uint64, t time.Duration, err error) error {
 	return nil
 }
+
+// Error returns the VM error captured by the trace.
+func (l *WasmLogger) Error() error { return l.err }
+
+// Output returns the VM return value captured by the trace.
+func (l *WasmLogger) Output() []byte { return l.output }
 
 // WasmLogger returns the captured log entries.
 func (l *WasmLogger) StructLogs() []StructLog { return l.logs }

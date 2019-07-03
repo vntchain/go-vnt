@@ -88,7 +88,7 @@ type Engine interface {
 	Finalize(chain ChainReader, header *types.Header, state *state.StateDB, txs []*types.Transaction,
 		receipts []*types.Receipt) (*types.Block, error)
 
-	// Seal generates a new block for the given input block with the local miner's
+	// Seal generates a new block for the given input block with the local producer's
 	// seal place on top.
 	Seal(chain ChainReader, block *types.Block, stop <-chan struct{}) (*types.Block, error)
 

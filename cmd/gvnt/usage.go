@@ -62,7 +62,7 @@ type flagGroup struct {
 
 // AppHelpFlagGroups is the application flags, grouped by functionality.
 var AppHelpFlagGroups = []flagGroup{
-	{ 
+	{
 		Name: "TEMP",
 		Flags: []cli.Flag{
 			utils.FindNodeFlag,
@@ -78,7 +78,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.NetworkIdFlag,
 			utils.SyncModeFlag,
 			utils.GCModeFlag,
-			utils.EthStatsURLFlag,
+			utils.VntStatsURLFlag,
 			utils.IdentityFlag,
 			utils.LightServFlag,
 			utils.LightPeersFlag,

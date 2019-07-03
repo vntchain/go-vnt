@@ -31,8 +31,8 @@ func (w *wizard) deployNode(boot bool) {
 		log.Error("No genesis block configured")
 		return
 	}
-	if w.conf.ethstats == "" {
-		log.Error("No ethstats server configured")
+	if w.conf.vntstats == "" {
+		log.Error("No vntstats server configured")
 		return
 	}
 	// Select the server to interact with
@@ -82,14 +82,14 @@ func (w *wizard) deployNode(boot bool) {
 
 	// Set a proper name to report on the stats page
 	fmt.Println()
-	if infos.ethstats == "" {
+	if infos.vntstats == "" {
 		fmt.Printf("What should the node be called on the stats page?\n")
-		infos.ethstats = w.readString() + ":" + w.conf.ethstats
+		infos.vntstats = w.readString() + ":" + w.conf.vntstats
 	} else {
-		fmt.Printf("What should the node be called on the stats page? (default = %s)\n", infos.ethstats)
-		infos.ethstats = w.readDefaultString(infos.ethstats) + ":" + w.conf.ethstats
+		fmt.Printf("What should the node be called on the stats page? (default = %s)\n", infos.vntstats)
+		infos.vntstats = w.readDefaultString(infos.vntstats) + ":" + w.conf.vntstats
 	}
-	// If the node is a miner/signer, load up needed credentials
+	// If the node is a producer/signer, load up needed credentials
 	if !boot {
 		// Establish the gas dynamics to be enforced by the signer
 		fmt.Println()

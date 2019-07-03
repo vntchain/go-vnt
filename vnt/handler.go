@@ -52,10 +52,6 @@ const (
 	txChanSize = 4096
 )
 
-var (
-	daoChallengeTimeout = 15 * time.Second // Time allowance for a node to reply to the DAO handshake challenge
-)
-
 // errIncompatibleConfig is returned if the requested protocols and configs are
 // not compatible (low protocol version restrictions and high requirements).
 var errIncompatibleConfig = errors.New("incompatible configuration")
@@ -82,12 +78,12 @@ type ProtocolManager struct {
 
 	SubProtocols []vntp2p.Protocol
 
-	eventMux      *event.TypeMux
-	txsCh         chan core.NewTxsEvent
-	txsSub        event.Subscription
-	minedBlockSub *event.TypeMuxSubscription
-	bftMsgSub     *event.TypeMuxSubscription
-	bftPeerSub    *event.TypeMuxSubscription
+	eventMux         *event.TypeMux
+	txsCh            chan core.NewTxsEvent
+	txsSub           event.Subscription
+	producedBlockSub *event.TypeMuxSubscription
+	bftMsgSub        *event.TypeMuxSubscription
+	bftPeerSub       *event.TypeMuxSubscription
 
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
@@ -247,11 +243,11 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 	pm.txsSub = pm.txpool.SubscribeNewTxsEvent(pm.txsCh)
 	go pm.txBroadcastLoop()
 
-	// broadcast mined blocks
-	pm.minedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
+	// broadcast produced blocks
+	pm.producedBlockSub = pm.eventMux.Subscribe(core.NewProducedBlockEvent{})
 	pm.bftMsgSub = pm.eventMux.Subscribe(core.SendBftMsgEvent{})
 	pm.bftPeerSub = pm.eventMux.Subscribe(core.BftPeerChangeEvent{})
-	go pm.minedBroadcastLoop()
+	go pm.producedBroadcastLoop()
 	go pm.bftBroadcastLoop()
 
 	go pm.resetBftPeerLoop()
@@ -265,8 +261,8 @@ func (pm *ProtocolManager) Start(maxPeers int) {
 func (pm *ProtocolManager) Stop() {
 	log.Info("Stopping VNT protocol")
 
-	pm.txsSub.Unsubscribe()        // quits txBroadcastLoop
-	pm.minedBlockSub.Unsubscribe() // quits blockBroadcastLoop
+	pm.txsSub.Unsubscribe()           // quits txBroadcastLoop
+	pm.producedBlockSub.Unsubscribe() // quits blockBroadcastLoop
 	pm.bftMsgSub.Unsubscribe()
 	pm.bftPeerSub.Unsubscribe()
 
@@ -520,7 +516,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		err := pm.downloader.DeliverBodies(p.id, transactions)
 		if err != nil {
-			log.Debug("Failed to deliver bodies", "err", err)
+			p.Log().Debug("Failed to deliver bodies", "err", err)
 		}
 
 	case p.version >= vnt63 && msg.Body.Type == GetNodeDataMsg:
@@ -773,13 +769,13 @@ func (pm *ProtocolManager) BroadcastBftMsg(bftMsg types.BftMsg) {
 	log.Trace("BroadcastBftMsg exit")
 }
 
-// Mined broadcast loop
-func (pm *ProtocolManager) minedBroadcastLoop() {
+// producedBroadcastLoop
+func (pm *ProtocolManager) producedBroadcastLoop() {
 	// automatically stops if unsubscribe
-	for obj := range pm.minedBlockSub.Chan() {
+	for obj := range pm.producedBlockSub.Chan() {
 		switch ev := obj.Data.(type) {
-		case core.NewMinedBlockEvent:
-			log.Debug("PM receive NewMinedBlockEvent")
+		case core.NewProducedBlockEvent:
+			log.Debug("PM receive NewProducedBlockEvent")
 			pm.BroadcastBlock(ev.Block, false) // Only announce all the peer
 		}
 	}
@@ -842,29 +838,9 @@ func (pm *ProtocolManager) NodeInfo() *NodeInfo {
 
 func (pm *ProtocolManager) resetBftPeerLoop() {
 	log.Debug("resetBftPeerLoop start")
+	defer log.Debug("resetBftPeerLoop exit")
 
-	var (
-		urls []string
-		ok   bool
-	)
-
-	ticker := time.NewTicker(time.Minute)
-	exit := false
-	for exit == false {
-		select {
-		case urls, ok = <-pm.urlsCh:
-			if !ok {
-				exit = true
-			} else {
-				log.Debug("resetBftPeerLoop, new urls")
-				pm.resetBftPeer(urls)
-			}
-
-		case <-ticker.C:
-			// log.Debug("resetBftPeerLoop, time to reset bft peer")
-			// pm.resetBftPeer(urls)
-		}
+	for urls := range pm.urlsCh {
+		pm.resetBftPeer(urls)
 	}
-
-	log.Debug("resetBftPeerLoop exit")
 }

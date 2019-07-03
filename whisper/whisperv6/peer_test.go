@@ -27,11 +27,11 @@ import (
 	"testing"
 	"time"
 
+	libp2p "github.com/libp2p/go-libp2p"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/common/hexutil"
 	"github.com/vntchain/go-vnt/crypto"
 	p2p "github.com/vntchain/go-vnt/vntp2p"
-	libp2p "github.com/libp2p/go-libp2p"
 )
 
 var keys = []string{

@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 
 	"github.com/vntchain/go-vnt/common"
-	"github.com/vntchain/go-vnt/contracts/ens"
+	"github.com/vntchain/go-vnt/contracts/vns"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/node"
@@ -47,8 +47,8 @@ type Config struct {
 	Swap *swap.SwapParams
 	*network.SyncParams
 	Contract    common.Address
-	EnsRoot     common.Address
-	EnsAPIs     []string
+	VnsRoot     common.Address
+	VnsAPIs     []string
 	Path        string
 	ListenAddr  string
 	Port        string
@@ -75,8 +75,8 @@ func NewDefaultConfig() (self *Config) {
 		ListenAddr:    DefaultHTTPListenAddr,
 		Port:          DefaultHTTPPort,
 		Path:          node.DefaultDataDir(),
-		EnsAPIs:       nil,
-		EnsRoot:       ens.TestNetAddress,
+		VnsAPIs:       nil,
+		VnsRoot:       vns.TestNetAddress,
 		NetworkId:     network.NetworkId,
 		SwapEnabled:   false,
 		SyncEnabled:   true,

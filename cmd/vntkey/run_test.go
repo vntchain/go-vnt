@@ -25,20 +25,20 @@ import (
 	"github.com/vntchain/go-vnt/internal/cmdtest"
 )
 
-type testEthkey struct {
+type testVntkey struct {
 	*cmdtest.TestCmd
 }
 
 // spawns vntkey with the given command line args.
-func runEthkey(t *testing.T, args ...string) *testEthkey {
-	tt := new(testEthkey)
+func runVntkey(t *testing.T, args ...string) *testVntkey {
+	tt := new(testVntkey)
 	tt.TestCmd = cmdtest.NewTestCmd(t, tt)
 	tt.Run("vntkey-test", args...)
 	return tt
 }
 
 func TestMain(m *testing.M) {
-	// Run the app if we've been exec'd as "vntkey-test" in runEthkey.
+	// Run the app if we've been exec'd as "vntkey-test" in runVntkey.
 	reexec.Register("vntkey-test", func() {
 		if err := app.Run(os.Args); err != nil {
 			fmt.Fprintln(os.Stderr, err)

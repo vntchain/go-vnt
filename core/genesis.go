@@ -315,7 +315,7 @@ func decodePrealloc(data string) GenesisAlloc {
 	return ga
 }
 
-// DeveloperGenesisBlock returns the 'geth --dev' genesis block. Note, this must
+// DeveloperGenesisBlock returns the 'gvnt --dev' genesis block. Note, this must
 // be seeded with the
 // for console CI fix
 func DeveloperGenesisBlock(period uint64, faucet common.Address) *Genesis {
@@ -338,7 +338,7 @@ func DeveloperGenesisBlock(period uint64, faucet common.Address) *Genesis {
 			common.BytesToAddress([]byte{6}): {Balance: big.NewInt(1)}, // ECAdd
 			common.BytesToAddress([]byte{7}): {Balance: big.NewInt(1)}, // ECScalarMul
 			common.BytesToAddress([]byte{8}): {Balance: big.NewInt(1)}, // ECPairing
-			faucet: {Balance: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))},
+			faucet:                           {Balance: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))},
 		},
 	}
 }

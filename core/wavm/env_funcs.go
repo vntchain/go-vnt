@@ -32,7 +32,7 @@ import (
 	"github.com/vntchain/go-vnt/common"
 	mat "github.com/vntchain/go-vnt/common/math"
 	"github.com/vntchain/go-vnt/core/types"
-	errormsg "github.com/vntchain/go-vnt/core/wavm/errors"
+	errormsg "github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/wavm/storage"
 	"github.com/vntchain/go-vnt/core/wavm/utils"
 	"github.com/vntchain/go-vnt/crypto"
@@ -250,6 +250,40 @@ func (ef *EnvFunctions) SHA3(proc *exec.WavmProcess, dataIdx uint64) uint64 {
 	ef.ctx.GasCounter.GasSHA3(uint64(len(data)))
 	hash := []byte(crypto.Keccak256Hash(data).Hex())
 	return uint64(proc.SetBytes(hash))
+}
+
+//Ecrecover
+func (ef *EnvFunctions) Ecrecover(proc *exec.WavmProcess, hashptr uint64, sigv uint64, sigr uint64, sigs uint64) uint64 {
+	ef.ctx.GasCounter.GasEcrecover()
+	hashBytes := proc.ReadAt(hashptr)
+	hash := common.HexToHash(string(hashBytes))
+
+	r := new(big.Int).SetBytes(common.FromHex(string(proc.ReadAt(sigr))))
+	s := new(big.Int).SetBytes(common.FromHex(string(proc.ReadAt(sigs))))
+	v := new(big.Int).SetBytes(common.FromHex(string(proc.ReadAt(sigv))))
+	v = v.Sub(v, new(big.Int).SetUint64(27))
+	if v.Cmp(new(big.Int).SetUint64(0)) != 0 && v.Cmp(new(big.Int).SetUint64(1)) != 0 {
+		return ef.returnAddress(proc, []byte(""))
+	}
+	// tighter sig s values input homestead only apply to tx sigs
+	sigV := byte(1)
+	if len(v.Bytes()) == 0 {
+		sigV = byte(0)
+	}
+
+	if !crypto.ValidateSignatureValues(sigV, r, s, false) {
+		return ef.returnAddress(proc, []byte(""))
+	}
+	// v needs to be at the end for libsecp256k1
+	pubKey, err := crypto.Ecrecover(hash.Bytes(), append(append(r.Bytes(), s.Bytes()...), sigV))
+	// make sure the public key is a valid one
+	if err != nil {
+		return ef.returnAddress(proc, []byte(""))
+	}
+
+	// // the first byte of pubkey is bitcoin heritage
+	addr := common.LeftPadBytes(crypto.Keccak256(pubKey[1:])[12:], 32)
+	return ef.returnAddress(proc, addr)
 }
 
 //GetContractAddress get contract address
@@ -1136,9 +1170,58 @@ func (ef *EnvFunctions) U256Cmp(proc *exec.WavmProcess, x, y uint64) uint64 {
 	bigx := readU256FromMemory(proc, x)
 	bigy := readU256FromMemory(proc, y)
 	res := bigx.Cmp(bigy)
-	// ef.ctx.GasCounter.GasPow(e)
 	ef.ctx.GasCounter.GasFastestStep()
 	return uint64(res)
+}
+
+func (ef *EnvFunctions) U256Shl(proc *exec.WavmProcess, value, shift uint64) uint64 {
+	bigShift := readU256FromMemory(proc, shift)
+	bigValue := readU256FromMemory(proc, value)
+	ef.ctx.GasCounter.GasFastestStep()
+	if bigShift.Cmp(common.Big256) >= 0 {
+		res := new(big.Int).SetUint64(0)
+		return ef.returnU256(proc, res)
+	}
+	n := uint(bigShift.Uint64())
+	res := math.U256(bigValue.Lsh(bigValue, n))
+	return ef.returnU256(proc, res)
+}
+
+func (ef *EnvFunctions) U256Shr(proc *exec.WavmProcess, value, shift uint64) uint64 {
+	bigShift := readU256FromMemory(proc, shift)
+	bigValue := readU256FromMemory(proc, value)
+	ef.ctx.GasCounter.GasFastestStep()
+	if bigShift.Cmp(common.Big256) >= 0 {
+		res := new(big.Int).SetUint64(0)
+		return ef.returnU256(proc, res)
+	}
+	n := uint(bigShift.Uint64())
+	res := math.U256(bigValue.Rsh(bigValue, n))
+	return ef.returnU256(proc, res)
+}
+
+func (ef *EnvFunctions) U256And(proc *exec.WavmProcess, x, y uint64) uint64 {
+	bigx := readU256FromMemory(proc, x)
+	bigy := readU256FromMemory(proc, y)
+	res := bigx.And(bigx, bigy)
+	ef.ctx.GasCounter.GasFastestStep()
+	return ef.returnU256(proc, res)
+}
+
+func (ef *EnvFunctions) U256Or(proc *exec.WavmProcess, x, y uint64) uint64 {
+	bigx := readU256FromMemory(proc, x)
+	bigy := readU256FromMemory(proc, y)
+	res := bigx.Or(bigx, bigy)
+	ef.ctx.GasCounter.GasFastestStep()
+	return ef.returnU256(proc, res)
+}
+
+func (ef *EnvFunctions) U256Xor(proc *exec.WavmProcess, x, y uint64) uint64 {
+	bigx := readU256FromMemory(proc, x)
+	bigy := readU256FromMemory(proc, y)
+	res := bigx.Xor(bigx, bigy)
+	ef.ctx.GasCounter.GasFastestStep()
+	return ef.returnU256(proc, res)
 }
 
 func (ef *EnvFunctions) Pow(proc *exec.WavmProcess, base, exponent uint64) uint64 {
@@ -1174,7 +1257,7 @@ func (ef *EnvFunctions) returnPointer(proc *exec.WavmProcess, input []byte) uint
 func (ef *EnvFunctions) returnAddress(proc *exec.WavmProcess, input []byte) uint64 {
 	ctx := ef.ctx
 	ctx.GasCounter.GasReturnAddress()
-	return uint64(proc.SetBytes(input))
+	return uint64(proc.SetBytes(common.BytesToAddress(input).Bytes()))
 }
 
 func (ef *EnvFunctions) returnU256(proc *exec.WavmProcess, bigint *big.Int) uint64 {
@@ -1191,7 +1274,9 @@ func (ef *EnvFunctions) returnHash(proc *exec.WavmProcess, hash []byte) uint64 {
 
 //Sender for qlang
 func (ef *EnvFunctions) Sender(proc *exec.WavmProcess, ptr uint64) {
-	sender := ef.ctx.Contract.Address().Bytes()
+	ctx := ef.ctx
+	ctx.GasCounter.GasGetSender()
+	sender := ctx.Contract.CallerAddress.Bytes()
 	proc.WriteAt(sender, int64(ptr))
 }
 
@@ -1207,6 +1292,7 @@ func (ef *EnvFunctions) Load(proc *exec.WavmProcess, keyptr uint64, dataptr uint
 		loc0 := new(big.Int).Add(keyHash.Big(), new(big.Int).SetInt64(int64(i)))
 		val0 := statedb.GetState(contractAddr, common.BigToHash(loc0)).Big().Bytes()
 		stateVal = append(stateVal, val0...)
+		ef.ctx.GasCounter.GasLoad()
 	}
 	proc.WriteAt(stateVal, int64(dataptr))
 	return uint64(len(stateVal))
@@ -1219,11 +1305,20 @@ func (ef *EnvFunctions) Store(proc *exec.WavmProcess, keyptr uint64, dataptr uin
 	valueData := ef.getQString(proc, dataptr)
 	statedb := ef.ctx.StateDB
 	contractAddr := ef.ctx.Contract.Address()
+	beforeN := statedb.GetState(contractAddr, keyHash).Big().Int64()
 	n, s := utils.Split(valueData)
+	ef.ctx.GasCounter.GasStore(statedb, contractAddr, keyHash, common.BigToHash(new(big.Int).SetInt64(int64(n))))
 	statedb.SetState(contractAddr, keyHash, common.BigToHash(new(big.Int).SetInt64(int64(n))))
 	for i := 1; i <= n; i++ {
 		loc0 := new(big.Int).Add(keyHash.Big(), new(big.Int).SetInt64(int64(i)))
+		ef.ctx.GasCounter.GasStore(statedb, contractAddr, common.BigToHash(loc0), common.BytesToHash(s[i-1]))
 		statedb.SetState(contractAddr, common.BigToHash(loc0), common.BytesToHash(s[i-1]))
+	}
+	for i := n + 1; i <= int(beforeN); i++ {
+		loc0 := new(big.Int).Add(keyHash.Big(), new(big.Int).SetInt64(int64(i)))
+		empty := common.Hash{}
+		ef.ctx.GasCounter.GasStore(statedb, contractAddr, common.BigToHash(loc0), empty)
+		statedb.SetState(contractAddr, common.BigToHash(loc0), empty)
 	}
 }
 

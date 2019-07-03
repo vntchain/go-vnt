@@ -79,6 +79,7 @@ func (opts *TransactOpts) GetNonce() int64      { return opts.opts.Nonce.Int64()
 func (opts *TransactOpts) GetValue() *BigInt    { return &BigInt{opts.opts.Value} }
 func (opts *TransactOpts) GetGasPrice() *BigInt { return &BigInt{opts.opts.GasPrice} }
 func (opts *TransactOpts) GetGasLimit() int64   { return int64(opts.opts.GasLimit) }
+func (opts *TransactOpts) GetChainID() *BigInt  { return &BigInt{opts.opts.ChainID} }
 
 // GetSigner cannot be reliably implemented without identity preservation (https://github.com/golang/go/issues/16876)
 // func (opts *TransactOpts) GetSigner() Signer { return &signer{opts.opts.Signer} }
@@ -102,6 +103,7 @@ func (opts *TransactOpts) SetValue(value *BigInt)      { opts.opts.Value = value
 func (opts *TransactOpts) SetGasPrice(price *BigInt)   { opts.opts.GasPrice = price.bigint }
 func (opts *TransactOpts) SetGasLimit(limit int64)     { opts.opts.GasLimit = uint64(limit) }
 func (opts *TransactOpts) SetContext(context *Context) { opts.opts.Context = context.context }
+func (opts *TransactOpts) SetChainID(chainID *BigInt)  { opts.opts.ChainID = chainID.bigint }
 
 // BoundContract is the base wrapper object that reflects a contract on the
 // VNT network. It contains a collection of methods that are used by the
@@ -114,13 +116,13 @@ type BoundContract struct {
 
 // DeployContract deploys a contract onto the VNT blockchain and binds the
 // deployment address with a wrapper.
-func DeployContract(opts *TransactOpts, chainID *big.Int, abiJSON string, bytecode []byte, client *VNTClient, args *Interfaces) (contract *BoundContract, _ error) {
+func DeployContract(opts *TransactOpts, abiJSON string, bytecode []byte, client *VNTClient, args *Interfaces) (contract *BoundContract, _ error) {
 	// Deploy the contract to the network
 	parsed, err := abi.JSON(strings.NewReader(abiJSON))
 	if err != nil {
 		return nil, err
 	}
-	addr, tx, bound, err := bind.DeployContract(&opts.opts, chainID, parsed, common.CopyBytes(bytecode), client.client, args.objects...)
+	addr, tx, bound, err := bind.DeployContract(&opts.opts, parsed, common.CopyBytes(bytecode), client.client, args.objects...)
 	if err != nil {
 		return nil, err
 	}
@@ -173,8 +175,8 @@ func (c *BoundContract) Call(opts *CallOpts, out *Interfaces, method string, arg
 }
 
 // Transact invokes the (paid) contract method with params as input values.
-func (c *BoundContract) Transact(opts *TransactOpts, chainID *big.Int, method string, args *Interfaces) (tx *Transaction, _ error) {
-	rawTx, err := c.contract.Transact(&opts.opts, chainID, method, args.objects...)
+func (c *BoundContract) Transact(opts *TransactOpts, method string, args *Interfaces) (tx *Transaction, _ error) {
+	rawTx, err := c.contract.Transact(&opts.opts, method, args.objects...)
 	if err != nil {
 		return nil, err
 	}
@@ -183,8 +185,8 @@ func (c *BoundContract) Transact(opts *TransactOpts, chainID *big.Int, method st
 
 // Transfer initiates a plain transaction to move funds to the contract, calling
 // its default method if one is available.
-func (c *BoundContract) Transfer(opts *TransactOpts, chainID *big.Int) (tx *Transaction, _ error) {
-	rawTx, err := c.contract.Transfer(&opts.opts, chainID)
+func (c *BoundContract) Transfer(opts *TransactOpts) (tx *Transaction, _ error) {
+	rawTx, err := c.contract.Transfer(&opts.opts)
 	if err != nil {
 		return nil, err
 	}

@@ -59,21 +59,10 @@ var (
 	unstakePeriod   = big.NewInt(OneDay)
 	baseBounty      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1000))
 	restTotalBounty = big.NewInt(0).Mul(big.NewInt(1e18), big.NewInt(1e9))
-)
 
-const AbiJSON = `[
-{"name":"registerWitness","inputs":[{"name":"nodeUrl","type":"bytes"},{"name":"website","type":"bytes"},{"name":"nodeName","type":"bytes"}],"outputs":[],"type":"function"},
-{"name":"unregisterWitness","inputs":[],"outputs":[],"type":"function"},
-{"name":"voteWitnesses","inputs":[{"name":"candidate","type":"address[]"}],"outputs":[],"type":"function"},
-{"name":"cancelVote","inputs":[],"outputs":[],"type":"function"},
-{"name":"startProxy","inputs":[],"outputs":[],"type":"function"},
-{"name":"stopProxy","inputs":[],"outputs":[],"type":"function"},
-{"name":"cancelProxy","inputs":[],"outputs":[],"type":"function"},
-{"name":"setProxy","inputs":[{"name":"proxy","type":"address"}],"outputs":[],"type":"function"},
-{"name":"stake","inputs":[{"name":"stakeCount","type":"uint256"}],"outputs":[],"type":"function"},
-{"name":"unStake","inputs":[],"outputs":[],"type":"function"},
-{"name":"extractOwnBounty","inputs":[],"outputs":[],"type":"function"}
-]`
+	// Is main net started
+	mainActive = false
+)
 
 type Election struct{}
 
@@ -86,6 +75,7 @@ type Voter struct {
 	IsProxy        bool             // 是否是代理人
 	ProxyVoteCount *big.Int         // 收到的代理的票数
 	Proxy          common.Address   // 代理人
+	LastStakeCount *big.Int         // 投票时抵押的金额
 	LastVoteCount  *big.Int         // 票数
 	TimeStamp      *big.Int         // 时间戳
 	VoteCandidates []common.Address // 投了哪些人
@@ -116,6 +106,7 @@ func newVoter() Voter {
 		IsProxy:        false,
 		ProxyVoteCount: big.NewInt(0),
 		Proxy:          emptyAddress,
+		LastStakeCount: big.NewInt(0),
 		LastVoteCount:  big.NewInt(0),
 		TimeStamp:      big.NewInt(0),
 		VoteCandidates: nil,
@@ -190,7 +181,8 @@ func (c CandidateList) dump() {
 
 type Stake struct {
 	Owner      common.Address // 抵押人地址
-	StakeCount *big.Int       // 抵押的数量
+	StakeCount *big.Int       // 抵押的数量，单位VNT，向下取整
+	Vnt        *big.Int       // 抵押的实际代币数，单位Wei
 	TimeStamp  *big.Int       // 时间戳
 }
 
@@ -208,14 +200,17 @@ func (e *Election) RequiredGas(input []byte) uint64 {
 	return 0
 }
 
-func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
+func (e *Election) Run(ctx inter.ChainContext, input []byte, value *big.Int) ([]byte, error) {
 	nonce := ctx.GetStateDb().GetNonce(contractAddr)
 	if nonce == 0 {
-		setRestBounty(ctx.GetStateDb(), Bounty{restTotalBounty})
+		if err := setRestBounty(ctx.GetStateDb(), Bounty{restTotalBounty}); err != nil {
+			// initializing failed leads to exit
+			log.Crit("Initialize bounty failed", "error", err)
+		}
 	}
 	ctx.GetStateDb().SetNonce(contractAddr, nonce+1)
 
-	electionABI, err := abi.JSON(strings.NewReader(AbiJSON))
+	electionABI, err := abi.JSON(strings.NewReader(ElectionAbiJSON))
 	if err != nil {
 		return nil, err
 	}
@@ -274,12 +269,9 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte) ([]byte, error) {
 		if err = electionABI.UnpackInput(&proxy, "setProxy", methodArgs); err == nil {
 			err = c.setProxy(ctx.GetOrigin(), proxy)
 		}
-	case bytes.Equal(methodId, electionABI.Methods["stake"].Id()):
-		methodName = "stake"
-		var stakeCount *big.Int
-		if err = electionABI.UnpackInput(&stakeCount, "stake", methodArgs); err == nil {
-			err = c.stake(ctx.GetOrigin(), stakeCount)
-		}
+	case bytes.Equal(methodId, electionABI.Methods["$stake"].Id()):
+		methodName = "$stake"
+		err = c.stake(ctx.GetOrigin(), value)
 	case bytes.Equal(methodId, electionABI.Methods["unStake"].Id()):
 		methodName = "unStake"
 		err = c.unStake(ctx.GetOrigin())
@@ -408,14 +400,18 @@ func (ec electionContext) voteWitnesses(address common.Address, candidates []com
 	}
 
 	voter := ec.getVoter(address)
-	var voteCount *big.Int
-	var err error
+	var (
+		voteCount *big.Int
+		stake     *Stake
+		err       error
+	)
 
-	if voteCount, err = ec.prepareForVote(&voter, address); err != nil {
+	if voteCount, stake, err = ec.prepareForVote(&voter, address); err != nil {
 		return err
 	}
 	// 计算当前stake可以兑换得到的票数
 	voter.LastVoteCount = new(big.Int).Set(voteCount)
+	voter.LastStakeCount = stake.StakeCount
 
 	if voter.ProxyVoteCount != nil && voter.ProxyVoteCount.Sign() > 0 {
 		voteCount.Add(voteCount, voter.ProxyVoteCount)
@@ -442,6 +438,7 @@ func (ec electionContext) voteWitnesses(address common.Address, candidates []com
 		}
 	}
 
+	// 保存投票信息
 	return ec.setVoter(voter)
 }
 
@@ -467,6 +464,7 @@ func (ec electionContext) cancelVote(address common.Address) error {
 
 	// 将上次投票信息置空
 	voter.LastVoteCount = big.NewInt(0)
+	voter.LastStakeCount = big.NewInt(0)
 	voter.VoteCandidates = nil
 
 	return ec.setVoter(voter)
@@ -549,20 +547,23 @@ func (ec electionContext) setProxy(address common.Address, proxy common.Address)
 		return fmt.Errorf("account registered as a proxy is not allowed to use a proxy")
 	}
 
-	var voteCount *big.Int
-	var err error
+	var (
+		voteCount *big.Int
+		stake     *Stake
+		err       error
+	)
 	// 撤销上次的投票或者设置代理
-	if voteCount, err = ec.prepareForVote(&voter, address); err != nil {
+	if voteCount, stake, err = ec.prepareForVote(&voter, address); err != nil {
 		return err
 	}
 	voter.LastVoteCount = new(big.Int).Set(voteCount)
+	voter.LastStakeCount = stake.StakeCount
 
 	if voter.ProxyVoteCount != nil && voter.ProxyVoteCount.Sign() > 0 {
 		voteCount.Add(voteCount, voter.ProxyVoteCount)
 	}
 
-	var proxyVoter Voter
-	proxyVoter = ec.getVoter(proxy)
+	proxyVoter := ec.getVoter(proxy)
 	if !proxyVoter.IsProxy {
 		return fmt.Errorf("%x is not a proxy", proxy)
 	}
@@ -581,7 +582,9 @@ func (ec electionContext) setProxy(address common.Address, proxy common.Address)
 			addOp := func(count *big.Int) {
 				count.Add(count, voteCount)
 			}
-			ec.opCandidates(&proxyVoter, addOp)
+			if err := ec.opCandidates(&proxyVoter, addOp); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -601,9 +604,8 @@ func (ec electionContext) cancelProxy(address common.Address) error {
 		voteCount.Add(voteCount, voter.ProxyVoteCount)
 	}
 
-	var proxyVoter Voter
 	for {
-		proxyVoter = ec.getVoter(proxy)
+		proxyVoter := ec.getVoter(proxy)
 		// 减少其代理的票
 		proxyVoter.ProxyVoteCount.Sub(proxyVoter.ProxyVoteCount, voteCount)
 		err := ec.setVoter(proxyVoter)
@@ -617,7 +619,9 @@ func (ec electionContext) cancelProxy(address common.Address) error {
 				subOp := func(count *big.Int) {
 					count.Sub(count, voteCount)
 				}
-				ec.opCandidates(&proxyVoter, subOp)
+				if err := ec.opCandidates(&proxyVoter, subOp); err != nil {
+					return err
+				}
 			}
 			break
 		}
@@ -625,44 +629,32 @@ func (ec electionContext) cancelProxy(address common.Address) error {
 		proxy = proxyVoter.Proxy
 	}
 
+	// 清空老数据
 	voter.Proxy = emptyAddress
 	voter.LastVoteCount = big.NewInt(0)
+	voter.LastStakeCount = big.NewInt(0)
 	return ec.setVoter(voter)
 }
 
-func (ec electionContext) stake(address common.Address, stakeCount *big.Int) error {
-	if stakeCount.Sign() <= 0 {
-		log.Error("stake stakeCount <= 0", "address", address.Hex(), "stakeCount", stakeCount)
-		return fmt.Errorf("stake stakeCount less than 0")
+func (ec electionContext) stake(address common.Address, value *big.Int) error {
+	if value.Cmp(vnt2wei(1)) < 0 {
+		log.Error("stake less than 1 VNT", "address", address.Hex(), "VNT", value.String())
+		return fmt.Errorf("stake stakeCount less than 1 VNT")
 	}
-
-	// get address balance
-	balance := ec.context.GetStateDb().GetBalance(address)
-
-	// get the balance that need staking
-	balanceNeedStake := big.NewInt(0).Mul(stakeCount, big.NewInt(1e+18))
-
-	// if balance is not enough, just ignore
-	if balance.Cmp(balanceNeedStake) < 0 {
-		log.Error("stake not enough balance.", "address", address.Hex(), "balance", balance)
-		return fmt.Errorf("stake not enough balance.")
-	}
-
-	// sub balance of staker
-	ec.context.GetStateDb().SubBalance(address, balanceNeedStake)
-
-	// get stake from db
-	stake := ec.getStake(address)
 
 	// if stake already exists, just add stakeCount to origin stake
+	stake := ec.getStake(address)
 	if bytes.Equal(stake.Owner.Bytes(), address.Bytes()) {
-		// add stake of staker
-		stake.StakeCount = big.NewInt(0).Add(stake.StakeCount, stakeCount)
+		// add vnt to user
+		stake.Vnt = big.NewInt(0).Add(stake.Vnt, value)
 	} else {
 		// else set StakeCount as @StakeCount
 		stake.Owner = address
-		stake.StakeCount = stakeCount
+		stake.Vnt = value
 	}
+
+	// Set stake count
+	stake.StakeCount = big.NewInt(0).Div(stake.Vnt, big.NewInt(1e+18))
 
 	// update last stake time
 	stake.TimeStamp = ec.context.GetTime()
@@ -684,15 +676,13 @@ func (ec electionContext) unStake(address common.Address) error {
 	// if stake is not found in db, just ignore
 	if !bytes.Equal(stake.Owner.Bytes(), address.Bytes()) {
 		log.Error("unStake stake is not found in db.", "address", address.Hex())
-		return fmt.Errorf("unStake stake is not found in db.")
+		return fmt.Errorf("unStake stake is not found in db")
 	}
 
-	stakeCount := stake.StakeCount
-
 	// no stake, no need to unstake, just ignore
-	if stakeCount.Cmp(big.NewInt(0)) == 0 {
+	if stake.Vnt.Cmp(big.NewInt(0)) == 0 {
 		log.Error("unStake 0 stakeCount.", "address", address.Hex())
-		return fmt.Errorf("unStake 0 stakeCount.")
+		return fmt.Errorf("unStake 0 stakeCount")
 	}
 
 	// get the time point that can unstake
@@ -704,8 +694,10 @@ func (ec electionContext) unStake(address common.Address) error {
 		return fmt.Errorf("cannot unstake in 24 hours")
 	}
 
+	amount := stake.Vnt
 	// sub stakeCount of staker
 	stake.StakeCount = big.NewInt(0)
+	stake.Vnt = big.NewInt(0)
 
 	// save stake into db
 	err := ec.setStake(stake)
@@ -715,8 +707,16 @@ func (ec electionContext) unStake(address common.Address) error {
 	}
 
 	// add balance of staker
-	ec.context.GetStateDb().AddBalance(address, big.NewInt(0).Mul(stakeCount, big.NewInt(1e+18)))
+	return transfer(ec.context.GetStateDb(), contractAddr, address, amount)
+}
 
+func transfer(db inter.StateDB, sender, receiver common.Address, amount *big.Int) error {
+	if db.GetBalance(sender).Cmp(amount) < 0 {
+		return fmt.Errorf("sender[%v] do not have enough balance", sender.Hex())
+	}
+
+	db.AddBalance(receiver, amount)
+	db.SubBalance(sender, amount)
 	return nil
 }
 
@@ -749,12 +749,12 @@ func (ec electionContext) extractOwnBounty(addr common.Address) error {
 	return nil
 }
 
-func (ec electionContext) prepareForVote(voter *Voter, address common.Address) (*big.Int, error) {
+func (ec electionContext) prepareForVote(voter *Voter, address common.Address) (*big.Int, *Stake, error) {
 	now := ec.context.GetTime()
 	stake := ec.getStake(address)
 	// 查看当前是否有抵押，无抵押返回无权投票的错误
 	if !bytes.Equal(stake.Owner.Bytes(), address.Bytes()) || stake.StakeCount == nil || stake.StakeCount.Sign() <= 0 {
-		return nil, fmt.Errorf("you must stake before vote")
+		return nil, nil, fmt.Errorf("you must stake before vote")
 	}
 	voteCount := ec.calculateVoteCount(stake.StakeCount)
 	// 第一次投票
@@ -764,20 +764,20 @@ func (ec electionContext) prepareForVote(voter *Voter, address common.Address) (
 	} else {
 		// 如果距离上次投票时间不足24小时，拒绝投票
 		if now.Cmp(voter.TimeStamp) < 0 || now.Cmp(new(big.Int).Add(voter.TimeStamp, big.NewInt(OneDay))) < 0 {
-			return nil, fmt.Errorf("it's less than 24h after your last vote or setProxy, lastTime: %v, now: %v", voter.TimeStamp, ec.context.GetTime())
+			return nil, nil, fmt.Errorf("it's less than 24h after your last vote or setProxy, lastTime: %v, now: %v", voter.TimeStamp, ec.context.GetTime())
 		} else {
 			voter.TimeStamp = now
 		}
 		// 如果当前设置了代理，要先取消代理,或者取消之前的投票
 		if !bytes.Equal(voter.Proxy.Bytes(), emptyAddress.Bytes()) {
 			voter.Proxy = emptyAddress
-			return voteCount, ec.cancelProxy(voter.Owner)
+			return voteCount, &stake, ec.cancelProxy(voter.Owner)
 		} else {
 			// 代理的票数和自身的票数
-			return voteCount, ec.subVoteFromCandidates(voter)
+			return voteCount, &stake, ec.subVoteFromCandidates(voter)
 		}
 	}
-	return voteCount, nil
+	return voteCount, &stake, nil
 }
 
 func (ec electionContext) subVoteFromCandidates(voter *Voter) error {
@@ -868,29 +868,27 @@ func GetAllCandidates(stateDB inter.StateDB, sorted bool) CandidateList {
 
 // GetVoter returns a voter's information
 func GetVoter(stateDB inter.StateDB, addr common.Address) *Voter {
-	getFromDB := func(key common.Hash) common.Hash {
-		return stateDB.GetState(contractAddr, key)
-	}
-
-	v := getVoterFrom(addr, getFromDB)
+	v := getVoterFrom(addr, genGetFunc(stateDB))
 	return &v
 }
 
 // GetStake returns a user's information
 func GetStake(stateDB inter.StateDB, addr common.Address) *Stake {
-	getFromDB := func(key common.Hash) common.Hash {
-		return stateDB.GetState(contractAddr, key)
-	}
-
-	s := getStakeFrom(addr, getFromDB)
+	s := getStakeFrom(addr, genGetFunc(stateDB))
 	return &s
 }
 
-func AddCandidatesBounty(stateDB inter.StateDB, bonus map[common.Address]*big.Int) error {
+// AddCandidatesBounty sends votes bounty to candidates.
+func AddCandidatesBounty(stateDB inter.StateDB, bonus map[common.Address]*big.Int, allBonus *big.Int) error {
 	for addr, bu := range bonus {
 		if err := addCandidateBounty(stateDB, addr, bu); err != nil {
 			return err
 		}
+	}
+
+	// 减少剩余激励Token数量
+	if _, err := GrantBounty(stateDB, allBonus); err != nil {
+		return err
 	}
 	return nil
 }
@@ -911,9 +909,15 @@ func GrantBounty(stateDB inter.StateDB, grantAmount *big.Int) (*big.Int, error) 
 func QueryRestVNTBounty(stateDB inter.StateDB) *big.Int {
 	if !stateDB.Exist(contractAddr) {
 		stateDB.SetNonce(contractAddr, 1)
-		setRestBounty(stateDB, Bounty{restTotalBounty})
+		if err := setRestBounty(stateDB, Bounty{restTotalBounty}); err != nil {
+			log.Crit("Initialize bounty failed in query", "error", err)
+		}
 		return restTotalBounty
 	}
 	bounty := getRestBounty(stateDB)
 	return bounty.RestTotalBounty
+}
+
+func vnt2wei(vnt int) *big.Int {
+	return big.NewInt(0).Mul(big.NewInt(int64(vnt)), big.NewInt(1e18))
 }

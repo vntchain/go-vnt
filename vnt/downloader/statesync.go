@@ -22,14 +22,14 @@ import (
 	"sync"
 	"time"
 
+	libp2p "github.com/libp2p/go-libp2p-peer"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/rawdb"
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/crypto/sha3"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/trie"
-	libp2p "github.com/libp2p/go-libp2p-peer"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 // stateReq represents a batch of state fetch requests grouped together into

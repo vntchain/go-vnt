@@ -24,8 +24,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vntchain/go-vnt/common"
 	libp2p "github.com/libp2p/go-libp2p-peer"
+	"github.com/vntchain/go-vnt/common"
 	"golang.org/x/crypto/pbkdf2"
 )
 

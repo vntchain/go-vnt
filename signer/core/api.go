@@ -357,7 +357,7 @@ func (api *SignerAPI) SignTransaction(ctx context.Context, args SendTxArgs, meth
 }
 
 // Sign calculates an VNT ECDSA signature for:
-// keccack256("\x19Ethereum Signed Message:\n" + len(message) + message))
+// keccack256("\x19Hubble Signed Message:\n" + len(message) + message))
 //
 // Note, the produced signature conforms to the secp256k1 curve R, S and V values,
 // where the V value will be 27 or 28 for legacy reasons.
@@ -395,9 +395,9 @@ func (api *SignerAPI) Sign(ctx context.Context, addr common.MixedcaseAddress, da
 }
 
 // EcRecover returns the address for the Account that was used to create the signature.
-// Note, this function is compatible with eth_sign and personal_sign. As such it recovers
+// Note, this function is compatible with core_sign and personal_sign. As such it recovers
 // the address of:
-// hash = keccak256("\x19Ethereum Signed Message:\n"${message length}${message})
+// hash = keccak256("\x19Hubble Signed Message:\n"${message length}${message})
 // addr = ecrecover(hash, signature)
 //
 // Note, the signature must conform to the secp256k1 curve R, S and V values, where
@@ -424,7 +424,7 @@ func (api *SignerAPI) EcRecover(ctx context.Context, data, sig hexutil.Bytes) (c
 // safely used to calculate a signature from.
 //
 // The hash is calculated as
-//   keccak256("\x19Ethereum Signed Message:\n"${message length}${message}).
+//   keccak256("\x19Hubble Signed Message:\n"${message length}${message}).
 //
 // This gives context to the signed message and prevents signing of transactions.
 func SignHash(data []byte) ([]byte, string) {
