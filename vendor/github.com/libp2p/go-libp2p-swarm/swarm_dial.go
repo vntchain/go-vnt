@@ -203,7 +203,6 @@ func (s *Swarm) dialPeer(ctx context.Context, p peer.ID) (*Conn, error) {
 	}
 
 	conn, err := s.dsync.DialLock(ctx, p)
-	fmt.Printf("#### %s, DialLock conn %v, err %v \n", p, conn, err)
 	if err != nil {
 		return nil, err
 	}
@@ -356,7 +355,6 @@ func (s *Swarm) dialAddrs(ctx context.Context, p peer.ID, remoteAddrs <-chan ma.
 				continue
 			}
 
-			fmt.Printf("#### %s will dial addr %s", p, addr)
 			s.limitedDial(ctx, p, addr, respch)
 			active++
 		case <-ctx.Done():
@@ -406,7 +404,6 @@ func (s *Swarm) dialAddr(ctx context.Context, p peer.ID, addr ma.Multiaddr) (tra
 	}
 
 	connC, err := transport.Dial(ctx, addr, p)
-	fmt.Printf("#### %s transport.Dial, addr %s, conn: %v, err: %v \n", p, addr, connC, err)
 	if err != nil {
 		return nil, fmt.Errorf("%s --> %s dial attempt failed: %s", s.local, p, err)
 	}

@@ -71,7 +71,7 @@ func (t *TcpTransport) maDial(ctx context.Context, raddr ma.Multiaddr) (manet.Co
 // Dial dials the peer at the remote address.
 func (t *TcpTransport) Dial(ctx context.Context, raddr ma.Multiaddr, p peer.ID) (tpt.Conn, error) {
 	conn, err := t.maDial(ctx, raddr)
-	fmt.Printf("#### %s TcpTransport.Dial, raddr: %s, conn: %v, err: %v", p, raddr, conn, err)
+	fmt.Printf("#### %s %s TcpTransport.Dial, raddr: %s, conn: %v, err: %v \n", p, time.Now().String(), raddr, conn, err)
 	if err != nil {
 		return nil, err
 	}

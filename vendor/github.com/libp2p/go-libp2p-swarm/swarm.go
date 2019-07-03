@@ -293,7 +293,6 @@ func (s *Swarm) NewStream(ctx context.Context, p peer.ID) (inet.Stream, error) {
 	for {
 		c := s.bestConnToPeer(p)
 		if c == nil {
-			fmt.Printf("#### %s, swarm.go: no connection, now dial! \n", p)
 			if dials >= DialAttempts {
 				return nil, errors.New("max dial attempts exceeded")
 			}
@@ -301,7 +300,6 @@ func (s *Swarm) NewStream(ctx context.Context, p peer.ID) (inet.Stream, error) {
 
 			var err error
 			c, err = s.dialPeer(ctx, p)
-			fmt.Printf("#### %s, swarm.go: dialPeer, conn %v, err %v \n", p, c, err)
 			if err != nil {
 				return nil, err
 			}

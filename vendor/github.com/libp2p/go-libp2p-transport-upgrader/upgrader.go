@@ -13,6 +13,7 @@ import (
 	filter "github.com/libp2p/go-maddr-filter"
 	smux "github.com/libp2p/go-stream-muxer"
 	manet "github.com/multiformats/go-multiaddr-net"
+	"time"
 )
 
 // ErrNilPeer is returned when attempting to upgrade an outbound connection
@@ -66,6 +67,7 @@ func (u *Upgrader) upgrade(ctx context.Context, t transport.Transport, maconn ma
 	if u.Filters != nil && u.Filters.AddrBlocked(maconn.RemoteMultiaddr()) {
 		log.Debugf("blocked connection from %s", maconn.RemoteMultiaddr())
 		maconn.Close()
+		fmt.Printf("#### %s %s upgrade fail1", p, time.Now().String())
 		return nil, fmt.Errorf("blocked connection from %s", maconn.RemoteMultiaddr())
 	}
 
@@ -74,10 +76,13 @@ func (u *Upgrader) upgrade(ctx context.Context, t transport.Transport, maconn ma
 		pconn, err := u.Protector.Protect(conn)
 		if err != nil {
 			conn.Close()
+
+			fmt.Printf("#### %s %s upgrade fail2", p, time.Now().String())
 			return nil, err
 		}
 		conn = pconn
 	} else if pnet.ForcePrivateNetwork {
+		fmt.Printf("#### %s %s upgrade fail3", p, time.Now().String())
 		log.Error("tried to dial with no Private Network Protector but usage" +
 			" of Private Networks is forced by the enviroment")
 		return nil, pnet.ErrNotInPrivateNetwork
@@ -85,13 +90,17 @@ func (u *Upgrader) upgrade(ctx context.Context, t transport.Transport, maconn ma
 	sconn, err := u.setupSecurity(ctx, conn, p)
 	if err != nil {
 		conn.Close()
+		fmt.Printf("#### %s %s upgrade fail5", p, time.Now().String())
 		return nil, err
 	}
 	smconn, err := u.setupMuxer(ctx, sconn, p)
 	if err != nil {
 		conn.Close()
+		fmt.Printf("#### %s %s upgrade fail6", p, time.Now().String())
 		return nil, err
 	}
+
+	fmt.Printf("#### %s %s upgrade success", p, time.Now().String())
 	return &transportConn{
 		Conn:           smconn,
 		ConnMultiaddrs: maconn,
