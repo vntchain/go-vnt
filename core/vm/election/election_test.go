@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/magiconair/properties/assert"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/state"
 	inter "github.com/vntchain/go-vnt/core/vm/interface"
@@ -1657,29 +1658,58 @@ func operate(c electionContext, op string, address common.Address, proxy common.
 }
 
 type bindCase struct {
+	name      string // case name
+	binder    common.Address
 	info      *BindInfo
-	amount    *big.Int
-	bindErr   error
+	amount    *big.Int   // unbind时忽略此字段
+	bindErr   error      // 也可以是unbind操作的结果
 	preCandi  *Candidate // bind前的candidate信息
 	wantCandi *Candidate
 }
 
+// 所有绑定候选人的测试用例
 func TestBindCandidate(t *testing.T) {
 	ca := newTestCandi()
-	info := &BindInfo{ca.Owner, beneficiary}
-	// 所有测试用例
 	// 绑定金额不为1000，返回错误ErrLockAmountMismatch
-	amount1 := bindCase{info, big.NewInt(999), ErrLockAmountMismatch, nil, nil}
-	amount2 := bindCase{info, big.NewInt(1001), ErrLockAmountMismatch, nil, nil}
+	c1 := bindCase{"c1", ca.Binder, newTestBindInfo(ca), big.NewInt(999), ErrLockAmountMismatch, nil, nil}
+	c2 := bindCase{"c2", ca.Binder, newTestBindInfo(ca), big.NewInt(1001), ErrLockAmountMismatch, nil, nil}
 
 	// 未注册，返回错误未找到candidate
-	// 注册，取消注册，返回ErrCandiNotReg
-	// 已注册，绑定人不一致，返回错误ErrBindInfoMismatch
-	// 已注册，受益人不一致，返回错误ErrBindInfoMismatch
-	// 已注册，已绑定，返回错误 ErrCandiAlreadyBind
-	// 已注册，未绑定，绑定成功，返回错误为nil，绑定人多1000vnt
+	c3 := bindCase{"c3", ca.Binder, newTestBindInfo(ca), bindAmount, fmt.Errorf("bindCandidates failed, candidates not exist: %s", ca.Owner.Hex()), nil, nil}
 
-	cases := []bindCase{amount1, amount2}
+	// 注册，取消注册，返回ErrCandiNotReg
+	ca4 := newTestCandi()
+	ca4.Registered = false
+	ca4.Bind = false
+	c4 := bindCase{"c4", ca4.Binder, newTestBindInfo(ca4), bindAmount, ErrCandiNotReg, ca4, ca4}
+
+	// 已注册，绑定人不一致，返回错误ErrBindInfoMismatch
+	ca5 := newTestCandi()
+	ca5.Registered = true
+	c5 := bindCase{"c5", common.HexToAddress("0x000000012321"), newTestBindInfo(ca5), bindAmount, ErrBindInfoMismatch, ca5, ca5}
+
+	// 已注册，受益人不一致，返回错误ErrBindInfoMismatch
+	ca6 := newTestCandi()
+	ca6.Registered = true
+	info := newTestBindInfo(ca6)
+	info.beneficiary = common.HexToAddress("0x0000000123")
+	c6 := bindCase{"c6", ca6.Binder, info, bindAmount, ErrBindInfoMismatch, ca6, ca6}
+
+	// 已注册，已绑定，返回错误 ErrCandiAlreadyBind
+	ca7 := newTestCandi()
+	ca7.Registered = true
+	ca7.Bind = true
+	c7 := bindCase{"c7", ca7.Binder, newTestBindInfo(ca7), bindAmount, ErrCandiAlreadyBind, ca7, ca7}
+
+	// 已注册，未绑定，绑定成功，返回错误为nil
+	ca8 := newTestCandi()
+	ca8.Registered = true
+	ca8.Bind = false
+	ca8Exp := newTestCandi()
+	ca8Exp.Registered = true
+	ca8Exp.Bind = true
+	c8 := bindCase{"c8", ca8.Binder, newTestBindInfo(ca8), bindAmount, nil, ca8, ca8Exp}
+	cases := []bindCase{c1, c2, c3, c4, c5, c6, c7, c8}
 	for _, c := range cases {
 		testBindCandidate(t, &c)
 	}
@@ -1687,7 +1717,6 @@ func TestBindCandidate(t *testing.T) {
 
 func testBindCandidate(t *testing.T, cas *bindCase) {
 	ec := newTestElectionCtx()
-	// TODO ec充1000VNT
 
 	// 先填充见证人信息
 	if cas.preCandi != nil {
@@ -1696,18 +1725,77 @@ func testBindCandidate(t *testing.T, cas *bindCase) {
 		}
 	}
 
-	// 	TODO 绑定
+	// 绑定和校验结果
+	err := ec.bindCandidate(cas.binder, cas.info, cas.amount)
+	assert.Equal(t, err, cas.bindErr, fmt.Sprintf(", bind error, case: %v", cas.name))
 
-	// TODO 匹配绑定错误
-
-	// TODO 匹配wantcandi
+	// 校验执行绑定后的数据
+	if cas.wantCandi != nil {
+		gotCandi := ec.getCandidate(cas.wantCandi.Owner)
+		assert.Equal(t, gotCandi.String(), (*cas.wantCandi).String(), fmt.Sprintf(", candidate mismtach after bind, case: %v", cas.name))
+	}
 }
 
-// 取消绑定
-// 未注册，返回错误未找到candidate
-// 注册，取消注册，返回或ErrCandiNotReg
-// 未绑定，返回ErrCandiNotBind
-// 已注册，已绑定，返回nil，绑定人多1000vnt
+// 取消绑定的所有测试
+func TestUnbindCandidate(t *testing.T) {
+	// 未注册，返回错误未找到candidate
+	ca1 := newTestCandi()
+	c1 := bindCase{"c1", ca1.Binder, newTestBindInfo(ca1), bindAmount, fmt.Errorf("bindCandidates failed, candidates not exist: %s", ca1.Owner.Hex()), nil, nil}
+
+	// 注册，取消注册，返回或 ErrCandiNotReg
+	ca2 := newTestCandi()
+	ca2.Registered = false
+	ca2.Bind = false
+	c2 := bindCase{"c2", ca2.Binder, newTestBindInfo(ca2), bindAmount, ErrCandiNotReg, ca2, ca2}
+
+	// 未绑定，返回 ErrCandiNotBind
+	ca3 := newTestCandi()
+	ca3.Registered = true
+	ca3.Bind = false
+	c3 := bindCase{"c3", ca3.Binder, newTestBindInfo(ca3), bindAmount, ErrCandiNotBind, ca3, ca3}
+
+	// 已注册，已绑定，返回nil，绑定人多1000vnt
+	ca4 := newTestCandi()
+	ca4.Registered = true
+	ca4.Bind = true
+	ca4Exp := newTestCandi()
+	ca4Exp.Registered = true
+	ca4Exp.Bind = false
+	c4 := bindCase{"c4", ca4.Binder, newTestBindInfo(ca4), bindAmount, nil, ca4, ca4Exp}
+
+	cases := []bindCase{c1, c2, c3, c4}
+	for _, c := range cases {
+		testUnbindCandidate(t, &c)
+	}
+}
+
+func testUnbindCandidate(t *testing.T, cas *bindCase) {
+	ec := newTestElectionCtx()
+	// ec充1000VNT
+	ec.context.GetStateDb().AddBalance(contractAddr, bindAmount)
+
+	// 先填充见证人信息
+	if cas.preCandi != nil {
+		if err := ec.setCandidate(*cas.preCandi); err != nil {
+			t.Errorf("set andiates: %s, error: %s", cas.preCandi.Owner, err)
+		}
+	}
+
+	// 绑定和校验结果
+	err := ec.unbindCandidate(cas.binder, cas.info)
+	assert.Equal(t, err, cas.bindErr, fmt.Sprintf(", bind error, case: %v", cas.name))
+
+	// 校验执行绑定后的数据
+	if cas.wantCandi != nil {
+		gotCandi := ec.getCandidate(cas.wantCandi.Owner)
+		assert.Equal(t, gotCandi, *cas.wantCandi, fmt.Sprintf(", candidate mismtach after unbind, case: %v", cas.name))
+	}
+
+	// 检查绑定人余额多1000VNT
+	if cas.bindErr == nil {
+		assert.Equal(t, ec.context.GetStateDb().GetBalance(cas.binder), bindAmount, ", balance of binder is wrong, case: %v", cas.name)
+	}
+}
 
 // 取消注册
 // 已注册，未绑定，返回nil，绑定人金额不变
@@ -1733,4 +1821,8 @@ func newTestCandi() *Candidate {
 		Website:         []byte("www.testwebsite.net/test/witness/website"),
 		Name:            []byte("testNet"),
 	}
+}
+
+func newTestBindInfo(ca *Candidate) *BindInfo {
+	return &BindInfo{ca.Owner, ca.Beneficiary}
 }
