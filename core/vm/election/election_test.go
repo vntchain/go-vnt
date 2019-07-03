@@ -1655,3 +1655,82 @@ func operate(c electionContext, op string, address common.Address, proxy common.
 	}
 	return err
 }
+
+type bindCase struct {
+	info      *BindInfo
+	amount    *big.Int
+	bindErr   error
+	preCandi  *Candidate // bind前的candidate信息
+	wantCandi *Candidate
+}
+
+func TestBindCandidate(t *testing.T) {
+	ca := newTestCandi()
+	info := &BindInfo{ca.Owner, beneficiary}
+	// 所有测试用例
+	// 绑定金额不为1000，返回错误ErrLockAmountMismatch
+	amount1 := bindCase{info, big.NewInt(999), ErrLockAmountMismatch, nil, nil}
+	amount2 := bindCase{info, big.NewInt(1001), ErrLockAmountMismatch, nil, nil}
+
+	// 未注册，返回错误未找到candidate
+	// 注册，取消注册，返回ErrCandiNotReg
+	// 已注册，绑定人不一致，返回错误ErrBindInfoMismatch
+	// 已注册，受益人不一致，返回错误ErrBindInfoMismatch
+	// 已注册，已绑定，返回错误 ErrCandiAlreadyBind
+	// 已注册，未绑定，绑定成功，返回错误为nil，绑定人多1000vnt
+
+	cases := []bindCase{amount1, amount2}
+	for _, c := range cases {
+		testBindCandidate(t, &c)
+	}
+}
+
+func testBindCandidate(t *testing.T, cas *bindCase) {
+	ec := newTestElectionCtx()
+	// TODO ec充1000VNT
+
+	// 先填充见证人信息
+	if cas.preCandi != nil {
+		if err := ec.setCandidate(*cas.preCandi); err != nil {
+			t.Errorf("set andiates: %s, error: %s", cas.preCandi.Owner, err)
+		}
+	}
+
+	// 	TODO 绑定
+
+	// TODO 匹配绑定错误
+
+	// TODO 匹配wantcandi
+}
+
+// 取消绑定
+// 未注册，返回错误未找到candidate
+// 注册，取消注册，返回或ErrCandiNotReg
+// 未绑定，返回ErrCandiNotBind
+// 已注册，已绑定，返回nil，绑定人多1000vnt
+
+// 取消注册
+// 已注册，未绑定，返回nil，绑定人金额不变
+// 已注册，未绑定，返回nil，绑定人金额多1000vnt
+
+func newTestElectionCtx() electionContext {
+	ctx := newcontext()
+	return newElectionContext(ctx)
+}
+
+func newTestCandi() *Candidate {
+	return &Candidate{
+		Owner:           common.HexToAddress("9ee97d274eb4c215f23238fee1f103d9ea10a234"),
+		Binder:          binder,
+		Beneficiary:     beneficiary,
+		Registered:      true,
+		Bind:            true,
+		VoteCount:       big.NewInt(0),
+		Url:             []byte("/ip4/192.168.9.102/tcp/5210/ipfs/1kHaMUmZgTpjGEhxcGATr1UVWy6iKkygFuknWEtW7LiLrev"),
+		TotalBounty:     big.NewInt(0).Mul(big.NewInt(10000), big.NewInt(1e18)),
+		ExtractedBounty: big.NewInt(0).Mul(big.NewInt(100), big.NewInt(1e18)),
+		LastExtractTime: big.NewInt(1531004152),
+		Website:         []byte("www.testwebsite.net/test/witness/website"),
+		Name:            []byte("testNet"),
+	}
+}

@@ -452,6 +452,10 @@ func (ec electionContext) bindCandidate(locker common.Address, info *BindInfo, a
 		return err
 	}
 
+	if !candidate.Registered {
+		return ErrCandiNotReg
+	}
+
 	// if candidate is already active, just ignore
 	if candidate.Bind {
 		return ErrCandiAlreadyBind
