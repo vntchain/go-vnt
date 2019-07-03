@@ -413,17 +413,15 @@ func (ec electionContext) unregisterWitness(address common.Address) error {
 
 	// if candidate is already inactive, just ignore
 	if !candidate.Registered {
-		log.Warn("unregisterWitness witness already inactive.", "address", address.Hex())
-		return fmt.Errorf("unregisterWitness witness already inactive")
+		log.Warn("unregisterWitness witness", "address", address.Hex(), "error", ErrCandiNotReg)
+		return ErrCandiNotReg
 	}
 
 	// set candidate active false
 	candidate.Registered = false
 
 	// 已经解除绑定
-	if !candidate.Bind {
-		return nil
-	}
+	shouldReturnToken := candidate.Bind == true
 	candidate.Bind = false
 
 	// save candidate info db
@@ -434,7 +432,10 @@ func (ec electionContext) unregisterWitness(address common.Address) error {
 	}
 
 	// 返还绑定金
-	return ec.transfer(contractAddr, candidate.Binder, bindAmount)
+	if shouldReturnToken {
+		return ec.transfer(contractAddr, candidate.Binder, bindAmount)
+	}
+	return nil
 }
 
 // bindCandidate 绑定候选节点，绑定人受益人信息需与候选人注册信息一致

@@ -1793,13 +1793,77 @@ func testUnbindCandidate(t *testing.T, cas *bindCase) {
 
 	// 检查绑定人余额多1000VNT
 	if cas.bindErr == nil {
-		assert.Equal(t, ec.context.GetStateDb().GetBalance(cas.binder), bindAmount, ", balance of binder is wrong, case: %v", cas.name)
+		assert.Equal(t, ec.context.GetStateDb().GetBalance(cas.binder), bindAmount, fmt.Sprintf(", balance of binder is wrong, case: %v", cas.name))
 	}
 }
 
+type unRegCase struct {
+	name         string // case name
+	retErr       error
+	preCandi     *Candidate // 操作前的candidate信息
+	wantCandi    *Candidate // 操作后期望的candidate信息
+	shouldReturn bool       // 是否要返还绑定金
+}
+
 // 取消注册
-// 已注册，未绑定，返回nil，绑定人金额不变
-// 已注册，未绑定，返回nil，绑定人金额多1000vnt
+func TestUnregisterCandidate(t *testing.T) {
+	// 已注册，未绑定，返回nil，绑定人金额不变
+	ca1 := newTestCandi()
+	ca1.Registered = true
+	ca1.Bind = false
+	ca1Exp := newTestCandi()
+	ca1Exp.Registered = false
+	ca1Exp.Bind = false
+	c1 := unRegCase{"c1", nil, ca1, ca1Exp, false}
+
+	// 已注册，已绑定，返回nil，绑定人金额多1000vnt
+	ca2 := newTestCandi()
+	ca2.Registered = true
+	ca2.Bind = true
+	ca2Exp := newTestCandi()
+	ca2Exp.Registered = false
+	ca2Exp.Bind = false
+	c2 := unRegCase{"c2", nil, ca2, ca2Exp, true}
+
+	// 已注册后取消，再取消
+	ca3 := newTestCandi()
+	ca3.Registered = false
+	ca3.Bind = false
+	c3 := unRegCase{"c3", ErrCandiNotReg, ca3, ca3, false}
+
+	cases := []unRegCase{c1, c2, c3}
+	for _, c := range cases {
+		testUnregisterCandidate(t, &c)
+	}
+}
+
+func testUnregisterCandidate(t *testing.T, cas *unRegCase) {
+	ec := newTestElectionCtx()
+	// ec充1000VNT
+	ec.context.GetStateDb().AddBalance(contractAddr, bindAmount)
+
+	// 先填充见证人信息
+	if cas.preCandi != nil {
+		if err := ec.setCandidate(*cas.preCandi); err != nil {
+			t.Errorf("set andiates: %s, error: %s", cas.preCandi.Owner, err)
+		}
+	}
+
+	// 校验结果
+	err := ec.unregisterWitness(cas.preCandi.Owner)
+	assert.Equal(t, err, cas.retErr, fmt.Sprintf(", unregesiter error, case: %v", cas.name))
+
+	// 校验操作后的候选人
+	if cas.wantCandi != nil {
+		gotCandi := ec.getCandidate(cas.wantCandi.Owner)
+		assert.Equal(t, gotCandi.String(), (*cas.wantCandi).String(), fmt.Sprintf(", candidate mismtach after unbind, case: %v", cas.name))
+	}
+
+	// 检查绑定人余额多1000VNT
+	if cas.shouldReturn {
+		assert.Equal(t, ec.context.GetStateDb().GetBalance(cas.preCandi.Binder), bindAmount, fmt.Sprintf(", balance of binder is wrong, case: %v", cas.name))
+	}
+}
 
 func newTestElectionCtx() electionContext {
 	ctx := newcontext()
