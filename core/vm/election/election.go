@@ -58,7 +58,7 @@ var (
 	// stake minimum time period
 	unstakePeriod   = big.NewInt(OneDay)
 	baseBounty      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1000))
-	restTotalBounty = big.NewInt(0).Mul(big.NewInt(1e18), big.NewInt(1e9))
+	restTotalBounty = big.NewInt(0).Mul(big.NewInt(1e18), big.NewInt(25e+7))
 
 	// Is main net started
 	mainActive = false
