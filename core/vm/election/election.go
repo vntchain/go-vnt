@@ -88,7 +88,7 @@ type Voter struct {
 }
 
 // Candidate information of witness candidates.
-// Tips: Modify CandidateList.Swap when adding element of Candidate.
+// Tips: Modify CandidateList.Swap() and Candidate.String() when adding or removing element of Candidate.
 type Candidate struct {
 	Owner           common.Address // 候选人地址
 	Binder          common.Address // 锁仓人/绑定人

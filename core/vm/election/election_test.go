@@ -1063,6 +1063,12 @@ func TestRegisterWitness(t *testing.T) {
 		}
 	}
 
+	// addr1注册成功了，它应当是register为true，bind为false，active为false
+	ca := ec.getCandidate(addr1)
+	if ca.Owner != addr1 || !ca.Registered || ca.Bind || ca.Active() {
+		t.Errorf("addr1 should success and check the active information: %v", ca.String())
+	}
+
 	candis := getAllCandidate(context.GetStateDb())
 	for _, candi := range candis {
 		t.Logf("333 addr: %v, voteCount: %v, active: %v", candi.Owner.Hex(), candi.VoteCount, candi.Active())
