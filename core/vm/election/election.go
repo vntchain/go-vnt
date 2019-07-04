@@ -58,7 +58,7 @@ var (
 	// stake minimum time period
 	unstakePeriod   = big.NewInt(OneDay)
 	baseBounty      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1000))
-	restTotalBounty = big.NewInt(0).Mul(big.NewInt(1e18), big.NewInt(1e9))
+	restTotalBounty = big.NewInt(0).Mul(big.NewInt(1e18), big.NewInt(25e+7))
 
 	// Is main net started
 	mainActive = false
@@ -187,7 +187,7 @@ type Stake struct {
 }
 
 type Bounty struct {
-	RestTotalBounty *big.Int // 剩余总激励，初始值10亿VNT
+	RestTotalBounty *big.Int // 剩余总激励
 }
 
 func newElectionContext(ctx inter.ChainContext) electionContext {

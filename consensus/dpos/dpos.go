@@ -50,8 +50,8 @@ const (
 )
 
 var (
-	VortexBlockReward     *big.Int = big.NewInt(6e+18)
-	VortexCandidatesBonus *big.Int = big.NewInt(6e+18)
+	VortexBlockReward     *big.Int = big.NewInt(15e+17)
+	VortexCandidatesBonus *big.Int = big.NewInt(15e+17)
 	// 2 seconds one block, 3 years producing about 47304000 blocks
 	stageTwoBlkNr = big.NewInt(47304000)
 	// 2 seconds one block, 6 years producing about 94608000 blocks
