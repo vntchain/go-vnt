@@ -147,6 +147,7 @@ func (s *secureSession) runHandshakeSync() error {
 	nonceOut := make([]byte, nonceSize)
 	_, err := rand.Read(nonceOut)
 	if err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail1, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 
@@ -167,12 +168,14 @@ func (s *secureSession) runHandshakeSync() error {
 	// Marshal our propose packet
 	proposeOutBytes, err := proto.Marshal(proposeOut)
 	if err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail2, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 
 	// Send Propose packet and Receive their Propose packet
 	proposeInBytes, err := readWriteMsg(s.insecureM, proposeOutBytes)
 	if err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail3, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 	defer s.insecureM.ReleaseMsg(proposeInBytes)
@@ -180,6 +183,7 @@ func (s *secureSession) runHandshakeSync() error {
 	// Parse their propose packet
 	proposeIn := new(pb.Propose)
 	if err = proto.Unmarshal(proposeInBytes, proposeIn); err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail4, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 
@@ -192,12 +196,14 @@ func (s *secureSession) runHandshakeSync() error {
 	// get remote identity
 	s.remote.permanentPubKey, err = crypto.DecompressPubkey(proposeIn.GetPubkey())
 	if err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail5, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 
 	// get peer id
 	actualRemotePeer, err := peer.IDFromPublicKey(s.remote.permanentPubKey)
 	if err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail6, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 	switch s.remotePeer {
@@ -210,6 +216,7 @@ func (s *secureSession) runHandshakeSync() error {
 		// Peer mismatch. Bail.
 		s.insecure.Close()
 		log.Debugf("expected peer %s, got peer %s", s.remotePeer, actualRemotePeer)
+		fmt.Printf("#### %s %s runHandshakeSync fail7, err: %v", s.RemotePeer(), time.Now().String(), ErrWrongPeer)
 		return ErrWrongPeer
 	}
 
@@ -223,21 +230,25 @@ func (s *secureSession) runHandshakeSync() error {
 	oh2 := hashSha256(append(myPubKeyBytes, proposeIn.GetRand()...))
 	order := bytes.Compare(oh1, oh2)
 	if order == 0 {
+		fmt.Printf("#### %s %s runHandshakeSync fail8, err: %v", s.RemotePeer(), time.Now().String(), ErrEcho)
 		return ErrEcho // talking to self (same socket. must be reuseport + dialing self)
 	}
 
 	s.local.curveT, err = selectBest(order, SupportedExchanges, proposeIn.GetExchanges())
 	if err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail9, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 
 	s.local.cipherT, err = selectBest(order, SupportedCiphers, proposeIn.GetCiphers())
 	if err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail10, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 
 	s.local.hashT, err = selectBest(order, SupportedHashes, proposeIn.GetHashes())
 	if err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail11, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 
@@ -257,6 +268,7 @@ func (s *secureSession) runHandshakeSync() error {
 	var genSharedKey crypto.GenSharedKey
 	s.local.ephemeralPubKey, genSharedKey, err = crypto.GenerateEKeyPair(s.local.curveT)
 	if err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail12, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 
@@ -277,18 +289,21 @@ func (s *secureSession) runHandshakeSync() error {
 
 	exchangeOut.Signature, err = crypto.Sign(crypto.Keccak256(rlpoutdata), s.localKey)
 	if err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail13, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 
 	// Marshal our exchange packet
 	exchangeOutBytes, err := proto.Marshal(exchangeOut)
 	if err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail14, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 
 	// Send Exchange packet and receive their Exchange packet
 	exchangeInBytes, err := readWriteMsg(s.insecureM, exchangeOutBytes)
 	if err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail15, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 	defer s.insecureM.ReleaseMsg(exchangeInBytes)
@@ -296,6 +311,7 @@ func (s *secureSession) runHandshakeSync() error {
 	// Parse their Exchange packet.
 	exchangeIn := new(pb.Exchange)
 	if err = proto.Unmarshal(exchangeInBytes, exchangeIn); err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail16, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 
@@ -327,6 +343,7 @@ func (s *secureSession) runHandshakeSync() error {
 
 	if !sigOK {
 		// log.Error("2.1 Verify: failed: %s", ErrBadSig)
+		fmt.Printf("#### %s %s runHandshakeSync fail17, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return ErrBadSig
 	}
 	// log.Debugf("2.1 Verify: signature verified.")
@@ -337,6 +354,7 @@ func (s *secureSession) runHandshakeSync() error {
 	// OK! seems like we're good to go.
 	s.sharedSecret, err = genSharedKey(exchangeIn.GetEpubkey())
 	if err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail18, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 
@@ -351,6 +369,7 @@ func (s *secureSession) runHandshakeSync() error {
 		k1, k2 = k2, k1 // swap
 	default:
 		// we should've bailed before this. but if not, bail here.
+		fmt.Printf("#### %s %s runHandshakeSync fail19, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return ErrEcho
 	}
 	s.local.keys = k1
@@ -363,10 +382,12 @@ func (s *secureSession) runHandshakeSync() error {
 	// step 2.3. MAC + Cipher -- prepare MAC + cipher
 
 	if err := s.local.makeMacAndCipher(); err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail20, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 
 	if err := s.remote.makeMacAndCipher(); err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail21, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 
@@ -385,12 +406,14 @@ func (s *secureSession) runHandshakeSync() error {
 	// send their Nonce and receive ours
 	nonceOut2, err := readWriteMsg(s.ReadWriteCloser, proposeIn.GetRand())
 	if err != nil {
+		fmt.Printf("#### %s %s runHandshakeSync fail22, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 	defer s.ReleaseMsg(nonceOut2)
 
 	// log.Debug("3.0 finish.\n\texpect: %v\n\tactual: %v", nonceOut, nonceOut2)
 	if !bytes.Equal(nonceOut, nonceOut2) {
+		fmt.Printf("#### %s %s runHandshakeSync fail23", s.RemotePeer(), time.Now().String())
 		return fmt.Errorf("Failed to read our encrypted nonce: %s != %s", nonceOut2, nonceOut)
 	}
 
