@@ -187,7 +187,7 @@ type Stake struct {
 }
 
 type Bounty struct {
-	RestTotalBounty *big.Int // 剩余总激励，初始值10亿VNT
+	RestTotalBounty *big.Int // 剩余总激励
 }
 
 func newElectionContext(ctx inter.ChainContext) electionContext {
