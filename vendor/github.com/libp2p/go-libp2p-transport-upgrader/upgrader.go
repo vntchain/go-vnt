@@ -90,7 +90,7 @@ func (u *Upgrader) upgrade(ctx context.Context, t transport.Transport, maconn ma
 	sconn, err := u.setupSecurity(ctx, conn, p)
 	if err != nil {
 		conn.Close()
-		fmt.Printf("#### %s %s upgrade fail4 \n", p, time.Now().String())
+		fmt.Printf("#### %s %s upgrade fail4, err %v \n", p, time.Now().String(), err)
 		return nil, err
 	}
 	smconn, err := u.setupMuxer(ctx, sconn, p)
