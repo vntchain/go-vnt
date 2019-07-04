@@ -23,7 +23,7 @@ import (
 )
 
 const ElectionAbiJSON = `[
-{"name":"registerWitness","inputs":[{"name":"nodeUrl","type":"bytes"},{"name":"website","type":"bytes"},{"name":"nodeName","type":"bytes"},{"name":"locker","type":"address"},{"beneficiary":"nodeName","type":"address"}],"outputs":[],"type":"function"},
+{"name":"registerWitness","inputs":[{"name":"nodeUrl","type":"bytes"},{"name":"website","type":"bytes"},{"name":"nodeName","type":"bytes"},{"name":"binder","type":"address"},{"name":"beneficiary","type":"address"}],"outputs":[],"type":"function"},
 {"name":"unregisterWitness","inputs":[],"outputs":[],"type":"function"},
 {"name":"voteWitnesses","inputs":[{"name":"candidate","type":"address[]"}],"outputs":[],"type":"function"},
 {"name":"cancelVote","inputs":[],"outputs":[],"type":"function"},

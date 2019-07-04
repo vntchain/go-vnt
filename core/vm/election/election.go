@@ -224,13 +224,13 @@ type NodeInfo struct {
 	NodeUrl     []byte
 	Website     []byte
 	NodeName    []byte
-	Locker      common.Address // 绑定人
+	Binder      common.Address // 绑定人
 	Beneficiary common.Address // 受益人
 }
 
 type BindInfo struct {
 	Candidate   common.Address // 绑定的候选账号
-	beneficiary common.Address // 收益的账号
+	Beneficiary common.Address // 收益的账号
 }
 
 func (e *Election) Run(ctx inter.ChainContext, input []byte, value *big.Int) ([]byte, error) {
@@ -344,7 +344,7 @@ func (ec electionContext) registerWitness(address common.Address, info *NodeInfo
 
 	// Reset candidate's info
 	candidate.Registered = true
-	candidate.Binder = info.Locker
+	candidate.Binder = info.Binder
 	candidate.Beneficiary = info.Beneficiary
 	candidate.Url = info.NodeUrl
 	candidate.Website = info.Website
@@ -441,9 +441,9 @@ func (ec electionContext) unregisterWitness(address common.Address) error {
 // bindCandidate 绑定候选节点，绑定人受益人信息需与候选人注册信息一致
 func (ec electionContext) bindCandidate(locker common.Address, info *BindInfo, amount *big.Int) error {
 	candi := info.Candidate
-	beneficiary := info.beneficiary
+	beneficiary := info.Beneficiary
 
-	// Check lock amount
+	// Check bind amount
 	if amount.Cmp(bindAmount) != 0 {
 		return ErrLockAmountMismatch
 	}
@@ -474,7 +474,7 @@ func (ec electionContext) bindCandidate(locker common.Address, info *BindInfo, a
 // unbindCandidate 绑定人取消绑定候选节点
 func (ec electionContext) unbindCandidate(locker common.Address, info *BindInfo) error {
 	candi := info.Candidate
-	beneficiary := info.beneficiary
+	beneficiary := info.Beneficiary
 	candidate, err := ec.matchLockerAndCandi(locker, candi, beneficiary)
 	if err != nil {
 		return err

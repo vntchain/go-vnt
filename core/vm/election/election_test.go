@@ -1698,7 +1698,7 @@ func TestBindCandidate(t *testing.T) {
 	ca6 := newTestCandi()
 	ca6.Registered = true
 	info := newTestBindInfo(ca6)
-	info.beneficiary = common.HexToAddress("0x0000000123")
+	info.Beneficiary = common.HexToAddress("0x0000000123")
 	c6 := bindCase{"c6", ca6.Binder, info, bindAmount, ErrBindInfoMismatch, ca6, ca6}
 
 	// 已注册，已绑定，返回错误 ErrCandiAlreadyBind
