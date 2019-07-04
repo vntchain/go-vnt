@@ -62,12 +62,9 @@ var (
 
 	// stake minimum time period
 	unstakePeriod   = big.NewInt(OneDay)
-	baseBounty      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1000))
+	baseBounty      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1000)) // TODO stb 删除
 	restTotalBounty = big.NewInt(0).Mul(big.NewInt(1e18), big.NewInt(1e9))
-	bindAmount      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1000))
-
-	// Is main net started
-	mainActive = false
+	bindAmount      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1e7))
 )
 
 type Election struct{}
@@ -843,6 +840,7 @@ func (ec electionContext) transfer(sender, receiver common.Address, amount *big.
 	return nil
 }
 
+// TODO stb删除
 func (ec electionContext) extractOwnBounty(addr common.Address) error {
 	//24小时内提取1次
 	//总激励-已提取激励：是本次可提取的VNT数量，每次至少1000VNT才可提取
