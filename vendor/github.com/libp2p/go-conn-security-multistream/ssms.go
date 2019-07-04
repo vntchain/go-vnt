@@ -8,6 +8,7 @@ import (
 	connsec "github.com/libp2p/go-conn-security"
 	peer "github.com/libp2p/go-libp2p-peer"
 	mss "github.com/multiformats/go-multistream"
+	"time"
 )
 
 // SSMuxer is a multistream stream security transport multiplexer.
@@ -49,6 +50,7 @@ func (sm *SSMuxer) SecureInbound(ctx context.Context, insecure net.Conn) (connse
 // SecureOutbound secures an outbound connection using this multistream
 // multiplexed stream security transport.
 func (sm *SSMuxer) SecureOutbound(ctx context.Context, insecure net.Conn, p peer.ID) (connsec.Conn, error) {
+	fmt.Printf("#### %s %s SSMuxer.SecureOutbound...", p, time.Now().String())
 	tpt, err := sm.selectProto(ctx, insecure, false)
 	if err != nil {
 		return nil, err
