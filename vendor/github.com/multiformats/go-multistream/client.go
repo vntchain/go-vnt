@@ -3,6 +3,7 @@ package multistream
 import (
 	"errors"
 	"io"
+	"fmt"
 )
 
 // ErrNotSupported is the error returned when the muxer does not support
@@ -25,13 +26,17 @@ func SelectProtoOrFail(proto string, rwc io.ReadWriteCloser) error {
 // SelectOneOf will perform handshakes with the protocols on the given slice
 // until it finds one which is supported by the muxer.
 func SelectOneOf(protos []string, rwc io.ReadWriteCloser) (string, error) {
+	fmt.Printf("#### SelectOnOf starting...")
 	err := handshake(rwc)
+	fmt.Printf("#### SelectOnOf starting..., err: %v", err)
 	if err != nil {
 		return "", err
 	}
 
+	fmt.Printf("#### SelectOnOf protocals: %v", protos)
 	for _, p := range protos {
 		err := trySelect(p, rwc)
+		fmt.Printf("#### SelectOnOf.trySelect err: %v", err)
 		switch err {
 		case nil:
 			return p, nil

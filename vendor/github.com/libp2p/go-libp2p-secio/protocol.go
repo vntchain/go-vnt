@@ -233,7 +233,6 @@ func (s *secureSession) runHandshakeSync() error {
 
 	s.local.cipherT, err = selectBest(order, SupportedCiphers, proposeIn.GetCiphers())
 	if err != nil {
-		fmt.Printf("#### %s %s runHandshakeSync fail10, err: %v", s.RemotePeer(), time.Now().String(), err)
 		return err
 	}
 

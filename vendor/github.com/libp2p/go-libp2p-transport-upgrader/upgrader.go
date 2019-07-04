@@ -8,12 +8,11 @@ import (
 
 	ss "github.com/libp2p/go-conn-security"
 	pnet "github.com/libp2p/go-libp2p-interface-pnet"
-	peer "github.com/libp2p/go-libp2p-peer"
-	transport "github.com/libp2p/go-libp2p-transport"
-	filter "github.com/libp2p/go-maddr-filter"
+	"github.com/libp2p/go-libp2p-peer"
+	"github.com/libp2p/go-libp2p-transport"
+	"github.com/libp2p/go-maddr-filter"
 	smux "github.com/libp2p/go-stream-muxer"
-	manet "github.com/multiformats/go-multiaddr-net"
-	"time"
+	"github.com/multiformats/go-multiaddr-net"
 )
 
 // ErrNilPeer is returned when attempting to upgrade an outbound connection
@@ -67,7 +66,6 @@ func (u *Upgrader) upgrade(ctx context.Context, t transport.Transport, maconn ma
 	if u.Filters != nil && u.Filters.AddrBlocked(maconn.RemoteMultiaddr()) {
 		log.Debugf("blocked connection from %s", maconn.RemoteMultiaddr())
 		maconn.Close()
-		fmt.Printf("#### %s %s upgrade fail1 \n", p, time.Now().String())
 		return nil, fmt.Errorf("blocked connection from %s", maconn.RemoteMultiaddr())
 	}
 
@@ -76,13 +74,10 @@ func (u *Upgrader) upgrade(ctx context.Context, t transport.Transport, maconn ma
 		pconn, err := u.Protector.Protect(conn)
 		if err != nil {
 			conn.Close()
-
-			fmt.Printf("#### %s %s upgrade fail2 \n", p, time.Now().String())
 			return nil, err
 		}
 		conn = pconn
 	} else if pnet.ForcePrivateNetwork {
-		fmt.Printf("#### %s %s upgrade fail3 \n", p, time.Now().String())
 		log.Error("tried to dial with no Private Network Protector but usage" +
 			" of Private Networks is forced by the enviroment")
 		return nil, pnet.ErrNotInPrivateNetwork
@@ -90,17 +85,14 @@ func (u *Upgrader) upgrade(ctx context.Context, t transport.Transport, maconn ma
 	sconn, err := u.setupSecurity(ctx, conn, p)
 	if err != nil {
 		conn.Close()
-		fmt.Printf("#### %s %s upgrade fail4, err %v \n", p, time.Now().String(), err)
-		return nil, err
+			return nil, err
 	}
 	smconn, err := u.setupMuxer(ctx, sconn, p)
 	if err != nil {
 		conn.Close()
-		fmt.Printf("#### %s %s upgrade fail5 \n", p, time.Now().String())
 		return nil, err
 	}
 
-	fmt.Printf("#### %s %s upgrade success", p, time.Now().String())
 	return &transportConn{
 		Conn:           smconn,
 		ConnMultiaddrs: maconn,
