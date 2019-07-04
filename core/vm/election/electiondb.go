@@ -96,23 +96,37 @@ func (ec electionContext) getFromDB(key common.Hash) common.Hash {
 func getVoterFrom(addr common.Address, getFromDB getFuncType) Voter {
 	var voter Voter
 	var err error
-	if err := convertToStruct(VOTERPREFIX, addr, &voter, getFromDB); err == nil {
+	if err = convertToStruct(VOTERPREFIX, addr, &voter, getFromDB); err == nil {
 		return voter
 	}
 
-	log.Debug("Get Voter From DB ", "addr", addr.String(), "err", err)
+	log.Debug("Get voter from DB ", "addr", addr.String(), "err", err)
 	return newVoter()
+}
+
+// getCandidateFrom get a candidate's information from a specific stateDB
+func getCandidateFrom(addr common.Address, getFromDB getFuncType) Candidate {
+	var (
+		ca  Candidate
+		err error
+	)
+	if err = convertToStruct(CANDIDATEPREFIX, addr, &ca, getFromDB); err == nil {
+		return ca
+	}
+
+	log.Debug("Get candidate from DB ", "addr", addr.String(), "err", err)
+	return newCandidate()
 }
 
 // getStakeFrom get a user's information from a specific stateDB
 func getStakeFrom(addr common.Address, getFromDB getFuncType) Stake {
 	var stake Stake
 	var err error
-	if err := convertToStruct(STAKEPREFIX, addr, &stake, getFromDB); err == nil {
+	if err = convertToStruct(STAKEPREFIX, addr, &stake, getFromDB); err == nil {
 		return stake
 	}
 
-	log.Debug("Get Stake From DB ", "addr", addr.String(), "err", err)
+	log.Debug("Get stake from DB ", "addr", addr.String(), "err", err)
 	return Stake{}
 }
 

@@ -495,7 +495,15 @@ func (d *Dpos) grantingReward(chain consensus.ChainReader, header *types.Header,
 			reward = restBounty
 		}
 		if restBounty, err = election.GrantBounty(state, reward); err == nil {
-			state.AddBalance(header.Coinbase, reward)
+			ca := election.GetCandidate(state, header.Coinbase)
+			if ca == nil {
+				// If node is initial node, reward to itself
+				log.Warn("Can not find witness info when granting reward", "addr", header.Coinbase.String())
+				state.AddBalance(header.Coinbase, reward)
+			} else {
+				// reward to beneficiary of it's binder
+				state.AddBalance(ca.Beneficiary, reward)
+			}
 		}
 
 		// Reward all witness candidates, when update witness list, if has any bounty

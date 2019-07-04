@@ -990,16 +990,31 @@ func GetAllCandidates(stateDB inter.StateDB, sorted bool) CandidateList {
 	return candidates
 }
 
-// GetVoter returns a voter's information
-func GetVoter(stateDB inter.StateDB, addr common.Address) *Voter {
-	v := getVoterFrom(addr, genGetFunc(stateDB))
-	return &v
+// GetCandidate returns a candidate's information. Return nil if not find.
+func GetCandidate(stateDB inter.StateDB, addr common.Address) *Candidate {
+	v := getCandidateFrom(addr, genGetFunc(stateDB))
+	if v.Owner == addr {
+		return &v
+	}
+	return nil
 }
 
-// GetStake returns a user's information
+// GetVoter returns a voter's information. Return nil if not find.
+func GetVoter(stateDB inter.StateDB, addr common.Address) *Voter {
+	v := getVoterFrom(addr, genGetFunc(stateDB))
+	if v.Owner == addr {
+		return &v
+	}
+	return nil
+}
+
+// GetStake returns a user's information. Return nil if not find.
 func GetStake(stateDB inter.StateDB, addr common.Address) *Stake {
-	s := getStakeFrom(addr, genGetFunc(stateDB))
-	return &s
+	v := getStakeFrom(addr, genGetFunc(stateDB))
+	if v.Owner == addr {
+		return &v
+	}
+	return nil
 }
 
 // AddCandidatesBounty sends votes bounty to candidates.
