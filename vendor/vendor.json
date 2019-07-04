@@ -1,7 +1,8 @@
 {
 	"comment": "",
 	"ignore": "test",
-	"package": [{
+	"package": [
+		{
 			"checksumSHA1": "b5bkSc2hlmUV7PlLY6JlLwiJpiE=",
 			"path": "bazil.org/fuse",
 			"revision": "371fbbdaa8987b715bdd21d6adc4c9b20155f748",
@@ -739,6 +740,12 @@
 			"path": "github.com/libp2p/go-ws-transport",
 			"revision": "a1711acf35fa181050206a820703bd4e7718c989",
 			"revisionTime": "2018-06-28T02:18:24Z"
+		},
+		{
+			"checksumSHA1": "cxWudRxSgBo2pjN0xpRKCKlYxa4=",
+			"path": "github.com/magiconair/properties/assert",
+			"revision": "de8848e004dd33dc07a2947b3d76f618a7fc7ef1",
+			"revisionTime": "2019-05-10T14:34:07Z"
 		},
 		{
 			"checksumSHA1": "7hln62oZPZmyqEmgXaybf9WxQ7A=",
