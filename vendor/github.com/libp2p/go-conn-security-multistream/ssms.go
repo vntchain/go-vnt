@@ -52,6 +52,7 @@ func (sm *SSMuxer) SecureInbound(ctx context.Context, insecure net.Conn) (connse
 func (sm *SSMuxer) SecureOutbound(ctx context.Context, insecure net.Conn, p peer.ID) (connsec.Conn, error) {
 	fmt.Printf("#### %s %s SSMuxer.SecureOutbound...", p, time.Now().String())
 	tpt, err := sm.selectProto(ctx, insecure, false)
+	fmt.Printf("#### %s %s SSMuxer.SecureOutbound, tpt: %v, err: %v", p, time.Now().String(), tpt, err)
 	if err != nil {
 		return nil, err
 	}
