@@ -100,11 +100,11 @@ func sameCandidate(candidate *Candidate, candidate1 *Candidate) (bool, error) {
 	} else if candidate.Registered != candidate1.Registered {
 		return false, fmt.Errorf("Error,registered before %v and after %v is different", candidate.Registered, candidate1.Registered)
 	} else if candidate.Binder != candidate1.Binder {
-		// 	TODO
+		return false, fmt.Errorf("Error,binder before %v and after %v is different", candidate.Binder, candidate1.Binder)
 	} else if candidate.Bind != candidate1.Bind {
-		// 	TODO
+		return false, fmt.Errorf("Error,bind before %v and after %v is different", candidate.Bind, candidate1.Bind)
 	} else if candidate.Beneficiary != candidate1.Beneficiary {
-		// 	TODO
+		return false, fmt.Errorf("Error,beneficiary before %v and after %v is different", candidate.Beneficiary, candidate1.Beneficiary)
 	} else if candidate.VoteCount.Cmp(candidate1.VoteCount) != 0 {
 		return false, fmt.Errorf("Error,voteCount before %v and after %v is different", candidate.VoteCount, candidate1.VoteCount)
 	} else if !bytes.Equal(candidate.Url, candidate1.Url) {
@@ -156,6 +156,7 @@ func TestConvertToKV(t *testing.T) {
 	}
 }
 
+// 把上面单元测试打印的结果添加到下面，如果pass说明解析对了
 func TestConvertToStruct(t *testing.T) {
 	kvMap := make(map[common.Hash]common.Hash)
 	// voter
@@ -171,9 +172,9 @@ func TestConvertToStruct(t *testing.T) {
 	kvMap[common.HexToHash("000000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000007")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000002") // VoteCandidates
 	// candidate
 	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000000")] = common.HexToHash("0000000000000000000000949ee97d274eb4c215f23238fee1f103d9ea10a234") // owner
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000001")] = common.HexToHash("0000000000000000000000949ee97d274eb4c215f23238fee1f103d9ea10a231") // Binder
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000002")] = common.HexToHash("0000000000000000000000949ee97d274eb4c215f23238fee1f103d9ea10a232") // Beneficiary
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000003")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000822b5c") // vote count
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000001")] = common.HexToHash("0000000000000000000000940000000000000000000000923839919383938289") // Binder
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000002")] = common.HexToHash("0000000000000000000000940000000000000000000000923839919383938281") // Beneficiary
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000003")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000080") // vote count
 	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000004")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001") // register
 	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000005")] = common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001") // bind
 	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000006")] = common.HexToHash("0000000000000000000000000000b8502f6970342f3139322e3136382e392e31") // url
@@ -460,7 +461,7 @@ func TestGetFirstXCandidates_3(t *testing.T) {
 	type addrPair struct {
 		addrPre byte
 		votes   int64
-		active  bool
+		bind    bool // register始终是true，bind是true则active为true
 	}
 
 	witNum := 4
@@ -484,7 +485,8 @@ func TestGetFirstXCandidates_3(t *testing.T) {
 		candidate1 := candidate
 		candidate1.Owner[0] = byte(tests[i].addrPre)
 		candidate1.VoteCount = big.NewInt(tests[i].votes)
-		candidate1.Registered = tests[i].active
+		candidate1.Registered = true
+		candidate1.Bind = tests[i].bind
 		if err := c.setCandidate(candidate1); err != nil {
 			t.Errorf("candiates: %s, error: %s", candidate1.Owner, err)
 		}
@@ -547,6 +549,7 @@ func TestGetFirstXCandidates_4(t *testing.T) {
 		candidate1.Owner[0] = byte(tests[i].addrPre)
 		candidate1.VoteCount = big.NewInt(tests[i].votes)
 		candidate1.Registered = true
+		candidate1.Bind = true
 		if err := c.setCandidate(candidate1); err != nil {
 			t.Errorf("candiates: %s, error: %s", candidate1.Owner, err)
 		}

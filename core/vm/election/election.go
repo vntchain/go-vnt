@@ -502,7 +502,6 @@ func (ec electionContext) matchLockerAndCandi(locker, candi, beneficiary common.
 	// get candidate from db
 	candidate := ec.getCandidate(candi)
 
-	// if candidate is active
 	if candidate.Owner != candi {
 		return nil, fmt.Errorf("bindCandidates failed, candidates not exist: %v", candi.Hex())
 	}
