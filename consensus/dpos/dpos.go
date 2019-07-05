@@ -494,18 +494,11 @@ func (d *Dpos) grantingReward(chain consensus.ChainReader, header *types.Header,
 		if restBounty.Cmp(reward) < 0 {
 			reward = restBounty
 		}
-		if restBounty, err = election.GrantBounty(state, reward); err == nil {
-			ca := election.GetCandidate(state, header.Coinbase)
-			if ca == nil {
-				// If node is initial node, reward to itself
-				log.Warn("Can not find witness info when granting reward", "addr", header.Coinbase.String())
-				state.AddBalance(header.Coinbase, reward)
-			} else {
-				// reward to beneficiary of it's binder
-				state.AddBalance(ca.Beneficiary, reward)
-			}
-		}
+		rewards := make(map[common.Address]*big.Int)
+		rewards[header.Coinbase] = reward
+		restBounty.Sub(restBounty, reward)
 
+		// 计算投票激励
 		// Reward all witness candidates, when update witness list, if has any bounty
 		if d.updatedWitnessCheckByTime(header) && restBounty.Cmp(common.Big0) > 0 {
 			candis, allBonus, err := d.voteBonusPreWork(chain, header, state)
@@ -515,11 +508,16 @@ func (d *Dpos) grantingReward(chain consensus.ChainReader, header *types.Header,
 
 			// the amount of bounty granted must not greater than the left bounty
 			actualBonus := math.BigMin(allBonus, restBounty)
-			log.Debug("Vote bounty", "each bounty(wei)", actualBonus.String())
-			if bonus := d.calcVoteBounty(candis, actualBonus); bonus != nil {
-				return election.AddCandidatesBounty(state, bonus, actualBonus)
-			}
+			log.Debug("Vote bounty", "bounty(wei)", actualBonus.String())
+			d.calcVoteBounty(candis, actualBonus, rewards)
 		}
+
+		// 统一发放激励
+		if err = election.GrantBounty(state, rewards); err == nil {
+			log.Warn("Granting reward failed", "error", err.Error())
+			return err
+		}
+
 	}
 	return nil
 }
@@ -815,9 +813,8 @@ func (upTime *updateTime) bigInt() *big.Int {
 }
 
 // calcVoteBounty returns a map, which contains the vote bonus of each candidates
-// in this period. If active candidates less than WitnessesNum it will return a
-// nil map.
-func (d *Dpos) calcVoteBounty(candis election.CandidateList, allBonus *big.Int) map[common.Address]*big.Int {
+// in this period. If active candidates less than WitnessesNum it will not reward candidate.
+func (d *Dpos) calcVoteBounty(candis election.CandidateList, allBonus *big.Int, rewards map[common.Address]*big.Int) {
 	totalVotes := big.NewInt(0)
 	activeCnt := 0
 	for _, can := range candis {
@@ -829,21 +826,23 @@ func (d *Dpos) calcVoteBounty(candis election.CandidateList, allBonus *big.Int) 
 	}
 	// Too less candidates before main net start, but it's normal
 	if activeCnt < d.config.WitnessesNum || totalVotes.Cmp(common.Big0) == 0 {
-		return nil
+		return
 	}
 
 	// Calc each candidates' bonus
-	bonus := make(map[common.Address]*big.Int, activeCnt)
 	for _, can := range candis {
 		if !can.Active() {
 			continue
 		}
 
-		tmp := big.NewInt(0).Mul(allBonus, can.VoteCount)
-		tmp.Div(tmp, totalVotes)
-		bonus[can.Owner] = tmp
+		reward := big.NewInt(0).Mul(allBonus, can.VoteCount)
+		reward.Div(reward, totalVotes)
+		if _, ok := rewards[can.Owner]; ok {
+			rewards[can.Owner] = big.NewInt(0).Add(rewards[can.Owner], reward)
+		} else {
+			rewards[can.Owner] = reward
+		}
 	}
-	return bonus
 }
 
 // voteBonusPreWork

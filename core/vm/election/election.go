@@ -62,8 +62,8 @@ var (
 
 	// stake minimum time period
 	unstakePeriod   = big.NewInt(OneDay)
-	baseBounty      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1000)) // TODO stb 删除
-	restTotalBounty = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(25e+7))
+	baseBounty      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1000))  // TODO stb 删除
+	restTotalBounty = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(25e+7)) // TODO stb reward相关移动到单独的文件
 	bindAmount      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1e7))
 )
 
@@ -294,6 +294,7 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte, value *big.Int) ([]
 	case isMethod("unStake"):
 		err = c.unStake(sender)
 	case isMethod("extractOwnBounty"):
+		// TODO stb 删除
 		err = c.extractOwnBounty(sender)
 	case isMethod("$bindCandidate"):
 		var info BindInfo
@@ -830,7 +831,10 @@ func (ec electionContext) unStake(address common.Address) error {
 
 // transfer 系统合约内的转账
 func (ec electionContext) transfer(sender, receiver common.Address, amount *big.Int) error {
-	db := ec.context.GetStateDb()
+	return transfer(ec.context.GetStateDb(), sender, receiver, amount)
+}
+
+func transfer(db inter.StateDB, sender, receiver common.Address, amount *big.Int) error {
 	if db.GetBalance(sender).Cmp(amount) < 0 {
 		return fmt.Errorf("sender[%v] do not have enough balance", sender.Hex())
 	}
@@ -840,7 +844,7 @@ func (ec electionContext) transfer(sender, receiver common.Address, amount *big.
 	return nil
 }
 
-// TODO stb删除
+// TODO stb 删除
 func (ec electionContext) extractOwnBounty(addr common.Address) error {
 	//24小时内提取1次
 	//总激励-已提取激励：是本次可提取的VNT数量，每次至少1000VNT才可提取
@@ -1014,35 +1018,54 @@ func GetStake(stateDB inter.StateDB, addr common.Address) *Stake {
 	return nil
 }
 
-// AddCandidatesBounty sends votes bounty to candidates.
-func AddCandidatesBounty(stateDB inter.StateDB, bonus map[common.Address]*big.Int, allBonus *big.Int) error {
-	for addr, bu := range bonus {
-		if err := addCandidateBounty(stateDB, addr, bu); err != nil {
+// GrantBounty 发放激励给该候选节点的受益人，返回错误。
+// 激励金额不足发放时为正常情况不返回error，返回nil。
+// 返回错误时，数据状态恢复到原始情况，即所有激励都不发放。
+func GrantBounty(stateDB inter.StateDB, rewards map[common.Address]*big.Int) (err error) {
+	// 无激励即可返回
+	bounty := getRestBounty(stateDB)
+	rest := bounty.RestTotalBounty
+	if rest.Cmp(common.Big0) <= 0 {
+		return nil
+	}
+
+	// 退出时，如果存在错误，恢复原始状态
+	snap := stateDB.Snapshot()
+	defer func() {
+		if err != nil {
+			stateDB.RevertToSnapshot(snap)
+		}
+	}()
+
+	for addr, amount := range rewards {
+		// 激励不能超过剩余金额
+		if rest.Cmp(amount) < 0 {
+			amount = rest
+		}
+		can := GetCandidate(stateDB, addr)
+		// 再检查：跳过不存在或未激活的候选人
+		if can == nil || !can.Active() {
+			log.Error("Not find candidate or inactive when granting reward", "addr", addr.String())
+			continue
+		}
+		// 发送错误退出
+		if err = transfer(stateDB, contractAddr, can.Beneficiary, amount); err != nil {
 			return err
+		}
+		rest = rest.Sub(rest, amount)
+		// 发放到无剩余激励
+		if rest.Cmp(common.Big0) <= 0 {
+			break
 		}
 	}
 
-	// 减少剩余激励Token数量
-	if _, err := GrantBounty(stateDB, allBonus); err != nil {
-		return err
-	}
-	return nil
-}
-
-// GrantBounty grants VNT bounty. Returns an error, if RestTotalBounty is less
-// than grantAmount.
-func GrantBounty(stateDB inter.StateDB, grantAmount *big.Int) (*big.Int, error) {
-	bounty := getRestBounty(stateDB)
-	if bounty.RestTotalBounty.Cmp(grantAmount) < 0 {
-		return bounty.RestTotalBounty, fmt.Errorf("rest bounty %v is not enough to pay %v", bounty.RestTotalBounty, grantAmount)
-	}
-	newRestBounty := new(big.Int).Sub(bounty.RestTotalBounty, grantAmount)
-	err := setRestBounty(stateDB, Bounty{newRestBounty})
-	return newRestBounty, err
+	// 激励正常发放完毕，更新剩余激励
+	return setRestBounty(stateDB, Bounty{RestTotalBounty: big.NewInt(0).Set(rest)})
 }
 
 // QueryRestVNTBounty returns the value of RestTotalBounty.
 func QueryRestVNTBounty(stateDB inter.StateDB) *big.Int {
+	// TODO 初始化为0
 	if !stateDB.Exist(contractAddr) {
 		stateDB.SetNonce(contractAddr, 1)
 		if err := setRestBounty(stateDB, Bounty{restTotalBounty}); err != nil {

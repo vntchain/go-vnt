@@ -1268,6 +1268,7 @@ func TestStakeInvalid(t *testing.T) {
 	}
 }
 
+// TODO stb 删除
 func TestExtractBounty(t *testing.T) {
 	context := newcontext()
 	ec := newElectionContext(context)
@@ -1283,31 +1284,85 @@ func TestExtractBounty(t *testing.T) {
 	}
 }
 
+type grantCase struct {
+	balance       *big.Int                    // 合约余额
+	rewardBalance *big.Int                    // 激励余额
+	cans          CandidateList               // 当前的候选人列表
+	rewards       map[common.Address]*big.Int // 待发放余额
+	errExpOfGrant error                       // 有error时意味着回滚，也要匹配具体error
+	// 匹配每个受益账号增加的金额与rewardBalance是否匹配，只有rewards中所有受益人能收到激励的测试场景才设置为true
+	matchBeneficiary bool
+}
+
 func TestGrantBounty(t *testing.T) {
-	context := newcontext()
+	// TODO stb
+	// 	有充足余额，有充足剩余激励，余额减少，收益人余额增加
+	// 	有充足余额，剩余激励够1个账号的，不足2个账号，有账号的受益人余额增加，有的未增加，剩余激励为0
+	// 	有充足余额，有充足剩余激励，候选人有1个未激活，被跳过，检查剩余激励正确
+	// 	余额不足，有充足剩余激励，返回error，statedb被回滚，检查statedb的snapshot id是否为运行前的
 
-	if err := setRestBounty(context.GetStateDb(), bounty); err != nil {
-		t.Error(err)
-	}
-	// enough to pay
-	if rest, err := GrantBounty(context.GetStateDb(), big.NewInt(1e17)); err != nil {
-		t.Error(err)
-	} else if rest.Cmp(big.NewInt(9e17)) != 0 {
-		t.Error("the rest of bounty error")
+}
+
+func testGrantBounty(t *testing.T, cas *grantCase) {
+	ec := newTestElectionCtx()
+	db := ec.context.GetStateDb()
+
+	// 设置余额
+	db.AddBalance(contractAddr, cas.balance)
+
+	// 设置剩余激励
+	err := setRestBounty(db, Bounty{cas.rewardBalance})
+	assert.Equal(t, err, nil, fmt.Sprintf("set rest bounty error: %v", err.Error()))
+
+	// 设置候选人
+	for i, can := range cas.cans {
+		err = ec.setCandidate(can)
+		assert.Equal(t, err, nil, fmt.Sprintf("[%d] set candidate error: %v", i, err.Error()))
+
 	}
 
-	// not enough to pay
-	if rest, err := GrantBounty(context.GetStateDb(), big.NewInt(1e18)); err == nil {
-		t.Error("the rest of bounty should be not enough to pay")
-	} else if rest.Cmp(big.NewInt(9e17)) != 0 {
-		t.Error("the rest of bounty error")
+	// 保存db snapshot
+	preSnap := db.Snapshot()
+
+	// 执行分激励
+	err = GrantBounty(db, cas.rewards)
+	assert.Equal(t, err, cas.errExpOfGrant, fmt.Sprintf("grant bounty error mismatch"))
+
+	// 校验回滚
+	if cas.errExpOfGrant != nil {
+		assert.Equal(t, db.Snapshot(), preSnap, fmt.Sprintf("db is reverted but snapshot mismatch"))
 	}
 
-	// just to pay
-	if rest, err := GrantBounty(context.GetStateDb(), big.NewInt(9e17)); err != nil {
-		t.Log(err)
-	} else if rest.Cmp(big.NewInt(0)) != 0 {
-		t.Error("the rest of bounty error")
+	// 校验余额和受益人余额增加额是否匹配，剩余激励是否匹配
+	totalReward := big.NewInt(0)
+	for _, re := range cas.rewards {
+		totalReward = totalReward.Add(totalReward, re)
+	}
+	reducedBalance := big.NewInt(0).Sub(cas.balance, db.GetBalance(contractAddr))
+	assert.Equal(t, reducedBalance, totalReward, "reduced contract balance should equal total reward")
+	reducedReward := big.NewInt(0).Sub(cas.rewardBalance, getRestBounty(db).RestTotalBounty)
+	assert.Equal(t, reducedReward, totalReward, "reduced contract reward should equal total reward")
+
+	// 	校验每个受益账户增加的余额
+	if cas.matchBeneficiary {
+		// 统计受益账户应收到的总激励
+		benes := make(map[common.Address]*big.Int)
+		for addr, amount := range cas.rewards {
+			can := ec.getCandidate(addr)
+			assert.Equal(t, can.Owner, addr, "candidate address not match")
+			if _, ok := benes[can.Beneficiary]; ok {
+				benes[can.Beneficiary] = big.NewInt(0).Add(benes[can.Beneficiary], amount)
+			} else {
+				benes[can.Beneficiary] = big.NewInt(0).Set(amount)
+			}
+		}
+
+		// 	匹配实际收到金额
+		for addr, reward := range benes {
+			// 所有受益账户初始都没有余额
+			addedBal := db.GetBalance(addr)
+			assert.Equal(t, addedBal, reward, fmt.Sprintf("beneficiary reward mismtach: %v", addr))
+		}
 	}
 }
 
