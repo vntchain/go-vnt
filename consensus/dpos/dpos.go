@@ -513,11 +513,10 @@ func (d *Dpos) grantingReward(chain consensus.ChainReader, header *types.Header,
 		}
 
 		// 统一发放激励
-		if err = election.GrantBounty(state, rewards); err == nil {
+		if err = election.GrantBounty(state, rewards); err != nil {
 			log.Warn("Granting reward failed", "error", err.Error())
 			return err
 		}
-
 	}
 	return nil
 }

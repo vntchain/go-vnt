@@ -419,6 +419,7 @@ func (ec electionContext) unregisterWitness(address common.Address) error {
 	candidate.Registered = false
 
 	// 已经解除绑定
+	binder := candidate.Binder
 	shouldReturnToken := candidate.Bind == true
 	candidate.Bind = false
 	candidate.Binder = emptyAddress
@@ -433,7 +434,7 @@ func (ec electionContext) unregisterWitness(address common.Address) error {
 
 	// 返还绑定金
 	if shouldReturnToken {
-		return ec.transfer(contractAddr, candidate.Binder, bindAmount)
+		return ec.transfer(contractAddr, binder, bindAmount)
 	}
 	return nil
 }
