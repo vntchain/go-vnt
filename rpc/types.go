@@ -169,18 +169,15 @@ func (bn BlockNumber) Int64() int64 {
 // Using hexutil.Big to replace big.Int for client
 // can read the value as string
 type Candidate struct {
-	Owner           string       `json:"owner"`           // 候选人地址
-	Name            string       `json:"name"`            // 候选人名称
-	Registered      bool         `json:"active"`          // 是否为注册状态
-	Website         string       `json:"website"`         // 见证人网站
-	Url             string       `json:"url"`             // 节点的URL
-	VoteCount       *hexutil.Big `json:"voteCount"`       // 收到的票数
-	TotalBounty     *hexutil.Big `json:"totalBounty"`     // 总奖励金额
-	ExtractedBounty *hexutil.Big `json:"extractedBounty"` // 已提取奖励金额
-	LastExtractTime *hexutil.Big `json:"lastExtractTime"` // 上次提权时间
-	Binder          string       `json:"binder"`          // 锁仓人/绑定人
-	Beneficiary     string       `json:"beneficiary"`     // 收益受益人
-	Bind            bool         `json:"bind"`            // 是否被绑定
+	Owner       string       `json:"owner"`       // 候选人地址
+	Name        string       `json:"name"`        // 候选人名称
+	Registered  bool         `json:"active"`      // 是否为注册状态
+	Website     string       `json:"website"`     // 见证人网站
+	Url         string       `json:"url"`         // 节点的URL
+	VoteCount   *hexutil.Big `json:"voteCount"`   // 收到的票数
+	Binder      string       `json:"binder"`      // 锁仓人/绑定人
+	Beneficiary string       `json:"beneficiary"` // 收益受益人
+	Bind        bool         `json:"bind"`        // 是否被绑定
 }
 
 // Voter is the information of who has vote witness candidate

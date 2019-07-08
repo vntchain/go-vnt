@@ -390,20 +390,6 @@ func getAllProxy(db inter.StateDB) []*Voter {
 	}
 	return result
 }
-func addCandidateBounty(stateDB inter.StateDB, addr common.Address, bouns *big.Int) error {
-	candidate := newCandidate()
-	err := convertToStruct(CANDIDATEPREFIX, addr, &candidate, genGetFunc(stateDB))
-	if err != nil {
-		return err
-	}
-
-	candidate.TotalBounty = new(big.Int).Add(candidate.TotalBounty, bouns)
-	err = convertToKV(CANDIDATEPREFIX, &candidate, genSetFunc(stateDB))
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func getRestBounty(stateDB inter.StateDB) Bounty {
 	var bounty Bounty

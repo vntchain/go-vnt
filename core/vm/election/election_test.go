@@ -309,11 +309,9 @@ func TestCandidateList_Less(t *testing.T) {
 
 func TestCandidateList_Swap(t *testing.T) {
 	c1 := Candidate{common.HexToAddress("0x1"), binder, beneficiary, big.NewInt(100),
-		false, false, []byte("/p2p/1"), big.NewInt(10000), big.NewInt(200),
-		big.NewInt(1548664636), []byte("node1.com"), []byte("node1")}
+		false, false, []byte("/p2p/1"), []byte("node1.com"), []byte("node1")}
 	c2 := Candidate{common.HexToAddress("0x2"), binder, beneficiary, big.NewInt(20),
-		true, true, []byte("/p2p/2"), big.NewInt(10000), big.NewInt(200),
-		big.NewInt(1548664636), []byte("node2.com"), []byte("node2")}
+		true, true, []byte("/p2p/2"), []byte("node2.com"), []byte("node2")}
 
 	candidates := CandidateList{c1, c2}
 	swaped := CandidateList{c2, c1}
@@ -328,20 +326,15 @@ func TestCandidateList_Swap(t *testing.T) {
 func TestCandidateList_Sort(t *testing.T) {
 	// c1票数为负，c2与c5票数相等，c3票数最多
 	c1 := Candidate{common.HexToAddress("0x1"), binder, beneficiary, big.NewInt(100),
-		false, false, []byte("/p2p/1"), big.NewInt(10000), big.NewInt(200),
-		big.NewInt(1548664636), []byte("node1.com"), []byte("node1")}
+		false, false, []byte("/p2p/1"), []byte("node1.com"), []byte("node1")}
 	c2 := Candidate{common.HexToAddress("0x2"), binder, beneficiary, big.NewInt(20),
-		true, true, []byte("/p2p/2"), big.NewInt(10000), big.NewInt(200),
-		big.NewInt(1548664636), []byte("node2.com"), []byte("node2")}
+		true, true, []byte("/p2p/2"), []byte("node2.com"), []byte("node2")}
 	c3 := Candidate{common.HexToAddress("0x3"), binder, beneficiary, big.NewInt(90),
-		true, true, []byte("/p2p/3"), big.NewInt(10000), big.NewInt(200),
-		big.NewInt(1548664636), []byte("node3.com"), []byte("node3")}
+		true, true, []byte("/p2p/3"), []byte("node3.com"), []byte("node3")}
 	c4 := Candidate{common.HexToAddress("0x4"), binder, beneficiary, big.NewInt(40),
-		true, true, []byte("/p2p/4"), big.NewInt(10000), big.NewInt(200),
-		big.NewInt(1548664636), []byte("node4.com"), []byte("node4")}
+		true, true, []byte("/p2p/4"), []byte("node4.com"), []byte("node4")}
 	c5 := Candidate{common.HexToAddress("0x5"), binder, beneficiary, big.NewInt(20),
-		true, true, []byte("/p2p/5"), big.NewInt(10000), big.NewInt(200),
-		big.NewInt(1548664636), []byte("node5.com"), []byte("node5")}
+		true, true, []byte("/p2p/5"), []byte("node5.com"), []byte("node5")}
 	candidates := CandidateList{c1, c2, c3, c4, c5}
 	sorted := CandidateList{c3, c4, c2, c5, c1}
 
@@ -1268,22 +1261,6 @@ func TestStakeInvalid(t *testing.T) {
 	}
 }
 
-// TODO stb 删除
-func TestExtractBounty(t *testing.T) {
-	context := newcontext()
-	ec := newElectionContext(context)
-	if err := ec.setCandidate(candidate); err != nil {
-		t.Errorf("candiates: %s, error: %s", candidate.Owner, err)
-	}
-	if err := ec.extractOwnBounty(candidate.Owner); err != nil {
-		t.Error(err)
-	}
-	candidate1 := ec.getCandidate(candidate.Owner)
-	if candidate1.TotalBounty.Cmp(candidate1.ExtractedBounty) != 0 {
-		t.Errorf("extracted bounty %v not equal to totalBouty %v", candidate1.ExtractedBounty, candidate1.TotalBounty)
-	}
-}
-
 type grantCase struct {
 	name          string                      // case名称
 	balance       *big.Int                    // 合约余额
@@ -1876,6 +1853,8 @@ func TestUnbindCandidate(t *testing.T) {
 	ca4Exp := newTestCandi()
 	ca4Exp.Registered = true
 	ca4Exp.Bind = false
+	ca4Exp.Binder = emptyAddress
+	ca4Exp.Beneficiary = emptyAddress
 	c4 := bindCase{"c4", ca4.Binder, newTestBindInfo(ca4), bindAmount, nil, ca4, ca4Exp}
 
 	cases := []bindCase{c1, c2, c3, c4}
@@ -1938,6 +1917,8 @@ func TestUnregisterCandidate(t *testing.T) {
 	ca2Exp := newTestCandi()
 	ca2Exp.Registered = false
 	ca2Exp.Bind = false
+	ca2Exp.Beneficiary = emptyAddress
+	ca2Exp.Binder = emptyAddress
 	c2 := unRegCase{"c2", nil, ca2, ca2Exp, true}
 
 	// 已注册后取消，再取消
@@ -1987,18 +1968,15 @@ func newTestElectionCtx() electionContext {
 
 func newTestCandi() *Candidate {
 	return &Candidate{
-		Owner:           common.HexToAddress("9ee97d274eb4c215f23238fee1f103d9ea10a234"),
-		Binder:          binder,
-		Beneficiary:     beneficiary,
-		Registered:      true,
-		Bind:            true,
-		VoteCount:       big.NewInt(0),
-		Url:             []byte("/ip4/192.168.9.102/tcp/5210/ipfs/1kHaMUmZgTpjGEhxcGATr1UVWy6iKkygFuknWEtW7LiLrev"),
-		TotalBounty:     big.NewInt(0).Mul(big.NewInt(10000), big.NewInt(1e18)),
-		ExtractedBounty: big.NewInt(0).Mul(big.NewInt(100), big.NewInt(1e18)),
-		LastExtractTime: big.NewInt(1531004152),
-		Website:         []byte("www.testwebsite.net/test/witness/website"),
-		Name:            []byte("testNet"),
+		Owner:       common.HexToAddress("9ee97d274eb4c215f23238fee1f103d9ea10a234"),
+		Binder:      binder,
+		Beneficiary: beneficiary,
+		Registered:  true,
+		Bind:        true,
+		VoteCount:   big.NewInt(0),
+		Url:         []byte("/ip4/192.168.9.102/tcp/5210/ipfs/1kHaMUmZgTpjGEhxcGATr1UVWy6iKkygFuknWEtW7LiLrev"),
+		Website:     []byte("www.testwebsite.net/test/witness/website"),
+		Name:        []byte("testNet"),
 	}
 }
 

@@ -62,7 +62,6 @@ var (
 
 	// stake minimum time period
 	unstakePeriod   = big.NewInt(OneDay)
-	baseBounty      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1000))  // TODO stb 删除
 	restTotalBounty = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(25e+7)) // TODO stb reward相关移动到单独的文件
 	bindAmount      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1e7))
 )
@@ -87,23 +86,20 @@ type Voter struct {
 // Candidate information of witness candidates.
 // Tips: Modify CandidateList.Swap() and Candidate.String() when adding or removing element of Candidate.
 type Candidate struct {
-	Owner           common.Address // 候选人地址
-	Binder          common.Address // 锁仓人/绑定人
-	Beneficiary     common.Address // 收益受益人
-	VoteCount       *big.Int       // 收到的票数
-	Registered      bool           // 当前是否注册为候选人
-	Bind            bool           // 是否被绑定
-	Url             []byte         // 节点的URL
-	TotalBounty     *big.Int       // 总奖励金额
-	ExtractedBounty *big.Int       // 已提取奖励金额
-	LastExtractTime *big.Int       // 上次提权时间
-	Website         []byte         // 节点网站地址
-	Name            []byte         // 节点名字
+	Owner       common.Address // 候选人地址
+	Binder      common.Address // 锁仓人/绑定人
+	Beneficiary common.Address // 收益受益人
+	VoteCount   *big.Int       // 收到的票数
+	Registered  bool           // 当前是否注册为候选人
+	Bind        bool           // 是否被绑定
+	Url         []byte         // 节点的URL
+	Website     []byte         // 节点网站地址
+	Name        []byte         // 节点名字
 }
 
 func (c *Candidate) String() string {
-	return fmt.Sprintf("candidate{ addr:%s, votes:%s, registered:%v, bind:%v, active:%v, url:%s, totalBounty: %v, extractedBounty: %v, lastExtractTime: %v, WebSite: %s, Name: %s}\n",
-		c.Owner.String(), c.VoteCount.String(), c.Registered, c.Bind, c.Active(), string(c.Url), c.TotalBounty, c.ExtractedBounty, c.LastExtractTime, string(c.Website), string(c.Name))
+	return fmt.Sprintf("candidate{ addr:%s, votes:%s, registered:%v, bind:%v, active:%v, url:%s, WebSite: %s, Name: %s}\n",
+		c.Owner.String(), c.VoteCount.String(), c.Registered, c.Bind, c.Active(), string(c.Url), string(c.Website), string(c.Name))
 }
 
 // Active 判断候选人是否已激活
@@ -177,9 +173,6 @@ func (c CandidateList) Swap(i, j int) {
 	c[i].Registered, c[j].Registered = c[j].Registered, c[i].Registered
 	c[i].Bind, c[j].Bind = c[j].Bind, c[i].Bind
 	c[i].Url, c[j].Url = c[j].Url, c[i].Url
-	c[i].TotalBounty, c[j].TotalBounty = c[j].TotalBounty, c[i].TotalBounty
-	c[i].ExtractedBounty, c[j].ExtractedBounty = c[j].ExtractedBounty, c[i].ExtractedBounty
-	c[i].LastExtractTime, c[j].LastExtractTime = c[j].LastExtractTime, c[i].LastExtractTime
 	c[i].Website, c[j].Website = c[j].Website, c[i].Website
 	c[i].Name, c[j].Name = c[j].Name, c[i].Name
 }
@@ -293,9 +286,6 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte, value *big.Int) ([]
 		err = c.stake(sender, value)
 	case isMethod("unStake"):
 		err = c.unStake(sender)
-	case isMethod("extractOwnBounty"):
-		// TODO stb 删除
-		err = c.extractOwnBounty(sender)
 	case isMethod("$bindCandidate"):
 		var info BindInfo
 		if err = electionABI.UnpackInput(&info, methodName, methodArgs); err != nil {
@@ -846,36 +836,6 @@ func transfer(db inter.StateDB, sender, receiver common.Address, amount *big.Int
 
 	db.AddBalance(receiver, amount)
 	db.SubBalance(sender, amount)
-	return nil
-}
-
-// TODO stb 删除
-func (ec electionContext) extractOwnBounty(addr common.Address) error {
-	//24小时内提取1次
-	//总激励-已提取激励：是本次可提取的VNT数量，每次至少1000VNT才可提取
-	candidate := ec.getCandidate(addr)
-	if !bytes.Equal(candidate.Owner.Bytes(), addr.Bytes()) {
-		log.Warn("extractOwnBounty unknown witness.", "address", addr.Hex())
-		return fmt.Errorf("extractOwnBounty unknown witness.")
-	}
-	now := ec.context.GetTime()
-	if now.Cmp(candidate.LastExtractTime) < 0 || now.Cmp(new(big.Int).Add(candidate.LastExtractTime, big.NewInt(OneDay))) < 0 {
-		return fmt.Errorf("it's less than 24h after your last extract bounty,lastExtractTime: %v , now: %v", candidate.LastExtractTime, now)
-	}
-
-	restBounty := new(big.Int).Sub(candidate.TotalBounty, candidate.ExtractedBounty)
-
-	if restBounty.Cmp(baseBounty) < 0 {
-		log.Warn("the rest of bounty is not enough 1000 vnt", restBounty)
-		return fmt.Errorf("the rest of bounty %v wei is not enough 1000 vnt", restBounty)
-	}
-
-	candidate.ExtractedBounty.Add(candidate.ExtractedBounty, restBounty)
-	candidate.LastExtractTime = now
-	if err := ec.setCandidate(candidate); err != nil {
-		return fmt.Errorf("set Candidate error %s", err)
-	}
-	ec.context.GetStateDb().AddBalance(addr, restBounty)
 	return nil
 }
 

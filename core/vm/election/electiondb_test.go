@@ -40,18 +40,15 @@ var (
 		TimeStamp:      big.NewInt(1531454152),
 	}
 	candidate = Candidate{
-		Owner:           common.HexToAddress("9ee97d274eb4c215f23238fee1f103d9ea10a234"),
-		Binder:          binder,
-		Beneficiary:     beneficiary,
-		Registered:      true,
-		Bind:            true,
-		VoteCount:       big.NewInt(0),
-		Url:             []byte("/ip4/192.168.9.102/tcp/5210/ipfs/1kHaMUmZgTpjGEhxcGATr1UVWy6iKkygFuknWEtW7LiLrev"),
-		TotalBounty:     big.NewInt(0).Mul(big.NewInt(10000), big.NewInt(1e18)),
-		ExtractedBounty: big.NewInt(0).Mul(big.NewInt(100), big.NewInt(1e18)),
-		LastExtractTime: big.NewInt(1531004152),
-		Website:         []byte("www.testwebsite.net/test/witness/website"),
-		Name:            []byte("testNet"),
+		Owner:       common.HexToAddress("9ee97d274eb4c215f23238fee1f103d9ea10a234"),
+		Binder:      binder,
+		Beneficiary: beneficiary,
+		Registered:  true,
+		Bind:        true,
+		VoteCount:   big.NewInt(0),
+		Url:         []byte("/ip4/192.168.9.102/tcp/5210/ipfs/1kHaMUmZgTpjGEhxcGATr1UVWy6iKkygFuknWEtW7LiLrev"),
+		Website:     []byte("www.testwebsite.net/test/witness/website"),
+		Name:        []byte("testNet"),
 	}
 	stake = Stake{
 		Owner:      common.HexToAddress("9ee97d274eb4c215f23238fee1f103d9ea10a234"),
@@ -109,12 +106,6 @@ func sameCandidate(candidate *Candidate, candidate1 *Candidate) (bool, error) {
 		return false, fmt.Errorf("Error,voteCount before %v and after %v is different", candidate.VoteCount, candidate1.VoteCount)
 	} else if !bytes.Equal(candidate.Url, candidate1.Url) {
 		return false, fmt.Errorf("Error, url before %x and after %x is different", candidate.Url, candidate1.Url)
-	} else if !bytes.Equal(candidate.TotalBounty.Bytes(), candidate1.TotalBounty.Bytes()) {
-		return false, fmt.Errorf("Error, totalBounty before %v and after %v is different", candidate.TotalBounty, candidate1.TotalBounty)
-	} else if !bytes.Equal(candidate.ExtractedBounty.Bytes(), candidate1.ExtractedBounty.Bytes()) {
-		return false, fmt.Errorf("Error, extractedBounty before %v and after %v is different", candidate.ExtractedBounty, candidate1.ExtractedBounty)
-	} else if !bytes.Equal(candidate.LastExtractTime.Bytes(), candidate1.LastExtractTime.Bytes()) {
-		return false, fmt.Errorf("Error, lastExtractTime before %v and after %v is different", candidate.LastExtractTime, candidate1.LastExtractTime)
 	} else if !bytes.Equal(candidate.Website, candidate1.Website) {
 		return false, fmt.Errorf("Error, Website before %v and after %v is different", candidate.Website, candidate1.Website)
 	} else if !bytes.Equal(candidate.Name, candidate1.Name) {
@@ -180,12 +171,9 @@ func TestConvertToStruct(t *testing.T) {
 	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000006")] = common.HexToHash("0000000000000000000000000000b8502f6970342f3139322e3136382e392e31") // url
 	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000100000006")] = common.HexToHash("30322f7463702f353231302f697066732f316b48614d556d5a6754706a474568") // url
 	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000200000006")] = common.HexToHash("786347415472315556577936694b6b796746756b6e57457457374c694c726576") // url
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000007")] = common.HexToHash("0000000000000000000000000000000000000000008a021e19e0c9bab2400000") // TotalBounty
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000008")] = common.HexToHash("0000000000000000000000000000000000000000000089056bc75e2d63100000") // ExtractedBounty
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000009")] = common.HexToHash("000000000000000000000000000000000000000000000000000000845b4144f8") // LastExtractTime
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a234000000010000000a")] = common.HexToHash("776562736974652e6e65742f746573742f7769746e6573732f77656273697465") // Website
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a234000000000000000a")] = common.HexToHash("0000000000000000000000000000000000000000000000a87777772e74657374") // Website
-	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a234000000000000000b")] = common.HexToHash("00000000000000000000000000000000000000000000000087746573744e6574") // name
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000100000007")] = common.HexToHash("776562736974652e6e65742f746573742f7769746e6573732f77656273697465") // Website
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000007")] = common.HexToHash("0000000000000000000000000000000000000000000000a87777772e74657374") // Website
+	kvMap[common.HexToHash("010000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000008")] = common.HexToHash("00000000000000000000000000000000000000000000000087746573744e6574") // name
 	// stake
 	kvMap[common.HexToHash("020000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000000")] = common.HexToHash("0000000000000000000000949ee97d274eb4c215f23238fee1f103d9ea10a234") // Owner
 	kvMap[common.HexToHash("020000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000001")] = common.HexToHash("00000000000000000000000000000000000000000000000000000000000081e6") // StakeCount
@@ -567,27 +555,5 @@ func TestGetFirstXCandidates_4(t *testing.T) {
 		if ret != 0 {
 			t.Errorf("candidates nots match at index:%d, ret:%d, want: %x, got:%x", i, ret, can, witsAddr[i])
 		}
-	}
-}
-
-func TestAddCandidateBounty(t *testing.T) {
-	db := vntdb.NewMemDatabase()
-	stateDB, _ := state.New(common.Hash{}, state.NewDatabase(db))
-
-	ctx := testContext{StateDB: stateDB}
-	c := newElectionContext(&ctx)
-
-	err := c.setCandidate(candidate)
-	if err != nil {
-		t.Error(err)
-	}
-
-	bounty := big.NewInt(0).Mul(big.NewInt(100), big.NewInt(1e18))
-	_ = addCandidateBounty(c.context.GetStateDb(), candidate.Owner, bounty)
-	candidate1 := c.getCandidate(candidate.Owner)
-	candidate1.TotalBounty.Sub(candidate1.TotalBounty, bounty)
-
-	if same, err := sameCandidate(&candidate, &candidate1); !same {
-		t.Error(err)
 	}
 }

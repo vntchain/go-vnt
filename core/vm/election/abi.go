@@ -33,7 +33,6 @@ const ElectionAbiJSON = `[
 {"name":"setProxy","inputs":[{"name":"proxy","type":"address"}],"outputs":[],"type":"function"},
 {"name":"$stake","inputs":[],"outputs":[],"type":"function"},
 {"name":"unStake","inputs":[],"outputs":[],"type":"function"},
-{"name":"extractOwnBounty","inputs":[],"outputs":[],"type":"function"},
 {"name":"$bindCandidate","inputs":[{"name":"candidate","type":"address"},{"name":"beneficiary","type":"address"}],"outputs":[],"type":"function"},
 {"name":"unbindCandidate","inputs":[{"name":"candidate","type":"address"},{"name":"beneficiary","type":"address"}],"outputs":[],"type":"function"}
 ]`
