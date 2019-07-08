@@ -33,10 +33,12 @@ const ElectionAbiJSON = `[
 {"name":"setProxy","inputs":[{"name":"proxy","type":"address"}],"outputs":[],"type":"function"},
 {"name":"$stake","inputs":[],"outputs":[],"type":"function"},
 {"name":"unStake","inputs":[],"outputs":[],"type":"function"},
+{"name":"$depositReward","inputs":[],"outputs":[],"type":"function"},
 {"name":"$bindCandidate","inputs":[{"name":"candidate","type":"address"},{"name":"beneficiary","type":"address"}],"outputs":[],"type":"function"},
 {"name":"unbindCandidate","inputs":[{"name":"candidate","type":"address"},{"name":"beneficiary","type":"address"}],"outputs":[],"type":"function"}
 ]`
 
+// To show how to use election abi
 func GetElectionABI() (abi.ABI, error) {
 	return abi.JSON(strings.NewReader(ElectionAbiJSON))
 }

@@ -61,9 +61,8 @@ var (
 	eraTimeStamp = big.NewInt(year2019)
 
 	// stake minimum time period
-	unstakePeriod   = big.NewInt(OneDay)
-	restTotalBounty = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(25e+7)) // TODO stb reward相关移动到单独的文件
-	bindAmount      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1e7))
+	unstakePeriod = big.NewInt(OneDay)
+	bindAmount    = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1e7))
 )
 
 type Election struct{}
@@ -196,10 +195,6 @@ type Stake struct {
 	TimeStamp  *big.Int       // 时间戳
 }
 
-type Bounty struct {
-	RestTotalBounty *big.Int // 剩余总激励
-}
-
 func newElectionContext(ctx inter.ChainContext) electionContext {
 	return electionContext{
 		context: ctx,
@@ -225,12 +220,6 @@ type BindInfo struct {
 
 func (e *Election) Run(ctx inter.ChainContext, input []byte, value *big.Int) ([]byte, error) {
 	nonce := ctx.GetStateDb().GetNonce(contractAddr)
-	if nonce == 0 {
-		if err := setRestBounty(ctx.GetStateDb(), Bounty{restTotalBounty}); err != nil {
-			// initializing failed leads to exit
-			log.Crit("Initialize bounty failed", "error", err)
-		}
-	}
 	ctx.GetStateDb().SetNonce(contractAddr, nonce+1)
 
 	electionABI, err := abi.JSON(strings.NewReader(ElectionAbiJSON))
@@ -296,6 +285,8 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte, value *big.Int) ([]
 		if err = electionABI.UnpackInput(&info, methodName, methodArgs); err != nil {
 			err = c.unbindCandidate(sender, &info)
 		}
+	case isMethod("$depositReward"):
+		err = c.depositReward(sender, value)
 	}
 
 	if err != nil {
@@ -981,66 +972,6 @@ func GetStake(stateDB inter.StateDB, addr common.Address) *Stake {
 		return &v
 	}
 	return nil
-}
-
-// GrantBounty 发放激励给该候选节点的受益人，返回错误。
-// 发放激励的接口不区分是产块激励还是投票激励，超级节点必须是Active，否则无收益。
-// 激励金额不足发放时为正常情况不返回error，返回nil。
-// 返回错误时，数据状态恢复到原始情况，即所有激励都不发放。
-func GrantBounty(stateDB inter.StateDB, rewards map[common.Address]*big.Int) (err error) {
-	// 无激励即可返回
-	bounty := getRestBounty(stateDB)
-	rest := bounty.RestTotalBounty
-	if rest.Cmp(common.Big0) <= 0 {
-		return nil
-	}
-
-	// 退出时，如果存在错误，恢复原始状态
-	snap := stateDB.Snapshot()
-	defer func() {
-		if err != nil {
-			stateDB.RevertToSnapshot(snap)
-		}
-	}()
-
-	for addr, amount := range rewards {
-		// 激励不能超过剩余金额
-		if rest.Cmp(amount) < 0 {
-			amount = rest
-		}
-		can := GetCandidate(stateDB, addr)
-		// 再检查：跳过不存在或未激活的候选人
-		if can == nil || !can.Active() {
-			log.Error("Not find candidate or inactive when granting reward", "addr", addr.String())
-			continue
-		}
-		// 发送错误退出
-		if err = transfer(stateDB, contractAddr, can.Beneficiary, amount); err != nil {
-			return err
-		}
-		rest = rest.Sub(rest, amount)
-		// 发放到无剩余激励
-		if rest.Cmp(common.Big0) <= 0 {
-			break
-		}
-	}
-
-	// 激励正常发放完毕，更新剩余激励
-	return setRestBounty(stateDB, Bounty{RestTotalBounty: big.NewInt(0).Set(rest)})
-}
-
-// QueryRestVNTBounty returns the value of RestTotalBounty.
-func QueryRestVNTBounty(stateDB inter.StateDB) *big.Int {
-	// TODO 初始化为0
-	if !stateDB.Exist(contractAddr) {
-		stateDB.SetNonce(contractAddr, 1)
-		if err := setRestBounty(stateDB, Bounty{restTotalBounty}); err != nil {
-			log.Crit("Initialize bounty failed in query", "error", err)
-		}
-		return restTotalBounty
-	}
-	bounty := getRestBounty(stateDB)
-	return bounty.RestTotalBounty
 }
 
 func vnt2wei(vnt int) *big.Int {

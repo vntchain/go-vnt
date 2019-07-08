@@ -487,7 +487,7 @@ func (d *Dpos) Finalize(chain consensus.ChainReader, header *types.Header, state
 // earned, in direct proportion to it's vote percentage.
 // WARN: There is no reward if no VNT bounty left.
 func (d *Dpos) grantingReward(chain consensus.ChainReader, header *types.Header, state *state.StateDB) error {
-	if restBounty := election.QueryRestVNTBounty(state); restBounty.Cmp(common.Big0) > 0 {
+	if restBounty := election.QueryRestReward(state); restBounty.Cmp(common.Big0) > 0 {
 		var err error
 		// Reward BP for producing this block
 		reward := curHeightBonus(header.Number, VortexBlockReward)
@@ -513,7 +513,7 @@ func (d *Dpos) grantingReward(chain consensus.ChainReader, header *types.Header,
 		}
 
 		// 统一发放激励
-		if err = election.GrantBounty(state, rewards); err != nil {
+		if err = election.GrantReward(state, rewards); err != nil {
 			log.Warn("Granting reward failed", "error", err.Error())
 			return err
 		}

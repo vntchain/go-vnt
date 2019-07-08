@@ -757,7 +757,7 @@ func (s *PublicBlockChainAPI) GetRestVNTBounty(ctx context.Context) (*big.Int, e
 		return nil, err
 	}
 
-	if rest := election.QueryRestVNTBounty(stateDB); rest == nil {
+	if rest := election.QueryRestReward(stateDB); rest == nil {
 		return nil, errors.New("can not get rest VNT bounty data")
 	} else {
 		return rest, nil
