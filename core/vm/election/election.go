@@ -421,6 +421,8 @@ func (ec electionContext) unregisterWitness(address common.Address) error {
 	// 已经解除绑定
 	shouldReturnToken := candidate.Bind == true
 	candidate.Bind = false
+	candidate.Binder = emptyAddress
+	candidate.Beneficiary = emptyAddress
 
 	// save candidate info db
 	err := ec.setCandidate(candidate)
@@ -487,6 +489,8 @@ func (ec electionContext) unbindCandidate(locker common.Address, info *BindInfo)
 
 	// 取消绑定
 	candidate.Bind = false
+	candidate.Binder = emptyAddress
+	candidate.Beneficiary = emptyAddress
 	if err := ec.setCandidate(*candidate); err != nil {
 		log.Error("bindCandidate setCandidate err.", "address", candi.Hex(), "err", err)
 		return err
@@ -1019,6 +1023,7 @@ func GetStake(stateDB inter.StateDB, addr common.Address) *Stake {
 }
 
 // GrantBounty 发放激励给该候选节点的受益人，返回错误。
+// 发放激励的接口不区分是产块激励还是投票激励，超级节点必须是Active，否则无收益。
 // 激励金额不足发放时为正常情况不返回error，返回nil。
 // 返回错误时，数据状态恢复到原始情况，即所有激励都不发放。
 func GrantBounty(stateDB inter.StateDB, rewards map[common.Address]*big.Int) (err error) {
