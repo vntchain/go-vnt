@@ -1285,22 +1285,67 @@ func TestExtractBounty(t *testing.T) {
 }
 
 type grantCase struct {
+	name          string                      // case名称
 	balance       *big.Int                    // 合约余额
 	rewardBalance *big.Int                    // 激励余额
 	cans          CandidateList               // 当前的候选人列表
 	rewards       map[common.Address]*big.Int // 待发放余额
 	errExpOfGrant error                       // 有error时意味着回滚，也要匹配具体error
-	// 匹配每个受益账号增加的金额与rewardBalance是否匹配，只有rewards中所有受益人能收到激励的测试场景才设置为true
+	matchTotal    bool                        // 匹配总金额的变化，只有当全部分配或全部未分配时才使用
+	// 匹配每个受益账号增加的金额与rewardBalance是否匹配，只有rewards中所有Active受益人能收到激励的测试场景才设置为true
 	matchBeneficiary bool
 }
 
 func TestGrantBounty(t *testing.T) {
-	// TODO stb
-	// 	有充足余额，有充足剩余激励，余额减少，收益人余额增加
-	// 	有充足余额，剩余激励够1个账号的，不足2个账号，有账号的受益人余额增加，有的未增加，剩余激励为0
-	// 	有充足余额，有充足剩余激励，候选人有1个未激活，被跳过，检查剩余激励正确
-	// 	余额不足，有充足剩余激励，返回error，statedb被回滚，检查statedb的snapshot id是否为运行前的
+	be := beneficiary.String()
+	be = be[:len(be)-1]
+	// binder地址实际不使用，可以相同，Beneficiary地址不能相同
+	ca1 := Candidate{Owner: addr1, Binder: binder, Beneficiary: common.HexToAddress(be + "1"), Registered: true, Bind: true}
+	ca2 := Candidate{Owner: addr2, Binder: binder, Beneficiary: common.HexToAddress(be + "2"), Registered: true, Bind: true}
+	ca3 := Candidate{Owner: addr3, Binder: binder, Beneficiary: common.HexToAddress(be + "3"), Registered: true, Bind: false}
+	ca4 := Candidate{Owner: addr4, Binder: binder, Beneficiary: common.HexToAddress(be + "4"), Registered: true, Bind: true}
 
+	// 	用例1：有充足余额，有充足剩余激励，余额减少，收益人余额增加
+	{
+		caList := CandidateList{ca1, ca2}
+		rewards := map[common.Address]*big.Int{
+			ca1.Owner: vnt2wei(1),                                     // 1VNT
+			ca2.Owner: big.NewInt(0).Div(vnt2wei(15), big.NewInt(10))} // 1.5VNT
+		cas := grantCase{"case1", vnt2wei(100), vnt2wei(10), caList, rewards, nil, true, true}
+		testGrantBounty(t, &cas)
+	}
+
+	// 	用例2：有充足余额，剩余激励够1个账号的，不足2个账号，有账号的受益人余额增加，有的未增加，剩余激励为0
+	{
+		caList := CandidateList{ca1, ca2}
+		rewards := map[common.Address]*big.Int{
+			ca1.Owner: vnt2wei(10), // 10VNT
+			ca2.Owner: vnt2wei(20)} // 20VNT
+		cas := grantCase{"case2", vnt2wei(100), vnt2wei(25), caList, rewards, nil, false, false}
+		testGrantBounty(t, &cas)
+	}
+
+	// 	用例3：有充足余额，有充足剩余激励，候选人有1个未激活，被跳过，检查剩余激励正确
+	{
+		caList := CandidateList{ca1, ca2, ca3}
+		rewards := map[common.Address]*big.Int{
+			ca1.Owner: vnt2wei(10), // 10VNT
+			ca2.Owner: vnt2wei(20), // 20VNT
+			ca3.Owner: vnt2wei(20)} // 20VNT，非法情况，正常调用不会存在非Active的候选人分激励
+		cas := grantCase{"case3", vnt2wei(100), vnt2wei(50), caList, rewards, nil, false, true}
+		testGrantBounty(t, &cas)
+	}
+
+	// 	用例4：余额不足，有充足剩余激励，返回error，statedb被回滚，检查statedb的snapshot id是否为运行前的
+	{
+		caList := CandidateList{ca1, ca2, ca3, ca4}
+		rewards := map[common.Address]*big.Int{
+			ca1.Owner: vnt2wei(10), // 10VNT
+			ca2.Owner: vnt2wei(20), // 20VNT
+			ca4.Owner: vnt2wei(20)} // 20VNT
+		cas := grantCase{"case4", vnt2wei(30), vnt2wei(100), caList, rewards, fmt.Errorf("sender[0x0000000000000000000000000000000000000009] do not have enough balance"), false, false}
+		testGrantBounty(t, &cas)
+	}
 }
 
 func testGrantBounty(t *testing.T, cas *grantCase) {
@@ -1312,25 +1357,29 @@ func testGrantBounty(t *testing.T, cas *grantCase) {
 
 	// 设置剩余激励
 	err := setRestBounty(db, Bounty{cas.rewardBalance})
-	assert.Equal(t, err, nil, fmt.Sprintf("set rest bounty error: %v", err.Error()))
+	assert.Equal(t, err, nil, fmt.Sprintf("%v, set rest bounty error: %v", cas.name, err))
 
 	// 设置候选人
 	for i, can := range cas.cans {
 		err = ec.setCandidate(can)
-		assert.Equal(t, err, nil, fmt.Sprintf("[%d] set candidate error: %v", i, err.Error()))
-
+		assert.Equal(t, err, nil, fmt.Sprintf("%v, [%d] set candidate error: %v", cas.name, i, err))
 	}
-
-	// 保存db snapshot
-	preSnap := db.Snapshot()
 
 	// 执行分激励
 	err = GrantBounty(db, cas.rewards)
-	assert.Equal(t, err, cas.errExpOfGrant, fmt.Sprintf("grant bounty error mismatch"))
+	assert.Equal(t, err, cas.errExpOfGrant, fmt.Sprintf("%v, grant bounty error mismatch", cas.name))
 
 	// 校验回滚
 	if cas.errExpOfGrant != nil {
-		assert.Equal(t, db.Snapshot(), preSnap, fmt.Sprintf("db is reverted but snapshot mismatch"))
+		// 校验余额，应当不变
+		assert.Equal(t, db.GetBalance(contractAddr), cas.balance, ",", cas.name, ", reverted, balance of contract should not change")
+		// 校验剩余激励，应当不变
+		assert.Equal(t, getRestBounty(db).RestTotalBounty, cas.rewardBalance, ",", cas.name, ", reverted, left reward should not change")
+		// 	各候选人账号的收益账号应当为0
+		for addr, _ := range cas.rewards {
+			can := ec.getCandidate(addr)
+			assert.Equal(t, db.GetBalance(can.Beneficiary), common.Big0, ",", cas.name, ", reverted, balance of beneficiary should be 0")
+		}
 	}
 
 	// 校验余额和受益人余额增加额是否匹配，剩余激励是否匹配
@@ -1339,9 +1388,12 @@ func testGrantBounty(t *testing.T, cas *grantCase) {
 		totalReward = totalReward.Add(totalReward, re)
 	}
 	reducedBalance := big.NewInt(0).Sub(cas.balance, db.GetBalance(contractAddr))
-	assert.Equal(t, reducedBalance, totalReward, "reduced contract balance should equal total reward")
 	reducedReward := big.NewInt(0).Sub(cas.rewardBalance, getRestBounty(db).RestTotalBounty)
-	assert.Equal(t, reducedReward, totalReward, "reduced contract reward should equal total reward")
+	assert.Equal(t, reducedBalance, reducedReward, ",", cas.name, "reduced balance should always equal to reduces reward")
+	if cas.matchTotal {
+		assert.Equal(t, reducedBalance, totalReward, ",", cas.name, "reduced contract balance should equal total reward")
+		assert.Equal(t, reducedReward, totalReward, ",", cas.name, "reduced contract reward should equal total reward")
+	}
 
 	// 	校验每个受益账户增加的余额
 	if cas.matchBeneficiary {
@@ -1349,11 +1401,13 @@ func testGrantBounty(t *testing.T, cas *grantCase) {
 		benes := make(map[common.Address]*big.Int)
 		for addr, amount := range cas.rewards {
 			can := ec.getCandidate(addr)
-			assert.Equal(t, can.Owner, addr, "candidate address not match")
-			if _, ok := benes[can.Beneficiary]; ok {
-				benes[can.Beneficiary] = big.NewInt(0).Add(benes[can.Beneficiary], amount)
-			} else {
-				benes[can.Beneficiary] = big.NewInt(0).Set(amount)
+			assert.Equal(t, can.Owner, addr, "%v, candidate address not match", cas.name)
+			if can.Active() {
+				if _, ok := benes[can.Beneficiary]; ok {
+					benes[can.Beneficiary] = big.NewInt(0).Add(benes[can.Beneficiary], amount)
+				} else {
+					benes[can.Beneficiary] = big.NewInt(0).Set(amount)
+				}
 			}
 		}
 
@@ -1361,7 +1415,7 @@ func testGrantBounty(t *testing.T, cas *grantCase) {
 		for addr, reward := range benes {
 			// 所有受益账户初始都没有余额
 			addedBal := db.GetBalance(addr)
-			assert.Equal(t, addedBal, reward, fmt.Sprintf("beneficiary reward mismtach: %v", addr))
+			assert.Equal(t, addedBal, reward, fmt.Sprintf("%v, beneficiary reward mismtach: %v", cas.name, addr.String()))
 		}
 	}
 }
