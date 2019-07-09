@@ -473,8 +473,6 @@ func (ec electionContext) unbindCandidate(locker common.Address, info *BindInfo)
 
 	// 取消绑定
 	candidate.Bind = false
-	candidate.Binder = emptyAddress
-	candidate.Beneficiary = emptyAddress
 	if err := ec.setCandidate(*candidate); err != nil {
 		log.Error("bindCandidate setCandidate err.", "address", candi.Hex(), "err", err)
 		return err

@@ -392,12 +392,12 @@ func getAllProxy(db inter.StateDB) []*Voter {
 }
 
 func getReward(stateDB inter.StateDB) Reward {
-	var bounty Reward
-	err := convertToStruct(REWARDPREFIX, contractAddr, &bounty, genGetFunc(stateDB))
+	var re Reward
+	err := convertToStruct(REWARDPREFIX, contractAddr, &re, genGetFunc(stateDB))
 	if err != nil {
 		return Reward{big.NewInt(0)}
 	}
-	return bounty
+	return re
 }
 
 func setReward(stateDB inter.StateDB, restBounty Reward) error {

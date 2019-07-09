@@ -1717,8 +1717,6 @@ func TestUnbindCandidate(t *testing.T) {
 	ca4Exp := newTestCandi()
 	ca4Exp.Registered = true
 	ca4Exp.Bind = false
-	ca4Exp.Binder = emptyAddress
-	ca4Exp.Beneficiary = emptyAddress
 	c4 := bindCase{"c4", ca4.Binder, newTestBindInfo(ca4), bindAmount, nil, ca4, ca4Exp}
 
 	cases := []bindCase{c1, c2, c3, c4}
