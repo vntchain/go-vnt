@@ -52,7 +52,7 @@ var (
 	ErrCandiAlreadyBind    = errors.New("candidate is already bind")
 	ErrCandiNotBind        = errors.New("candidate is not bind")
 	ErrBindInfoMismatch    = errors.New("bind address not match candidates saved")
-	ErrLockAmountMismatch  = errors.New("bind amount is not equal 1000 VNT")
+	ErrLockAmountMismatch  = errors.New("bind amount is not equal 10,000,000 VNT")
 )
 
 var (
@@ -62,7 +62,7 @@ var (
 
 	// stake minimum time period
 	unstakePeriod = big.NewInt(OneDay)
-	bindAmount    = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1e7))
+	bindAmount    = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1e7)) // 1000万VNT
 )
 
 type Election struct{}
@@ -277,23 +277,25 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte, value *big.Int) ([]
 		err = c.unStake(sender)
 	case isMethod("$bindCandidate"):
 		var info BindInfo
-		if err = electionABI.UnpackInput(&info, methodName, methodArgs); err != nil {
+		if err = electionABI.UnpackInput(&info, methodName, methodArgs); err == nil {
 			err = c.bindCandidate(sender, &info, value)
 		}
 	case isMethod("unbindCandidate"):
 		var info BindInfo
-		if err = electionABI.UnpackInput(&info, methodName, methodArgs); err != nil {
+		if err = electionABI.UnpackInput(&info, methodName, methodArgs); err == nil {
 			err = c.unbindCandidate(sender, &info)
 		}
 	case isMethod("$depositReward"):
 		err = c.depositReward(sender, value)
+	default:
+		log.Error("call election contract err: method doesn't exist")
+		err = fmt.Errorf("call election contract err: method doesn't exist")
 	}
+
+	log.Debug("Election call", "method", methodName)
 
 	if err != nil {
 		log.Error("call election contract err:", "method", methodName, "err", err)
-	} else if methodName == "None" {
-		log.Error("call election contract err: method doesn't exist")
-		err = fmt.Errorf("call election contract err: method doesn't exist")
 	}
 	return nil, err
 }

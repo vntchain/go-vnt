@@ -171,7 +171,7 @@ func (bn BlockNumber) Int64() int64 {
 type Candidate struct {
 	Owner       string       `json:"owner"`       // 候选人地址
 	Name        string       `json:"name"`        // 候选人名称
-	Registered  bool         `json:"active"`      // 是否为注册状态
+	Registered  bool         `json:"registered"`  // 是否为注册状态
 	Website     string       `json:"website"`     // 见证人网站
 	Url         string       `json:"url"`         // 节点的URL
 	VoteCount   *hexutil.Big `json:"voteCount"`   // 收到的票数
