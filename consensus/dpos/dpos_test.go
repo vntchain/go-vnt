@@ -132,36 +132,40 @@ func TestCalcVoteBounty(t *testing.T) {
 	// 情况1：人不够,但都是active
 	// 情况2：人不够，有inactive
 	// 情况3：没投票
-
 	ca1 := election.Candidate{
-		Owner:     common.BytesToAddress([]byte{1}),
-		VoteCount: big.NewInt(0),
-		Active:    true,
+		Owner:      common.BytesToAddress([]byte{1}),
+		VoteCount:  big.NewInt(0),
+		Registered: true,
+		Bind:       true,
 	}
 	ca2 := election.Candidate{
-		Owner:     common.BytesToAddress([]byte{2}),
-		VoteCount: big.NewInt(0),
-		Active:    true,
+		Owner:      common.BytesToAddress([]byte{2}),
+		VoteCount:  big.NewInt(0),
+		Registered: true,
+		Bind:       true,
 	}
 	ca3 := election.Candidate{
-		Owner:     common.BytesToAddress([]byte{3}),
-		VoteCount: big.NewInt(0),
-		Active:    true,
+		Owner:      common.BytesToAddress([]byte{3}),
+		VoteCount:  big.NewInt(0),
+		Registered: true,
+		Bind:       true,
 	}
 	ca4 := election.Candidate{
-		Owner:     common.BytesToAddress([]byte{4}),
-		VoteCount: big.NewInt(0),
-		Active:    true,
+		Owner:      common.BytesToAddress([]byte{4}),
+		VoteCount:  big.NewInt(0),
+		Registered: true,
+		Bind:       true,
 	}
 	ca5 := election.Candidate{
-		Owner:     common.BytesToAddress([]byte{5}),
-		VoteCount: big.NewInt(0),
-		Active:    false,
+		Owner:      common.BytesToAddress([]byte{5}),
+		VoteCount:  big.NewInt(0),
+		Registered: false,
 	}
 	ca6 := election.Candidate{
-		Owner:     common.BytesToAddress([]byte{5}),
-		VoteCount: big.NewInt(0),
-		Active:    true,
+		Owner:      common.BytesToAddress([]byte{5}),
+		VoteCount:  big.NewInt(0),
+		Registered: true,
+		Bind:       true,
 	}
 
 	candis1 := election.CandidateList{ca1, ca2, ca3}
@@ -170,9 +174,11 @@ func TestCalcVoteBounty(t *testing.T) {
 
 	failTests := []election.CandidateList{candis1, candis2, candis3}
 	allBonus := big.NewInt(100)
+	rewardsExpEmpty := make(map[common.Address]*big.Int)
 	for i, ts := range failTests {
-		if get := dp.calcVoteBounty(ts, allBonus); get != nil {
-			t.Errorf("test: %d, want: nil, get: %x", i, get)
+		dp.calcVoteBounty(ts, allBonus, rewardsExpEmpty)
+		if len(rewardsExpEmpty) != 0 {
+			t.Errorf("test: %d, want: reward is empty, get: len(rewardsExpEmpty)=%v", i, len(rewardsExpEmpty))
 		}
 	}
 
@@ -183,21 +189,31 @@ func TestCalcVoteBounty(t *testing.T) {
 	ca4.VoteCount = big.NewInt(30)
 	ca5.VoteCount = big.NewInt(15)
 	candis4 := election.CandidateList{ca1, ca2, ca3, ca4, ca5}
-	ret := dp.calcVoteBounty(candis4, allBonus)
-	if ret == nil {
-		t.Errorf("good want: nil, get: %x", ret)
+	rewardsExpNoneEmpty := make(map[common.Address]*big.Int)
+	rewardsExpNoneEmpty[ca1.Owner] = big.NewInt(3) // ca1有3个的已有激励
+	dp.calcVoteBounty(candis4, allBonus, rewardsExpNoneEmpty)
+	if len(rewardsExpNoneEmpty) == 0 {
+		t.Errorf("want: rewardsExpNoneEmpty, get: len(rewardsExpNoneEmpty) == 0")
 	}
 	for i, ca := range candis4 {
-		if ca.Active == false {
+		if !ca.Active() {
 			continue
 		}
-		caBonus := ret[ca.Owner]
+		caBonus := rewardsExpNoneEmpty[ca.Owner]
 		if caBonus == nil {
 			t.Errorf("can %d, want bonus: %s, get: nil", i, ca.VoteCount.String())
 			continue
 		}
-		if ca.VoteCount.Cmp(caBonus) != 0 {
-			t.Errorf("can %d, want bonus: %s, get: %s", i, ca.VoteCount.String(), caBonus.String())
+		if ca.Owner == ca1.Owner {
+			// ca1的已有激励不能被覆盖
+			if ca.VoteCount.Add(ca.VoteCount, big.NewInt(3)).Cmp(caBonus) != 0 {
+				t.Errorf("can %d, want bonus: %s+3, get: %s", i, ca.VoteCount.String(), caBonus.String())
+			}
+		} else {
+			if ca.VoteCount.Cmp(caBonus) != 0 {
+				t.Errorf("can %d, want bonus: %s, get: %s", i, ca.VoteCount.String(), caBonus.String())
+			}
 		}
+
 	}
 }

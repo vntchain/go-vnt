@@ -43,11 +43,16 @@ const (
 )
 
 var (
-	ErrCandiNameLenInvalid    = errors.New("the length of candidate's name should between [3, 20]")
-	ErrCandiUrlLenInvalid     = errors.New("the length of candidate's website url should between [3, 60]")
-	ErrCandiNameInvalid       = errors.New("candidate's name should consist of digits and lowercase letters")
-	ErrCandiInfoDup           = errors.New("candidate's name, website url or node url is duplicated with a registered candidate")
-	ErrCandiAlreadyRegistered = errors.New("candidate is already registered")
+	ErrCandiNameLenInvalid = errors.New("the length of candidate's name should between [3, 20]")
+	ErrCandiUrlLenInvalid  = errors.New("the length of candidate's website url should between [3, 60]")
+	ErrCandiNameInvalid    = errors.New("candidate's name should consist of digits and lowercase letters")
+	ErrCandiInfoDup        = errors.New("candidate's name, website url or node url is duplicated with a registered candidate")
+	ErrCandiAlreadyReg     = errors.New("candidate is already registered")
+	ErrCandiNotReg         = errors.New("candidate is not registered")
+	ErrCandiAlreadyBind    = errors.New("candidate is already bind")
+	ErrCandiNotBind        = errors.New("candidate is not bind")
+	ErrBindInfoMismatch    = errors.New("bind address not match candidates saved")
+	ErrLockAmountMismatch  = errors.New("bind amount is not equal 10,000,000 VNT")
 )
 
 var (
@@ -56,12 +61,8 @@ var (
 	eraTimeStamp = big.NewInt(year2019)
 
 	// stake minimum time period
-	unstakePeriod   = big.NewInt(OneDay)
-	baseBounty      = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1000))
-	restTotalBounty = big.NewInt(0).Mul(big.NewInt(1e18), big.NewInt(25e+7))
-
-	// Is main net started
-	mainActive = false
+	unstakePeriod = big.NewInt(OneDay)
+	bindAmount    = big.NewInt(0).Mul(big.NewInt(1e+18), big.NewInt(1e7)) // 1000万VNT
 )
 
 type Election struct{}
@@ -82,22 +83,27 @@ type Voter struct {
 }
 
 // Candidate information of witness candidates.
-// Tips: Modify CandidateList.Swap when adding element of Candidate.
+// Tips: Modify CandidateList.Swap() and Candidate.String() when adding or removing element of Candidate.
 type Candidate struct {
-	Owner           common.Address // 候选人地址
-	VoteCount       *big.Int       // 收到的票数
-	Active          bool           // 当前是否是候选人
-	Url             []byte         // 节点的URL
-	TotalBounty     *big.Int       // 总奖励金额
-	ExtractedBounty *big.Int       // 已提取奖励金额
-	LastExtractTime *big.Int       // 上次提权时间
-	Website         []byte         // 节点网站地址
-	Name            []byte         // 节点名字
+	Owner       common.Address // 候选人地址
+	Binder      common.Address // 锁仓人/绑定人
+	Beneficiary common.Address // 收益受益人
+	VoteCount   *big.Int       // 收到的票数
+	Registered  bool           // 当前是否注册为候选人
+	Bind        bool           // 是否被绑定
+	Url         []byte         // 节点的URL
+	Website     []byte         // 节点网站地址
+	Name        []byte         // 节点名字
 }
 
 func (c *Candidate) String() string {
-	return fmt.Sprintf("candidate, addr:%s, votes:%s, active:%v, url:%s, totalBounty: %v, extractedBounty: %v, lastExtractTime: %v, WebSite: %s, Name: %s\n",
-		c.Owner.String(), c.VoteCount.String(), c.Active, string(c.Url), c.TotalBounty, c.ExtractedBounty, c.LastExtractTime, string(c.Website), string(c.Name))
+	return fmt.Sprintf("candidate{ addr:%s, votes:%s, registered:%v, bind:%v, active:%v, url:%s, WebSite: %s, Name: %s}\n",
+		c.Owner.String(), c.VoteCount.String(), c.Registered, c.Bind, c.Active(), string(c.Url), string(c.Website), string(c.Name))
+}
+
+// Active 判断候选人是否已激活
+func (c *Candidate) Active() bool {
+	return c.Registered && c.Bind
 }
 
 func newVoter() Voter {
@@ -115,14 +121,17 @@ func newVoter() Voter {
 
 func newCandidate() Candidate {
 	return Candidate{
-		Owner:     emptyAddress,
-		VoteCount: big.NewInt(0),
-		Active:    false,
+		Owner:       emptyAddress,
+		Binder:      emptyAddress,
+		Beneficiary: emptyAddress,
+		VoteCount:   big.NewInt(0),
+		Registered:  false,
+		Bind:        false,
 	}
 }
 
 func (c *Candidate) votes() *big.Int {
-	if c.Active {
+	if c.Active() {
 		return c.VoteCount
 	}
 
@@ -157,12 +166,12 @@ func (c CandidateList) Less(i, j int) bool {
 
 func (c CandidateList) Swap(i, j int) {
 	c[i].Owner, c[j].Owner = c[j].Owner, c[i].Owner
+	c[i].Binder, c[j].Binder = c[j].Binder, c[i].Binder
+	c[i].Beneficiary, c[j].Beneficiary = c[j].Beneficiary, c[i].Beneficiary
 	c[i].VoteCount, c[j].VoteCount = c[j].VoteCount, c[i].VoteCount
-	c[i].Active, c[j].Active = c[j].Active, c[i].Active
+	c[i].Registered, c[j].Registered = c[j].Registered, c[i].Registered
+	c[i].Bind, c[j].Bind = c[j].Bind, c[i].Bind
 	c[i].Url, c[j].Url = c[j].Url, c[i].Url
-	c[i].TotalBounty, c[j].TotalBounty = c[j].TotalBounty, c[i].TotalBounty
-	c[i].ExtractedBounty, c[j].ExtractedBounty = c[j].ExtractedBounty, c[i].ExtractedBounty
-	c[i].LastExtractTime, c[j].LastExtractTime = c[j].LastExtractTime, c[i].LastExtractTime
 	c[i].Website, c[j].Website = c[j].Website, c[i].Website
 	c[i].Name, c[j].Name = c[j].Name, c[i].Name
 }
@@ -175,7 +184,7 @@ func (c CandidateList) Sort() {
 func (c CandidateList) dump() {
 	fmt.Println("dump candidats list")
 	for i, ca := range c {
-		fmt.Printf("can:%d, addr:%s, votes:%s, active:%v \n", i, ca.Owner.String(), ca.VoteCount.String(), ca.Active)
+		fmt.Printf("can:%d, addr:%s, votes:%s, active:%v \n", i, ca.Owner.String(), ca.VoteCount.String(), ca.Active())
 	}
 }
 
@@ -184,10 +193,6 @@ type Stake struct {
 	StakeCount *big.Int       // 抵押的数量，单位VNT，向下取整
 	Vnt        *big.Int       // 抵押的实际代币数，单位Wei
 	TimeStamp  *big.Int       // 时间戳
-}
-
-type Bounty struct {
-	RestTotalBounty *big.Int // 剩余总激励
 }
 
 func newElectionContext(ctx inter.ChainContext) electionContext {
@@ -200,14 +205,21 @@ func (e *Election) RequiredGas(input []byte) uint64 {
 	return 0
 }
 
+type NodeInfo struct {
+	NodeUrl     []byte
+	Website     []byte
+	NodeName    []byte
+	Binder      common.Address // 绑定人
+	Beneficiary common.Address // 受益人
+}
+
+type BindInfo struct {
+	Candidate   common.Address // 绑定的候选账号
+	Beneficiary common.Address // 收益的账号
+}
+
 func (e *Election) Run(ctx inter.ChainContext, input []byte, value *big.Int) ([]byte, error) {
 	nonce := ctx.GetStateDb().GetNonce(contractAddr)
-	if nonce == 0 {
-		if err := setRestBounty(ctx.GetStateDb(), Bounty{restTotalBounty}); err != nil {
-			// initializing failed leads to exit
-			log.Crit("Initialize bounty failed", "error", err)
-		}
-	}
 	ctx.GetStateDb().SetNonce(contractAddr, nonce+1)
 
 	electionABI, err := abi.JSON(strings.NewReader(ElectionAbiJSON))
@@ -215,89 +227,89 @@ func (e *Election) Run(ctx inter.ChainContext, input []byte, value *big.Int) ([]
 		return nil, err
 	}
 
-	c := newElectionContext(ctx)
-	methodName := "None"
 	if len(input) < 4 {
 		return nil, nil
 	}
 	// input的组成见abi.Pack函数
 	methodId := input[:4]
 	methodArgs := input[4:]
-	switch {
-	case bytes.Equal(methodId, electionABI.Methods["registerWitness"].Id()):
-		methodName = "registerWitness"
-		type NodeInfo struct {
-			NodeUrl  []byte
-			Website  []byte
-			NodeName []byte
+
+	methodName := "None"
+	isMethod := func(name string) bool {
+		if bytes.Equal(methodId, electionABI.Methods[name].Id()) {
+			methodName = name
+			return true
 		}
-		var nodeInfo NodeInfo
-		if err = electionABI.UnpackInput(&nodeInfo, "registerWitness", methodArgs); err == nil {
-			err = c.registerWitness(ctx.GetOrigin(), nodeInfo.NodeUrl, nodeInfo.Website, nodeInfo.NodeName)
-		}
-
-	case bytes.Equal(methodId, electionABI.Methods["unregisterWitness"].Id()):
-		methodName = "unregisterWitness"
-		err = c.unregisterWitness(ctx.GetOrigin())
-
-	case bytes.Equal(methodId, electionABI.Methods["voteWitnesses"].Id()):
-		methodName = "voteWitnesses"
-		var candidates []common.Address
-		if err = electionABI.UnpackInput(&candidates, "voteWitnesses", methodArgs); err == nil {
-			err = c.voteWitnesses(ctx.GetOrigin(), candidates)
-		}
-
-	case bytes.Equal(methodId, electionABI.Methods["cancelVote"].Id()):
-		methodName = "cancelVote"
-		err = c.cancelVote(ctx.GetOrigin())
-
-	case bytes.Equal(methodId, electionABI.Methods["startProxy"].Id()):
-		methodName = "startProxy"
-		err = c.startProxy(ctx.GetOrigin())
-
-	case bytes.Equal(methodId, electionABI.Methods["stopProxy"].Id()):
-		methodName = "stopProxy"
-		err = c.stopProxy(ctx.GetOrigin())
-
-	case bytes.Equal(methodId, electionABI.Methods["cancelProxy"].Id()):
-		methodName = "cancelProxy"
-		err = c.cancelProxy(ctx.GetOrigin())
-
-	case bytes.Equal(methodId, electionABI.Methods["setProxy"].Id()):
-		methodName = "setProxy"
-		var proxy common.Address
-		if err = electionABI.UnpackInput(&proxy, "setProxy", methodArgs); err == nil {
-			err = c.setProxy(ctx.GetOrigin(), proxy)
-		}
-	case bytes.Equal(methodId, electionABI.Methods["$stake"].Id()):
-		methodName = "$stake"
-		err = c.stake(ctx.GetOrigin(), value)
-	case bytes.Equal(methodId, electionABI.Methods["unStake"].Id()):
-		methodName = "unStake"
-		err = c.unStake(ctx.GetOrigin())
-	case bytes.Equal(methodId, electionABI.Methods["extractOwnBounty"].Id()):
-		methodName = "extractOwnBounty"
-		err = c.extractOwnBounty(ctx.GetOrigin())
+		return false
 	}
-	if err != nil {
-		log.Error("call election contract err:", "method", methodName, "err", err)
-	} else if methodName == "None" {
+
+	c := newElectionContext(ctx)
+	sender := ctx.GetOrigin()
+	switch {
+	case isMethod("registerWitness"):
+		var nodeInfo NodeInfo
+		if err = electionABI.UnpackInput(&nodeInfo, methodName, methodArgs); err == nil {
+			err = c.registerWitness(sender, &nodeInfo)
+		}
+	case isMethod("unregisterWitness"):
+		err = c.unregisterWitness(sender)
+	case isMethod("voteWitnesses"):
+		var candidates []common.Address
+		if err = electionABI.UnpackInput(&candidates, methodName, methodArgs); err == nil {
+			err = c.voteWitnesses(sender, candidates)
+		}
+	case isMethod("cancelVote"):
+		err = c.cancelVote(sender)
+	case isMethod("startProxy"):
+		err = c.startProxy(sender)
+	case isMethod("stopProxy"):
+		err = c.stopProxy(sender)
+	case isMethod("cancelProxy"):
+		err = c.cancelProxy(sender)
+	case isMethod("setProxy"):
+		var proxy common.Address
+		if err = electionABI.UnpackInput(&proxy, methodName, methodArgs); err == nil {
+			err = c.setProxy(sender, proxy)
+		}
+	case isMethod("$stake"):
+		err = c.stake(sender, value)
+	case isMethod("unStake"):
+		err = c.unStake(sender)
+	case isMethod("$bindCandidate"):
+		var info BindInfo
+		if err = electionABI.UnpackInput(&info, methodName, methodArgs); err == nil {
+			err = c.bindCandidate(sender, &info, value)
+		}
+	case isMethod("unbindCandidate"):
+		var info BindInfo
+		if err = electionABI.UnpackInput(&info, methodName, methodArgs); err == nil {
+			err = c.unbindCandidate(sender, &info)
+		}
+	case isMethod("$depositReward"):
+		err = c.depositReward(sender, value)
+	default:
 		log.Error("call election contract err: method doesn't exist")
 		err = fmt.Errorf("call election contract err: method doesn't exist")
+	}
+
+	log.Debug("Election call", "method", methodName)
+
+	if err != nil {
+		log.Error("call election contract err:", "method", methodName, "err", err)
 	}
 	return nil, err
 }
 
-func (ec electionContext) registerWitness(address common.Address, url []byte, website []byte, name []byte) error {
+func (ec electionContext) registerWitness(address common.Address, info *NodeInfo) error {
 	// get candidate from db
 	candidate := ec.getCandidate(address)
 
-	// if candidate already exists
+	// if candidate is active
 	if bytes.Equal(candidate.Owner.Bytes(), address.Bytes()) {
 		// if candidate is already active, just ignore
-		if candidate.Active {
+		if candidate.Registered {
 			log.Warn("registerWitness witness already exists", "address", address.Hex())
-			return ErrCandiAlreadyRegistered
+			return ErrCandiAlreadyReg
 		}
 	} else {
 		// if candidate is not found in db
@@ -307,15 +319,17 @@ func (ec electionContext) registerWitness(address common.Address, url []byte, we
 	}
 
 	// Sanity check
-	if err := ec.checkCandi(address, string(name), string(website), string(url)); err != nil {
+	if err := ec.checkCandi(address, string(info.NodeName), string(info.Website), string(info.NodeUrl)); err != nil {
 		return err
 	}
 
-	// Mark candidate as active
-	candidate.Active = true
-	candidate.Url = url
-	candidate.Website = website
-	candidate.Name = name
+	// Reset candidate's info
+	candidate.Registered = true
+	candidate.Binder = info.Binder
+	candidate.Beneficiary = info.Beneficiary
+	candidate.Url = info.NodeUrl
+	candidate.Website = info.Website
+	candidate.Name = info.NodeName
 
 	// save candidate info db
 	err := ec.setCandidate(candidate)
@@ -364,6 +378,10 @@ func (ec electionContext) checkCandi(addr common.Address, name string, website s
 	return nil
 }
 
+// unregisterWitness 取消注册见证人
+// 1. 未注册时不处理
+// 2. 已注册，未绑定时，取消注册，不返回绑定金
+// 3. 已注册，已绑定时，取消注册，返回绑定金
 func (ec electionContext) unregisterWitness(address common.Address) error {
 	// get candidate from db
 	candidate := ec.getCandidate(address)
@@ -371,17 +389,24 @@ func (ec electionContext) unregisterWitness(address common.Address) error {
 	// if candidate is not found in db
 	if !bytes.Equal(candidate.Owner.Bytes(), address.Bytes()) {
 		log.Warn("unregisterWitness unregister unknown witness.", "address", address.Hex())
-		return fmt.Errorf("unregisterWitness unregister unknown witness.")
+		return fmt.Errorf("unregisterWitness unregister unknown witness")
 	}
 
 	// if candidate is already inactive, just ignore
-	if !candidate.Active {
-		log.Warn("unregisterWitness witness already inactive.", "address", address.Hex())
-		return fmt.Errorf("unregisterWitness witness already inactive.")
+	if !candidate.Registered {
+		log.Warn("unregisterWitness witness", "address", address.Hex(), "error", ErrCandiNotReg)
+		return ErrCandiNotReg
 	}
 
 	// set candidate active false
-	candidate.Active = false
+	candidate.Registered = false
+
+	// 已经解除绑定
+	binder := candidate.Binder
+	shouldReturnToken := candidate.Bind == true
+	candidate.Bind = false
+	candidate.Binder = emptyAddress
+	candidate.Beneficiary = emptyAddress
 
 	// save candidate info db
 	err := ec.setCandidate(candidate)
@@ -390,7 +415,87 @@ func (ec electionContext) unregisterWitness(address common.Address) error {
 		return err
 	}
 
+	// 返还绑定金
+	if shouldReturnToken {
+		return ec.transfer(contractAddr, binder, bindAmount)
+	}
 	return nil
+}
+
+// bindCandidate 绑定候选节点，绑定人受益人信息需与候选人注册信息一致
+func (ec electionContext) bindCandidate(locker common.Address, info *BindInfo, amount *big.Int) error {
+	candi := info.Candidate
+	beneficiary := info.Beneficiary
+
+	// Check bind amount
+	if amount.Cmp(bindAmount) != 0 {
+		return ErrLockAmountMismatch
+	}
+
+	candidate, err := ec.matchLockerAndCandi(locker, candi, beneficiary)
+	if err != nil {
+		return err
+	}
+
+	if !candidate.Registered {
+		return ErrCandiNotReg
+	}
+
+	// if candidate is already active, just ignore
+	if candidate.Bind {
+		return ErrCandiAlreadyBind
+	}
+
+	candidate.Bind = true
+	if err := ec.setCandidate(*candidate); err != nil {
+		log.Error("bindCandidate setCandidate err.", "address", candi.Hex(), "err", err)
+		return err
+	}
+
+	return nil
+}
+
+// unbindCandidate 绑定人取消绑定候选节点
+func (ec electionContext) unbindCandidate(locker common.Address, info *BindInfo) error {
+	candi := info.Candidate
+	beneficiary := info.Beneficiary
+	candidate, err := ec.matchLockerAndCandi(locker, candi, beneficiary)
+	if err != nil {
+		return err
+	}
+
+	if !candidate.Registered {
+		return ErrCandiNotReg
+	}
+	if !candidate.Bind {
+		return ErrCandiNotBind
+	}
+
+	// 取消绑定
+	candidate.Bind = false
+	if err := ec.setCandidate(*candidate); err != nil {
+		log.Error("bindCandidate setCandidate err.", "address", candi.Hex(), "err", err)
+		return err
+	}
+
+	// 返回绑定人锁仓金额
+	return ec.transfer(contractAddr, locker, bindAmount)
+}
+
+func (ec electionContext) matchLockerAndCandi(locker, candi, beneficiary common.Address) (*Candidate, error) {
+	// get candidate from db
+	candidate := ec.getCandidate(candi)
+
+	if candidate.Owner != candi {
+		return nil, fmt.Errorf("bindCandidates failed, candidates not exist: %v", candi.Hex())
+	}
+
+	// 	Match information
+	if candidate.Binder != locker || candidate.Beneficiary != beneficiary {
+		return nil, ErrBindInfoMismatch
+	}
+
+	return &candidate, nil
 }
 
 func (ec electionContext) voteWitnesses(address common.Address, candidates []common.Address) error {
@@ -428,7 +533,7 @@ func (ec electionContext) voteWitnesses(address common.Address, candidates []com
 
 		// 如果是候选人则增加相应的选票
 		candi := ec.getCandidate(candidate)
-		if bytes.Equal(candi.Owner.Bytes(), candidate.Bytes()) && candi.Active {
+		if bytes.Equal(candi.Owner.Bytes(), candidate.Bytes()) && candi.Active() {
 			voter.VoteCandidates = append(voter.VoteCandidates, candidate)
 			candi.VoteCount.Add(candi.VoteCount, voteCount)
 			err = ec.setCandidate(candi)
@@ -707,7 +812,12 @@ func (ec electionContext) unStake(address common.Address) error {
 	}
 
 	// add balance of staker
-	return transfer(ec.context.GetStateDb(), contractAddr, address, amount)
+	return ec.transfer(contractAddr, address, amount)
+}
+
+// transfer 系统合约内的转账
+func (ec electionContext) transfer(sender, receiver common.Address, amount *big.Int) error {
+	return transfer(ec.context.GetStateDb(), sender, receiver, amount)
 }
 
 func transfer(db inter.StateDB, sender, receiver common.Address, amount *big.Int) error {
@@ -717,35 +827,6 @@ func transfer(db inter.StateDB, sender, receiver common.Address, amount *big.Int
 
 	db.AddBalance(receiver, amount)
 	db.SubBalance(sender, amount)
-	return nil
-}
-
-func (ec electionContext) extractOwnBounty(addr common.Address) error {
-	//24小时内提取1次
-	//总激励-已提取激励：是本次可提取的VNT数量，每次至少1000VNT才可提取
-	candidate := ec.getCandidate(addr)
-	if !bytes.Equal(candidate.Owner.Bytes(), addr.Bytes()) {
-		log.Warn("extractOwnBounty unknown witness.", "address", addr.Hex())
-		return fmt.Errorf("extractOwnBounty unknown witness.")
-	}
-	now := ec.context.GetTime()
-	if now.Cmp(candidate.LastExtractTime) < 0 || now.Cmp(new(big.Int).Add(candidate.LastExtractTime, big.NewInt(OneDay))) < 0 {
-		return fmt.Errorf("it's less than 24h after your last extract bounty,lastExtractTime: %v , now: %v", candidate.LastExtractTime, now)
-	}
-
-	restBounty := new(big.Int).Sub(candidate.TotalBounty, candidate.ExtractedBounty)
-
-	if restBounty.Cmp(baseBounty) < 0 {
-		log.Warn("the rest of bounty is not enough 1000 vnt", restBounty)
-		return fmt.Errorf("the rest of bounty %v wei is not enough 1000 vnt", restBounty)
-	}
-
-	candidate.ExtractedBounty.Add(candidate.ExtractedBounty, restBounty)
-	candidate.LastExtractTime = now
-	if err := ec.setCandidate(candidate); err != nil {
-		return fmt.Errorf("set Candidate error %s", err)
-	}
-	ec.context.GetStateDb().AddBalance(addr, restBounty)
 	return nil
 }
 
@@ -842,7 +923,7 @@ func GetFirstNCandidates(stateDB inter.StateDB, witnessesNum int) ([]common.Addr
 	candidates.Sort()
 	witnessSet := make(map[common.Address]struct{})
 	for i := 0; i < len(candidates) && len(witnesses) < witnessesNum; i++ {
-		if candidates[i].VoteCount.Cmp(big.NewInt(0)) >= 0 && candidates[i].Active {
+		if candidates[i].VoteCount.Cmp(big.NewInt(0)) >= 0 && candidates[i].Active() {
 			witnesses = append(witnesses, candidates[i].Owner)
 			witnessSet[candidates[i].Owner] = struct{}{}
 			urls = append(urls, string(candidates[i].Url))
@@ -866,56 +947,31 @@ func GetAllCandidates(stateDB inter.StateDB, sorted bool) CandidateList {
 	return candidates
 }
 
-// GetVoter returns a voter's information
-func GetVoter(stateDB inter.StateDB, addr common.Address) *Voter {
-	v := getVoterFrom(addr, genGetFunc(stateDB))
-	return &v
-}
-
-// GetStake returns a user's information
-func GetStake(stateDB inter.StateDB, addr common.Address) *Stake {
-	s := getStakeFrom(addr, genGetFunc(stateDB))
-	return &s
-}
-
-// AddCandidatesBounty sends votes bounty to candidates.
-func AddCandidatesBounty(stateDB inter.StateDB, bonus map[common.Address]*big.Int, allBonus *big.Int) error {
-	for addr, bu := range bonus {
-		if err := addCandidateBounty(stateDB, addr, bu); err != nil {
-			return err
-		}
-	}
-
-	// 减少剩余激励Token数量
-	if _, err := GrantBounty(stateDB, allBonus); err != nil {
-		return err
+// GetCandidate returns a candidate's information. Return nil if not find.
+func GetCandidate(stateDB inter.StateDB, addr common.Address) *Candidate {
+	v := getCandidateFrom(addr, genGetFunc(stateDB))
+	if v.Owner == addr {
+		return &v
 	}
 	return nil
 }
 
-// GrantBounty grants VNT bounty. Returns an error, if RestTotalBounty is less
-// than grantAmount.
-func GrantBounty(stateDB inter.StateDB, grantAmount *big.Int) (*big.Int, error) {
-	bounty := getRestBounty(stateDB)
-	if bounty.RestTotalBounty.Cmp(grantAmount) < 0 {
-		return bounty.RestTotalBounty, fmt.Errorf("rest bounty %v is not enough to pay %v", bounty.RestTotalBounty, grantAmount)
+// GetVoter returns a voter's information. Return nil if not find.
+func GetVoter(stateDB inter.StateDB, addr common.Address) *Voter {
+	v := getVoterFrom(addr, genGetFunc(stateDB))
+	if v.Owner == addr {
+		return &v
 	}
-	newRestBounty := new(big.Int).Sub(bounty.RestTotalBounty, grantAmount)
-	err := setRestBounty(stateDB, Bounty{newRestBounty})
-	return newRestBounty, err
+	return nil
 }
 
-// QueryRestVNTBounty returns the value of RestTotalBounty.
-func QueryRestVNTBounty(stateDB inter.StateDB) *big.Int {
-	if !stateDB.Exist(contractAddr) {
-		stateDB.SetNonce(contractAddr, 1)
-		if err := setRestBounty(stateDB, Bounty{restTotalBounty}); err != nil {
-			log.Crit("Initialize bounty failed in query", "error", err)
-		}
-		return restTotalBounty
+// GetStake returns a user's information. Return nil if not find.
+func GetStake(stateDB inter.StateDB, addr common.Address) *Stake {
+	v := getStakeFrom(addr, genGetFunc(stateDB))
+	if v.Owner == addr {
+		return &v
 	}
-	bounty := getRestBounty(stateDB)
-	return bounty.RestTotalBounty
+	return nil
 }
 
 func vnt2wei(vnt int) *big.Int {
