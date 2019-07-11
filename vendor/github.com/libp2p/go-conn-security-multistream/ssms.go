@@ -81,7 +81,7 @@ func (sm *SSMuxer) selectProto(ctx context.Context, insecure net.Conn, server bo
 	case <-ctx.Done():
 		// We *must* do this. We have outstanding work on the connection
 		// and it's no longer safe to use.
-		fmt.Printf("#### Timeout!!!!!")
+		fmt.Printf("#### Timeout!!!!! \n")
 		insecure.Close()
 		return nil, ctx.Err()
 	}

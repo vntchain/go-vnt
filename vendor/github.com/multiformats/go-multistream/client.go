@@ -26,17 +26,17 @@ func SelectProtoOrFail(proto string, rwc io.ReadWriteCloser) error {
 // SelectOneOf will perform handshakes with the protocols on the given slice
 // until it finds one which is supported by the muxer.
 func SelectOneOf(protos []string, rwc io.ReadWriteCloser) (string, error) {
-	fmt.Printf("#### SelectOnOf starting...")
+	fmt.Printf("#### SelectOnOf starting... \n")
 	err := handshake(rwc)
-	fmt.Printf("#### SelectOnOf starting..., err: %v", err)
+	fmt.Printf("#### SelectOnOf starting..., err: %v \n", err)
 	if err != nil {
 		return "", err
 	}
 
-	fmt.Printf("#### SelectOnOf protocals: %v", protos)
+	fmt.Printf("#### SelectOnOf protocals: %v \n", protos)
 	for _, p := range protos {
 		err := trySelect(p, rwc)
-		fmt.Printf("#### SelectOnOf.trySelect err: %v", err)
+		fmt.Printf("#### SelectOnOf.trySelect err: %v \n", err)
 		switch err {
 		case nil:
 			return p, nil

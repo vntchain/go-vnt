@@ -40,7 +40,7 @@ func (sg *Transport) SecureInbound(ctx context.Context, insecure net.Conn) (cs.C
 	return newSecureSession(ctx, sg.LocalID, sg.PrivateKey, insecure, "")
 }
 func (sg *Transport) SecureOutbound(ctx context.Context, insecure net.Conn, p peer.ID) (cs.Conn, error) {
-	fmt.Printf("#### %s %s Transport.SecureOutbound", p, time.Now().String())
+	fmt.Printf("#### %s %s Transport.SecureOutbound \n", p, time.Now().String())
 	return newSecureSession(ctx, sg.LocalID, sg.PrivateKey, insecure, p)
 }
 
