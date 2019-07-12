@@ -299,13 +299,9 @@ func DefaultGenesisBlock() *Genesis {
 		GasLimit:   0x47b760,
 		Difficulty: big.NewInt(1),
 		Alloc:      decodePrealloc(mainnetAllocData),
-		Timestamp:  0x5b45b949,
-		Witnesses: []common.Address{
-			common.HexToAddress("0x122369f04f32269598789998de33e3d56e2c507a"),
-			common.HexToAddress("0x42a875ac43f2b4e6d17f54d288071f5952bf8911"),
-			common.HexToAddress("0x3dcf0b3787c31b2bdf62d5bc9128a79c2bb18829"),
-			common.HexToAddress("0xbf66d398226f200467cd27b14e85b25a8c232384"),
-		},
+		Timestamp:  0x5d18dc80,
+		Witnesses:  params.MainnetChainWitnesses,
+		ExtraData:  []byte("To explore strange new worlds，to seek out new life and new civilizations，to boldly go where no one has gone before."),
 	}
 }
 
