@@ -378,6 +378,8 @@ func (p *peer) readStatus(network uint64, status *statusData, genesis common.Has
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
 	if status.GenesisBlock != genesis {
+		// this peer is mismatch with local node, drop it
+		p.Peer.Drop()
 		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", status.GenesisBlock[:8], genesis[:8])
 	}
 	if status.NetworkId != network {
