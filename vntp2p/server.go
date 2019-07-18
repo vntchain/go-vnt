@@ -447,6 +447,9 @@ func (server *Server) runPeer(p *Peer) {
 
 	// run the protocol
 	remoteRequested, err := p.run()
+	if err != nil {
+		log.Debug("Run peer failed", "peer id", p.RemoteID(), "peer addr", p.RemoteAddr())
+	}
 
 	// broadcast peer drop
 	server.peerFeed.Send(&PeerEvent{
