@@ -118,6 +118,11 @@ func newPeer(s *Stream, server *Server) *Peer {
 	return p
 }
 
+// Drop this peer forever because of protocol mismatch
+func (p *Peer) Drop() {
+	p.rw.Conn().Close()
+}
+
 // LocalID return local PeerID for upper application
 func (p *Peer) LocalID() libp2p.ID {
 	return p.rw.Conn().LocalPeer()
