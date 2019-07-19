@@ -451,12 +451,15 @@ func (p *peer) Handshake(td *big.Int, head common.Hash, headNum uint64, genesis 
 	}
 
 	if rGenesis != genesis {
+		p.Peer.Drop()
 		return errResp(ErrGenesisBlockMismatch, "%x (!= %x)", rGenesis[:8], genesis[:8])
 	}
 	if rNetwork != p.network {
+		p.Peer.Drop()
 		return errResp(ErrNetworkIdMismatch, "%d (!= %d)", rNetwork, p.network)
 	}
 	if int(rVersion) != p.version {
+		p.Peer.Drop()
 		return errResp(ErrProtocolVersionMismatch, "%d (!= %d)", rVersion, p.version)
 	}
 	if server != nil {
