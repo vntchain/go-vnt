@@ -689,13 +689,13 @@ func (s *PublicBlockChainAPI) GetAllCandidates(ctx context.Context) ([]rpc.Candi
 	for i, ca := range list {
 		rpcCandidates[i].Owner = ca.Owner.String()
 		rpcCandidates[i].Name = string(ca.Name)
-		rpcCandidates[i].Active = ca.Active
+		rpcCandidates[i].Registered = ca.Registered
 		rpcCandidates[i].Url = string(ca.Url)
 		rpcCandidates[i].VoteCount = (*hexutil.Big)(ca.VoteCount)
-		rpcCandidates[i].TotalBounty = (*hexutil.Big)(ca.TotalBounty)
-		rpcCandidates[i].ExtractedBounty = (*hexutil.Big)(ca.ExtractedBounty)
-		rpcCandidates[i].LastExtractTime = (*hexutil.Big)(ca.LastExtractTime)
 		rpcCandidates[i].Website = string(ca.Website)
+		rpcCandidates[i].Binder = ca.Binder.String()
+		rpcCandidates[i].Beneficiary = ca.Beneficiary.String()
+		rpcCandidates[i].Bind = ca.Bind
 	}
 	return rpcCandidates, nil
 }
@@ -757,7 +757,7 @@ func (s *PublicBlockChainAPI) GetRestVNTBounty(ctx context.Context) (*big.Int, e
 		return nil, err
 	}
 
-	if rest := election.QueryRestVNTBounty(stateDB); rest == nil {
+	if rest := election.QueryRestReward(stateDB); rest == nil {
 		return nil, errors.New("can not get rest VNT bounty data")
 	} else {
 		return rest, nil

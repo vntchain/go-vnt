@@ -50,8 +50,8 @@ const (
 )
 
 var (
-	VortexBlockReward     *big.Int = big.NewInt(6e+18)
-	VortexCandidatesBonus *big.Int = big.NewInt(6e+18)
+	VortexBlockReward     *big.Int = big.NewInt(24e+17) // 2.4VNT
+	VortexCandidatesBonus *big.Int = big.NewInt(16e+17) // 1.6VNT
 	// 2 seconds one block, 3 years producing about 47304000 blocks
 	stageTwoBlkNr = big.NewInt(47304000)
 	// 2 seconds one block, 6 years producing about 94608000 blocks
@@ -487,17 +487,18 @@ func (d *Dpos) Finalize(chain consensus.ChainReader, header *types.Header, state
 // earned, in direct proportion to it's vote percentage.
 // WARN: There is no reward if no VNT bounty left.
 func (d *Dpos) grantingReward(chain consensus.ChainReader, header *types.Header, state *state.StateDB) error {
-	if restBounty := election.QueryRestVNTBounty(state); restBounty.Cmp(common.Big0) > 0 {
+	if restBounty := election.QueryRestReward(state); restBounty.Cmp(common.Big0) > 0 {
 		var err error
 		// Reward BP for producing this block
 		reward := curHeightBonus(header.Number, VortexBlockReward)
 		if restBounty.Cmp(reward) < 0 {
 			reward = restBounty
 		}
-		if restBounty, err = election.GrantBounty(state, reward); err == nil {
-			state.AddBalance(header.Coinbase, reward)
-		}
+		rewards := make(map[common.Address]*big.Int)
+		rewards[header.Coinbase] = reward
+		restBounty.Sub(restBounty, reward)
 
+		// 计算投票激励
 		// Reward all witness candidates, when update witness list, if has any bounty
 		if d.updatedWitnessCheckByTime(header) && restBounty.Cmp(common.Big0) > 0 {
 			candis, allBonus, err := d.voteBonusPreWork(chain, header, state)
@@ -507,10 +508,14 @@ func (d *Dpos) grantingReward(chain consensus.ChainReader, header *types.Header,
 
 			// the amount of bounty granted must not greater than the left bounty
 			actualBonus := math.BigMin(allBonus, restBounty)
-			log.Debug("Vote bounty", "each bounty(wei)", actualBonus.String())
-			if bonus := d.calcVoteBounty(candis, actualBonus); bonus != nil {
-				return election.AddCandidatesBounty(state, bonus, actualBonus)
-			}
+			log.Debug("Vote bounty", "bounty(wei)", actualBonus.String())
+			d.calcVoteBounty(candis, actualBonus, rewards)
+		}
+
+		// 统一发放激励
+		if err = election.GrantReward(state, rewards); err != nil {
+			log.Warn("Granting reward failed", "error", err.Error())
+			return err
 		}
 	}
 	return nil
@@ -807,13 +812,12 @@ func (upTime *updateTime) bigInt() *big.Int {
 }
 
 // calcVoteBounty returns a map, which contains the vote bonus of each candidates
-// in this period. If active candidates less than WitnessesNum it will return a
-// nil map.
-func (d *Dpos) calcVoteBounty(candis election.CandidateList, allBonus *big.Int) map[common.Address]*big.Int {
+// in this period. If active candidates less than WitnessesNum it will not reward candidate.
+func (d *Dpos) calcVoteBounty(candis election.CandidateList, allBonus *big.Int, rewards map[common.Address]*big.Int) {
 	totalVotes := big.NewInt(0)
 	activeCnt := 0
 	for _, can := range candis {
-		if !can.Active {
+		if !can.Active() {
 			continue
 		}
 		totalVotes.Add(totalVotes, can.VoteCount)
@@ -821,21 +825,23 @@ func (d *Dpos) calcVoteBounty(candis election.CandidateList, allBonus *big.Int) 
 	}
 	// Too less candidates before main net start, but it's normal
 	if activeCnt < d.config.WitnessesNum || totalVotes.Cmp(common.Big0) == 0 {
-		return nil
+		return
 	}
 
 	// Calc each candidates' bonus
-	bonus := make(map[common.Address]*big.Int, activeCnt)
 	for _, can := range candis {
-		if !can.Active {
+		if !can.Active() {
 			continue
 		}
 
-		tmp := big.NewInt(0).Mul(allBonus, can.VoteCount)
-		tmp.Div(tmp, totalVotes)
-		bonus[can.Owner] = tmp
+		reward := big.NewInt(0).Mul(allBonus, can.VoteCount)
+		reward.Div(reward, totalVotes)
+		if _, ok := rewards[can.Owner]; ok {
+			rewards[can.Owner] = big.NewInt(0).Add(rewards[can.Owner], reward)
+		} else {
+			rewards[can.Owner] = reward
+		}
 	}
-	return bonus
 }
 
 // voteBonusPreWork

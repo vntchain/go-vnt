@@ -33,7 +33,7 @@ const (
 	VOTERPREFIX     = byte(0)
 	CANDIDATEPREFIX = byte(1)
 	STAKEPREFIX     = byte(2)
-	BOUNTYPREFIX    = byte(3)
+	REWARDPREFIX    = byte(3)
 	PREFIXLENGTH    = 4 // key的结构为，4位表前缀，20位address，8位的value在struct中的位置
 )
 
@@ -96,23 +96,37 @@ func (ec electionContext) getFromDB(key common.Hash) common.Hash {
 func getVoterFrom(addr common.Address, getFromDB getFuncType) Voter {
 	var voter Voter
 	var err error
-	if err := convertToStruct(VOTERPREFIX, addr, &voter, getFromDB); err == nil {
+	if err = convertToStruct(VOTERPREFIX, addr, &voter, getFromDB); err == nil {
 		return voter
 	}
 
-	log.Debug("Get Voter From DB ", "addr", addr.String(), "err", err)
+	log.Debug("Get voter from DB ", "addr", addr.String(), "err", err)
 	return newVoter()
+}
+
+// getCandidateFrom get a candidate's information from a specific stateDB
+func getCandidateFrom(addr common.Address, getFromDB getFuncType) Candidate {
+	var (
+		ca  Candidate
+		err error
+	)
+	if err = convertToStruct(CANDIDATEPREFIX, addr, &ca, getFromDB); err == nil {
+		return ca
+	}
+
+	log.Debug("Get candidate from DB ", "addr", addr.String(), "err", err)
+	return newCandidate()
 }
 
 // getStakeFrom get a user's information from a specific stateDB
 func getStakeFrom(addr common.Address, getFromDB getFuncType) Stake {
 	var stake Stake
 	var err error
-	if err := convertToStruct(STAKEPREFIX, addr, &stake, getFromDB); err == nil {
+	if err = convertToStruct(STAKEPREFIX, addr, &stake, getFromDB); err == nil {
 		return stake
 	}
 
-	log.Debug("Get Stake From DB ", "addr", addr.String(), "err", err)
+	log.Debug("Get stake from DB ", "addr", addr.String(), "err", err)
 	return Stake{}
 }
 
@@ -376,32 +390,18 @@ func getAllProxy(db inter.StateDB) []*Voter {
 	}
 	return result
 }
-func addCandidateBounty(stateDB inter.StateDB, addr common.Address, bouns *big.Int) error {
-	candidate := newCandidate()
-	err := convertToStruct(CANDIDATEPREFIX, addr, &candidate, genGetFunc(stateDB))
-	if err != nil {
-		return err
-	}
 
-	candidate.TotalBounty = new(big.Int).Add(candidate.TotalBounty, bouns)
-	err = convertToKV(CANDIDATEPREFIX, &candidate, genSetFunc(stateDB))
+func getReward(stateDB inter.StateDB) Reward {
+	var re Reward
+	err := convertToStruct(REWARDPREFIX, contractAddr, &re, genGetFunc(stateDB))
 	if err != nil {
-		return err
+		return Reward{big.NewInt(0)}
 	}
-	return nil
+	return re
 }
 
-func getRestBounty(stateDB inter.StateDB) Bounty {
-	var bounty Bounty
-	err := convertToStruct(BOUNTYPREFIX, contractAddr, &bounty, genGetFunc(stateDB))
-	if err != nil {
-		return Bounty{big.NewInt(0)}
-	}
-	return bounty
-}
-
-func setRestBounty(stateDB inter.StateDB, restBounty Bounty) error {
-	return convertToKV(BOUNTYPREFIX, restBounty, genSetFunc(stateDB))
+func setReward(stateDB inter.StateDB, restBounty Reward) error {
+	return convertToKV(REWARDPREFIX, restBounty, genSetFunc(stateDB))
 }
 
 // genGetFunc generate universal get function for read from state db.

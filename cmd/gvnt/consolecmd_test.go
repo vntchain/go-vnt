@@ -51,7 +51,7 @@ func TestConsoleWelcome(t *testing.T) {
 	gvnt.SetTemplateFunc("goarch", func() string { return runtime.GOARCH })
 	gvnt.SetTemplateFunc("gover", runtime.Version)
 	gvnt.SetTemplateFunc("gvntver", func() string { return params.Version })
-	gvnt.SetTemplateFunc("niltime", func() string { return time.Unix(0, 0).Format(time.RFC1123) })
+	gvnt.SetTemplateFunc("niltime", func() string { return time.Unix(1561910400, 0).Format(time.RFC1123) })
 	gvnt.SetTemplateFunc("apis", func() string { return ipcAPIs })
 
 	// Verify the actual welcome message to the required template
@@ -135,7 +135,7 @@ func testAttachWelcome(t *testing.T, gvnt *testgvnt, endpoint, apis string) {
 	attach.SetTemplateFunc("gover", runtime.Version)
 	attach.SetTemplateFunc("gvntver", func() string { return params.Version })
 	attach.SetTemplateFunc("coinbase", func() string { return gvnt.Coinbase })
-	attach.SetTemplateFunc("niltime", func() string { return time.Unix(0, 0).Format(time.RFC1123) })
+	attach.SetTemplateFunc("niltime", func() string { return time.Unix(1561910400, 0).Format(time.RFC1123) })
 	attach.SetTemplateFunc("ipc", func() bool { return strings.HasPrefix(endpoint, "ipc") })
 	attach.SetTemplateFunc("datadir", func() string { return gvnt.Datadir })
 	attach.SetTemplateFunc("apis", func() string { return apis })
