@@ -26,13 +26,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vntchain/go-vnt/common"
 	"github.com/stretchr/testify/require"
+	"github.com/vntchain/go-vnt/common"
 )
 
 type unpackTest struct {
 	def  string      // ABI definition JSON
-	enc  string      // evm return data
+	enc  string      // vm return data
 	want interface{} // the expected output
 	err  string      // empty or error if expected
 }

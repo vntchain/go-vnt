@@ -16,7 +16,7 @@
 
 package storage
 
-// this is a clone of an earlier state of the ethereum vntdb/database
+// this is a clone of an earlier state of the hubble vntdb/database
 // no need for queueing/caching
 
 import (

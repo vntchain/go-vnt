@@ -1,0 +1,153 @@
+{
+     "env": {
+          "previousHash": "5e20a0453cecd065ea59c37ac63e079ee08998b6045136a8ce6635c7912ec0b6",
+          "currentNumber": 257,
+          "currentGasLimit": 4000000,
+          "currentDifficulty": 256,
+          "currentTimestamp": 1546273000,
+          "currentCoinbase": "0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba"
+     },
+     "exec": {
+          "address": "0xcccccccccccccccccccccccccccccccccccccccc",
+          "value": 0,
+          "gas": 4000000,
+          "caller": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "origin": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "gasPrice": 1000000
+     },
+     "pre": {
+          "0xcccccccccccccccccccccccccccccccccccccccc": {
+               "balance": "0xDE0B6B3A7640000",
+               "code": "",
+               "nonce": "0x00",
+               "storage": {}
+          },
+          "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+               "balance": "0xDE0B6B3A7640000",
+               "code": "",
+               "nonce": "0x00",
+               "storage": {}
+          }
+     },
+     "testcase": [{
+          "code": "initializeVariables/initializeVariables.compress",
+          "abi": "initializeVariables/abi.json",
+          "initcase": {
+               "needinit": true,
+               "input": []
+          },
+          "tests": [{
+               "function": "getU256",
+               "input": [],
+               "wanted": {
+                    "data": "100000000000",
+                    "type": "uint256"
+               }
+          }, {
+               "function": "getAddr",
+               "input": [],
+               "wanted": {
+                    "data": "0xaaaaaa",
+                    "type": "address"
+               }
+          }, {
+               "function": "getStr",
+               "input": [],
+               "wanted": {
+                    "data": "teststring",
+                    "type": "string"
+               }
+          }, {
+               "function": "getU64",
+               "input": [],
+               "wanted": {
+                    "data": "100000",
+                    "type": "uint64"
+               }
+          }, {
+               "function": "getStrInS1",
+               "input": [],
+               "wanted": {
+                    "data": "teststringinstruct",
+                    "type": "string"
+               }
+          }, {
+               "function": "getU256InS1",
+               "input": [],
+               "wanted": {
+                    "data": "10000000000011",
+                    "type": "uint256"
+               }
+          }, {
+               "function": "getAddrInS1",
+               "input": [],
+               "wanted": {
+                    "data": "0xaaaaaa11",
+                    "type": "address"
+               }
+          }, {
+               "function": "getU64InS1",
+               "input": [],
+               "wanted": {
+                    "data": "1000001",
+                    "type": "uint64"
+               }
+          }, {
+               "function": "getStr1InS2",
+               "input": [],
+               "wanted": {
+                    "data": "teststringinstruct",
+                    "type": "string"
+               }
+          }, {
+               "function": "getU2561InS2",
+               "input": [],
+               "wanted": {
+                    "data": "10000000000011",
+                    "type": "uint256"
+               }
+          }, {
+               "function": "getAddr1InS2",
+               "input": [],
+               "wanted": {
+                    "data": "0xaaaaaa11",
+                    "type": "address"
+               }
+          }, {
+               "function": "getU641InS2",
+               "input": [],
+               "wanted": {
+                    "data": "1000001",
+                    "type": "uint64"
+               }
+          }, {
+               "function": "getStr2InS2",
+               "input": [],
+               "wanted": {
+                    "data": "teststringinstructstruct",
+                    "type": "string"
+               }
+          }, {
+               "function": "getU2562InS2",
+               "input": [],
+               "wanted": {
+                    "data": "1000000000001122",
+                    "type": "uint256"
+               }
+          }, {
+               "function": "getAddr2InS2",
+               "input": [],
+               "wanted": {
+                    "data": "0xaaaaaa1122",
+                    "type": "address"
+               }
+          }, {
+               "function": "getU642InS2",
+               "input": [],
+               "wanted": {
+                    "data": "10000012",
+                    "type": "uint64"
+               }
+          }]
+     }]
+}

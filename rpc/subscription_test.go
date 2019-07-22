@@ -58,7 +58,7 @@ func (s *NotificationTestService) SomeSubscription(ctx context.Context, n, val i
 
 	// by explicitly creating an subscription we make sure that the subscription id is send back to the client
 	// before the first subscription.Notify is called. Otherwise the events might be send before the response
-	// for the eth_subscribe method.
+	// for the core_subscribe method.
 	subscription := notifier.CreateSubscription()
 
 	go func() {

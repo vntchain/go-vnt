@@ -410,7 +410,7 @@ func (ec *Client) PendingTransactionCount(ctx context.Context) (uint, error) {
 // Contract Calling
 
 // CallContract executes a message call transaction, which is directly executed in the VM
-// of the node, but never mined into the blockchain.
+// of the node, but never produced into the blockchain.
 //
 // blockNumber selects the block height at which the call runs. It can be nil, in which
 // case the code is taken from the latest known block. Note that state from very old
@@ -424,7 +424,7 @@ func (ec *Client) CallContract(ctx context.Context, msg hubble.CallMsg, blockNum
 	return hex, nil
 }
 
-// PendingCallContract executes a message call transaction using the EVM.
+// PendingCallContract executes a message call transaction using the VM.
 // The state seen by the contract call is the pending state.
 func (ec *Client) PendingCallContract(ctx context.Context, msg hubble.CallMsg) ([]byte, error) {
 	var hex hexutil.Bytes
@@ -447,7 +447,7 @@ func (ec *Client) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
 
 // EstimateGas tries to estimate the gas needed to execute a specific transaction based on
 // the current pending state of the backend blockchain. There is no guarantee that this is
-// the true gas limit requirement as other transactions may be added or removed by miners,
+// the true gas limit requirement as other transactions may be added or removed by producers,
 // but it should provide a basis for setting a reasonable default.
 func (ec *Client) EstimateGas(ctx context.Context, msg hubble.CallMsg) (uint64, error) {
 	var hex hexutil.Uint64
@@ -461,7 +461,7 @@ func (ec *Client) EstimateGas(ctx context.Context, msg hubble.CallMsg) (uint64, 
 // SendTransaction injects a signed transaction into the pending pool for execution.
 //
 // If the transaction was a contract creation use the TransactionReceipt method to get the
-// contract address after the transaction has been mined.
+// contract address after the transaction has been produced.
 func (ec *Client) SendTransaction(ctx context.Context, tx *types.Transaction) error {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
@@ -497,7 +497,7 @@ func toCallArg(msg hubble.CallMsg) interface{} {
 //
 // parameter sender only used for to get nonce of the account who send this transaction. funcName name is the operation
 // what you want to do, and args is the parameters of funcName in election contract.
-func (ec *Client) NewElectionTx(ctx context.Context, sender common.Address, gasLimit uint64, gasPrice *big.Int, funcName string, args ...interface{}) (*types.Transaction, error) {
+func (ec *Client) NewElectionTx(ctx context.Context, sender common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, funcName string, args ...interface{}) (*types.Transaction, error) {
 	// 	Generate tx txData
 	electAbi, err := getElectionABI()
 	if err != nil {
@@ -514,11 +514,11 @@ func (ec *Client) NewElectionTx(ctx context.Context, sender common.Address, gasL
 		return nil, err
 	}
 
-	return types.NewTransaction(nonce, common.HexToAddress(election.ContractAddr), common.Big0, gasLimit, gasPrice, txData), nil
+	return types.NewTransaction(nonce, common.HexToAddress(election.ContractAddr), amount, gasLimit, gasPrice, txData), nil
 }
 
 func getElectionABI() (abi.ABI, error) {
-	return abi.JSON(strings.NewReader(election.AbiJSON))
+	return abi.JSON(strings.NewReader(election.ElectionAbiJSON))
 }
 
 func packInput(abiobj abi.ABI, name string, args ...interface{}) ([]byte, error) {

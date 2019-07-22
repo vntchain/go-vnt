@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"sync/atomic"
 	"time"
 
 	inet "github.com/libp2p/go-libp2p-net"
@@ -88,26 +89,10 @@ func (gmm *GoodMorningMsg) HandleMessage() error {
 	return nil
 }
 
-type msgHandler func() error
-
-/*func (mb *MsgBody) handleForMsgType() (msgHandler, error) {
-	switch mb.Type {
-	case GoodMorning:
-		gmm := &GoodMorningMsg{}
-		err := json.Unmarshal(mb.Payload, gmm)
-		if err != nil {
-			return nil, err
-		}
-		return gmm.HandleMessage, nil
-	default:
-		return nil, errors.New("invalid message type")
-	}
-}*/
-
 // Send is used to send message payload with specific messge type
 func Send(w MsgWriter, protocolID string, msgType MessageType, data interface{}) error {
 	// 还是要使用rlp进行序列化，因为类型多变，rlp已经有完整的支持
-	log.Info("yhx-test", "send message type", msgType)
+	log.Info("Send message", "type", msgType)
 	size, r, err := rlp.EncodeToReader(data)
 	if err != nil {
 		log.Error("Send()", "rlp encode error", err)
@@ -163,52 +148,48 @@ func (msg *Msg) GetBodySize() uint32 {
 	return bodySize
 }
 
-// VNTMessenger vnt chain message readwriter
-type VNTMessenger struct {
-	protocol    Protocol
-	in          chan Msg
-	err         chan error
-	w           inet.Stream
-	peerPointer *Peer
+// VNTMsger vnt chain message readwriter
+type VNTMsger struct {
+	protocol Protocol
+	in       chan Msg
+	err      chan error
+	w        inet.Stream
+	peer     *Peer
 }
 
 // WriteMsg implement MsgReadWriter interface
-func (rw *VNTMessenger) WriteMsg(msg Msg) (err error) {
-	//if uint64(msg.Body.Type) >= rw.Length {
-	//	return newPeerError(errInvalidMsgCode, "not handled")
-	//}
-	// 暂时先不管主动关闭需要告知对方的情况，目前聚焦于发送消息这件基本工作
-
+func (rw *VNTMsger) WriteMsg(msg Msg) (err error) {
 	msgHeaderByte := msg.Header[:]
 	msgBodyByte, err := json.Marshal(msg.Body)
 	if err != nil {
-		log.Error("WriteMsg()", "marshal msgbody error", err)
+		rw.peer.log.Error("Write message", "marshal msgbody error", err)
 		return err
 	}
 	m := append(msgHeaderByte, msgBodyByte...)
-	//log.Info("p2p-test", "MESSAGE", string(m))
 
 	_, err = rw.w.Write(m)
 	if err != nil {
-		log.Error("WriteMsg()", "write msg error", err)
-		if !rw.peerPointer.closed {
-			log.Info("WriteMsg()", "underlay will close this connection which remotePID", rw.peerPointer.RemoteID())
-			rw.peerPointer.err <- err
+		rw.peer.log.Error("Write message", "write msg error", err)
+		if atomic.LoadInt32(&rw.peer.reseted) == 0 {
+			rw.peer.log.Info("Write message", "underlay will close this connection which remotePID", rw.peer.RemoteID())
+			rw.peer.sendError(err)
 		}
-		log.Trace("WriteMsg() exit", "peer", rw.peerPointer.RemoteID())
+		rw.peer.log.Trace("Write message exit", "peer", rw.peer.RemoteID())
 		return err
 	}
 	return nil
 }
 
 // ReadMsg implement MsgReadWriter interface
-func (rw *VNTMessenger) ReadMsg() (Msg, error) {
+func (rw *VNTMsger) ReadMsg() (Msg, error) {
 	select {
 	case msg := <-rw.in:
-		log.Info("p2p-test", "incoming message", msg)
 		return msg, nil
 	case err := <-rw.err:
 		return Msg{}, err
+	case <-rw.peer.server.quit:
+		rw.peer.log.Info("P2P server is being closed, no longer read message...")
+		return Msg{}, errServerStopped
 	}
 }
 

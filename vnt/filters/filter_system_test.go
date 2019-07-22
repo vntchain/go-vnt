@@ -286,9 +286,9 @@ func TestLogFilterCreation(t *testing.T) {
 			{FilterCriteria{}, true},
 			// valid block number range
 			{FilterCriteria{FromBlock: big.NewInt(1), ToBlock: big.NewInt(2)}, true},
-			// "mined" block range to pending
+			// "produced" block range to pending
 			{FilterCriteria{FromBlock: big.NewInt(1), ToBlock: big.NewInt(rpc.LatestBlockNumber.Int64())}, true},
-			// new mined and pending blocks
+			// new produced and pending blocks
 			{FilterCriteria{FromBlock: big.NewInt(rpc.LatestBlockNumber.Int64()), ToBlock: big.NewInt(rpc.PendingBlockNumber.Int64())}, true},
 			// from block "higher" than to block
 			{FilterCriteria{FromBlock: big.NewInt(2), ToBlock: big.NewInt(1)}, false},
@@ -396,15 +396,15 @@ func TestLogFilter(t *testing.T) {
 			5: {FilterCriteria{Addresses: []common.Address{secondAddr, thirdAddress}, Topics: [][]common.Hash{{firstTopic, secondTopic}}}, allLogs[2:5], ""},
 			// logs in the pending block
 			6: {FilterCriteria{Addresses: []common.Address{firstAddr}, FromBlock: big.NewInt(rpc.PendingBlockNumber.Int64()), ToBlock: big.NewInt(rpc.PendingBlockNumber.Int64())}, allLogs[:2], ""},
-			// mined logs with block num >= 2 or pending logs
+			// produced logs with block num >= 2 or pending logs
 			7: {FilterCriteria{FromBlock: big.NewInt(2), ToBlock: big.NewInt(rpc.PendingBlockNumber.Int64())}, expectedCase7, ""},
-			// all "mined" logs with block num >= 2
+			// all "produced" logs with block num >= 2
 			8: {FilterCriteria{FromBlock: big.NewInt(2), ToBlock: big.NewInt(rpc.LatestBlockNumber.Int64())}, allLogs[3:], ""},
-			// all "mined" logs
+			// all "produced" logs
 			9: {FilterCriteria{ToBlock: big.NewInt(rpc.LatestBlockNumber.Int64())}, allLogs, ""},
-			// all "mined" logs with 1>= block num <=2 and topic secondTopic
+			// all "produced" logs with 1>= block num <=2 and topic secondTopic
 			10: {FilterCriteria{FromBlock: big.NewInt(1), ToBlock: big.NewInt(2), Topics: [][]common.Hash{{secondTopic}}}, allLogs[3:4], ""},
-			// all "mined" and pending logs with topic firstTopic
+			// all "produced" and pending logs with topic firstTopic
 			11: {FilterCriteria{FromBlock: big.NewInt(rpc.LatestBlockNumber.Int64()), ToBlock: big.NewInt(rpc.PendingBlockNumber.Int64()), Topics: [][]common.Hash{{firstTopic}}}, expectedCase11, ""},
 			// match all logs due to wildcard topic
 			12: {FilterCriteria{Topics: [][]common.Hash{nil}}, allLogs[1:], ""},

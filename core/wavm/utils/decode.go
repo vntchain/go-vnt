@@ -18,8 +18,8 @@ package utils
 
 import (
 	"bytes"
-	"errors"
 
+	"github.com/vntchain/go-vnt/core/vm"
 	"github.com/vntchain/go-vnt/core/wavm/contract"
 	"github.com/vntchain/go-vnt/rlp"
 )
@@ -27,7 +27,7 @@ import (
 func DecodeContractCode(input []byte) (contract.WasmCode, []byte, error) {
 	magic, _ := ReadMagic(input)
 	if magic != MAGIC {
-		return contract.WasmCode{}, nil, errors.New("Magic number mismatch")
+		return contract.WasmCode{}, nil, vm.ErrMagicNumberMismatch
 	}
 	input = input[4:]
 	buf := bytes.NewReader(input)

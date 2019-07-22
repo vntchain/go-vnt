@@ -21,8 +21,8 @@ package keystore
 import (
 	"time"
 
-	"github.com/vntchain/go-vnt/log"
 	"github.com/rjeczalik/notify"
+	"github.com/vntchain/go-vnt/log"
 )
 
 type watcher struct {

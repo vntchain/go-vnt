@@ -249,7 +249,7 @@ func (c *Config) name() string {
 }
 
 // These resources are resolved differently for "gvnt" instances.
-var isOldGethResource = map[string]bool{
+var isOldGvntResource = map[string]bool{
 	"chaindata":          true,
 	"nodes":              true,
 	"nodekey":            true,
@@ -267,7 +267,7 @@ func (c *Config) resolvePath(path string) string {
 	}
 	// Backwards-compatibility: ensure that data directory files created
 	// by gvnt 1.4 are used if they exist.
-	if c.name() == "gvnt" && isOldGethResource[path] {
+	if c.name() == "gvnt" && isOldGvntResource[path] {
 		oldpath := ""
 		if c.Name == "gvnt" {
 			oldpath = filepath.Join(c.DataDir, path)

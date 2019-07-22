@@ -78,7 +78,7 @@ var landingPageTemplate = template.Must(template.New("landingPage").Parse(`
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" ww="chrome=1">
     <meta name="description" content="VNT/Swarm Landing page">
-    <meta property="og:url" content="https://swarm-gateways.net/bzz:/theswarm.eth">
+    <meta property="og:url" content="https://swarm-gateways.net/bzz:/theswarm.vnt">
 		<style>
 
       body, div, header, footer {
@@ -189,7 +189,7 @@ var landingPageTemplate = template.Must(template.New("landingPage").Parse(`
 			function goToPage() {
 					var page = document.getElementById('page').value;
 					if (page == "") {
-						var page = "theswarm.eth"
+						var page = "theswarm.vnt"
 					}
 					var address = "/bzz:/" + page;
 					location.href = address;
@@ -198,7 +198,7 @@ var landingPageTemplate = template.Must(template.New("landingPage").Parse(`
 			</script>
 				<content-body>
 
-	            <h1>Enter the hash or ENS of a Swarm-hosted file below:</h1>
+	            <h1>Enter the hash or VNS of a Swarm-hosted file below:</h1>
 								<input type="text" id="page" size="64"/>
 								<input type="submit" value="submit" onclick="goToPage();" />
 
@@ -206,7 +206,7 @@ var landingPageTemplate = template.Must(template.New("landingPage").Parse(`
       <footer>
         <p>
           Swarm: Serverless Hosting Incentivised Peer-To-Peer Storage And Content Distribution<br/>
-          <a href="http://swarm-gateways.net/bzz:/theswarm.eth">Swarm</a>
+          <a href="http://swarm-gateways.net/bzz:/theswarm.vnt">Swarm</a>
         </p>
       </footer>
 

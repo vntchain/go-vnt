@@ -105,10 +105,10 @@ var (
 		Usage:  "Swarm Syncing enabled (default true)",
 		EnvVar: SWARM_ENV_SYNC_ENABLE,
 	}
-	EnsAPIFlag = cli.StringSliceFlag{
-		Name:   "ens-api",
-		Usage:  "ENS API endpoint for a TLD and with contract address, can be repeated, format [tld:][contract-addr@]url",
-		EnvVar: SWARM_ENV_ENS_API,
+	VnsAPIFlag = cli.StringSliceFlag{
+		Name:   "vns-api",
+		Usage:  "VNS API endpoint for a TLD and with contract address, can be repeated, format [tld:][contract-addr@]url",
+		EnvVar: SWARM_ENV_VNS_API,
 	}
 	SwarmApiFlag = cli.StringFlag{
 		Name:  "bzzapi",
@@ -142,13 +142,13 @@ var (
 	}
 
 	// the following flags are deprecated and should be removed in the future
-	DeprecatedEthAPIFlag = cli.StringFlag{
+	DeprecatedVntAPIFlag = cli.StringFlag{
 		Name:  "vntapi",
-		Usage: "DEPRECATED: please use --ens-api and --swap-api",
+		Usage: "DEPRECATED: please use --vns-api and --swap-api",
 	}
-	DeprecatedEnsAddrFlag = cli.StringFlag{
-		Name:  "ens-addr",
-		Usage: "DEPRECATED: ENS contract address, please use --ens-api with contract address according to its format",
+	DeprecatedVnsAddrFlag = cli.StringFlag{
+		Name:  "vns-addr",
+		Usage: "DEPRECATED: VNS contract address, please use --vns-api with contract address according to its format",
 	}
 )
 
@@ -176,7 +176,7 @@ var app = utils.NewApp(gitCommit, "VNT Swarm")
 func init() {
 	app.Action = bzzd
 	app.HideVersion = true // we have a command to print the version
-	app.Copyright = "Copyright 2013-2016 The go-ethereum Authors"
+	app.Copyright = "Copyright 2018-2019 The Vntchain Authors"
 	app.Commands = []cli.Command{
 		{
 			Action:    version,
@@ -267,12 +267,12 @@ Manage the local chunk database.
 					Description: `
 Export a local chunk database as a tar archive (use - to send to stdout).
 
-    swarm db export ~/.ethereum/swarm/bzz-KEY/chunks chunks.tar
+    swarm db export ~/.vntchain/swarm/bzz-KEY/chunks chunks.tar
 
 The export may be quite large, consider piping the output through the Unix
 pv(1) tool to get a progress bar:
 
-    swarm db export ~/.ethereum/swarm/bzz-KEY/chunks - | pv > chunks.tar
+    swarm db export ~/.vntchain/swarm/bzz-KEY/chunks - | pv > chunks.tar
 `,
 				},
 				{
@@ -283,12 +283,12 @@ pv(1) tool to get a progress bar:
 					Description: `
 Import chunks from a tar archive into a local chunk database (use - to read from stdin).
 
-    swarm db import ~/.ethereum/swarm/bzz-KEY/chunks chunks.tar
+    swarm db import ~/.vntchain/swarm/bzz-KEY/chunks chunks.tar
 
 The import may be quite large, consider piping the input through the Unix
 pv(1) tool to get a progress bar:
 
-    pv chunks.tar | swarm db import ~/.ethereum/swarm/bzz-KEY/chunks -
+    pv chunks.tar | swarm db import ~/.vntchain/swarm/bzz-KEY/chunks -
 `,
 				},
 				{
@@ -336,7 +336,7 @@ DEPRECATED: use 'swarm db clean'.
 		utils.PasswordFileFlag,
 		// bzzd-specific flags
 		CorsStringFlag,
-		EnsAPIFlag,
+		VnsAPIFlag,
 		SwarmTomlConfigPathFlag,
 		SwarmConfigPathFlag,
 		SwarmSwapEnabledFlag,
@@ -355,8 +355,8 @@ DEPRECATED: use 'swarm db clean'.
 		SwarmUpFromStdinFlag,
 		SwarmUploadMimeType,
 		//deprecated flags
-		DeprecatedEthAPIFlag,
-		DeprecatedEnsAddrFlag,
+		DeprecatedVntAPIFlag,
+		DeprecatedVnsAddrFlag,
 	}
 	app.Flags = append(app.Flags, debug.Flags...)
 	app.Flags = append(app.Flags, swarmmetrics.Flags...)
@@ -410,7 +410,7 @@ func bzzd(ctx *cli.Context) error {
 	if _, err := os.Stat(bzzconfig.Path); err == nil {
 		cfg.DataDir = bzzconfig.Path
 	}
-	//setup the ethereum node
+	//setup the vntchain node
 	utils.SetNodeConfig(ctx, &cfg)
 	stack, err := node.New(&cfg)
 	if err != nil {
@@ -419,7 +419,7 @@ func bzzd(ctx *cli.Context) error {
 	//a few steps need to be done after the config phase is completed,
 	//due to overriding behavior
 	initSwarmNode(bzzconfig, stack, ctx)
-	//register BZZ as node.Service in the ethereum node
+	//register BZZ as node.Service in the vntchain node
 	registerBzzService(bzzconfig, ctx, stack)
 	//start the node
 	utils.StartNode(stack)
@@ -463,7 +463,7 @@ func registerBzzService(bzzconfig *bzzapi.Config, ctx *cli.Context, stack *node.
 
 		return swarm.NewSwarm(ctx, swapClient, bzzconfig)
 	}
-	//register within the ethereum node
+	//register within the vntchain node
 	if err := stack.Register(boot); err != nil {
 		utils.Fatalf("Failed to register the Swarm service: %v", err)
 	}

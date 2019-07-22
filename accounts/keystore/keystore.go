@@ -17,12 +17,13 @@
 // Package keystore implements encrypted storage of secp256k1 private keys.
 //
 // Keys are stored as encrypted JSON files according to the Web3 Secret Storage specification.
-// See https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition for more information.
 package keystore
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	crand "crypto/rand"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -83,6 +84,23 @@ func NewKeyStore(keydir string, scryptN, scryptP int) *KeyStore {
 	return ks
 }
 
+func NewSecureEnclaveKeyStore(keyjson []byte) *KeyStore {
+	var (
+		keystores PackKeyStore
+	)
+	err := json.NewDecoder(bytes.NewBuffer(keyjson)).Decode(&keystores)
+	if err != nil {
+		return nil
+	}
+	vntks := make(map[common.Address]encryptedKeyJSONV3)
+	for _, v := range keystores.VNTKeystore {
+		vntks[common.HexToAddress(v.Address)] = v
+	}
+	ks := &KeyStore{storage: &keyStoreSecureEnclave{vntks}}
+	ks.initWithKeyJson(keystores.VNTKeystore)
+	return ks
+}
+
 // NewPlaintextKeyStore creates a keystore for the given directory.
 // Deprecated: Use NewKeyStore.
 func NewPlaintextKeyStore(keydir string) *KeyStore {
@@ -113,6 +131,25 @@ func (ks *KeyStore) init(keydir string) {
 	for i := 0; i < len(accs); i++ {
 		ks.wallets[i] = &keystoreWallet{account: accs[i], keystore: ks}
 	}
+}
+
+func (ks *KeyStore) initWithKeyJson(keyjson []encryptedKeyJSONV3) {
+	ks.mu.Lock()
+	defer ks.mu.Unlock()
+	ks.cache = &accountCache{
+		byAddr: make(map[common.Address][]accounts.Account),
+	}
+	readAccount := func(ks encryptedKeyJSONV3) *accounts.Account {
+		addr := common.HexToAddress(ks.Address)
+		return &accounts.Account{Address: addr}
+	}
+	for _, v := range keyjson {
+		ac := readAccount(v)
+		ks.cache.byAddr[ac.Address] = []accounts.Account{*ac}
+		ks.cache.all = append(ks.cache.all, *ac)
+	}
+	ks.unlocked = make(map[common.Address]*unlocked)
+	ks.cache.watcher = newWatcher(ks.cache)
 }
 
 // Wallets implements accounts.Backend, returning all single-key wallets from the
@@ -418,6 +455,8 @@ func (ks *KeyStore) Export(a accounts.Account, passphrase, newPassphrase string)
 	var N, P int
 	if store, ok := ks.storage.(*keyStorePassphrase); ok {
 		N, P = store.scryptN, store.scryptP
+	} else if _, ok := ks.storage.(*keyStoreSecureEnclave); ok {
+		N, P = LightScryptN, LightScryptP
 	} else {
 		N, P = StandardScryptN, StandardScryptP
 	}

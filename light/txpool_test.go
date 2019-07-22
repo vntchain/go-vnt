@@ -33,17 +33,17 @@ import (
 )
 
 type testTxRelay struct {
-	send, discard, mined chan int
+	send, discard, produced chan int
 }
 
 func (self *testTxRelay) Send(txs types.Transactions) {
 	self.send <- len(txs)
 }
 
-func (self *testTxRelay) NewHead(head common.Hash, mined []common.Hash, rollback []common.Hash) {
-	m := len(mined)
+func (self *testTxRelay) NewHead(head common.Hash, produced []common.Hash, rollback []common.Hash) {
+	m := len(produced)
 	if m != 0 {
-		self.mined <- m
+		self.produced <- m
 	}
 }
 
@@ -62,14 +62,14 @@ func sentTx(i int) int {
 	return int(math.Pow(float64(i)/float64(poolTestBlocks), 0.9) * poolTestTxs)
 }
 
-// txs included in block i or before that (minedTx(i) <= sentTx(i))
-func minedTx(i int) int {
+// txs included in block i or before that (producedTx(i) <= sentTx(i))
+func producedTx(i int) int {
 	return int(math.Pow(float64(i)/float64(poolTestBlocks), 1.1) * poolTestTxs)
 }
 
 func txPoolTestChainGen(i int, block *core.BlockGen) {
-	s := minedTx(i)
-	e := minedTx(i + 1)
+	s := producedTx(i)
+	e := producedTx(i + 1)
 	for i := s; i < e; i++ {
 		block.AddTx(testTx[i])
 	}
@@ -96,9 +96,9 @@ func TestTxPool(t *testing.T) {
 
 	odr := &testOdr{sdb: sdb, ldb: ldb}
 	relay := &testTxRelay{
-		send:    make(chan int, 1),
-		discard: make(chan int, 1),
-		mined:   make(chan int, 1),
+		send:     make(chan int, 1),
+		discard:  make(chan int, 1),
+		produced: make(chan int, 1),
 	}
 	lightchain, _ := NewLightChain(odr, params.TestChainConfig, mock.NewMock())
 	txPermanent = 50
@@ -123,15 +123,15 @@ func TestTxPool(t *testing.T) {
 			panic(err)
 		}
 
-		got := <-relay.mined
-		exp := minedTx(i) - minedTx(i-1)
+		got := <-relay.produced
+		exp := producedTx(i) - producedTx(i-1)
 		if got != exp {
-			t.Errorf("relay.NewHead expected len(mined) = %d, got %d", exp, got)
+			t.Errorf("relay.NewHead expected len(produced) = %d, got %d", exp, got)
 		}
 
 		exp = 0
 		if i > int(txPermanent)+1 {
-			exp = minedTx(i-int(txPermanent)-1) - minedTx(i-int(txPermanent)-2)
+			exp = producedTx(i-int(txPermanent)-1) - producedTx(i-int(txPermanent)-2)
 		}
 		if exp != 0 {
 			got = <-relay.discard

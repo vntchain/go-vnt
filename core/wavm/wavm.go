@@ -23,15 +23,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	wasmcontract "github.com/vntchain/go-vnt/core/wavm/contract"
-	"github.com/vntchain/go-vnt/core/wavm/gas"
-
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/vm"
-
-	"github.com/vntchain/go-vnt/core/vm/interface"
-	errorsmsg "github.com/vntchain/go-vnt/core/wavm/errors"
+	errorsmsg "github.com/vntchain/go-vnt/core/vm"
+	inter "github.com/vntchain/go-vnt/core/vm/interface"
+	wasmcontract "github.com/vntchain/go-vnt/core/wavm/contract"
+	"github.com/vntchain/go-vnt/core/wavm/gas"
 	"github.com/vntchain/go-vnt/core/wavm/storage"
 	"github.com/vntchain/go-vnt/core/wavm/utils"
 	"github.com/vntchain/go-vnt/crypto"
@@ -60,7 +58,7 @@ type WAVM struct {
 	// virtual machine configuration options used to initialise the
 	// wavm.
 	wavmConfig Config
-	// global (to this context) ethereum virtual machine
+	// global (to this context) vntchain virtual machine
 	// used throughout the execution of the tx.
 	abort int32
 	// callGasTemp holds the gas available for the current call. This is needed because the
@@ -147,6 +145,9 @@ func runWavm(wavm *WAVM, contract *wasmcontract.WASMContract, input []byte, isCr
 	if isCreate == true {
 		// compile the wasm code: add gas counter, add statedb r/w
 		compiled, err := CompileModule(newwawm.Module, crx, mutable)
+		if err != nil {
+			return nil, err
+		}
 		res, err = newwawm.Apply(input, compiled, mutable)
 		if err != nil {
 			return nil, err
@@ -299,7 +300,7 @@ func (wavm *WAVM) Call(caller vm.ContractRef, addr common.Address, input []byte,
 	}
 	wavm.Transfer(wavm.StateDB, caller.Address(), to.Address(), value)
 
-	// Initialise a new contract and set the code that is to be used by the EVM.
+	// Initialise a new contract and set the code that is to be used by the WAVM.
 	// The contract is a scoped environment for this execution context only.
 	contract := wasmcontract.NewWASMContract(caller, to, value, gas)
 
@@ -318,7 +319,7 @@ func (wavm *WAVM) Call(caller vm.ContractRef, addr common.Address, input []byte,
 		}()
 	}
 	ret, err = runWavm(wavm, contract, input, false)
-	// When an error was returned by the EVM or when setting the creation code
+	// When an error was returned by the WAVM or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// this also counts for code storage gas errors.
 	if err != nil {
@@ -356,7 +357,7 @@ func (wavm *WAVM) CallCode(caller vm.ContractRef, addr common.Address, input []b
 		to       = vm.AccountRef(caller.Address())
 	)
 	// initialise a new contract and set the code that is to be used by the
-	// EVM. The contract is a scoped environment for this execution context
+	// WAVM. The contract is a scoped environment for this execution context
 	// only.
 	contract := wasmcontract.NewWASMContract(caller, to, value, gas)
 

@@ -6,8 +6,8 @@ import (
 	uurl "net/url"
 	"time"
 
-	"github.com/vntchain/go-vnt/metrics"
 	"github.com/influxdata/influxdb/client"
+	"github.com/vntchain/go-vnt/metrics"
 )
 
 type reporter struct {

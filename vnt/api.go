@@ -34,7 +34,6 @@ import (
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/internal/vntapi"
 	"github.com/vntchain/go-vnt/log"
-	"github.com/vntchain/go-vnt/miner"
 	"github.com/vntchain/go-vnt/params"
 	"github.com/vntchain/go-vnt/rlp"
 	"github.com/vntchain/go-vnt/rpc"
@@ -47,7 +46,7 @@ type PublicVntAPI struct {
 	e *VNT
 }
 
-// NewPublicEthereumAPI creates a new VNT protocol API for full nodes.
+// NewPublicVntAPI creates a new VNT protocol API for full nodes.
 func NewPublicVntAPI(e *VNT) *PublicVntAPI {
 	return &PublicVntAPI{e}
 }
@@ -57,47 +56,43 @@ func (api *PublicVntAPI) Coinbase() (common.Address, error) {
 	return api.e.Coinbase()
 }
 
-// PublicMinerAPI provides an API to control the miner.
+// PublicProducerAPI provides an API to control the producer.
 // It offers only methods that operate on data that pose no security risk when it is publicly accessible.
-type PublicMinerAPI struct {
-	e     *VNT
-	agent *miner.RemoteAgent
-}
-
-// NewPublicMinerAPI create a new PublicMinerAPI instance.
-func NewPublicMinerAPI(e *VNT) *PublicMinerAPI {
-	agent := miner.NewRemoteAgent(e.BlockChain(), e.Engine())
-	e.Miner().Register(agent)
-
-	return &PublicMinerAPI{e, agent}
-}
-
-// Producing returns an indication if this node is currently block producing.
-func (api *PublicMinerAPI) Producing() bool {
-	return api.e.IsProducing()
-}
-
-// PrivateMinerAPI provides private RPC methods to control the miner.
-// These methods can be abused by external users and must be considered insecure for use by untrusted users.
-type PrivateMinerAPI struct {
+type PublicProducerAPI struct {
 	e *VNT
 }
 
-// NewPrivateMinerAPI create a new RPC service which controls the miner of this node.
-func NewPrivateMinerAPI(e *VNT) *PrivateMinerAPI {
-	return &PrivateMinerAPI{e: e}
+// NewPublicProducerAPI create a new PublicProducerAPI instance.
+func NewPublicProducerAPI(e *VNT) *PublicProducerAPI {
+	return &PublicProducerAPI{e}
 }
 
-// Start the miner with the given number of threads. If threads is nil the number
+// Producing returns an indication if this node is currently block producing.
+func (api *PublicProducerAPI) Producing() bool {
+	return api.e.IsProducing()
+}
+
+// PrivateProducerAPI provides private RPC methods to control the producer.
+// These methods can be abused by external users and must be considered insecure for use by untrusted users.
+type PrivateProducerAPI struct {
+	e *VNT
+}
+
+// NewPrivateProducerAPI create a new RPC service which controls the producer of this node.
+func NewPrivateProducerAPI(e *VNT) *PrivateProducerAPI {
+	return &PrivateProducerAPI{e: e}
+}
+
+// Start the producer with the given number of threads. If threads is nil the number
 // of workers started is equal to the number of logical CPUs that are usable by
 // this process. If block producing is already running, this method adjust the number of
 // threads allowed to use.
-func (api *PrivateMinerAPI) Start(threads *int) error {
+func (api *PrivateProducerAPI) Start(threads *int) error {
 	// Set the number of threads if the seal engine supports it
 	if threads == nil {
 		threads = new(int)
 	} else if *threads == 0 {
-		*threads = -1 // Disable the miner from within
+		*threads = -1 // Disable the producer from within
 	}
 	type threaded interface {
 		SetThreads(threads int)
@@ -106,7 +101,7 @@ func (api *PrivateMinerAPI) Start(threads *int) error {
 		log.Info("Updated block producing threads", "threads", *threads)
 		th.SetThreads(*threads)
 	}
-	// Start the miner and return
+	// Start the producer and return
 	if !api.e.IsProducing() {
 		// Propagate the initial price point to the transaction pool
 		api.e.lock.RLock()
@@ -119,8 +114,8 @@ func (api *PrivateMinerAPI) Start(threads *int) error {
 	return nil
 }
 
-// Stop the miner
-func (api *PrivateMinerAPI) Stop() bool {
+// Stop the producer
+func (api *PrivateProducerAPI) Stop() bool {
 	type threaded interface {
 		SetThreads(threads int)
 	}
@@ -131,16 +126,16 @@ func (api *PrivateMinerAPI) Stop() bool {
 	return true
 }
 
-// SetExtra sets the extra data string that is included when this miner mines a block.
-func (api *PrivateMinerAPI) SetExtra(extra string) (bool, error) {
-	if err := api.e.Miner().SetExtra([]byte(extra)); err != nil {
+// SetExtra sets the extra data string that is included when this producer mines a block.
+func (api *PrivateProducerAPI) SetExtra(extra string) (bool, error) {
+	if err := api.e.Producer().SetExtra([]byte(extra)); err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
-// SetGasPrice sets the minimum accepted gas price for the miner.
-func (api *PrivateMinerAPI) SetGasPrice(gasPrice hexutil.Big) bool {
+// SetGasPrice sets the minimum accepted gas price for the producer.
+func (api *PrivateProducerAPI) SetGasPrice(gasPrice hexutil.Big) bool {
 	api.e.lock.Lock()
 	api.e.gasPrice = (*big.Int)(&gasPrice)
 	api.e.lock.Unlock()
@@ -149,8 +144,8 @@ func (api *PrivateMinerAPI) SetGasPrice(gasPrice hexutil.Big) bool {
 	return true
 }
 
-// SetCoinbase sets the coinbase of the miner
-func (api *PrivateMinerAPI) SetCoinbase(coinbase common.Address) bool {
+// SetCoinbase sets the coinbase of the producer
+func (api *PrivateProducerAPI) SetCoinbase(coinbase common.Address) bool {
 	api.e.SetCoinbase(coinbase)
 	return true
 }
@@ -265,8 +260,8 @@ func (api *PublicDebugAPI) DumpBlock(blockNr rpc.BlockNumber) (state.Dump, error
 	if blockNr == rpc.PendingBlockNumber {
 		// If we're dumping the pending state, we need to request
 		// both the pending block as well as the pending state from
-		// the miner and operate on those
-		_, stateDb := api.vnt.miner.Pending()
+		// the producer and operate on those
+		_, stateDb := api.vnt.producer.Pending()
 		return stateDb.RawDump(), nil
 	}
 	var block *types.Block

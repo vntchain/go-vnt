@@ -32,8 +32,8 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/crypto"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/rlp"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 func init() {
@@ -205,11 +205,11 @@ func TestDelete(t *testing.T) {
 	trie := newEmpty()
 	vals := []struct{ k, v string }{
 		{"do", "verb"},
-		{"ether", "wookiedoo"},
+		{"vnt", "wookiedoo"},
 		{"horse", "stallion"},
 		{"shaman", "horse"},
 		{"doge", "coin"},
-		{"ether", ""},
+		{"vnt", ""},
 		{"dog", "puppy"},
 		{"shaman", ""},
 	}
@@ -233,11 +233,11 @@ func TestEmptyValues(t *testing.T) {
 
 	vals := []struct{ k, v string }{
 		{"do", "verb"},
-		{"ether", "wookiedoo"},
+		{"vnt", "wookiedoo"},
 		{"horse", "stallion"},
 		{"shaman", "horse"},
 		{"doge", "coin"},
-		{"ether", ""},
+		{"vnt", ""},
 		{"dog", "puppy"},
 		{"shaman", ""},
 	}
@@ -256,7 +256,7 @@ func TestReplication(t *testing.T) {
 	trie := newEmpty()
 	vals := []struct{ k, v string }{
 		{"do", "verb"},
-		{"ether", "wookiedoo"},
+		{"vnt", "wookiedoo"},
 		{"horse", "stallion"},
 		{"shaman", "horse"},
 		{"doge", "coin"},
@@ -292,11 +292,11 @@ func TestReplication(t *testing.T) {
 	// perform some insertions on the new trie.
 	vals2 := []struct{ k, v string }{
 		{"do", "verb"},
-		{"ether", "wookiedoo"},
+		{"vnt", "wookiedoo"},
 		{"horse", "stallion"},
 		// {"shaman", "horse"},
 		// {"doge", "coin"},
-		// {"ether", ""},
+		// {"vnt", ""},
 		// {"dog", "puppy"},
 		// {"somethingveryoddindeedthis is", "myothernodedata"},
 		// {"shaman", ""},

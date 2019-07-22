@@ -20,13 +20,13 @@ import (
 	"encoding/binary"
 	"fmt"
 
+	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/util"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/rlp"
 	whisper "github.com/vntchain/go-vnt/whisper/whisperv6"
-	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/util"
 
 	libp2p "github.com/libp2p/go-libp2p-peer"
 )

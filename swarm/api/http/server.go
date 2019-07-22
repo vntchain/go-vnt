@@ -35,12 +35,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rs/cors"
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/metrics"
 	"github.com/vntchain/go-vnt/swarm/api"
 	"github.com/vntchain/go-vnt/swarm/storage"
-	"github.com/rs/cors"
 )
 
 //setup metrics

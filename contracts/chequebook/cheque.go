@@ -17,8 +17,8 @@
 // Package chequebook package wraps the 'chequebook' VNT smart contract.
 //
 // The functions in this package allow using chequebook for
-// issuing, receiving, verifying cheques in ether; (auto)cashing cheques in ether
-// as well as (auto)depositing ether to the chequebook contract.
+// issuing, receiving, verifying cheques in vnt; (auto)cashing cheques in vnt
+// as well as (auto)depositing vnt to the chequebook contract.
 package chequebook
 
 //go:generate abigen --sol contract/chequebook.sol --exc contract/mortal.sol:mortal,contract/owned.sol:owned --pkg contract --out contract/chequebook.go
@@ -52,8 +52,8 @@ import (
 // Some functionality requires interacting with the blockchain:
 // * setting current balance on peer's chequebook
 // * sending the transaction to cash the cheque
-// * depositing ether to the chequebook
-// * watching incoming ether
+// * depositing vnt to the chequebook
+// * watching incoming vnt
 
 var (
 	gasToCash = uint64(2000000) // gas cost of a cash transaction using chequebook
@@ -119,11 +119,11 @@ func NewChequebook(chainID *big.Int, path string, contractAddr common.Address, p
 	balance := new(big.Int)
 	sent := make(map[common.Address]*big.Int)
 
-	chbook, err := contract.NewChequebook(chainID, contractAddr, backend)
+	chbook, err := contract.NewChequebook(contractAddr, backend)
 	if err != nil {
 		return nil, err
 	}
-	transactOpts := bind.NewKeyedTransactor(prvKey)
+	transactOpts := bind.NewKeyedTransactor(prvKey, chainID)
 	session := &contract.ChequebookSession{
 		Contract:     chbook,
 		TransactOpts: *transactOpts,
@@ -299,14 +299,9 @@ func (self *Chequebook) Cash(ch *Cheque) (txhash string, err error) {
 
 // data to sign: contract address, beneficiary, cumulative amount of funds ever sent
 func sigHash(contract, beneficiary common.Address, sum *big.Int) []byte {
-	bigamount := sum.Bytes()
-	if len(bigamount) > 32 {
-		return nil
-	}
-	var amount32 [32]byte
-	copy(amount32[32-len(bigamount):32], bigamount)
+	bigamount := []byte(sum.String())
 	input := append(contract.Bytes(), beneficiary.Bytes()...)
-	input = append(input, amount32[:]...)
+	input = append(input, bigamount[:]...)
 	return crypto.Keccak256(input)
 }
 
@@ -338,9 +333,9 @@ func (self *Chequebook) Deposit(amount *big.Int) (string, error) {
 // The caller must hold self.lock.
 func (self *Chequebook) deposit(amount *big.Int) (string, error) {
 	// since the amount is variable here, we do not use sessions
-	depositTransactor := bind.NewKeyedTransactor(self.prvKey)
+	depositTransactor := bind.NewKeyedTransactor(self.prvKey, self.chainID)
 	depositTransactor.Value = amount
-	chbookRaw := &contract.ChequebookRaw{ChainID: self.chainID, Contract: self.contract}
+	chbookRaw := &contract.ChequebookRaw{Contract: self.contract}
 	tx, err := chbookRaw.Transfer(depositTransactor)
 	if err != nil {
 		self.log.Warn("Failed to fund chequebook", "amount", amount, "balance", self.balance, "target", self.buffer, "err", err)
@@ -452,11 +447,11 @@ func NewInbox(chainID *big.Int, prvKey *ecdsa.PrivateKey, contractAddr, benefici
 	if signer == nil {
 		return nil, fmt.Errorf("signer is null")
 	}
-	chbook, err := contract.NewChequebook(chainID, contractAddr, abigen)
+	chbook, err := contract.NewChequebook(contractAddr, abigen)
 	if err != nil {
 		return nil, err
 	}
-	transactOpts := bind.NewKeyedTransactor(prvKey)
+	transactOpts := bind.NewKeyedTransactor(prvKey, chainID)
 	transactOpts.GasLimit = gasToCash
 	session := &contract.ChequebookSession{
 		Contract:     chbook,
@@ -617,8 +612,8 @@ func (self *Cheque) Verify(signerKey *ecdsa.PublicKey, contract, beneficiary com
 }
 
 // v/r/s representation of signature
-func sig2vrs(sig []byte) (v byte, r, s [32]byte) {
-	v = sig[64] + 27
+func sig2vrs(sig []byte) (v []byte, r, s [32]byte) {
+	v = []byte{sig[64] + 27}
 	copy(r[:], sig[:32])
 	copy(s[:], sig[32:64])
 	return
@@ -627,7 +622,7 @@ func sig2vrs(sig []byte) (v byte, r, s [32]byte) {
 // Cash cashes the cheque by sending an VNT transaction.
 func (self *Cheque) Cash(session *contract.ChequebookSession) (string, error) {
 	v, r, s := sig2vrs(self.Sig)
-	tx, err := session.Cash(self.Beneficiary, self.Amount, v, r, s)
+	tx, err := session.Cash(self.Beneficiary, self.Amount, common.Bytes2Hex(v), common.Bytes2Hex(r[:]), common.Bytes2Hex(s[:]))
 	if err != nil {
 		return "", err
 	}

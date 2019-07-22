@@ -37,7 +37,7 @@ var DefaultConfig = Config{
 	LightPeers:    100,
 	DatabaseCache: 768,
 	TrieCache:     256,
-	TrieTimeout:   60 * time.Minute,
+	TrieTimeout:   300 * time.Millisecond, // 只计算写区块的时间，写区块的300ms大约等于连续产生了1小时的区块
 	GasPrice:      big.NewInt(18 * params.Gwei),
 
 	TxPool: core.DefaultTxPoolConfig,

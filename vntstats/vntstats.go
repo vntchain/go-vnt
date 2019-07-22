@@ -82,7 +82,7 @@ type Service struct {
 }
 
 // New returns a monitoring service ready for stats reporting.
-func New(url string, ethServ *vnt.VNT, lesServ *les.LightVnt) (*Service, error) {
+func New(url string, vntServ *vnt.VNT, lesServ *les.LightVnt) (*Service, error) {
 	// Parse the netstats connection url
 	re := regexp.MustCompile("([^:@]*)(:([^@]*))?@(.+)")
 	parts := re.FindStringSubmatch(url)
@@ -91,13 +91,13 @@ func New(url string, ethServ *vnt.VNT, lesServ *les.LightVnt) (*Service, error) 
 	}
 	// Assemble and return the stats service
 	var engine consensus.Engine
-	if ethServ != nil {
-		engine = ethServ.Engine()
+	if vntServ != nil {
+		engine = vntServ.Engine()
 	} else {
 		engine = lesServ.Engine()
 	}
 	return &Service{
-		vnt:    ethServ,
+		vnt:    vntServ,
 		les:    lesServ,
 		engine: engine,
 		node:   parts[1],
@@ -316,7 +316,7 @@ func (s *Service) readLoop(conn *websocket.Conn) {
 			if !ok {
 				log.Warn("Invalid stats history request", "msg", msg["emit"][1])
 				s.histCh <- nil
-				continue // Ethstats sometime sends invalid history requests, ignore those
+				continue // Vntstats sometime sends invalid history requests, ignore those
 			}
 			list, ok := request["list"].([]interface{})
 			if !ok {
@@ -431,7 +431,7 @@ func (s *Service) report(conn *websocket.Conn) error {
 // reportLatency sends a ping request to the server, measures the RTT time and
 // finally sends a latency update.
 func (s *Service) reportLatency(conn *websocket.Conn) error {
-	// Send the current time to the ethstats server
+	// Send the current time to the vntstats server
 	start := time.Now()
 
 	ping := map[string][]interface{}{
@@ -454,7 +454,7 @@ func (s *Service) reportLatency(conn *websocket.Conn) error {
 	latency := strconv.Itoa(int((time.Since(start) / time.Duration(2)).Nanoseconds() / 1000000))
 
 	// Send back the measured latency
-	log.Trace("Sending measured latency to ethstats", "latency", latency)
+	log.Trace("Sending measured latency to vntstats", "latency", latency)
 
 	stats := map[string][]interface{}{
 		"emit": {"latency", map[string]string{
@@ -471,7 +471,7 @@ type blockStats struct {
 	Hash       common.Hash    `json:"hash"`
 	ParentHash common.Hash    `json:"parentHash"`
 	Timestamp  *big.Int       `json:"timestamp"`
-	Miner      common.Address `json:"producer"`
+	Producer   common.Address `json:"producer"`
 	GasUsed    uint64         `json:"gasUsed"`
 	GasLimit   uint64         `json:"gasLimit"`
 	Diff       string         `json:"difficulty"`
@@ -492,7 +492,7 @@ func (s *Service) reportBlock(conn *websocket.Conn, block *types.Block) error {
 	details := s.assembleBlockStats(block)
 
 	// Assemble the block report and send it to the server
-	log.Trace("Sending new block to ethstats", "number", details.Number, "hash", details.Hash)
+	log.Trace("Sending new block to vntstats", "number", details.Number, "hash", details.Hash)
 
 	stats := map[string]interface{}{
 		"id":    s.node,
@@ -543,7 +543,7 @@ func (s *Service) assembleBlockStats(block *types.Block) *blockStats {
 		Hash:       header.Hash(),
 		ParentHash: header.ParentHash,
 		Timestamp:  header.Time,
-		Miner:      author,
+		Producer:   author,
 		GasUsed:    header.GasUsed,
 		GasLimit:   header.GasLimit,
 		Diff:       header.Difficulty.String(),
@@ -601,7 +601,7 @@ func (s *Service) reportHistory(conn *websocket.Conn, list []uint64) error {
 	}
 	// Assemble the history report and send it to the server
 	if len(history) > 0 {
-		log.Trace("Sending historical blocks to ethstats", "first", history[0].Number, "last", history[len(history)-1].Number)
+		log.Trace("Sending historical blocks to vntstats", "first", history[0].Number, "last", history[len(history)-1].Number)
 	} else {
 		log.Trace("No history to send to stats server")
 	}
@@ -631,7 +631,7 @@ func (s *Service) reportPending(conn *websocket.Conn) error {
 		pending = s.les.TxPool().Stats()
 	}
 	// Assemble the transaction stats and send it to the server
-	log.Trace("Sending pending transactions to ethstats", "count", pending)
+	log.Trace("Sending pending transactions to vntstats", "count", pending)
 
 	stats := map[string]interface{}{
 		"id": s.node,
@@ -658,14 +658,14 @@ type nodeStats struct {
 // reportPending retrieves various stats about the node at the networking and
 // block producing layer and reports it to the stats server.
 func (s *Service) reportStats(conn *websocket.Conn) error {
-	// Gather the syncing and block producing infos from the local miner instance
+	// Gather the syncing and block producing infos from the local producer instance
 	var (
 		producing bool
 		syncing   bool
 		gasprice  int
 	)
 	if s.vnt != nil {
-		producing = s.vnt.Miner().Producing()
+		producing = s.vnt.Producer().Producing()
 
 		sync := s.vnt.Downloader().Progress()
 		syncing = s.vnt.BlockChain().CurrentHeader().Number.Uint64() >= sync.HighestBlock
@@ -677,7 +677,7 @@ func (s *Service) reportStats(conn *websocket.Conn) error {
 		syncing = s.les.BlockChain().CurrentHeader().Number.Uint64() >= sync.HighestBlock
 	}
 	// Assemble the node stats and send it to the server
-	log.Trace("Sending node details to ethstats")
+	log.Trace("Sending node details to vntstats")
 
 	stats := map[string]interface{}{
 		"id": s.node,

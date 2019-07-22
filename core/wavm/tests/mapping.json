@@ -1,0 +1,804 @@
+{
+     "env": {
+          "previousHash": "5e20a0453cecd065ea59c37ac63e079ee08998b6045136a8ce6635c7912ec0b6",
+          "currentNumber": 257,
+          "currentGasLimit": 4000000,
+          "currentDifficulty": 256,
+          "currentTimestamp": 1546273000,
+          "currentCoinbase": "0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba"
+     },
+     "exec": {
+          "address": "0xcccccccccccccccccccccccccccccccccccccccc",
+          "value": 0,
+          "gas": 4000000,
+          "caller": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "origin": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "gasPrice": 1000000
+     },
+     "pre": {
+          "0xcccccccccccccccccccccccccccccccccccccccc": {
+               "balance": "0xDE0B6B3A7640000",
+               "code": "",
+               "nonce": "0x00",
+               "storage": {}
+          },
+          "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+               "balance": "0xDE0B6B3A7640000",
+               "code": "",
+               "nonce": "0x00",
+               "storage": {}
+          }
+     },
+     "testcase": [
+          {
+               "code": "mapping/MappingTest.compress",
+               "abi": "mapping/abi.json",
+               "initcase": {
+                    "needinit": true,
+                    "input": []
+               },
+               "tests": [
+                    {
+                         "function": "setAddrMapping1",
+                         "input": [
+                              {
+                                   "data": "KEY",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "0x11111",
+                                   "type": "address"
+                              }
+                         ],
+                         "wanted": {}
+                    },
+                    {
+                         "function": "getAddrMapping1",
+                         "input": [
+                              {
+                                   "data": "KEY",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0x11111",
+                              "type": "address"
+                         }
+                    },
+                    {
+                         "function": "getAddrMapping1",
+                         "input": [
+                              {
+                                   "data": "KEYNOEXIST",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0x0",
+                              "type": "address"
+                         }
+                    },
+                    {
+                         "function": "setAddrMapping2",
+                         "input": [],
+                         "wanted": {}
+                    },
+                    {
+                         "function": "getAddrMapping1",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0x88888888888",
+                              "type": "address"
+                         }
+                    },
+                    {
+                         "function": "setStrMapping1",
+                         "input": [
+                              {
+                                   "data": "KEY",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "0x11111",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {}
+                    },
+                    {
+                         "function": "getStrMapping1",
+                         "input": [
+                              {
+                                   "data": "KEY",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0x11111",
+                              "type": "string"
+                         }
+                    },
+                    {
+                         "function": "getStrMapping1",
+                         "input": [
+                              {
+                                   "data": "KEYNOEXIST",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "",
+                              "type": "string"
+                         }
+                    },
+                    {
+                         "function": "setStrMapping2",
+                         "input": [],
+                         "wanted": {}
+                    },
+                    {
+                         "function": "getStrMapping1",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0x88888888888",
+                              "type": "string"
+                         }
+                    },
+                    {
+                         "function": "setMapStruct1",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "-1",
+                                   "type": "int32"
+                              },
+                              {
+                                   "data": "-2",
+                                   "type": "int64"
+                              },
+                              {
+                                   "data": "1",
+                                   "type": "uint32"
+                              },
+                              {
+                                   "data": "2",
+                                   "type": "uint64"
+                              },
+                              {
+                                   "data": "value",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "0x111",
+                                   "type": "address"
+                              },
+                              {
+                                   "data": "false",
+                                   "type": "bool"
+                              },
+                              {
+                                   "data": "111111111111",
+                                   "type": "uint256"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0",
+                              "type": "int32"
+                         }
+                    },
+                    {
+                         "function": "getMapStructA",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "-1",
+                              "type": "int32"
+                         }
+                    },
+                    {
+                         "function": "getMapStructB",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "-2",
+                              "type": "int64"
+                         }
+                    },
+                    {
+                         "function": "getMapStructC",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "1",
+                              "type": "uint32"
+                         }
+                    },
+                    {
+                         "function": "getMapStructD",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "2",
+                              "type": "uint64"
+                         }
+                    },
+                    {
+                         "function": "getMapStructE",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "value",
+                              "type": "string"
+                         }
+                    },
+                    {
+                         "function": "getMapStructF",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0x111",
+                              "type": "address"
+                         }
+                    },
+                    {
+                         "function": "getMapStructG",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "false",
+                              "type": "bool"
+                         }
+                    },
+                    {
+                         "function": "getMapStructH",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "111111111111",
+                              "type": "uint256"
+                         }
+                    },
+                    {
+                         "function": "setMapStruct2",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "-11",
+                                   "type": "int32"
+                              },
+                              {
+                                   "data": "-22",
+                                   "type": "int64"
+                              },
+                              {
+                                   "data": "11",
+                                   "type": "uint32"
+                              },
+                              {
+                                   "data": "22",
+                                   "type": "uint64"
+                              },
+                              {
+                                   "data": "value1",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "0x1111",
+                                   "type": "address"
+                              },
+                              {
+                                   "data": "true",
+                                   "type": "bool"
+                              },
+                              {
+                                   "data": "1111111111111",
+                                   "type": "uint256"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0",
+                              "type": "int32"
+                         }
+                    },
+                    {
+                         "function": "getMapStructA",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "-11",
+                              "type": "int32"
+                         }
+                    },
+                    {
+                         "function": "getMapStructB",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "-22",
+                              "type": "int64"
+                         }
+                    },
+                    {
+                         "function": "getMapStructC",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "11",
+                              "type": "uint32"
+                         }
+                    },
+                    {
+                         "function": "getMapStructD",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "22",
+                              "type": "uint64"
+                         }
+                    },
+                    {
+                         "function": "getMapStructE",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "value1",
+                              "type": "string"
+                         }
+                    },
+                    {
+                         "function": "getMapStructF",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0x1111",
+                              "type": "address"
+                         }
+                    },
+                    {
+                         "function": "getMapStructG",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "true",
+                              "type": "bool"
+                         }
+                    },
+                    {
+                         "function": "getMapStructH",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "1111111111111",
+                              "type": "uint256"
+                         }
+                    },
+                    {
+                         "function": "setMapStruct3",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "-111",
+                                   "type": "int32"
+                              },
+                              {
+                                   "data": "-222",
+                                   "type": "int64"
+                              },
+                              {
+                                   "data": "111",
+                                   "type": "uint32"
+                              },
+                              {
+                                   "data": "222",
+                                   "type": "uint64"
+                              },
+                              {
+                                   "data": "value11",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "0x11111",
+                                   "type": "address"
+                              },
+                              {
+                                   "data": "false",
+                                   "type": "bool"
+                              },
+                              {
+                                   "data": "11111111111111",
+                                   "type": "uint256"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0",
+                              "type": "int32"
+                         }
+                    },
+                    {
+                         "function": "getMapStructA",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "-111",
+                              "type": "int32"
+                         }
+                    },
+                    {
+                         "function": "getMapStructB",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "-222",
+                              "type": "int64"
+                         }
+                    },
+                    {
+                         "function": "getMapStructC",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "111",
+                              "type": "uint32"
+                         }
+                    },
+                    {
+                         "function": "getMapStructD",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "222",
+                              "type": "uint64"
+                         }
+                    },
+                    {
+                         "function": "getMapStructE",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "value11",
+                              "type": "string"
+                         }
+                    },
+                    {
+                         "function": "getMapStructF",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0x11111",
+                              "type": "address"
+                         }
+                    },
+                    {
+                         "function": "getMapStructG",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "false",
+                              "type": "bool"
+                         }
+                    },
+                    {
+                         "function": "getMapStructH",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "11111111111111",
+                              "type": "uint256"
+                         }
+                    },
+                    {
+                         "function": "getMapStructA1",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "-111",
+                              "type": "int32"
+                         }
+                    },
+                    {
+                         "function": "getMapStructB1",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "-222",
+                              "type": "int64"
+                         }
+                    },
+                    {
+                         "function": "getMapStructC1",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "111",
+                              "type": "uint32"
+                         }
+                    },
+                    {
+                         "function": "getMapStructD1",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "222",
+                              "type": "uint64"
+                         }
+                    },
+                    {
+                         "function": "getMapStructE1",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "value11",
+                              "type": "string"
+                         }
+                    },
+                    {
+                         "function": "getMapStructF1",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0x11111",
+                              "type": "address"
+                         }
+                    },
+                    {
+                         "function": "getMapStructG1",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "false",
+                              "type": "bool"
+                         }
+                    },
+                    {
+                         "function": "getMapStructH1",
+                         "input": [
+                              {
+                                   "data": "customkey",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "11111111111111",
+                              "type": "uint256"
+                         }
+                    },
+                    {
+                         "function": "setMapWithMap",
+                         "input": [
+                              {
+                                   "data": "key1",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "key2",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "value",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0",
+                              "type": "int32"
+                         }
+                    },
+                    {
+                         "function": "getMapWithMap",
+                         "input": [
+                              {
+                                   "data": "key1",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "key2",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "value",
+                              "type": "string"
+                         }
+                    },
+                    {
+                         "function": "getMapWithMapWithoutPointer",
+                         "input": [
+                              {
+                                   "data": "key1",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "key2",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "",
+                              "type": "string"
+                         }
+                    },
+                    {
+                         "function": "setMapWithMap1",
+                         "input": [
+                              {
+                                   "data": "key11",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "key22",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "value11",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "0",
+                              "type": "int32"
+                         }
+                    },
+                    {
+                         "function": "getMapWithMap1",
+                         "input": [
+                              {
+                                   "data": "key11",
+                                   "type": "string"
+                              },
+                              {
+                                   "data": "key22",
+                                   "type": "string"
+                              }
+                         ],
+                         "wanted": {
+                              "data": "",
+                              "type": "string"
+                         }
+                    }
+               ]
+          }
+     ]
+}

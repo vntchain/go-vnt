@@ -25,7 +25,7 @@ import (
 
 // Genesis hashes to enforce below configs on.
 var (
-	MainnetGenesisHash = common.HexToHash("0x9c62e96e22812c31f4b8b74e7556410fdc79104a237dd163f755d1ca471deaf2")
+	MainnetGenesisHash = common.HexToHash("0xf2ba87b7a6b3c3ff2fc2c0e2b2985b9cfc7ca24daaa39ac04677855b1583e5ad")
 )
 
 var (
@@ -35,7 +35,56 @@ var (
 		Dpos: &DposConfig{
 			Period:       2,
 			WitnessesNum: 19,
+			WitnessesUrl: []string{
+				"/ip4/47.106.71.114/tcp/3001/ipfs/1kHfbk8u12U1HSyaqAe6f622wVMESHcvFZ8VcbGKwsrtT6H",
+				"/ip4/47.108.69.101/tcp/3001/ipfs/1kHb7UpvD2zbEgCCPzboTtJLENQ1YhEZ1H2A7QNTb18sHd4",
+				"/ip4/47.108.67.119/tcp/3001/ipfs/1kHjhzoNTxEpFvRky1oVvCUAPBUuGzBvBcXmkroDU9NhACg",
+				"/ip4/39.100.143.156/tcp/3001/ipfs/1kHG1essWxbjSUjwKMrJcva6Y7XfPoBN86pUemd4wnd2X2A",
+				"/ip4/118.190.59.122/tcp/3001/ipfs/1kHBXTtDX4JqStm4qBNCcCZar9isCyu74BPgX6b2odm7zw7",
+
+				"/ip4/118.190.59.100/tcp/3001/ipfs/1kHWbCuCgjLnERsaVr7FCSAWFiA7Sx1CdzstMQKKkEWdYSr",
+				"/ip4/47.56.69.191/tcp/3001/ipfs/1kHcupmVj3eLe6QdgrXRn5qetpQQc4XhYc6LXNhQUkRCDK5",
+				"/ip4/39.97.171.233/tcp/3001/ipfs/1kHDnV8YSUrHNLf6NGWY7QHxBjMLnKPxKFKvMdPLt1Gg7a6",
+				"/ip4/47.103.107.188/tcp/3001/ipfs/1kHTKpK29Kw2EvJ3C817yn6wNDgpXw6oWAkUz8AzAozrVHD",
+				"/ip4/47.103.57.160/tcp/3001/ipfs/1kHD3RiEFGZE2SQQgGhX1yzipcR8sE6cSaTj3Xi1yvF1EBL",
+
+				"/ip4/47.254.235.57/tcp/3001/ipfs/1kHMwGapAtV92rXgkxRx4dgjUZnXVtE6wUa8Bk3yzFYLz4h",
+				"/ip4/120.77.236.120/tcp/3001/ipfs/1kHHW1DrdwETgtZmDdERZEDgKiAfP2SDfxz2oKuzjuJK2B9",
+				"/ip4/47.111.131.2/tcp/3001/ipfs/1kHCcTMZ8EjRm23nffDsYEEARohWwF4ks6zdsaBs3JbzKnA",
+				"/ip4/47.88.217.237/tcp/3001/ipfs/1kHVYJ6tckDB5gChvDFo46esBWzz6aWsMaEXfxJPNwruHWZ",
+				"/ip4/47.91.19.11/tcp/3001/ipfs/1kHBa9E1onVKmruWvefJHSNFGokkNc3ESZebnq2oJFRDFDG",
+
+				"/ip4/47.254.20.76/tcp/3001/ipfs/1kHKUGfEQ4nzpWG4SkQAUPicrKHCVo32WTgNEQbM75rNEbx",
+				"/ip4/47.93.191.135/tcp/3001/ipfs/1kHVzyb8mczCYNB3suPCXac7HMPEc4XyvibHE2hQsh8ehEk",
+				"/ip4/101.132.191.42/tcp/3001/ipfs/1kHCoMGo8ANpjFNMyYFZLTHruBJ5DrAXYVBvfQP2CZWKf6h",
+				"/ip4/39.104.62.26/tcp/3001/ipfs/1kHHvSatMYVHDdDFNmMyta8tNY4c4VvtifkBAxfjNG7wSpU",
+			},
 		},
+	}
+
+	MainnetChainWitnesses = []common.Address{
+		common.HexToAddress("0x91837ff26639700c9688cf8f3fe92bd8b2ec806d"),
+		common.HexToAddress("0x3c60a032ba3c6177e50188748e55e5894fb241e4"),
+		common.HexToAddress("0xaa2b5f39fb2a4aee56db3ee19567f699d30df1a1"),
+		common.HexToAddress("0x61a6e04c737483d72c20de6e71dd8cbb6f6c747d"),
+		common.HexToAddress("0x186bae02dc3444d2bb3d39504fefdc9754860481"),
+
+		common.HexToAddress("0xf4c8fd44490493000b8776fd1597752bd9ede431"),
+		common.HexToAddress("0x4e94885ed5cfe31a00c7496176f59fdc5e5c7a71"),
+		common.HexToAddress("0x4b47c3262a9d2c309b692c9220898ff728054c00"),
+		common.HexToAddress("0x31ba9c8cf34d7cc0957a95744b245322af427786"),
+		common.HexToAddress("0x4dcfcd45b253119c0d3db6b9ba9e154167dd6a58"),
+
+		common.HexToAddress("0xe6c745142283dbbe4b4a03e969525e25031939fa"),
+		common.HexToAddress("0xc61a92dd1713f9ba2214f0ce92e3d408ba4d426d"),
+		common.HexToAddress("0xc221a4d0b30dee366bc7899dd29e0f7ac9a7e45a"),
+		common.HexToAddress("0xddfd32c4d33915685b926ba5eaab3860db1690cd"),
+		common.HexToAddress("0xd338d81c4723982c815a294de3b38608dad9962c"),
+
+		common.HexToAddress("0x6cd54fc6da0f044c43d4550d87ae10b9e1cea351"),
+		common.HexToAddress("0xd328d8864649ed050b3d8e9d77f94c75299fd243"),
+		common.HexToAddress("0x386dd85ad17b6bd60d2d142473b54bf9d5439842"),
+		common.HexToAddress("0x4b8a6cff7b9e008caa936aadd33d9be048623d53"),
 	}
 
 	// TestnetChainConfig contains the chain parameters to run a node on the Ropsten test network.
@@ -48,7 +97,7 @@ var (
 	}
 
 	// AllCliqueProtocolChanges contains every protocol change (EIPs) introduced
-	// and accepted by the Ethereum core developers into the Clique consensus.
+	// and accepted by the hubble core developers into the Clique consensus.
 	//
 	// This configuration is intentionally not using keyed fields to force anyone
 	// adding flags to the config to also have to set these fields.

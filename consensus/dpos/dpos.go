@@ -50,8 +50,8 @@ const (
 )
 
 var (
-	VortexBlockReward     *big.Int = big.NewInt(6e+18)
-	VortexCandidatesBonus *big.Int = big.NewInt(6e+18)
+	VortexBlockReward     *big.Int = big.NewInt(24e+17) // 2.4VNT
+	VortexCandidatesBonus *big.Int = big.NewInt(16e+17) // 1.6VNT
 	// 2 seconds one block, 3 years producing about 47304000 blocks
 	stageTwoBlkNr = big.NewInt(47304000)
 	// 2 seconds one block, 6 years producing about 94608000 blocks
@@ -76,9 +76,6 @@ var (
 	// errInvalidTimestamp is returned if the timestamp of a block is lower than
 	// the previous block's timestamp + the minimum block period.
 	errInvalidTimestamp = errors.New("invalid timestamp")
-
-	// errUnauthorized is returned if a header is signed by a non-authorized entity.
-	errUnauthorized = errors.New("unauthorized")
 
 	// witness should be same with the parent
 	errWitnesses = errors.New("witnesses is different from parent")
@@ -125,10 +122,10 @@ type lastBountyInfo struct {
 // Note, the method requires the extra data to be at least 65 bytes, otherwise it
 // panics. This is done to avoid accidentally using both forms (signature present
 // or not), which could be abused to produce different hashes for the same header.
-func sigHash(header *types.Header) (hash common.Hash) {
+func sigHash(header *types.Header) (hash common.Hash, err error) {
 	hasher := sha3.NewKeccak256()
 
-	rlp.Encode(hasher, []interface{}{
+	err = rlp.Encode(hasher, []interface{}{
 		header.ParentHash,
 		header.Coinbase,
 		header.Root,
@@ -143,8 +140,12 @@ func sigHash(header *types.Header) (hash common.Hash) {
 		header.Extra,
 		header.Witnesses,
 	})
+	if err != nil {
+		return common.Hash{}, err
+	}
+
 	hasher.Sum(hash[:0])
-	return hash
+	return hash, nil
 }
 
 // ecrecover extracts the VNT account address from a signed header.
@@ -158,9 +159,13 @@ func ecrecover(header *types.Header, sigcache *lru.ARCCache) (common.Address, er
 	signature := header.Signature
 
 	// Recover the public key and the VNT address
-	pubkey, err := crypto.Ecrecover(sigHash(header).Bytes(), signature)
+	sh, err := sigHash(header)
 	if err != nil {
 		return common.Address{}, err
+	}
+	pubkey, err := crypto.Ecrecover(sh.Bytes(), signature)
+	if err != nil {
+		return common.Address{}, fmt.Errorf("ecrecover fialed: %s", err.Error())
 	}
 	var signer common.Address
 	copy(signer[:], crypto.Keccak256(pubkey[1:])[12:])
@@ -352,12 +357,12 @@ func (d *Dpos) verifySeal(chain consensus.ChainReader, header *types.Header, par
 		return err
 	}
 
-	if bytes.Compare(signer.Bytes(), header.Coinbase.Bytes()) != 0 {
+	if signer != header.Coinbase {
 		return errInvalidCoinBase
 	}
 
 	// 确认轮次对不对，是不是该这个节点出块
-	if d.inTurn(header, signer, chain, parents) == false {
+	if !d.inTurn(header, signer, chain, parents) {
 		return errOutTurn
 	}
 	return nil
@@ -372,18 +377,18 @@ func (d *Dpos) VerifyWitnesses(header *types.Header, db *state.StateDB, parent *
 
 	// Check header.Extra
 	if needSetUpdateTime(updated, header.Number.Uint64()) {
-		if d.updatedWitnessCheckByTime(header) == false {
+		if !d.updatedWitnessCheckByTime(header) {
 			return fmt.Errorf("header.Extra is mismatch with header.Time when update")
 		}
 	} else {
-		if bytes.Compare(header.Extra, parent.Extra) != 0 {
+		if !bytes.Equal(header.Extra, parent.Extra) {
 			return fmt.Errorf("header.Extra is mismatch with parent.Time when NOT update")
 		}
 	}
 
 	// Check the witnesses list
 	for i := 0; i < len(localWitnesses); i++ {
-		if bytes.Compare(localWitnesses[i].Bytes(), header.Witnesses[i].Bytes()) != 0 {
+		if localWitnesses[i] != header.Witnesses[i] {
 			return fmt.Errorf("witnesses is not match")
 		}
 	}
@@ -439,7 +444,7 @@ func (d *Dpos) Prepare(chain consensus.ChainReader, header *types.Header) error 
 
 	// Make sure self is the current block producer before produce
 	witness := header.Coinbase
-	if d.inTurn(header, witness, chain, nil) == false {
+	if !d.inTurn(header, witness, chain, nil) {
 		log.Debug("Prepare failed", "err", errOutTurn)
 		return fmt.Errorf("node is out of turn")
 	}
@@ -482,17 +487,18 @@ func (d *Dpos) Finalize(chain consensus.ChainReader, header *types.Header, state
 // earned, in direct proportion to it's vote percentage.
 // WARN: There is no reward if no VNT bounty left.
 func (d *Dpos) grantingReward(chain consensus.ChainReader, header *types.Header, state *state.StateDB) error {
-	if restBounty := election.QueryRestVNTBounty(state); restBounty.Cmp(common.Big0) > 0 {
+	if restBounty := election.QueryRestReward(state); restBounty.Cmp(common.Big0) > 0 {
 		var err error
 		// Reward BP for producing this block
 		reward := curHeightBonus(header.Number, VortexBlockReward)
 		if restBounty.Cmp(reward) < 0 {
 			reward = restBounty
 		}
-		if restBounty, err = election.GrantBounty(state, reward); err == nil {
-			state.AddBalance(header.Coinbase, reward)
-		}
+		rewards := make(map[common.Address]*big.Int)
+		rewards[header.Coinbase] = reward
+		restBounty.Sub(restBounty, reward)
 
+		// 计算投票激励
 		// Reward all witness candidates, when update witness list, if has any bounty
 		if d.updatedWitnessCheckByTime(header) && restBounty.Cmp(common.Big0) > 0 {
 			candis, allBonus, err := d.voteBonusPreWork(chain, header, state)
@@ -502,13 +508,14 @@ func (d *Dpos) grantingReward(chain consensus.ChainReader, header *types.Header,
 
 			// the amount of bounty granted must not greater than the left bounty
 			actualBonus := math.BigMin(allBonus, restBounty)
-			log.Debug("Vote bounty", "each bounty(wei)", actualBonus.String())
-			if bonus := d.calcVoteBounty(candis, actualBonus); bonus != nil {
-				if err = election.AddCandidatesBounty(state, bonus); err != nil {
-					return err
-				}
-				election.GrantBounty(state, actualBonus)
-			}
+			log.Debug("Vote bounty", "bounty(wei)", actualBonus.String())
+			d.calcVoteBounty(candis, actualBonus, rewards)
+		}
+
+		// 统一发放激励
+		if err = election.GrantReward(state, rewards); err != nil {
+			log.Warn("Granting reward failed", "error", err.Error())
+			return err
 		}
 	}
 	return nil
@@ -541,7 +548,11 @@ func (d *Dpos) Seal(chain consensus.ChainReader, block *types.Block, stop <-chan
 	d.lock.RUnlock()
 
 	// Sign all the things without Signature
-	sighash, err := signFn(accounts.Account{Address: witness}, sigHash(header).Bytes())
+	sh, err := sigHash(header)
+	if err != nil {
+		return nil, err
+	}
+	sighash, err := signFn(accounts.Account{Address: witness}, sh.Bytes())
 	if err != nil {
 		return nil, err
 	}
@@ -602,12 +613,12 @@ func (d *Dpos) inTurn(header *types.Header, witness common.Address, chain consen
 	)
 
 	getHeaderFromParents := func(hash common.Hash, num uint64) *types.Header {
-		if parents == nil || len(parents) == 0 {
+		if len(parents) == 0 {
 			return nil
 		}
 
 		for i := len(parents) - 1; i >= 0; i-- {
-			if bytes.Compare(parents[i].Hash().Bytes(), hash.Bytes()) == 0 && parents[i].Number.Uint64() == num {
+			if parents[i].Hash() == hash && parents[i].Number.Uint64() == num {
 				return parents[i]
 			}
 		}
@@ -646,7 +657,7 @@ func (d *Dpos) previousWitness(manager *Manager, chain consensus.ChainReader, ha
 	var header *types.Header
 
 	find := false
-	for find == false {
+	for !find {
 		if number == 0 {
 			return witness, produceTime, errNoPreviousWitness
 		}
@@ -662,7 +673,7 @@ func (d *Dpos) previousWitness(manager *Manager, chain consensus.ChainReader, ha
 		// check is witness still valid
 		witness = header.Coinbase
 		find = manager.has(witness)
-		if find == true {
+		if find {
 			break
 		}
 
@@ -730,7 +741,7 @@ func (d *Dpos) getWitnesses(header *types.Header, db *state.StateDB, parent *typ
 
 	// Using parent's witnesses, when update failed or No need update
 	updated := need
-	if witnesses == nil || len(witnesses) == 0 {
+	if len(witnesses) == 0 {
 		witnesses = parent.Witnesses
 		updated = false
 	}
@@ -754,10 +765,7 @@ func (d *Dpos) GetWitnessesFromStateDB(stateDB *state.StateDB) ([]common.Address
 func (d *Dpos) needUpdateWitnesses(t *big.Int, lastUpdateTime *big.Int) bool {
 	log.Debug("needUpdateWitnesses", "last", lastUpdateTime.String(), "current", t.String())
 	dur := new(big.Int).Sub(t, lastUpdateTime)
-	if dur.Cmp(d.updateInterval) >= 0 {
-		return true
-	}
-	return false
+	return dur.Cmp(d.updateInterval) >= 0
 }
 
 // setUpdateInterval only called when start up
@@ -765,7 +773,7 @@ func (d *Dpos) setUpdateInterval() {
 	d.updateInterval = new(big.Int).SetUint64(3 * uint64(d.config.WitnessesNum) * d.config.Period)
 }
 
-// coinBase get the address of this miner
+// coinBase get the address of this producer
 func (d *Dpos) coinBase() (cb common.Address) {
 	d.lock.RLock()
 	cb = d.signer
@@ -804,13 +812,12 @@ func (upTime *updateTime) bigInt() *big.Int {
 }
 
 // calcVoteBounty returns a map, which contains the vote bonus of each candidates
-// in this period. If active candidates less than WitnessesNum it will return a
-// nil map.
-func (d *Dpos) calcVoteBounty(candis election.CandidateList, allBonus *big.Int) map[common.Address]*big.Int {
+// in this period. If active candidates less than WitnessesNum it will not reward candidate.
+func (d *Dpos) calcVoteBounty(candis election.CandidateList, allBonus *big.Int, rewards map[common.Address]*big.Int) {
 	totalVotes := big.NewInt(0)
 	activeCnt := 0
 	for _, can := range candis {
-		if can.Active == false {
+		if !can.Active() {
 			continue
 		}
 		totalVotes.Add(totalVotes, can.VoteCount)
@@ -818,21 +825,23 @@ func (d *Dpos) calcVoteBounty(candis election.CandidateList, allBonus *big.Int) 
 	}
 	// Too less candidates before main net start, but it's normal
 	if activeCnt < d.config.WitnessesNum || totalVotes.Cmp(common.Big0) == 0 {
-		return nil
+		return
 	}
 
 	// Calc each candidates' bonus
-	bonus := make(map[common.Address]*big.Int, activeCnt)
 	for _, can := range candis {
-		if can.Active == false {
+		if !can.Active() {
 			continue
 		}
 
-		tmp := big.NewInt(0).Mul(allBonus, can.VoteCount)
-		tmp.Div(tmp, totalVotes)
-		bonus[can.Owner] = tmp
+		reward := big.NewInt(0).Mul(allBonus, can.VoteCount)
+		reward.Div(reward, totalVotes)
+		if _, ok := rewards[can.Owner]; ok {
+			rewards[can.Owner] = big.NewInt(0).Add(rewards[can.Owner], reward)
+		} else {
+			rewards[can.Owner] = reward
+		}
 	}
-	return bonus
 }
 
 // voteBonusPreWork
@@ -917,10 +926,7 @@ func (d *Dpos) updatedWitnessCheckByTime(header *types.Header) bool {
 	var upTime updateTime
 	copy(upTime[:], header.Extra[:updateTimeLen])
 	uTime := upTime.bigInt()
-	if uTime.Cmp(header.Time) == 0 {
-		return true
-	}
-	return false
+	return uTime.Cmp(header.Time) == 0
 }
 
 // curHeightBonus return the VNT bonus at blkNr block number.

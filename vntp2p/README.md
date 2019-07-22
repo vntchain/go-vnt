@@ -42,7 +42,7 @@ $ bootnode -nodekey=node.key
 ## `membernode` starts 
 
 > ATTENTION：
-> * `datadir` can't be too long (https://github.com/vntchain/go-vnt/issues/16342)。
+> * `datadir` can't be too long。
 > * `vntbootnode` is `vnt's``bootnodeURL`
 > * `port` is `vntnode's` port
 
@@ -50,12 +50,12 @@ $ bootnode -nodekey=node.key
 $ gvnt --datadir=./datadir1 --vntbootnode=/ip4/127.0.0.1/tcp/30301/ipfs/QmW1zhpCHrfoyXjWRkJMaTgtfy7BiqhZfHajgK3Xnysoxx --port 30306
 ```
 
-miners node starts
+producers node starts
 
 ```bash
 $ gvnt account new --datadir ./datadir2
 
-$ gvnt --datadir=./datadir2 --vntbootnode=/ip4/127.0.0.1/tcp/30301/ipfs/QmW1zhpCHrfoyXjWRkJMaTgtfy7BiqhZfHajgK3Xnysoxx --mine --minerthreads=1 --coinbase=0xf6f5038a406a7fe78229a80850ca8ed42fe03bfd --port 30307
+$ gvnt --datadir=./datadir2 --vntbootnode=/ip4/127.0.0.1/tcp/30301/ipfs/QmW1zhpCHrfoyXjWRkJMaTgtfy7BiqhZfHajgK3Xnysoxx --produce --producerthreads=1 --coinbase=0xf6f5038a406a7fe78229a80850ca8ed42fe03bfd --port 30307
 ```
 
 now，`vntdb` is support `--datadir` tag

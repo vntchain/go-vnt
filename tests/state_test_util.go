@@ -30,6 +30,7 @@ import (
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/types"
 	"github.com/vntchain/go-vnt/core/vm"
+	"github.com/vntchain/go-vnt/core/wavm"
 	"github.com/vntchain/go-vnt/crypto"
 	"github.com/vntchain/go-vnt/crypto/sha3"
 	"github.com/vntchain/go-vnt/params"
@@ -38,7 +39,6 @@ import (
 )
 
 // StateTest checks transaction processing without block context.
-// See https://github.com/ethereum/EIPs/issues/176 for the test format specification.
 type StateTest struct {
 	json stJSON
 }
@@ -135,12 +135,12 @@ func (t *StateTest) Run(subtest StateSubtest, vmconfig vm.Config) (*state.StateD
 	}
 	context := core.NewVMContext(msg, block.Header(), nil, &t.json.Env.Coinbase)
 	context.GetHash = vmTestBlockHash
-	evm := vm.NewEVM(context, statedb, config, vmconfig)
+	wavm := wavm.NewWAVM(context, statedb, config, vmconfig)
 
 	gaspool := new(core.GasPool)
 	gaspool.AddGas(block.GasLimit())
 	snapshot := statedb.Snapshot()
-	if _, _, _, err := core.ApplyMessage(evm, msg, gaspool); err != nil {
+	if _, _, _, err := core.ApplyMessage(wavm, msg, gaspool); err != nil {
 		statedb.RevertToSnapshot(snapshot)
 	}
 	if logs := rlpHash(statedb.Logs()); logs != common.Hash(post.Logs) {
@@ -218,7 +218,6 @@ func (tx *stTransaction) toMessage(ps stPostState) (core.Message, error) {
 	dataHex := tx.Data[ps.Indexes.Data]
 	valueHex := tx.Value[ps.Indexes.Value]
 	gasLimit := tx.GasLimit[ps.Indexes.Gas]
-	// Value, Data hex encoding is messy: https://github.com/ethereum/tests/issues/203
 	value := new(big.Int)
 	if valueHex != "0x" {
 		v, ok := math.ParseBig256(valueHex)

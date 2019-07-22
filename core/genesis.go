@@ -296,10 +296,12 @@ func GenesisBlockForTesting(db vntdb.Database, addr common.Address, balance *big
 func DefaultGenesisBlock() *Genesis {
 	return &Genesis{
 		Config:     params.MainnetChainConfig,
-		ExtraData:  hexutil.MustDecode("0x11bbe8db4e347b4e8c937c1c8370e4b5ed33adb3db69cbdb7a38e1e50b1b82fa"),
-		GasLimit:   5000,
-		Difficulty: big.NewInt(17179869184),
+		GasLimit:   0x47b760,
+		Difficulty: big.NewInt(1),
 		Alloc:      decodePrealloc(mainnetAllocData),
+		Timestamp:  0x5d18dc80,
+		Witnesses:  params.MainnetChainWitnesses,
+		ExtraData:  []byte("To explore strange new worlds，to seek out new life and new civilizations，to boldly go where no one has gone before."),
 	}
 }
 
@@ -315,7 +317,7 @@ func decodePrealloc(data string) GenesisAlloc {
 	return ga
 }
 
-// DeveloperGenesisBlock returns the 'geth --dev' genesis block. Note, this must
+// DeveloperGenesisBlock returns the 'gvnt --dev' genesis block. Note, this must
 // be seeded with the
 // for console CI fix
 func DeveloperGenesisBlock(period uint64, faucet common.Address) *Genesis {

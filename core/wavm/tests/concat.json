@@ -1,0 +1,100 @@
+{
+     "env": {
+          "previousHash": "5e20a0453cecd065ea59c37ac63e079ee08998b6045136a8ce6635c7912ec0b6",
+          "currentNumber": 257,
+          "currentGasLimit": 4000000,
+          "currentDifficulty": 256,
+          "currentTimestamp": 1546273000,
+          "currentCoinbase": "0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba"
+     },
+     "exec": {
+          "address": "0xcccccccccccccccccccccccccccccccccccccccc",
+          "value": 0,
+          "gas": 4000000,
+          "caller": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "origin": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "gasPrice": 1000000
+     },
+     "pre": {
+          "0xcccccccccccccccccccccccccccccccccccccccc": {
+               "balance": "0xDE0B6B3A7640000",
+               "code": "",
+               "nonce": "0x00",
+               "storage": {}
+          },
+          "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+               "balance": "0xDE0B6B3A7640000",
+               "code": "",
+               "nonce": "0x00",
+               "storage": {}
+          }
+     },
+     "testcase": [{
+          "code": "concat/testConcat.compress",
+          "abi": "concat/abi.json",
+          "initcase": {
+               "needinit": true,
+               "input": []
+          },
+          "tests": [{
+               "function": "Test_Concat",
+               "rawinput": "0x0efc11a200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000076578616d706c6500000000000000000000000000000000000000000000000000",
+               "wanted": {
+                    "data": "example",
+                    "type": "string"
+               }
+          }, {
+               "function": "Test_Concat",
+               "input": [{
+                    "data": "",
+                    "type": "string"
+               }, {
+                    "data": "example",
+                    "type": "string"
+               }],
+               "wanted": {
+                    "data": "example",
+                    "type": "string"
+               }
+          }, {
+               "function": "Test_Concat",
+               "input": [{
+                    "data": "",
+                    "type": "string"
+               }, {
+                    "data": "example",
+                    "type": "string"
+               }],
+               "wanted": {
+                    "data": "example",
+                    "type": "string"
+               }
+          }, {
+               "function": "Test_Equal",
+               "input": [{
+                    "data": "",
+                    "type": "string"
+               }, {
+                    "data": "example",
+                    "type": "string"
+               }],
+               "wanted": {
+                    "data": "false",
+                    "type": "bool"
+               }
+          }, {
+               "function": "Test_Equal",
+               "input": [{
+                    "data": "example",
+                    "type": "string"
+               }, {
+                    "data": "example",
+                    "type": "string"
+               }],
+               "wanted": {
+                    "data": "true",
+                    "type": "bool"
+               }
+          }]
+     }]
+}

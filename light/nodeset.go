@@ -22,8 +22,8 @@ import (
 
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/crypto"
-	"github.com/vntchain/go-vnt/vntdb"
 	"github.com/vntchain/go-vnt/rlp"
+	"github.com/vntchain/go-vnt/vntdb"
 )
 
 // NodeSet stores a set of trie nodes. It implements trie.Database and can also

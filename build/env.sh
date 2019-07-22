@@ -10,10 +10,10 @@ fi
 # Create fake Go workspace if it doesn't exist yet.
 workspace="$PWD/build/_workspace"
 root="$PWD"
-ethdir="$workspace/src/github.com/vntchain"
-if [ ! -L "$ethdir/go-vnt" ]; then
-    mkdir -p "$ethdir"
-    cd "$ethdir"
+vntdir="$workspace/src/github.com/vntchain"
+if [ ! -L "$vntdir/go-vnt" ]; then
+    mkdir -p "$vntdir"
+    cd "$vntdir"
     ln -s ../../../../../. go-vnt
     cd "$root"
 fi
@@ -23,8 +23,8 @@ GOPATH="$workspace"
 export GOPATH
 
 # Run the command inside the workspace.
-cd "$ethdir/go-vnt"
-PWD="$ethdir/go-vnt"
+cd "$vntdir/go-vnt"
+PWD="$vntdir/go-vnt"
 
 # Launch the arguments with the configured environment.
 exec "$@"

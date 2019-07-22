@@ -26,9 +26,9 @@ import (
 	"github.com/vntchain/go-vnt/log"
 )
 
-// WaitMined waits for tx to be mined on the blockchain.
+// WaitProduced waits for tx to be produced on the blockchain.
 // It stops waiting when the context is canceled.
-func WaitMined(ctx context.Context, b DeployBackend, tx *types.Transaction) (*types.Receipt, error) {
+func WaitProduced(ctx context.Context, b DeployBackend, tx *types.Transaction) (*types.Receipt, error) {
 	queryTicker := time.NewTicker(time.Second)
 	defer queryTicker.Stop()
 
@@ -41,7 +41,7 @@ func WaitMined(ctx context.Context, b DeployBackend, tx *types.Transaction) (*ty
 		if err != nil {
 			logger.Trace("Receipt retrieval failed", "err", err)
 		} else {
-			logger.Trace("Transaction not yet mined")
+			logger.Trace("Transaction not yet produced")
 		}
 		// Wait for the next round.
 		select {
@@ -53,12 +53,12 @@ func WaitMined(ctx context.Context, b DeployBackend, tx *types.Transaction) (*ty
 }
 
 // WaitDeployed waits for a contract deployment transaction and returns the on-chain
-// contract address when it is mined. It stops waiting when ctx is canceled.
+// contract address when it is produced. It stops waiting when ctx is canceled.
 func WaitDeployed(ctx context.Context, b DeployBackend, tx *types.Transaction) (common.Address, error) {
 	if tx.To() != nil {
 		return common.Address{}, fmt.Errorf("tx is not contract creation")
 	}
-	receipt, err := WaitMined(ctx, b, tx)
+	receipt, err := WaitProduced(ctx, b, tx)
 	if err != nil {
 		return common.Address{}, err
 	}

@@ -35,7 +35,6 @@ import (
 	"strings"
 
 	sha256 "github.com/minio/sha256-simd"
-
 	"github.com/vntchain/go-vnt/common"
 	"github.com/vntchain/go-vnt/common/math"
 	"github.com/vntchain/go-vnt/crypto/sha3"
@@ -78,7 +77,7 @@ func Keccak512(data ...[]byte) []byte {
 	return d.Sum(nil)
 }
 
-// CreateAddress creates an ethereum address given the bytes and the nonce
+// CreateAddress creates an hubble address given the bytes and the nonce
 func CreateAddress(b common.Address, nonce uint64) common.Address {
 	data, _ := rlp.EncodeToBytes([]interface{}{b, nonce})
 	return common.BytesToAddress(Keccak256(data)[12:])
