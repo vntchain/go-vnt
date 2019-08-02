@@ -199,6 +199,9 @@ func (server *Server) LoadConfig(ctx context.Context) []peer.ID {
 }
 
 func (server *Server) run(ctx context.Context, tasker taskworker) {
+	// run the blacklist daemon to handle mismatched peers
+	go blacklist.run()
+
 	defer server.loopWG.Done()
 	_ = server.table.Start(ctx)
 	var (

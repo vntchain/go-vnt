@@ -29,6 +29,7 @@ import (
 var (
 	errAlreadyDialing   = errors.New("already dialing")
 	errAlreadyConnected = errors.New("already connected")
+	errBlackListed = errors.New("pid blacklisted")
 )
 
 type taskstate struct {
@@ -145,6 +146,8 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 func (s *taskstate) checkDial(n peer.ID, peers map[peer.ID]*Peer) error {
 	_, dialing := s.dialmap[n]
 	switch {
+	case blacklist.exists(n):
+		return errBlackListed
 	case dialing:
 		return errAlreadyDialing
 	case peers[n] != nil:

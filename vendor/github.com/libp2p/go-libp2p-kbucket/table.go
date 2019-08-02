@@ -121,12 +121,6 @@ func (rt *RoutingTable) Remove(p peer.ID) {
 	bucket := rt.Buckets[bucketID]
 	bucket.Remove(p)
 	rt.PeerRemoved(p)
-
-	fmt.Printf("remove后当前 DHT: \n")
-	bus := rt.Buckets
-	for i := range bus {
-		fmt.Printf("%v\n", bus[i].Peers())
-	}
 }
 
 func (rt *RoutingTable) nextBucket() peer.ID {
