@@ -293,7 +293,10 @@ func (server *Server) Stop() {
 }
 
 func (server *Server) AddPeer(ctx context.Context, node *Node) {
-
+	if blacklist.exists(node.Id) {
+		log.Trace("node is blacklisted", "pid", node.Id)
+		return
+	}
 	server.host.Peerstore().AddAddrs(node.Id, []ma.Multiaddr{node.Addr}, peerstore.PermanentAddrTTL)
 	_ = server.table.Update(ctx, node.Id)
 
