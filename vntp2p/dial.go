@@ -84,6 +84,7 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 
 	// newtasks = append(newtasks, &dialTask{})
 	for id, task := range s.static {
+		log.Trace("Will dial static peer", "pid", id)
 		if err := s.checkDial(id, peers); err == nil {
 			s.dialmap[id] = task.flag
 			newtasks = append(newtasks, task)
@@ -110,6 +111,7 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 	if randomDial > 0 {
 		randompeerlist := s.table.RandomPeer()
 		for i := 0; i < randomDial && i < len(randompeerlist); i++ {
+			log.Trace("Will dial static peer", "pid", randompeerlist[i])
 			if addDial(dynDialedDail, randompeerlist[i]) {
 				needDial--
 			}
@@ -121,6 +123,7 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 	// lookup results
 	i := 0
 	for ; i < len(s.lookupNode) && needDial > 0; i++ {
+		log.Trace("Will dial lookup peer", "pid", s.lookupNode[i])
 		if addDial(dynDialedDail, s.lookupNode[i]) {
 			needDial--
 		}

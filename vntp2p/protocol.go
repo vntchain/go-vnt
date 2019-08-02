@@ -43,6 +43,7 @@ type Protocol struct {
 func (server *Server) HandleStream(s inet.Stream) {
 	// if peer is blacklisted, ignore it
 	if blacklist.exists(s.Conn().RemotePeer()) {
+		log.Trace("HandleStream: related peer is blacklisted", "pid", s.Conn().RemotePeer())
 		s.Conn().Close()
 		return
 	}
