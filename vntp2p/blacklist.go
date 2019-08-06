@@ -1,21 +1,19 @@
 package vntp2p
 
 import (
-	"github.com/hashicorp/golang-lru"
 	"github.com/libp2p/go-libp2p-peer"
 	"github.com/vntchain/go-vnt/log"
+	"github.com/bluele/gcache"
+	"time"
 )
 
 type BlackList struct {
-	cache	*lru.Cache
+	cache	gcache.Cache
 	rwPid	chan peer.ID
 }
 
 func NewPeerBlackList() *BlackList {
-	blacklist, err := lru.New(1024)
-	if err != nil {
-		panic(err)
-	}
+	blacklist := gcache.New(1024).LRU().Expiration(30 * time.Second).Build()
 
 	return &BlackList{
 		blacklist,
@@ -34,13 +32,13 @@ func (b *BlackList) run() {
 		select {
 		case pid := <- b.rwPid:
 			log.Info("Add to blacklist:", "pid", pid)
-			if !b.cache.Contains(pid) {
-				b.cache.Add(pid, true)
+			if !b.cache.Has(pid) {
+				b.cache.Set(pid, true)
 			}
 		}
 	}
 }
 
 func (b *BlackList) exists(pid peer.ID) bool {
-	return b.cache.Contains(pid)
+	return b.cache.Has(pid)
 }

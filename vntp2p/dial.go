@@ -111,7 +111,7 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 	if randomDial > 0 {
 		randompeerlist := s.table.RandomPeer()
 		for i := 0; i < randomDial && i < len(randompeerlist); i++ {
-			log.Trace("Will dial static peer", "pid", randompeerlist[i])
+			log.Trace("Will dial random peer", "pid", randompeerlist[i])
 			if addDial(dynDialedDail, randompeerlist[i]) {
 				needDial--
 			}
