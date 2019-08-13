@@ -120,7 +120,9 @@ func newPeer(s *Stream, server *Server) *Peer {
 
 // Drop this peer forever because of protocol mismatch
 func (p *Peer) Drop() {
+	log.Trace("Drop peer forever", "pid", p.RemoteID())
 	p.rw.Conn().Close()
+	blacklist.write(p.RemoteID())
 }
 
 // LocalID return local PeerID for upper application

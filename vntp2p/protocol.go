@@ -41,6 +41,13 @@ type Protocol struct {
 // HandleStream handle all message which is from anywhere
 // 主、被动连接都走的流程
 func (server *Server) HandleStream(s inet.Stream) {
+	// if peer is blacklisted, ignore it
+	if blacklist.exists(s.Conn().RemotePeer()) {
+		log.Trace("HandleStream: related peer is blacklisted", "pid", s.Conn().RemotePeer())
+		s.Conn().Close()
+		return
+	}
+
 	// peer信息只获取1次即可
 	log.Debug("Stream data coming...")
 	peer := server.GetPeerByRemoteID(s)
