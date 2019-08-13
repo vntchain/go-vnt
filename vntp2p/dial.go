@@ -29,6 +29,7 @@ import (
 var (
 	errAlreadyDialing   = errors.New("already dialing")
 	errAlreadyConnected = errors.New("already connected")
+	errBlackListed = errors.New("pid blacklisted")
 )
 
 type taskstate struct {
@@ -83,6 +84,7 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 
 	// newtasks = append(newtasks, &dialTask{})
 	for id, task := range s.static {
+		log.Trace("Will dial static peer", "pid", id)
 		if err := s.checkDial(id, peers); err == nil {
 			s.dialmap[id] = task.flag
 			newtasks = append(newtasks, task)
@@ -109,6 +111,7 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 	if randomDial > 0 {
 		randompeerlist := s.table.RandomPeer()
 		for i := 0; i < randomDial && i < len(randompeerlist); i++ {
+			log.Trace("Will dial random peer", "pid", randompeerlist[i])
 			if addDial(dynDialedDail, randompeerlist[i]) {
 				needDial--
 			}
@@ -120,6 +123,7 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 	// lookup results
 	i := 0
 	for ; i < len(s.lookupNode) && needDial > 0; i++ {
+		log.Trace("Will dial lookup peer", "pid", s.lookupNode[i])
 		if addDial(dynDialedDail, s.lookupNode[i]) {
 			needDial--
 		}
@@ -145,6 +149,8 @@ func (s *taskstate) newTasks(peers map[peer.ID]*Peer) []task {
 func (s *taskstate) checkDial(n peer.ID, peers map[peer.ID]*Peer) error {
 	_, dialing := s.dialmap[n]
 	switch {
+	case blacklist.exists(n):
+		return errBlackListed
 	case dialing:
 		return errAlreadyDialing
 	case peers[n] != nil:

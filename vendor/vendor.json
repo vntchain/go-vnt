@@ -63,6 +63,12 @@
 			"revisionTime": "2017-02-10T01:56:32Z"
 		},
 		{
+			"checksumSHA1": "m6NT4xzNfAH9Ll5M06Ln3eMRzmc=",
+			"path": "github.com/bluele/gcache",
+			"revision": "bc40bd6538339bd4be8cb0b48fc33fdf012ddb6e",
+			"revisionTime": "2019-05-18T03:11:35Z"
+		},
+		{
 			"checksumSHA1": "gZQ6HheWahvZzIc3phBnOwoWHjE=",
 			"path": "github.com/btcsuite/btcd/btcec",
 			"revision": "2e60448ffcc6bf78332d1fe590260095f554dd78",
