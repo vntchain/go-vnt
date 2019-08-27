@@ -27,7 +27,7 @@ import (
 	"github.com/vntchain/go-vnt/core/state"
 	"github.com/vntchain/go-vnt/core/vm"
 	errorsmsg "github.com/vntchain/go-vnt/core/vm"
-	inter "github.com/vntchain/go-vnt/core/vm/interface"
+	"github.com/vntchain/go-vnt/core/vm/interface"
 	wasmcontract "github.com/vntchain/go-vnt/core/wavm/contract"
 	"github.com/vntchain/go-vnt/core/wavm/gas"
 	"github.com/vntchain/go-vnt/core/wavm/storage"
@@ -252,7 +252,7 @@ func (wavm *WAVM) Create(caller vm.ContractRef, code []byte, gas uint64, value *
 	// also counts for code storage gas errors.
 	if maxCodeSizeExceeded || err != nil {
 		wavm.StateDB.RevertToSnapshot(snapshot)
-		if err.Error() != errorsmsg.ErrExecutionReverted.Error() {
+		if err != nil && err.Error() != errorsmsg.ErrExecutionReverted.Error() {
 			contract.UseGas(contract.Gas)
 		}
 	}
