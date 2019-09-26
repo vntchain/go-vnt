@@ -278,6 +278,7 @@ func (self *worker) update() {
 			}
 
 		case nextRoundTime := <-self.resetTimerEvent:
+			log.Trace("Receive reset round timer")
 			self.resetRoundTimer(nextRoundTime)
 
 		case <-self.producerStop:
@@ -402,6 +403,7 @@ func (self *worker) commitNewWork() {
 
 	preErr := self.engine.Prepare(self.chain, header)
 	if atomic.LoadInt32(&self.producing) == 1 {
+		log.Trace("Send reset round timer")
 		self.resetTimerEvent <- header.Time
 	}
 	if time.Unix(header.Time.Int64(), 0).Sub(time.Now()) <= 0 {

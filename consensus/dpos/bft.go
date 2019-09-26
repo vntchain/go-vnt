@@ -164,6 +164,9 @@ func (b *BftManager) handleBftMsg(msg types.ConsensusMsg) error {
 // saved to msg pool. No need to care about you will vote for two pre-prepare msg. You only
 // vote for the pre-prepare msg in msg pool.
 func (b *BftManager) handlePrePrepareMsg(msg *types.PreprepareMsg) error {
+	log.Trace("HandlePrePrepareMsg")
+	defer log.Trace("HandlePrePrepareMsg exit")
+
 	// check bft step, should be at newRound
 	stp := atomic.LoadUint32(&b.step)
 	if stp != newRound {
@@ -183,11 +186,15 @@ func (b *BftManager) handlePrePrepareMsg(msg *types.PreprepareMsg) error {
 		log.Debug("Pre-prepare block is valid")
 	}
 
+	log.Trace("HandlePrePrepareMsg verified block")
+
 	// Add msg to round msg pool, instead of msg pool
 	if err := b.roundMp.addMsg(msg); err != nil {
 		log.Warn("Add pre-prepare msg failed", "error", err)
 		return err
 	}
+
+	log.Trace("HandlePrePrepareMsg msg has been add to round msg pool")
 
 	// Go to next step
 	if ok := atomic.CompareAndSwapUint32(&b.step, newRound, prePrePared); ok {
@@ -198,7 +205,9 @@ func (b *BftManager) handlePrePrepareMsg(msg *types.PreprepareMsg) error {
 
 // startPrepare enter prepare step, whether
 func (b *BftManager) startPrepare() error {
-	log.Trace("Start Prepare")
+	log.Trace("StartPrepare")
+	defer log.Trace("StartPrepare exit")
+
 	// check our state and make a prepare msg
 	if atomic.LoadUint32(&b.step) != prePrePared {
 		return nil
@@ -227,6 +236,9 @@ func (b *BftManager) startPrepare() error {
 
 // tryCommitStep check whether can enter commit step
 func (b *BftManager) tryCommitStep() error {
+	log.Trace("tryCommitStep")
+	defer log.Trace("tryCommitStep exit")
+
 	stp := atomic.LoadUint32(&b.step)
 	if stp < preparing || stp > prepared {
 		log.Debug("tryCommitStep step not match", "step", stp)
@@ -256,7 +268,9 @@ func (b *BftManager) tryCommitStep() error {
 
 // startCommit build commit message and send it
 func (b *BftManager) startCommit(prePreMsg *types.PreprepareMsg) error {
-	log.Trace("Start commit")
+	log.Trace("StartCommit")
+	defer log.Trace("StartCommit exit")
+
 	if atomic.LoadUint32(&b.step) != prepared {
 		return nil
 	}
@@ -288,6 +302,9 @@ func (b *BftManager) sendMsg(msg types.ConsensusMsg) {
 }
 
 func (b *BftManager) tryWriteBlockStep() error {
+	log.Trace("TryWriteBlockStep")
+	defer log.Trace("TryWriteBlockStep exit")
+
 	if atomic.LoadUint32(&b.step) != committing {
 		return nil
 	}
