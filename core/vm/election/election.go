@@ -452,6 +452,15 @@ func (ec electionContext) bindCandidate(locker common.Address, info *BindInfo, a
 		return err
 	}
 
+	db := ec.context.GetStateDb()
+	totalLock := getLock(db)
+	totalLock.Amount = big.NewInt(0).Add(totalLock.Amount, bindAmount)
+	err = setLock(db, totalLock)
+	if err != nil {
+		log.Error("bindCandidate setReward err.", "address", candi.Hex(), "err", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -474,7 +483,16 @@ func (ec electionContext) unbindCandidate(locker common.Address, info *BindInfo)
 	// 取消绑定
 	candidate.Bind = false
 	if err := ec.setCandidate(*candidate); err != nil {
-		log.Error("bindCandidate setCandidate err.", "address", candi.Hex(), "err", err)
+		log.Error("unbindCandidate setCandidate err.", "address", candi.Hex(), "err", err)
+		return err
+	}
+
+	db := ec.context.GetStateDb()
+	totalLock := getLock(db)
+	totalLock.Amount = big.NewInt(0).Sub(totalLock.Amount, bindAmount)
+	err = setLock(db, totalLock)
+	if err != nil {
+		log.Error("unbindCandidate setReward err.", "address", candi.Hex(), "err", err)
 		return err
 	}
 
@@ -771,6 +789,14 @@ func (ec electionContext) stake(address common.Address, value *big.Int) error {
 		return err
 	}
 
+	db := ec.context.GetStateDb()
+	totalLock := getLock(db)
+	totalLock.Amount = big.NewInt(0).Add(totalLock.Amount, value)
+	err = setLock(db, totalLock)
+	if err != nil {
+		log.Error("stake setReward err.", "address", address.Hex(), "err", err)
+		return err
+	}
 	return nil
 }
 
@@ -808,6 +834,15 @@ func (ec electionContext) unStake(address common.Address) error {
 	err := ec.setStake(stake)
 	if err != nil {
 		log.Error("unStake setStake err.", "address", address.Hex(), "err", err)
+		return err
+	}
+
+	db := ec.context.GetStateDb()
+	totalLock := getLock(db)
+	totalLock.Amount = big.NewInt(0).Sub(totalLock.Amount, amount)
+	err = setLock(db, totalLock)
+	if err != nil {
+		log.Error("unStake setReward err.", "address", address.Hex(), "err", err)
 		return err
 	}
 

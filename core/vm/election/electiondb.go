@@ -33,7 +33,7 @@ const (
 	VOTERPREFIX     = byte(0)
 	CANDIDATEPREFIX = byte(1)
 	STAKEPREFIX     = byte(2)
-	REWARDPREFIX    = byte(3)
+	ALLLOCKPREFIX    = byte(3)
 	PREFIXLENGTH    = 4 // key的结构为，4位表前缀，20位address，8位的value在struct中的位置
 )
 
@@ -391,17 +391,17 @@ func getAllProxy(db inter.StateDB) []*Voter {
 	return result
 }
 
-func getReward(stateDB inter.StateDB) Reward {
-	var re Reward
-	err := convertToStruct(REWARDPREFIX, contractAddr, &re, genGetFunc(stateDB))
+func getLock(stateDB inter.StateDB) AllLock {
+	var re AllLock
+	err := convertToStruct(ALLLOCKPREFIX, contractAddr, &re, genGetFunc(stateDB))
 	if err != nil {
-		return Reward{big.NewInt(0)}
+		return AllLock{big.NewInt(0)}
 	}
 	return re
 }
 
-func setReward(stateDB inter.StateDB, restBounty Reward) error {
-	return convertToKV(REWARDPREFIX, restBounty, genSetFunc(stateDB))
+func setLock(stateDB inter.StateDB, restBounty AllLock) error {
+	return convertToKV(ALLLOCKPREFIX, restBounty, genSetFunc(stateDB))
 }
 
 // genGetFunc generate universal get function for read from state db.

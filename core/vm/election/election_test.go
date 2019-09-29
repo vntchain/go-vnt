@@ -420,12 +420,16 @@ func TestVoteWithoutEnoughTimeGap(t *testing.T) {
 func TestVoteCandidatesFistTime(t *testing.T) {
 	context := newcontext()
 	c := newElectionContext(context)
+	setLock(c.context.GetStateDb(), AllLock{common.Big0})
 
 	addr := common.BytesToAddress([]byte{111})
-	c.context.GetStateDb().AddBalance(addr, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
+	stakeAmount := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18))
+	c.context.GetStateDb().AddBalance(addr, stakeAmount)
 	if err := c.stake(addr, vnt2wei(10)); err != nil {
 		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
 	}
+
+	assert.Equal(t, getLock(c.context.GetStateDb()).Amount, stakeAmount, fmt.Sprintf("stake failed, amount of alllock mismatch, addr: %s", addr.String()))
 
 	// 候选人注册
 	for i := 0; i < len(candidates); i++ {
@@ -1186,12 +1190,15 @@ func testStakeWithCase(t *testing.T, c *stakeCase) {
 	db.AddBalance(contractAddr, c.vnt)
 	db.SubBalance(addr, c.vnt)
 
+	setLock(db, AllLock{common.Big0})
+
 	err := ec.stake(addr, c.vnt)
 	if err != nil {
 		t.Errorf("TestStake stake err:%v ", err)
 	}
 	stake := ec.getStake(addr)
 	checkStake(t, &stake, addr, c.vnt, c.stake)
+	assert.Equal(t, getLock(db).Amount, c.vnt, fmt.Sprintf("after stake, amount of alllock is wrong"))
 
 	bal := db.GetBalance(addr)
 	shouldLeft := big.NewInt(0).Sub(c.bal, c.vnt)
@@ -1206,6 +1213,7 @@ func testStakeWithCase(t *testing.T, c *stakeCase) {
 	}
 	stake = ec.getStake(addr)
 	checkStake(t, &stake, addr, c.vnt, c.stake)
+	assert.Equal(t, getLock(db).Amount, c.vnt, fmt.Sprintf("after unstake, amount of alllock is wrong"))
 
 	// 取消抵押
 	twentyFourHoursLater(t, context)
@@ -1215,6 +1223,7 @@ func testStakeWithCase(t *testing.T, c *stakeCase) {
 	}
 	stake = ec.getStake(addr)
 	checkStake(t, &stake, addr, common.Big0, common.Big0)
+	assert.Equal(t, getLock(db).Amount, common.Big0, fmt.Sprintf("finally, amount of alllock is wrong"))
 }
 
 func checkStake(t *testing.T, stake *Stake, expAddr common.Address, expVnt, expStake *big.Int) {
@@ -1673,6 +1682,7 @@ func TestBindCandidate(t *testing.T) {
 
 func testBindCandidate(t *testing.T, cas *bindCase) {
 	ec := newTestElectionCtx()
+	setLock(ec.context.GetStateDb(), AllLock{common.Big0})
 
 	// 先填充见证人信息
 	if cas.preCandi != nil {
@@ -1689,6 +1699,10 @@ func testBindCandidate(t *testing.T, cas *bindCase) {
 	if cas.wantCandi != nil {
 		gotCandi := ec.getCandidate(cas.wantCandi.Owner)
 		assert.Equal(t, gotCandi.String(), (*cas.wantCandi).String(), fmt.Sprintf(", candidate mismtach after bind, case: %v", cas.name))
+	}
+
+	if cas.bindErr == nil {
+		assert.Equal(t, getLock(ec.context.GetStateDb()).Amount, bindAmount, fmt.Sprintf("amount of alllock is wrong, case:%v", cas.name))
 	}
 }
 
@@ -1727,8 +1741,10 @@ func TestUnbindCandidate(t *testing.T) {
 
 func testUnbindCandidate(t *testing.T, cas *bindCase) {
 	ec := newTestElectionCtx()
-	// ec充1000VNT
+	// ec充1000W VNT
 	ec.context.GetStateDb().AddBalance(contractAddr, bindAmount)
+	// AllLock填充1000W VNT
+	setLock(ec.context.GetStateDb(), AllLock{bindAmount})
 
 	// 先填充见证人信息
 	if cas.preCandi != nil {
@@ -1736,6 +1752,7 @@ func testUnbindCandidate(t *testing.T, cas *bindCase) {
 			t.Errorf("set andiates: %s, error: %s", cas.preCandi.Owner, err)
 		}
 	}
+
 
 	// 绑定和校验结果
 	err := ec.unbindCandidate(cas.binder, cas.info)
@@ -1747,10 +1764,13 @@ func testUnbindCandidate(t *testing.T, cas *bindCase) {
 		assert.Equal(t, gotCandi, *cas.wantCandi, fmt.Sprintf(", candidate mismtach after unbind, case: %v", cas.name))
 	}
 
-	// 检查绑定人余额多1000VNT
+	// 检查绑定人余额多1000W VNT
+	// 检查AllLock减少1000W VNT
 	if cas.bindErr == nil {
 		assert.Equal(t, ec.context.GetStateDb().GetBalance(cas.binder), bindAmount, fmt.Sprintf(", balance of binder is wrong, case: %v", cas.name))
+		assert.Equal(t, getLock(ec.context.GetStateDb()).Amount, big.NewInt(0), fmt.Sprintf("amount of alllock is wrong, case:%v", cas.name))
 	}
+
 }
 
 type unRegCase struct {
