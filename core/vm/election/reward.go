@@ -84,8 +84,12 @@ func GrantReward(stateDB inter.StateDB, rewards map[common.Address]*big.Int) (er
 
 // QueryRestReward returns the value of left reward for candidates.
 func QueryRestReward(stateDB inter.StateDB) *big.Int {
-	totalLock:= getLock(stateDB)
-	totalBalance := stateDB.GetBalance(common.HexToAddress(ContractAddr))
+	totalLock, err := getLock(stateDB)
+	if err != nil {
+		log.Error("QueryRestReward failed", "err", err)
+		return common.Big0;
+	}
+	totalBalance := stateDB.GetBalance(contractAddr)
 	if rest := big.NewInt(0).Sub(totalBalance, totalLock.Amount); rest.Cmp(common.Big0) > 0 {
 		return rest;
 	} else {

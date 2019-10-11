@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"strings"
 
 	"github.com/vntchain/go-vnt/common"
 	inter "github.com/vntchain/go-vnt/core/vm/interface"
@@ -33,7 +34,7 @@ const (
 	VOTERPREFIX     = byte(0)
 	CANDIDATEPREFIX = byte(1)
 	STAKEPREFIX     = byte(2)
-	ALLLOCKPREFIX    = byte(3)
+	ALLLOCKPREFIX   = byte(3)
 	PREFIXLENGTH    = 4 // key的结构为，4位表前缀，20位address，8位的value在struct中的位置
 )
 
@@ -58,6 +59,27 @@ func (ec electionContext) getCandidate(key common.Address) Candidate {
 
 func (ec electionContext) getStake(addr common.Address) Stake {
 	return getStakeFrom(addr, ec.getFromDB)
+}
+
+func (ec electionContext) updateLockAmount(value *big.Int, opt string) error {
+	db := ec.context.GetStateDb()
+	re, err := getLock(db)
+	if err != nil {
+		log.Debug("updateLockAmount, Get Lock Amount From DB ", "err", err)
+		return err
+	}
+	if strings.Compare(opt, "add") == 0 {
+		re.Amount = big.NewInt(0).Add(re.Amount, value)
+	} else if strings.Compare(opt, "sub") == 0{
+		re.Amount = big.NewInt(0).Sub(re.Amount, value)
+	}
+
+	err = setLock(db, re)
+	if err != nil {
+		log.Error("updateLockAmount, Set Lock Amount To DB", "err", err, "value", value)
+		return err
+	}
+	return nil
 }
 
 func (ec electionContext) setVoter(voter Voter) error {
@@ -391,17 +413,21 @@ func getAllProxy(db inter.StateDB) []*Voter {
 	return result
 }
 
-func getLock(stateDB inter.StateDB) AllLock {
+func getLock(stateDB inter.StateDB) (AllLock, error) {
 	var re AllLock
 	err := convertToStruct(ALLLOCKPREFIX, contractAddr, &re, genGetFunc(stateDB))
 	if err != nil {
-		return AllLock{big.NewInt(0)}
+		return AllLock{big.NewInt(0)}, err
 	}
-	return re
+	return re, nil
 }
 
-func setLock(stateDB inter.StateDB, restBounty AllLock) error {
-	return convertToKV(ALLLOCKPREFIX, restBounty, genSetFunc(stateDB))
+func setLock(stateDB inter.StateDB, lock AllLock) error {
+	err := convertToKV(ALLLOCKPREFIX, lock, genSetFunc(stateDB))
+	if err != nil {
+		log.Error("setLock error", "err", err, "lock", lock)
+	}
+	return err
 }
 
 // genGetFunc generate universal get function for read from state db.

@@ -111,7 +111,8 @@ func testGrantBounty(t *testing.T, cas *grantCase) {
 		// 校验余额，应当不变
 		assert.Equal(t, db.GetBalance(contractAddr), cas.balance, ",", cas.name, ", reverted, balance of contract should not change")
 		// 校验剩余激励，应当不变
-		assert.Equal(t, getLock(db).Amount, cas.allLockBalance, ",", cas.name, ", reverted, left reward should not change")
+		acLockAmount, _ := getLock(db)
+		assert.Equal(t, acLockAmount.Amount, cas.allLockBalance, ",", cas.name, ", reverted, left reward should not change")
 		// 	各候选人账号的收益账号应当为0
 		for addr, _ := range cas.rewards {
 			can := ec.getCandidate(addr)
@@ -164,7 +165,7 @@ func TestDepositReward(t *testing.T) {
 	sender := common.HexToAddress("0x123456")
 
 	// 初始值应当为0
-	got := getLock(ec.context.GetStateDb())
+	got, _:= getLock(ec.context.GetStateDb())
 	assert.Equal(t, got.Amount, common.Big0, "rest reward should be 0 at first")
 
 	// 存负值
@@ -176,6 +177,6 @@ func TestDepositReward(t *testing.T) {
 	amount = vnt2wei(1000)
 	err = ec.depositReward(sender, amount)
 	assert.Equal(t, err, nil, fmt.Sprintf("deposit reward error: %v", err))
-	got = getLock(ec.context.GetStateDb())
+	got, _ = getLock(ec.context.GetStateDb())
 	assert.Equal(t, got.Amount, common.Big0, "deposit reward not equal")
 }

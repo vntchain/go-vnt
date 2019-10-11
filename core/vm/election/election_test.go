@@ -394,6 +394,7 @@ func TestVoteWithoutEnoughTimeGap(t *testing.T) {
 	c := newElectionContext(context)
 	addr := common.BytesToAddress([]byte{111})
 
+	setLock(c.context.GetStateDb(), AllLock{big.NewInt(0)})
 	// 数据库中塞一条voter数据
 	voter := Voter{
 		Owner:     addr,
@@ -429,7 +430,8 @@ func TestVoteCandidatesFistTime(t *testing.T) {
 		t.Errorf("stake failed, addr: %s, error: %s", addr.String(), err)
 	}
 
-	assert.Equal(t, getLock(c.context.GetStateDb()).Amount, stakeAmount, fmt.Sprintf("stake failed, amount of alllock mismatch, addr: %s", addr.String()))
+	acStakeAmount, _ := getLock(c.context.GetStateDb())
+	assert.Equal(t, acStakeAmount.Amount, stakeAmount, fmt.Sprintf("stake failed, amount of alllock mismatch, addr: %s", addr.String()))
 
 	// 候选人注册
 	for i := 0; i < len(candidates); i++ {
@@ -495,6 +497,8 @@ func TestCancelVote(t *testing.T) {
 	c := newElectionContext(context)
 	addr := common.BytesToAddress([]byte{111})
 	addr1 := common.BytesToAddress([]byte{10})
+
+	setLock(c.context.GetStateDb(), AllLock{big.NewInt(0)})
 
 	// 抵押1
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
@@ -603,6 +607,8 @@ func TestProxyWithoutEnoughTimeGap(t *testing.T) {
 	addr := common.BytesToAddress([]byte{111})
 	proxy := common.BytesToAddress([]byte{10})
 
+	setLock(c.context.GetStateDb(), AllLock{big.NewInt(0)})
+
 	// 数据库中塞一条voter数据
 	voter := Voter{
 		Owner:     addr,
@@ -631,6 +637,8 @@ func TestProxyIsNotProxy(t *testing.T) {
 	c := newElectionContext(context)
 	addr := common.BytesToAddress([]byte{111})
 	proxy := common.BytesToAddress([]byte{10})
+
+	setLock(c.context.GetStateDb(), AllLock{big.NewInt(0)})
 
 	// 抵押
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(1e18))
@@ -797,6 +805,7 @@ func TestStartAndStopProxy(t *testing.T) {
 	proxy := common.BytesToAddress([]byte{10})
 	db := c.context.GetStateDb()
 	db.AddBalance(addr1, big.NewInt(0).Mul(big.NewInt(20), big.NewInt(1e18)))
+	setLock(db, AllLock{big.NewInt(0)})
 	stakeVnt := vnt2wei(20)
 	testTransfer(db, addr1, contractAddr, stakeVnt)
 	if err := c.stake(addr1, stakeVnt); err != nil {
@@ -960,6 +969,9 @@ func TestStopAndSetProxy(t *testing.T) {
 func setProxy(t *testing.T, c electionContext) error {
 	addr := common.BytesToAddress([]byte{111})
 	proxy := common.BytesToAddress([]byte{10})
+
+	setLock(c.context.GetStateDb(), AllLock{big.NewInt(0)})
+
 	// 账户addr抵押
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
 	if err := c.stake(addr, vnt2wei(10)); err != nil {
@@ -1198,7 +1210,9 @@ func testStakeWithCase(t *testing.T, c *stakeCase) {
 	}
 	stake := ec.getStake(addr)
 	checkStake(t, &stake, addr, c.vnt, c.stake)
-	assert.Equal(t, getLock(db).Amount, c.vnt, fmt.Sprintf("after stake, amount of alllock is wrong"))
+
+	acStakeAmount, _ := getLock(db)
+	assert.Equal(t, acStakeAmount.Amount, c.vnt, fmt.Sprintf("after stake, amount of alllock is wrong"))
 
 	bal := db.GetBalance(addr)
 	shouldLeft := big.NewInt(0).Sub(c.bal, c.vnt)
@@ -1213,7 +1227,9 @@ func testStakeWithCase(t *testing.T, c *stakeCase) {
 	}
 	stake = ec.getStake(addr)
 	checkStake(t, &stake, addr, c.vnt, c.stake)
-	assert.Equal(t, getLock(db).Amount, c.vnt, fmt.Sprintf("after unstake, amount of alllock is wrong"))
+
+	acStakeAmount, _ = getLock(db)
+	assert.Equal(t, acStakeAmount.Amount, c.vnt, fmt.Sprintf("after unstake, amount of alllock is wrong"))
 
 	// 取消抵押
 	twentyFourHoursLater(t, context)
@@ -1223,7 +1239,9 @@ func testStakeWithCase(t *testing.T, c *stakeCase) {
 	}
 	stake = ec.getStake(addr)
 	checkStake(t, &stake, addr, common.Big0, common.Big0)
-	assert.Equal(t, getLock(db).Amount, common.Big0, fmt.Sprintf("finally, amount of alllock is wrong"))
+
+	acStakeAmount, _ = getLock(db)
+	assert.Equal(t, acStakeAmount.Amount, common.Big0, fmt.Sprintf("finally, amount of alllock is wrong"))
 }
 
 func checkStake(t *testing.T, stake *Stake, expAddr common.Address, expVnt, expStake *big.Int) {
@@ -1497,6 +1515,8 @@ func initForStateTest(t *testing.T, c electionContext) {
 		ctx.SetTime(new(big.Int).Set(eraTimeStamp))
 	}
 
+	setLock(c.context.GetStateDb(), AllLock{big.NewInt(0)})
+
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
 	if err := c.stake(addr, vnt2wei(10)); err != nil {
 		t.Errorf("stake error, addr: %s, error: %s", addr.String(), err)
@@ -1702,7 +1722,8 @@ func testBindCandidate(t *testing.T, cas *bindCase) {
 	}
 
 	if cas.bindErr == nil {
-		assert.Equal(t, getLock(ec.context.GetStateDb()).Amount, bindAmount, fmt.Sprintf("amount of alllock is wrong, case:%v", cas.name))
+		acBindAmount, _ := getLock(ec.context.GetStateDb())
+		assert.Equal(t, acBindAmount.Amount, bindAmount, fmt.Sprintf("amount of alllock is wrong, case:%v", cas.name))
 	}
 }
 
@@ -1768,7 +1789,8 @@ func testUnbindCandidate(t *testing.T, cas *bindCase) {
 	// 检查AllLock减少1000W VNT
 	if cas.bindErr == nil {
 		assert.Equal(t, ec.context.GetStateDb().GetBalance(cas.binder), bindAmount, fmt.Sprintf(", balance of binder is wrong, case: %v", cas.name))
-		assert.Equal(t, getLock(ec.context.GetStateDb()).Amount, big.NewInt(0), fmt.Sprintf("amount of alllock is wrong, case:%v", cas.name))
+		acBindAmount, _ := getLock(ec.context.GetStateDb())
+		assert.Equal(t, acBindAmount.Amount, big.NewInt(0), fmt.Sprintf("amount of alllock is wrong, case:%v", cas.name))
 	}
 
 }

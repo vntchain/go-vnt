@@ -452,12 +452,9 @@ func (ec electionContext) bindCandidate(locker common.Address, info *BindInfo, a
 		return err
 	}
 
-	db := ec.context.GetStateDb()
-	totalLock := getLock(db)
-	totalLock.Amount = big.NewInt(0).Add(totalLock.Amount, bindAmount)
-	err = setLock(db, totalLock)
+	err = ec.updateLockAmount(bindAmount, "add")
 	if err != nil {
-		log.Error("bindCandidate setReward err.", "address", candi.Hex(), "err", err)
+		log.Error("bindCandidate addLockAmount err.", "address", candi.Hex(), "err", err)
 		return err
 	}
 
@@ -487,12 +484,9 @@ func (ec electionContext) unbindCandidate(locker common.Address, info *BindInfo)
 		return err
 	}
 
-	db := ec.context.GetStateDb()
-	totalLock := getLock(db)
-	totalLock.Amount = big.NewInt(0).Sub(totalLock.Amount, bindAmount)
-	err = setLock(db, totalLock)
+	err = ec.updateLockAmount(bindAmount, "sub")
 	if err != nil {
-		log.Error("unbindCandidate setReward err.", "address", candi.Hex(), "err", err)
+		log.Error("unbindCandidate subLockAmount err.", "address", candi.Hex(), "err", err)
 		return err
 	}
 
@@ -789,12 +783,10 @@ func (ec electionContext) stake(address common.Address, value *big.Int) error {
 		return err
 	}
 
-	db := ec.context.GetStateDb()
-	totalLock := getLock(db)
-	totalLock.Amount = big.NewInt(0).Add(totalLock.Amount, value)
-	err = setLock(db, totalLock)
+	err = ec.updateLockAmount(value, "add")
 	if err != nil {
-		log.Error("stake setReward err.", "address", address.Hex(), "err", err)
+		fmt.Println(err)
+		log.Error("stake addLockAmount err.", "address", address.Hex(), "err", err)
 		return err
 	}
 	return nil
@@ -837,12 +829,9 @@ func (ec electionContext) unStake(address common.Address) error {
 		return err
 	}
 
-	db := ec.context.GetStateDb()
-	totalLock := getLock(db)
-	totalLock.Amount = big.NewInt(0).Sub(totalLock.Amount, amount)
-	err = setLock(db, totalLock)
+	err = ec.updateLockAmount(amount, "sub")
 	if err != nil {
-		log.Error("unStake setReward err.", "address", address.Hex(), "err", err)
+		log.Error("unStake subLockAmount err.", "address", address.Hex(), "err", err)
 		return err
 	}
 

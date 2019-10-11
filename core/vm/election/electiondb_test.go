@@ -284,7 +284,7 @@ func TestGetFromDB(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 
-	bounty1 := getLock(stateDB)
+	bounty1, _:= getLock(stateDB)
 	if bounty.Amount.Cmp(bounty1.Amount) != 0 {
 		t.Errorf("Error: the reset total Reward before is %v after is %v", bounty.Amount, bounty1.Amount)
 	}
