@@ -267,7 +267,9 @@ func convertToStruct(prefix byte, addr common.Address, v interface{}, getFn getF
 
 		// 从数据库中得到对应的数据
 		valByte := getFn(key)
-
+		if valByte == (common.Hash{}) {
+			return fmt.Errorf("the key do not exist")
+		}
 		// 按照数据类型对数据进行解析后，赋值给struct
 		if _, ok := fv.Interface().(common.Address); ok {
 			var tmp common.Address
@@ -416,8 +418,12 @@ func getAllProxy(db inter.StateDB) []*Voter {
 func getLock(stateDB inter.StateDB) (AllLock, error) {
 	var re AllLock
 	err := convertToStruct(ALLLOCKPREFIX, contractAddr, &re, genGetFunc(stateDB))
+	if err != nil && strings.Contains(err.Error(), "the key do not exist") {
+		re = AllLock{big.NewInt(0)}
+		err = setLock(stateDB, re)
+	}
 	if err != nil {
-		return AllLock{big.NewInt(0)}, err
+		return re, err
 	}
 	return re, nil
 }

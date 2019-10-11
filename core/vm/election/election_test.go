@@ -394,7 +394,6 @@ func TestVoteWithoutEnoughTimeGap(t *testing.T) {
 	c := newElectionContext(context)
 	addr := common.BytesToAddress([]byte{111})
 
-	setLock(c.context.GetStateDb(), AllLock{big.NewInt(0)})
 	// 数据库中塞一条voter数据
 	voter := Voter{
 		Owner:     addr,
@@ -421,7 +420,6 @@ func TestVoteWithoutEnoughTimeGap(t *testing.T) {
 func TestVoteCandidatesFistTime(t *testing.T) {
 	context := newcontext()
 	c := newElectionContext(context)
-	setLock(c.context.GetStateDb(), AllLock{common.Big0})
 
 	addr := common.BytesToAddress([]byte{111})
 	stakeAmount := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18))
@@ -497,8 +495,6 @@ func TestCancelVote(t *testing.T) {
 	c := newElectionContext(context)
 	addr := common.BytesToAddress([]byte{111})
 	addr1 := common.BytesToAddress([]byte{10})
-
-	setLock(c.context.GetStateDb(), AllLock{big.NewInt(0)})
 
 	// 抵押1
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
@@ -607,8 +603,6 @@ func TestProxyWithoutEnoughTimeGap(t *testing.T) {
 	addr := common.BytesToAddress([]byte{111})
 	proxy := common.BytesToAddress([]byte{10})
 
-	setLock(c.context.GetStateDb(), AllLock{big.NewInt(0)})
-
 	// 数据库中塞一条voter数据
 	voter := Voter{
 		Owner:     addr,
@@ -637,8 +631,6 @@ func TestProxyIsNotProxy(t *testing.T) {
 	c := newElectionContext(context)
 	addr := common.BytesToAddress([]byte{111})
 	proxy := common.BytesToAddress([]byte{10})
-
-	setLock(c.context.GetStateDb(), AllLock{big.NewInt(0)})
 
 	// 抵押
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(1e18))
@@ -805,7 +797,6 @@ func TestStartAndStopProxy(t *testing.T) {
 	proxy := common.BytesToAddress([]byte{10})
 	db := c.context.GetStateDb()
 	db.AddBalance(addr1, big.NewInt(0).Mul(big.NewInt(20), big.NewInt(1e18)))
-	setLock(db, AllLock{big.NewInt(0)})
 	stakeVnt := vnt2wei(20)
 	testTransfer(db, addr1, contractAddr, stakeVnt)
 	if err := c.stake(addr1, stakeVnt); err != nil {
@@ -969,8 +960,6 @@ func TestStopAndSetProxy(t *testing.T) {
 func setProxy(t *testing.T, c electionContext) error {
 	addr := common.BytesToAddress([]byte{111})
 	proxy := common.BytesToAddress([]byte{10})
-
-	setLock(c.context.GetStateDb(), AllLock{big.NewInt(0)})
 
 	// 账户addr抵押
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
@@ -1201,8 +1190,6 @@ func testStakeWithCase(t *testing.T, c *stakeCase) {
 	// 模拟vm转账
 	db.AddBalance(contractAddr, c.vnt)
 	db.SubBalance(addr, c.vnt)
-
-	setLock(db, AllLock{common.Big0})
 
 	err := ec.stake(addr, c.vnt)
 	if err != nil {
@@ -1515,8 +1502,6 @@ func initForStateTest(t *testing.T, c electionContext) {
 		ctx.SetTime(new(big.Int).Set(eraTimeStamp))
 	}
 
-	setLock(c.context.GetStateDb(), AllLock{big.NewInt(0)})
-
 	c.context.GetStateDb().AddBalance(addr, big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1e18)))
 	if err := c.stake(addr, vnt2wei(10)); err != nil {
 		t.Errorf("stake error, addr: %s, error: %s", addr.String(), err)
@@ -1702,7 +1687,6 @@ func TestBindCandidate(t *testing.T) {
 
 func testBindCandidate(t *testing.T, cas *bindCase) {
 	ec := newTestElectionCtx()
-	setLock(ec.context.GetStateDb(), AllLock{common.Big0})
 
 	// 先填充见证人信息
 	if cas.preCandi != nil {
@@ -1773,7 +1757,6 @@ func testUnbindCandidate(t *testing.T, cas *bindCase) {
 			t.Errorf("set andiates: %s, error: %s", cas.preCandi.Owner, err)
 		}
 	}
-
 
 	// 绑定和校验结果
 	err := ec.unbindCandidate(cas.binder, cas.info)
