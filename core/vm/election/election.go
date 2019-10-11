@@ -785,7 +785,6 @@ func (ec electionContext) stake(address common.Address, value *big.Int) error {
 
 	err = ec.updateLockAmount(value, "add")
 	if err != nil {
-		fmt.Println(err)
 		log.Error("stake addLockAmount err.", "address", address.Hex(), "err", err)
 		return err
 	}
