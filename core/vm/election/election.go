@@ -452,7 +452,7 @@ func (ec electionContext) bindCandidate(locker common.Address, info *BindInfo, a
 		return err
 	}
 
-	err = ec.updateLockAmount(bindAmount, "add")
+	err = ec.updateLockAmount(bindAmount, true)
 	if err != nil {
 		log.Error("bindCandidate addLockAmount err.", "address", candi.Hex(), "err", err)
 		return err
@@ -484,7 +484,7 @@ func (ec electionContext) unbindCandidate(locker common.Address, info *BindInfo)
 		return err
 	}
 
-	err = ec.updateLockAmount(bindAmount, "sub")
+	err = ec.updateLockAmount(bindAmount, false)
 	if err != nil {
 		log.Error("unbindCandidate subLockAmount err.", "address", candi.Hex(), "err", err)
 		return err
@@ -783,7 +783,7 @@ func (ec electionContext) stake(address common.Address, value *big.Int) error {
 		return err
 	}
 
-	err = ec.updateLockAmount(value, "add")
+	err = ec.updateLockAmount(value, true)
 	if err != nil {
 		log.Error("stake addLockAmount err.", "address", address.Hex(), "err", err)
 		return err
@@ -828,7 +828,7 @@ func (ec electionContext) unStake(address common.Address) error {
 		return err
 	}
 
-	err = ec.updateLockAmount(amount, "sub")
+	err = ec.updateLockAmount(amount, false)
 	if err != nil {
 		log.Error("unStake subLockAmount err.", "address", address.Hex(), "err", err)
 		return err

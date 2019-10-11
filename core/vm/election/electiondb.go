@@ -20,14 +20,13 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"math/big"
-	"reflect"
-	"strings"
-
+	"github.com/pkg/errors"
 	"github.com/vntchain/go-vnt/common"
 	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/rlp"
+	"math/big"
+	"reflect"
 )
 
 const (
@@ -37,6 +36,8 @@ const (
 	ALLLOCKPREFIX   = byte(3)
 	PREFIXLENGTH    = 4 // key的结构为，4位表前缀，20位address，8位的value在struct中的位置
 )
+
+var keyNotExistErr = errors.New("the key do not exist")
 
 type getFuncType func(key common.Hash) common.Hash
 type setFuncType func(key common.Hash, value common.Hash)
@@ -61,16 +62,16 @@ func (ec electionContext) getStake(addr common.Address) Stake {
 	return getStakeFrom(addr, ec.getFromDB)
 }
 
-func (ec electionContext) updateLockAmount(value *big.Int, opt string) error {
+func (ec electionContext) updateLockAmount(value *big.Int, isAdd bool) error {
 	db := ec.context.GetStateDb()
 	re, err := getLock(db)
 	if err != nil {
 		log.Debug("updateLockAmount, Get Lock Amount From DB ", "err", err)
 		return err
 	}
-	if strings.Compare(opt, "add") == 0 {
+	if isAdd {
 		re.Amount = big.NewInt(0).Add(re.Amount, value)
-	} else if strings.Compare(opt, "sub") == 0{
+	} else {
 		re.Amount = big.NewInt(0).Sub(re.Amount, value)
 	}
 
@@ -268,7 +269,7 @@ func convertToStruct(prefix byte, addr common.Address, v interface{}, getFn getF
 		// 从数据库中得到对应的数据
 		valByte := getFn(key)
 		if valByte == (common.Hash{}) {
-			return fmt.Errorf("the key do not exist")
+			return keyNotExistErr
 		}
 		// 按照数据类型对数据进行解析后，赋值给struct
 		if _, ok := fv.Interface().(common.Address); ok {
@@ -415,17 +416,14 @@ func getAllProxy(db inter.StateDB) []*Voter {
 	return result
 }
 
+// 第一次从db中读取key时，key不存在，要加判断并初始化kv
 func getLock(stateDB inter.StateDB) (AllLock, error) {
-	var re AllLock
+	re := AllLock{big.NewInt(0)}
 	err := convertToStruct(ALLLOCKPREFIX, contractAddr, &re, genGetFunc(stateDB))
-	if err != nil && strings.Contains(err.Error(), "the key do not exist") {
-		re = AllLock{big.NewInt(0)}
+	if err == keyNotExistErr {
 		err = setLock(stateDB, re)
 	}
-	if err != nil {
-		return re, err
-	}
-	return re, nil
+	return re, err
 }
 
 func setLock(stateDB inter.StateDB, lock AllLock) error {
