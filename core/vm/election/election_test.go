@@ -1824,6 +1824,8 @@ func testUnregisterCandidate(t *testing.T, cas *unRegCase) {
 	ec := newTestElectionCtx()
 	// ec充1000VNT
 	ec.context.GetStateDb().AddBalance(contractAddr, bindAmount)
+	// AllLock填充1000W VNT
+	setLock(ec.context.GetStateDb(), AllLock{bindAmount})
 
 	// 先填充见证人信息
 	if cas.preCandi != nil {
@@ -1842,9 +1844,13 @@ func testUnregisterCandidate(t *testing.T, cas *unRegCase) {
 		assert.Equal(t, gotCandi.String(), (*cas.wantCandi).String(), fmt.Sprintf(", candidate mismtach after unbind, case: %v", cas.name))
 	}
 
+	acStakeAmount, _ := getLock(ec.context.GetStateDb())
 	// 检查绑定人余额多1000VNT
 	if cas.shouldReturn {
 		assert.Equal(t, ec.context.GetStateDb().GetBalance(cas.preCandi.Binder), bindAmount, fmt.Sprintf(", balance of binder is wrong, case: %v", cas.name))
+		assert.Equal(t, acStakeAmount.Amount, big.NewInt(0), fmt.Sprintf("UnregisterCandidate failed, amount of alllock mismatch, case: %v", cas.name))
+	} else {
+		assert.Equal(t, acStakeAmount.Amount, bindAmount, fmt.Sprintf("UnregisterCandidate failed, amount of alllock mismatch, case: %v", cas.name))
 	}
 }
 
