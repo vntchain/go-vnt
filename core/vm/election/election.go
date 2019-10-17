@@ -417,6 +417,11 @@ func (ec electionContext) unregisterWitness(address common.Address) error {
 
 	// 返还绑定金
 	if shouldReturnToken {
+		err = ec.updateLockAmount(bindAmount, false)
+		if err != nil {
+			log.Error("unregisterWitness subLockAmount err.", "address", address.Hex(), "err", err)
+			return err
+		}
 		return ec.transfer(contractAddr, binder, bindAmount)
 	}
 	return nil
