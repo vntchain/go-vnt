@@ -25,8 +25,8 @@ import (
 	"github.com/vntchain/go-vnt/log"
 )
 
-type AllLock struct {
-	Amount *big.Int // 锁仓和抵押总额
+type Reward struct {
+	Rest *big.Int // 剩余总激励
 }
 
 func (ec electionContext) depositReward(address common.Address, value *big.Int) error {
@@ -34,7 +34,16 @@ func (ec electionContext) depositReward(address common.Address, value *big.Int) 
 		log.Error("depositReward less than 0 VNT", "address", address.Hex(), "VNT", value.String())
 		return fmt.Errorf("deposit reward less than 0 VNT")
 	}
-	return nil
+
+	db := ec.context.GetStateDb()
+	// 查询当前剩余Reward
+	reward := getReward(db)
+
+	// 增加当前Reward
+	reward.Rest = big.NewInt(0).Add(reward.Rest, value)
+
+	// 保存当前Reward
+	return setReward(db, reward)
 }
 
 // GrantReward 发放激励给该候选节点的受益人，返回错误。
@@ -84,15 +93,6 @@ func GrantReward(stateDB inter.StateDB, rewards map[common.Address]*big.Int) (er
 
 // QueryRestReward returns the value of left reward for candidates.
 func QueryRestReward(stateDB inter.StateDB) *big.Int {
-	totalLock, err := getLock(stateDB)
-	if err != nil {
-		log.Error("QueryRestReward failed", "err", err)
-		return common.Big0;
-	}
-	totalBalance := stateDB.GetBalance(contractAddr)
-	if rest := big.NewInt(0).Sub(totalBalance, totalLock.Amount); rest.Cmp(common.Big0) > 0 {
-		return rest;
-	} else {
-		return common.Big0;
-	}
+	reward := stateDB.GetBalance(contractAddr)
+	return reward
 }

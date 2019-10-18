@@ -28,7 +28,7 @@ import (
 type grantCase struct {
 	name          string                      // case名称
 	balance       *big.Int                    // 合约余额
-	allLockBalance *big.Int                    // 锁仓和抵押总额
+	rewardBalance *big.Int                    // 激励余额
 	cans          CandidateList               // 当前的候选人列表
 	rewards       map[common.Address]*big.Int // 待发放余额
 	errExpOfGrant error                       // 有error时意味着回滚，也要匹配具体error
@@ -45,23 +45,23 @@ func TestGrantBounty(t *testing.T) {
 	ca2 := Candidate{Owner: addr2, Binder: binder, Beneficiary: common.HexToAddress(be + "2"), Registered: true, Bind: true}
 	ca3 := Candidate{Owner: addr3, Binder: binder, Beneficiary: common.HexToAddress(be + "3"), Registered: true, Bind: false}
 
-	// 	用例1：有充足余额，有充足剩余激励，余额减少，收益人余额增加
+	// 	用例1：有充足激励，余额减少，收益人余额增加
 	{
 		caList := CandidateList{ca1, ca2}
 		rewards := map[common.Address]*big.Int{
 			ca1.Owner: vnt2wei(1),                                     // 1VNT
 			ca2.Owner: big.NewInt(0).Div(vnt2wei(15), big.NewInt(10))} // 1.5VNT
-		cas := grantCase{"case1", vnt2wei(100), vnt2wei(90), caList, rewards, nil, true, true}
+		cas := grantCase{"case1", vnt2wei(100), vnt2wei(10), caList, rewards, nil, true, true}
 		testGrantBounty(t, &cas)
 	}
 
-	// 	用例2：有充足余额，剩余激励够1个账号的，不足2个账号，有账号的受益人余额增加，有的未增加，剩余激励为0
+	// 	用例2：剩余激励够1个账号的，不足2个账号，有账号的受益人余额增加，有的未增加，剩余激励为0
 	{
 		caList := CandidateList{ca1, ca2}
 		rewards := map[common.Address]*big.Int{
 			ca1.Owner: vnt2wei(10), // 10VNT
 			ca2.Owner: vnt2wei(20)} // 20VNT
-		cas := grantCase{"case2", vnt2wei(100), vnt2wei(75), caList, rewards, nil, false, false}
+		cas := grantCase{"case2", vnt2wei(25), vnt2wei(25), caList, rewards, nil, false, false}
 		testGrantBounty(t, &cas)
 	}
 
@@ -84,35 +84,20 @@ func testGrantBounty(t *testing.T, cas *grantCase) {
 	// 设置余额
 	db.AddBalance(contractAddr, cas.balance)
 
-	// 设置alllock amount
-	err := setLock(db, AllLock{cas.allLockBalance})
-	assert.Equal(t, err, nil, fmt.Sprintf("%v, set alllock amount error: %v", cas.name, err))
-
-	restReward := QueryRestReward(db)
-	expRestReward := common.Big0
-	if cas.balance.Cmp(cas.allLockBalance) > 0 {
-		expRestReward = big.NewInt(0).Sub(cas.balance, cas.allLockBalance)
-	}
-	assert.Equal(t, restReward, expRestReward, fmt.Sprintf("%v, rest bounty amount error: %v", cas.name, err))
-
-
 	// 设置候选人
 	for i, can := range cas.cans {
-		err = ec.setCandidate(can)
+		err := ec.setCandidate(can)
 		assert.Equal(t, err, nil, fmt.Sprintf("%v, [%d] set candidate error: %v", cas.name, i, err))
 	}
 
 	// 执行分激励
-	err = GrantReward(db, cas.rewards)
+	err := GrantReward(db, cas.rewards)
 	assert.Equal(t, err, cas.errExpOfGrant, fmt.Sprintf("%v, grant bounty error mismatch", cas.name))
 
 	// 校验回滚
 	if cas.errExpOfGrant != nil {
 		// 校验余额，应当不变
 		assert.Equal(t, db.GetBalance(contractAddr), cas.balance, ",", cas.name, ", reverted, balance of contract should not change")
-		// 校验剩余激励，应当不变
-		acLockAmount, _ := getLock(db)
-		assert.Equal(t, acLockAmount.Amount, cas.allLockBalance, ",", cas.name, ", reverted, left reward should not change")
 		// 	各候选人账号的收益账号应当为0
 		for addr, _ := range cas.rewards {
 			can := ec.getCandidate(addr)
@@ -125,14 +110,9 @@ func testGrantBounty(t *testing.T, cas *grantCase) {
 	for _, re := range cas.rewards {
 		totalReward = totalReward.Add(totalReward, re)
 	}
-
-	reminReward := QueryRestReward(db)
 	reducedBalance := big.NewInt(0).Sub(cas.balance, db.GetBalance(contractAddr))
-	reducedReward := big.NewInt(0).Sub(restReward, reminReward)
-	assert.Equal(t, reducedBalance, reducedReward, ",", cas.name, "reduced balance should always equal to reduces reward")
 	if cas.matchTotal {
 		assert.Equal(t, reducedBalance, totalReward, ",", cas.name, "reduced contract balance should equal total reward")
-		assert.Equal(t, reducedReward, totalReward, ",", cas.name, "reduced contract reward should equal total reward")
 	}
 
 	// 	校验每个受益账户增加的余额
@@ -165,18 +145,15 @@ func TestDepositReward(t *testing.T) {
 	sender := common.HexToAddress("0x123456")
 
 	// 初始值应当为0
-	got, _:= getLock(ec.context.GetStateDb())
-	assert.Equal(t, got.Amount, common.Big0, "rest reward should be 0 at first")
+	got := getReward(ec.context.GetStateDb())
+	assert.Equal(t, got.Rest, common.Big0, "rest reward should be 0 at first")
 
-	// 存负值
-	amount := vnt2wei(-1000)
+	// 存1000VNT
+	amount := vnt2wei(1000)
 	err := ec.depositReward(sender, amount)
-	assert.Equal(t, err, fmt.Errorf("deposit reward less than 0 VNT"), fmt.Sprintf("deposit reward error: %v", err))
+	assert.Equal(t, err, nil, fmt.Sprintf("deposit reward error: %v", err))
 
 	// 得1000VNT
-	amount = vnt2wei(1000)
-	err = ec.depositReward(sender, amount)
-	assert.Equal(t, err, nil, fmt.Sprintf("deposit reward error: %v", err))
-	got, _ = getLock(ec.context.GetStateDb())
-	assert.Equal(t, got.Amount, common.Big0, "deposit reward not equal")
+	got = getReward(ec.context.GetStateDb())
+	assert.Equal(t, got.Rest, amount, "deposit reward not equal")
 }
