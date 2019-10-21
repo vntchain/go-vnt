@@ -64,7 +64,7 @@ func GrantReward(stateDB inter.StateDB, rewards map[common.Address]*big.Int) (er
 		can := GetCandidate(stateDB, addr)
 		// 再检查：跳过不存在或未激活的候选人
 		if can == nil || !can.Active() {
-			log.Error("Not find candidate or inactive when granting reward", "addr", addr.String())
+			log.Warn("Not find candidate or inactive when granting reward", "addr", addr.String())
 			continue
 		}
 		// 发送错误退出
@@ -85,7 +85,7 @@ func GrantReward(stateDB inter.StateDB, rewards map[common.Address]*big.Int) (er
 // QueryRestReward returns the value of left reward for candidates.
 func QueryRestReward(stateDB inter.StateDB) *big.Int {
 	totalLock, err := getLock(stateDB)
-	if err != nil {
+	if err != nil && err != KeyNotExistErr {
 		log.Error("QueryRestReward failed", "err", err)
 		return common.Big0;
 	}

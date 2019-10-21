@@ -37,7 +37,7 @@ const (
 	PREFIXLENGTH    = 4 // key的结构为，4位表前缀，20位address，8位的value在struct中的位置
 )
 
-var keyNotExistErr = errors.New("the key do not exist")
+var KeyNotExistErr = errors.New("the key do not exist")
 
 type getFuncType func(key common.Hash) common.Hash
 type setFuncType func(key common.Hash, value common.Hash)
@@ -65,7 +65,7 @@ func (ec electionContext) getStake(addr common.Address) Stake {
 func (ec electionContext) updateLockAmount(value *big.Int, isAdd bool) error {
 	db := ec.context.GetStateDb()
 	re, err := getLock(db)
-	if err != nil {
+	if err != nil && err != KeyNotExistErr {
 		log.Debug("updateLockAmount, Get Lock Amount From DB ", "err", err)
 		return err
 	}
@@ -269,7 +269,7 @@ func convertToStruct(prefix byte, addr common.Address, v interface{}, getFn getF
 		// 从数据库中得到对应的数据
 		valByte := getFn(key)
 		if valByte == (common.Hash{}) {
-			return keyNotExistErr
+			return KeyNotExistErr
 		}
 		// 按照数据类型对数据进行解析后，赋值给struct
 		if _, ok := fv.Interface().(common.Address); ok {
@@ -420,9 +420,9 @@ func getAllProxy(db inter.StateDB) []*Voter {
 func getLock(stateDB inter.StateDB) (AllLock, error) {
 	re := AllLock{big.NewInt(0)}
 	err := convertToStruct(ALLLOCKPREFIX, contractAddr, &re, genGetFunc(stateDB))
-	if err == keyNotExistErr {
-		err = setLock(stateDB, re)
-	}
+	//if err == KeyNotExistErr {
+	//	err = setLock(stateDB, re)
+	//}
 	return re, err
 }
 
