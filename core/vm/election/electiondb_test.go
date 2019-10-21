@@ -55,8 +55,12 @@ var (
 		StakeCount: big.NewInt(230),
 		TimeStamp:  big.NewInt(1531454152),
 	}
-	bounty = AllLock{
+	allLock = AllLock{
 		Amount: big.NewInt(1e18),
+	}
+
+	bounty = Reward{
+		Rest: big.NewInt(1e18),
 	}
 )
 
@@ -141,7 +145,12 @@ func TestConvertToKV(t *testing.T) {
 		t.Error(err)
 	}
 
-	err = convertToKV(ALLLOCKPREFIX, bounty, print)
+	err = convertToKV(REWARDPREFIX, bounty, print)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = convertToKV(ALLLOCKPREFIX, allLock, print)
 	if err != nil {
 		t.Error(err)
 	}
@@ -181,6 +190,8 @@ func TestConvertToStruct(t *testing.T) {
 	kvMap[common.HexToHash("020000009ee97d274eb4c215f23238fee1f103d9ea10a2340000000000000003")] = common.HexToHash("000000000000000000000000000000000000000000000000000000845b4822c8") // TimeStamp
 	// bounty
 	kvMap[common.HexToHash("0300000000000000000000000000000000000000000000090000000000000000")] = common.HexToHash("0000000000000000000000000000000000000000000000880de0b6b3a7640000") // RestTotalBounty
+	// Alllock
+	kvMap[common.HexToHash("0400000000000000000000000000000000000000000000090000000000000000")] = common.HexToHash("0000000000000000000000000000000000000000000000880de0b6b3a7640000") // RestTotalBounty
 
 	getFn := func(hash common.Hash) common.Hash {
 		return kvMap[hash]
@@ -213,13 +224,22 @@ func TestConvertToStruct(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 
-	var bounty1 AllLock
-	err = convertToStruct(ALLLOCKPREFIX, contractAddr, &bounty1, getFn)
+	var bounty1 Reward
+	err = convertToStruct(REWARDPREFIX, contractAddr, &bounty1, getFn)
 	if err != nil {
 		t.Error(err)
 	}
-	if bounty1.Amount.Cmp(bounty.Amount) != 0 {
-		t.Errorf("Error: the reset total Reward before is %v after is %v", bounty.Amount, bounty1.Amount)
+	if bounty1.Rest.Cmp(bounty.Rest) != 0 {
+		t.Errorf("Error: the reset total Reward before is %v after is %v", bounty.Rest, bounty1.Rest)
+	}
+
+	var alllock1 AllLock
+	err = convertToStruct(ALLLOCKPREFIX, contractAddr, &alllock1, getFn)
+	if err != nil {
+		t.Error(err)
+	}
+	if alllock1.Amount.Cmp(allLock.Amount) != 0 {
+		t.Errorf("Error: the reset total Reward before is %v after is %v", allLock.Amount, alllock1.Amount)
 	}
 }
 
@@ -245,7 +265,12 @@ func TestSetToDB(t *testing.T) {
 		t.Error(err)
 	}
 
-	err = setLock(stateDB, bounty)
+	err = setReward(stateDB, bounty)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = setLock(stateDB, allLock)
 	if err != nil {
 		t.Error(err)
 	}
@@ -262,9 +287,10 @@ func TestGetFromDB(t *testing.T) {
 	err1 := c.setVoter(voter)
 	err2 := c.setCandidate(candidate)
 	err3 := c.setStake(stake)
-	err4 := setLock(stateDB, bounty)
+	err4 := setReward(stateDB, bounty)
+	err5 := setLock(stateDB, allLock)
 
-	if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
+	if err1 != nil || err2 != nil || err3 != nil || err4 != nil || err5 != nil {
 		t.Fatal("SetToDB err", err1, err2, err3, err4)
 	}
 
@@ -284,9 +310,14 @@ func TestGetFromDB(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 
-	bounty1, _:= getLock(stateDB)
-	if bounty.Amount.Cmp(bounty1.Amount) != 0 {
-		t.Errorf("Error: the reset total Reward before is %v after is %v", bounty.Amount, bounty1.Amount)
+	bounty1 := getReward(stateDB)
+	if bounty.Rest.Cmp(bounty1.Rest) != 0 {
+		t.Errorf("Error: the reset total Reward before is %v after is %v", bounty.Rest, bounty1.Rest)
+	}
+
+	allLock1, _:= getLock(stateDB)
+	if allLock1.Amount.Cmp(allLock.Amount) != 0 {
+		t.Errorf("Error: the reset total Reward before is %v after is %v", allLock.Amount, allLock1.Amount)
 	}
 }
 

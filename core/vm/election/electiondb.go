@@ -33,7 +33,8 @@ const (
 	VOTERPREFIX     = byte(0)
 	CANDIDATEPREFIX = byte(1)
 	STAKEPREFIX     = byte(2)
-	ALLLOCKPREFIX   = byte(3)
+	REWARDPREFIX    = byte(3)
+	ALLLOCKPREFIX   = byte(4)
 	PREFIXLENGTH    = 4 // key的结构为，4位表前缀，20位address，8位的value在struct中的位置
 )
 
@@ -416,7 +417,7 @@ func getAllProxy(db inter.StateDB) []*Voter {
 	return result
 }
 
-// 第一次从db中读取key时，key不存在，要加判断并初始化kv
+// 第一次从db中读取key时，key不存在，返回特殊异常，外部创建kv
 func getLock(stateDB inter.StateDB) (AllLock, error) {
 	re := AllLock{big.NewInt(0)}
 	err := convertToStruct(ALLLOCKPREFIX, contractAddr, &re, genGetFunc(stateDB))
@@ -432,6 +433,19 @@ func setLock(stateDB inter.StateDB, lock AllLock) error {
 		log.Error("setLock error", "err", err, "lock", lock)
 	}
 	return err
+}
+
+func getReward(stateDB inter.StateDB) Reward {
+	var re Reward
+	err := convertToStruct(REWARDPREFIX, contractAddr, &re, genGetFunc(stateDB))
+	if err != nil {
+		return Reward{big.NewInt(0)}
+	}
+	return re
+}
+
+func setReward(stateDB inter.StateDB, restBounty Reward) error {
+	return convertToKV(REWARDPREFIX, restBounty, genSetFunc(stateDB))
 }
 
 // genGetFunc generate universal get function for read from state db.

@@ -88,7 +88,7 @@ func testGrantBounty(t *testing.T, cas *grantCase) {
 	err := setLock(db, AllLock{cas.allLockBalance})
 	assert.Equal(t, err, nil, fmt.Sprintf("%v, set alllock amount error: %v", cas.name, err))
 
-	restReward := QueryRestReward(db)
+	restReward := QueryRestReward(db, big.NewInt(ElectionStart + 1))
 	expRestReward := common.Big0
 	if cas.balance.Cmp(cas.allLockBalance) > 0 {
 		expRestReward = big.NewInt(0).Sub(cas.balance, cas.allLockBalance)
@@ -103,7 +103,7 @@ func testGrantBounty(t *testing.T, cas *grantCase) {
 	}
 
 	// 执行分激励
-	err = GrantReward(db, cas.rewards)
+	err = GrantReward(db, cas.rewards, big.NewInt(ElectionStart + 1))
 	assert.Equal(t, err, cas.errExpOfGrant, fmt.Sprintf("%v, grant bounty error mismatch", cas.name))
 
 	// 校验回滚
@@ -126,7 +126,7 @@ func testGrantBounty(t *testing.T, cas *grantCase) {
 		totalReward = totalReward.Add(totalReward, re)
 	}
 
-	reminReward := QueryRestReward(db)
+	reminReward := QueryRestReward(db, big.NewInt(ElectionStart + 1))
 	reducedBalance := big.NewInt(0).Sub(cas.balance, db.GetBalance(contractAddr))
 	reducedReward := big.NewInt(0).Sub(restReward, reminReward)
 	assert.Equal(t, reducedBalance, reducedReward, ",", cas.name, "reduced balance should always equal to reduces reward")

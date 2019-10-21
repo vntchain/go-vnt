@@ -464,7 +464,7 @@ func (ec electionContext) bindCandidate(locker common.Address, info *BindInfo, a
 	}
 
 	blockNum := ec.context.GetBlockNum()
-	log.Debug("bindCandidate blocknum ", blockNum.String())
+	log.Debug("bindCandidate blocknum ", "blocknum ", blockNum.String())
 	if blockNum.Cmp(big.NewInt(ElectionStart)) > 0 {
 		log.Debug("bindCandidate shouldUpdateLockAmount")
 		err = ec.updateLockAmount(bindAmount, true)
