@@ -117,7 +117,7 @@ func newcontext() inter.ChainContext {
 		Origin:  common.BytesToAddress([]byte{111}),
 		Time:    big.NewInt(1531328510),
 		StateDB: stateDB,
-		BlockNumber: big.NewInt(int64(10001)),
+		BlockNumber: big.NewInt(int64(ElectionStart)),
 	}
 	return &c
 }

@@ -64,6 +64,10 @@ func (ec electionContext) getStake(addr common.Address) Stake {
 }
 
 func (ec electionContext) updateLockAmount(value *big.Int, isAdd bool) error {
+	blockNum := ec.context.GetBlockNum()
+	if blockNum.Cmp(big.NewInt(ElectionStart)) < 0 {
+		return nil
+	}
 	db := ec.context.GetStateDb()
 	re, err := getLock(db)
 	if err != nil && err != KeyNotExistErr {

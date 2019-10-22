@@ -418,15 +418,10 @@ func (ec electionContext) unregisterWitness(address common.Address) error {
 
 	// 返还绑定金
 	if shouldReturnToken {
-		blockNum := ec.context.GetBlockNum()
-		log.Debug("unregisterWitness shouldReturnToken blocknum ", blockNum.String())
-		if blockNum.Cmp(big.NewInt(ElectionStart)) > 0 {
-			log.Debug("unregisterWitness shouldUpdateLockAmount")
-			err = ec.updateLockAmount(bindAmount, false)
-			if err != nil {
-				log.Error("unregisterWitness subLockAmount err.", "address", address.Hex(), "err", err)
-				return err
-			}
+		err = ec.updateLockAmount(bindAmount, false)
+		if err != nil {
+			log.Error("unregisterWitness subLockAmount err.", "address", address.Hex(), "err", err)
+			return err
 		}
 		return ec.transfer(contractAddr, binder, bindAmount)
 	}
@@ -463,15 +458,10 @@ func (ec electionContext) bindCandidate(locker common.Address, info *BindInfo, a
 		return err
 	}
 
-	blockNum := ec.context.GetBlockNum()
-	log.Debug("bindCandidate blocknum ", "blocknum ", blockNum.String())
-	if blockNum.Cmp(big.NewInt(ElectionStart)) > 0 {
-		log.Debug("bindCandidate shouldUpdateLockAmount")
-		err = ec.updateLockAmount(bindAmount, true)
-		if err != nil {
-			log.Error("bindCandidate addLockAmount err.", "address", candi.Hex(), "err", err)
-			return err
-		}
+	err = ec.updateLockAmount(bindAmount, true)
+	if err != nil {
+		log.Error("bindCandidate addLockAmount err.", "address", candi.Hex(), "err", err)
+		return err
 	}
 
 	return nil
@@ -500,15 +490,10 @@ func (ec electionContext) unbindCandidate(locker common.Address, info *BindInfo)
 		return err
 	}
 
-	blockNum := ec.context.GetBlockNum()
-	log.Debug("unbindCandidate blocknum ", blockNum.String())
-	if blockNum.Cmp(big.NewInt(ElectionStart)) > 0 {
-		log.Debug("unbindCandidate shouldUpdateLockAmount")
-		err = ec.updateLockAmount(bindAmount, false)
-		if err != nil {
-			log.Error("unbindCandidate subLockAmount err.", "address", candi.Hex(), "err", err)
-			return err
-		}
+	err = ec.updateLockAmount(bindAmount, false)
+	if err != nil {
+		log.Error("unbindCandidate subLockAmount err.", "address", candi.Hex(), "err", err)
+		return err
 	}
 
 	// 返回绑定人锁仓金额
@@ -804,15 +789,10 @@ func (ec electionContext) stake(address common.Address, value *big.Int) error {
 		return err
 	}
 
-	blockNum := ec.context.GetBlockNum()
-	log.Debug("stake blocknum ", blockNum.String())
-	if blockNum.Cmp(big.NewInt(ElectionStart)) > 0 {
-		log.Debug("stake shouldUpdateLockAmount")
-		err = ec.updateLockAmount(value, true)
-		if err != nil {
-			log.Error("stake addLockAmount err.", "address", address.Hex(), "err", err)
-			return err
-		}
+	err = ec.updateLockAmount(value, true)
+	if err != nil {
+		log.Error("stake addLockAmount err.", "address", address.Hex(), "err", err)
+		return err
 	}
 	return nil
 }
@@ -854,15 +834,10 @@ func (ec electionContext) unStake(address common.Address) error {
 		return err
 	}
 
-	blockNum := ec.context.GetBlockNum()
-	log.Debug("unStake blocknum ", blockNum.String())
-	if blockNum.Cmp(big.NewInt(ElectionStart)) > 0 {
-		log.Debug("unStake shouldUpdateLockAmount")
-		err = ec.updateLockAmount(amount, false)
-		if err != nil {
-			log.Error("unStake subLockAmount err.", "address", address.Hex(), "err", err)
-			return err
-		}
+	err = ec.updateLockAmount(amount, false)
+	if err != nil {
+		log.Error("unStake subLockAmount err.", "address", address.Hex(), "err", err)
+		return err
 	}
 
 	// add balance of staker
