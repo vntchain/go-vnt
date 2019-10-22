@@ -33,11 +33,12 @@ const (
 	VOTERPREFIX     = byte(0)
 	CANDIDATEPREFIX = byte(1)
 	STAKEPREFIX     = byte(2)
-	ALLLOCKPREFIX   = byte(3)
+	REWARDPREFIX    = byte(3)
+	ALLLOCKPREFIX   = byte(4)
 	PREFIXLENGTH    = 4 // key的结构为，4位表前缀，20位address，8位的value在struct中的位置
 )
 
-var keyNotExistErr = errors.New("the key do not exist")
+var KeyNotExistErr = errors.New("the key do not exist")
 
 type getFuncType func(key common.Hash) common.Hash
 type setFuncType func(key common.Hash, value common.Hash)
@@ -63,10 +64,14 @@ func (ec electionContext) getStake(addr common.Address) Stake {
 }
 
 func (ec electionContext) updateLockAmount(value *big.Int, isAdd bool) error {
+	blockNum := ec.context.GetBlockNum()
+	if blockNum.Cmp(big.NewInt(ElectionStart)) < 0 {
+		return nil
+	}
 	db := ec.context.GetStateDb()
 	re, err := getLock(db)
-	if err != nil {
-		log.Debug("updateLockAmount, Get Lock Amount From DB ", "err", err)
+	if err != nil && err != KeyNotExistErr {
+		log.Error("updateLockAmount, Get Lock Amount From DB ", "err", err)
 		return err
 	}
 	if isAdd {
@@ -269,7 +274,7 @@ func convertToStruct(prefix byte, addr common.Address, v interface{}, getFn getF
 		// 从数据库中得到对应的数据
 		valByte := getFn(key)
 		if valByte == (common.Hash{}) {
-			return keyNotExistErr
+			return KeyNotExistErr
 		}
 		// 按照数据类型对数据进行解析后，赋值给struct
 		if _, ok := fv.Interface().(common.Address); ok {
@@ -416,13 +421,10 @@ func getAllProxy(db inter.StateDB) []*Voter {
 	return result
 }
 
-// 第一次从db中读取key时，key不存在，要加判断并初始化kv
+// 第一次从db中读取key时，key不存在，返回特殊异常，外部创建kv
 func getLock(stateDB inter.StateDB) (AllLock, error) {
 	re := AllLock{big.NewInt(0)}
 	err := convertToStruct(ALLLOCKPREFIX, contractAddr, &re, genGetFunc(stateDB))
-	if err == keyNotExistErr {
-		err = setLock(stateDB, re)
-	}
 	return re, err
 }
 
@@ -432,6 +434,19 @@ func setLock(stateDB inter.StateDB, lock AllLock) error {
 		log.Error("setLock error", "err", err, "lock", lock)
 	}
 	return err
+}
+
+func getReward(stateDB inter.StateDB) Reward {
+	var re Reward
+	err := convertToStruct(REWARDPREFIX, contractAddr, &re, genGetFunc(stateDB))
+	if err != nil {
+		return Reward{big.NewInt(0)}
+	}
+	return re
+}
+
+func setReward(stateDB inter.StateDB, restBounty Reward) error {
+	return convertToKV(REWARDPREFIX, restBounty, genSetFunc(stateDB))
 }
 
 // genGetFunc generate universal get function for read from state db.

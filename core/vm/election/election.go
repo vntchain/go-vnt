@@ -40,6 +40,7 @@ const (
 	OneDay       = int64(24) * 3600
 	oneWeek      = OneDay * 7
 	year2019     = 1546272000
+	ElectionStart = int64(4294756)
 )
 
 var (

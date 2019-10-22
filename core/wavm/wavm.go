@@ -426,3 +426,7 @@ func (wavm *WAVM) GetOrigin() common.Address {
 func (wavm *WAVM) GetTime() *big.Int {
 	return wavm.Time
 }
+
+func (wavm *WAVM) GetBlockNum() *big.Int {
+	return wavm.BlockNumber
+}
