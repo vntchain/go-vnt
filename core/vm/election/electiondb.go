@@ -67,7 +67,7 @@ func (ec electionContext) updateLockAmount(value *big.Int, isAdd bool) error {
 	db := ec.context.GetStateDb()
 	re, err := getLock(db)
 	if err != nil && err != KeyNotExistErr {
-		log.Debug("updateLockAmount, Get Lock Amount From DB ", "err", err)
+		log.Error("updateLockAmount, Get Lock Amount From DB ", "err", err)
 		return err
 	}
 	if isAdd {
@@ -421,9 +421,6 @@ func getAllProxy(db inter.StateDB) []*Voter {
 func getLock(stateDB inter.StateDB) (AllLock, error) {
 	re := AllLock{big.NewInt(0)}
 	err := convertToStruct(ALLLOCKPREFIX, contractAddr, &re, genGetFunc(stateDB))
-	//if err == KeyNotExistErr {
-	//	err = setLock(stateDB, re)
-	//}
 	return re, err
 }
 
