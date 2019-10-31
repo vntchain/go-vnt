@@ -72,7 +72,7 @@ func (e IllegalInputError) Error() string {
 type UnknownABITypeError string
 
 func (e UnknownABITypeError) Error() string {
-	return fmt.Sprintf("Exec wasm error: Unknown abi type \"%s\"", e)
+	return fmt.Sprintf("Exec wasm error: Unknown abi type \"%s\"", string(e))
 }
 
 type UnknownTypeError string
@@ -84,7 +84,7 @@ func (e UnknownTypeError) Error() string {
 type NoFunctionError string
 
 func (e NoFunctionError) Error() string {
-	return fmt.Sprintf("Exec wasm error: Can't find function %s in abi", e)
+	return fmt.Sprintf("Exec wasm error: Can't find function %s in abi", string(e))
 }
 
 type MismatchMutableFunctionError struct {
