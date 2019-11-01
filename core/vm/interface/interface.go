@@ -78,4 +78,5 @@ type ChainContext interface {
 	GetStateDb() StateDB
 	GetOrigin() common.Address
 	GetTime() *big.Int
+	GetBlockNum() *big.Int
 }

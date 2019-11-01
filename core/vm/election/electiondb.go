@@ -20,13 +20,13 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"math/big"
-	"reflect"
-
+	"github.com/pkg/errors"
 	"github.com/vntchain/go-vnt/common"
 	inter "github.com/vntchain/go-vnt/core/vm/interface"
 	"github.com/vntchain/go-vnt/log"
 	"github.com/vntchain/go-vnt/rlp"
+	"math/big"
+	"reflect"
 )
 
 const (
@@ -34,8 +34,11 @@ const (
 	CANDIDATEPREFIX = byte(1)
 	STAKEPREFIX     = byte(2)
 	REWARDPREFIX    = byte(3)
+	ALLLOCKPREFIX   = byte(4)
 	PREFIXLENGTH    = 4 // key的结构为，4位表前缀，20位address，8位的value在struct中的位置
 )
+
+var KeyNotExistErr = errors.New("the key do not exist")
 
 type getFuncType func(key common.Hash) common.Hash
 type setFuncType func(key common.Hash, value common.Hash)
@@ -58,6 +61,31 @@ func (ec electionContext) getCandidate(key common.Address) Candidate {
 
 func (ec electionContext) getStake(addr common.Address) Stake {
 	return getStakeFrom(addr, ec.getFromDB)
+}
+
+func (ec electionContext) updateLockAmount(value *big.Int, isAdd bool) error {
+	blockNum := ec.context.GetBlockNum()
+	if blockNum.Cmp(big.NewInt(ElectionStart)) <= 0 {
+		return nil
+	}
+	db := ec.context.GetStateDb()
+	re, err := getLock(db)
+	if err != nil && err != KeyNotExistErr {
+		log.Error("updateLockAmount, Get Lock Amount From DB ", "err", err)
+		return err
+	}
+	if isAdd {
+		re.Amount = big.NewInt(0).Add(re.Amount, value)
+	} else {
+		re.Amount = big.NewInt(0).Sub(re.Amount, value)
+	}
+
+	err = setLock(db, re)
+	if err != nil {
+		log.Error("updateLockAmount, Set Lock Amount To DB", "err", err, "value", value)
+		return err
+	}
+	return nil
 }
 
 func (ec electionContext) setVoter(voter Voter) error {
@@ -245,7 +273,9 @@ func convertToStruct(prefix byte, addr common.Address, v interface{}, getFn getF
 
 		// 从数据库中得到对应的数据
 		valByte := getFn(key)
-
+		if valByte == (common.Hash{}) {
+			return KeyNotExistErr
+		}
 		// 按照数据类型对数据进行解析后，赋值给struct
 		if _, ok := fv.Interface().(common.Address); ok {
 			var tmp common.Address
@@ -389,6 +419,21 @@ func getAllProxy(db inter.StateDB) []*Voter {
 		}
 	}
 	return result
+}
+
+// 第一次从db中读取key时，key不存在，返回特殊异常，外部创建kv
+func getLock(stateDB inter.StateDB) (AllLock, error) {
+	re := AllLock{big.NewInt(0)}
+	err := convertToStruct(ALLLOCKPREFIX, contractAddr, &re, genGetFunc(stateDB))
+	return re, err
+}
+
+func setLock(stateDB inter.StateDB, lock AllLock) error {
+	err := convertToKV(ALLLOCKPREFIX, lock, genSetFunc(stateDB))
+	if err != nil {
+		log.Error("setLock error", "err", err, "lock", lock)
+	}
+	return err
 }
 
 func getReward(stateDB inter.StateDB) Reward {

@@ -25,6 +25,10 @@ import (
 	"github.com/vntchain/go-vnt/log"
 )
 
+type AllLock struct {
+	Amount *big.Int // 锁仓和抵押总额
+}
+
 type Reward struct {
 	Rest *big.Int // 剩余总激励
 }
@@ -50,10 +54,9 @@ func (ec electionContext) depositReward(address common.Address, value *big.Int) 
 // 发放激励的接口不区分是产块激励还是投票激励，超级节点必须是Active，否则无收益。
 // 激励金额不足发放时为正常情况不返回error，返回nil。
 // 返回错误时，数据状态恢复到原始情况，即所有激励都不发放。
-func GrantReward(stateDB inter.StateDB, rewards map[common.Address]*big.Int) (err error) {
+func GrantReward(stateDB inter.StateDB, rewards map[common.Address]*big.Int, blockNum *big.Int) (err error) {
 	// 无激励即可返回
-	reward := getReward(stateDB)
-	rest := reward.Rest
+	rest := QueryRestReward(stateDB, blockNum)
 	if rest.Cmp(common.Big0) <= 0 {
 		return nil
 	}
@@ -74,7 +77,7 @@ func GrantReward(stateDB inter.StateDB, rewards map[common.Address]*big.Int) (er
 		can := GetCandidate(stateDB, addr)
 		// 再检查：跳过不存在或未激活的候选人
 		if can == nil || !can.Active() {
-			log.Error("Not find candidate or inactive when granting reward", "addr", addr.String())
+			log.Warn("Not find candidate or inactive when granting reward", "addr", addr.String())
 			continue
 		}
 		// 发送错误退出
@@ -88,12 +91,30 @@ func GrantReward(stateDB inter.StateDB, rewards map[common.Address]*big.Int) (er
 		}
 	}
 
-	// 激励正常发放完毕，更新剩余激励
-	return setReward(stateDB, Reward{Rest: big.NewInt(0).Set(rest)})
+	if  blockNum.Cmp(big.NewInt(ElectionStart)) > 0  {
+		return nil
+	} else {
+		// 激励正常发放完毕，更新剩余激励
+		return setReward(stateDB, Reward{Rest: big.NewInt(0).Set(rest)})
+	}
 }
 
 // QueryRestReward returns the value of left reward for candidates.
-func QueryRestReward(stateDB inter.StateDB) *big.Int {
-	reward := getReward(stateDB)
-	return reward.Rest
+func QueryRestReward(stateDB inter.StateDB, blockNum *big.Int) *big.Int {
+	if  blockNum.Cmp(big.NewInt(ElectionStart)) > 0 {
+		totalLock, err := getLock(stateDB)
+		if err != nil && err != KeyNotExistErr {
+			log.Error("QueryRestReward failed", "err", err)
+			return common.Big0;
+		}
+		totalBalance := stateDB.GetBalance(contractAddr)
+		if rest := big.NewInt(0).Sub(totalBalance, totalLock.Amount); rest.Cmp(common.Big0) > 0 {
+			return rest;
+		} else {
+			return common.Big0;
+		}
+	} else {
+		reward := getReward(stateDB)
+		return reward.Rest
+	}
 }
