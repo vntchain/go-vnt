@@ -29,6 +29,9 @@ VNT Chain的公链——Hubble Network是下一代商业级智能价值传递的
     cd $GOPATH/src/github.com/vntchain
     git clone https://github.com/vntchain/go-vnt
     cd go-vnt
+如果有以前的版本，请更新到最新：
+
+    git pull
 
 然后，使用下面命令编译`gvnt`:
 
@@ -41,10 +44,16 @@ VNT Chain的公链——Hubble Network是下一代商业级智能价值传递的
 经过以上可以在`$GOPATH/src/github.com/vntchain/go-vnt/build/bin/`目录调用`gvnt`，为方便使用可以将`gvnt`安装到`$GOPATH/bin`:
 
     go install -v ./cmd/gvnt
+ 
+ 查看当前使用的gvnt版本号
+ 
+    gvnt version
 
 ## 运行Gvnt
 
-当前VNT的公链测试网络还未启动，你可以在本地搭建一个小型测试网，资料请参考：[如何搭建VNT网络](https://github.com/vntchain/vnt-documentation/blob/master/introduction/set-up-vnt-network/set-up-4-node-vnt-network.md)。
+当前VNT的公链主网和测试网络都已经启动，资料参考：[如何加入测试网](https://github.com/vntchain/vnt-documentation/blob/master/developer-guide/05-network/connect-to-hubble-testnet.md), [如何加入主网](https://github.com/vntchain/vnt-documentation/blob/master/developer-guide/05-network/connect-to-hubble-network.md)
+
+你可以在本地搭建一个小型测试网，资料请参考：[如何搭建VNT网络](https://github.com/vntchain/vnt-documentation/blob/master/introduction/set-up-vnt-network/set-up-4-node-vnt-network.md)。
 
 ## 资源
 
