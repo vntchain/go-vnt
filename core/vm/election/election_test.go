@@ -87,6 +87,7 @@ type testContext struct {
 	Origin  common.Address
 	Time    *big.Int
 	StateDB inter.StateDB
+	BlockNumber *big.Int
 }
 
 func (tc *testContext) GetOrigin() common.Address {
@@ -105,6 +106,10 @@ func (tc *testContext) SetTime(t *big.Int) {
 	tc.Time = t
 }
 
+func (tc *testContext) GetBlockNum() *big.Int {
+	return tc.BlockNumber
+}
+
 func newcontext() inter.ChainContext {
 	db := vntdb.NewMemDatabase()
 	stateDB, _ := state.New(common.Hash{}, state.NewDatabase(db))
@@ -112,6 +117,7 @@ func newcontext() inter.ChainContext {
 		Origin:  common.BytesToAddress([]byte{111}),
 		Time:    big.NewInt(1531328510),
 		StateDB: stateDB,
+		BlockNumber: big.NewInt(int64(ElectionStart+1)),
 	}
 	return &c
 }
