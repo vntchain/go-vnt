@@ -162,14 +162,14 @@ func (rw *VNTMsger) WriteMsg(msg Msg) (err error) {
 	msgHeaderByte := msg.Header[:]
 	msgBodyByte, err := json.Marshal(msg.Body)
 	if err != nil {
-		rw.peer.log.Error("Write message", "marshal msgbody error", err)
+		rw.peer.log.Warn("Write message", "marshal msgbody error", err)
 		return err
 	}
 	m := append(msgHeaderByte, msgBodyByte...)
 
 	_, err = rw.w.Write(m)
 	if err != nil {
-		rw.peer.log.Error("Write message", "write msg error", err)
+		rw.peer.log.Warn("Write message", "write msg error", err)
 		if atomic.LoadInt32(&rw.peer.reseted) == 0 {
 			rw.peer.log.Info("Write message", "underlay will close this connection which remotePID", rw.peer.RemoteID())
 			rw.peer.sendError(err)
